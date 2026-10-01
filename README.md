@@ -84,3 +84,11 @@ Every string a person reads lives in `src/copy.ts`, as plain nouns with no
 em dashes and no emoji. `src/components/vocab.tsx` is the companion for
 fixed-choice fields: the icon, label, and short label for each enum value,
 keyed by field. Add a new label or icon there, not inline in a component.
+
+## Design and decisions
+
+The design of record lives in cartograph-engine: `docs/UI_CONTRACT.md`
+says what an interface is built from, and `docs/DESIGN_RULES.md` how it
+behaves. Structural decisions are recorded in `docs/adr/` there,
+including the one that put this interface behind the `Client` port
+(ADR 0006).
