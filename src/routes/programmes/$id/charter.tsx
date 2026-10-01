@@ -28,8 +28,8 @@ function Page() {
         </Button>
       </div>
       <CharterView
-        url={`/api/v1/manifests/Programme/${id}/charter.html`}
-        pdfUrl={`/api/v1/manifests/Programme/${id}/charter.pdf`}
+        kind="Programme"
+        id={id}
         fileName={id}
         empty={cc.empty}
       />

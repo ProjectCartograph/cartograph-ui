@@ -18,7 +18,8 @@ import { ComboboxMultiple } from "@/components/ui/combobox";
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { FieldHeading, Help } from "@/components/guidance";
 import { VocabMark } from "@/components/vocab";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { orUndefined } from "@/client/port";
 import { copy } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
 import { ObjectiveEditor } from "../ObjectiveEditor";
@@ -45,21 +46,16 @@ const PICKED = "data-[state=on]:bg-primary data-[state=on]:text-primary-foregrou
  * once per programme.
  */
 function useProgrammeGoals() {
+  const client = useClient();
   return useQuery({
     queryKey: ["programme-goals"],
     queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}", {
-        params: { path: { kind: "Programme" } },
-      });
-      if (error) throw error;
-      const items = Array.isArray(data) ? data : (data?.items ?? []);
+      const items = await client.list("Programme");
       const out = new Map<string, string[]>();
       await Promise.all(
         items.map(async (summary) => {
-          const res = await client.GET("/manifests/{kind}/{id}", {
-            params: { path: { kind: "Programme", id: summary.id } },
-          });
-          const spec = (res.data as unknown as { manifest?: { spec?: { goals?: string[] } } })?.manifest?.spec;
+          const view = await orUndefined(client.get("Programme", summary.id));
+          const spec = (view as unknown as { manifest?: { spec?: { goals?: string[] } } })?.manifest?.spec;
           out.set(summary.id, spec?.goals ?? []);
         }),
       );
@@ -75,14 +71,10 @@ interface KPIRow {
 }
 
 function useKPIList() {
+  const client = useClient();
   return useQuery({
     queryKey: ["project-aim-kpis"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}", { params: { path: { kind: "KPI" } } });
-      if (error) throw error;
-      const items = Array.isArray(data) ? data : (data?.items ?? []);
-      return items as KPIRow[];
-    },
+    queryFn: async () => (await client.list("KPI")) as KPIRow[],
   });
 }
 

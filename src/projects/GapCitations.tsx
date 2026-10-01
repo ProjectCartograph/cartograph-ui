@@ -8,23 +8,23 @@ import { copy } from "@/copy";
 import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { useQueries } from "@tanstack/react-query";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { orUndefined } from "@/client/port";
 import type { GapCitation } from "./types";
 
 const ac = copy.projects.aim;
 
 /** The segments one gap was observed in, read from the gap itself. */
 function useGapSegments(gapIDs: string[]) {
+  const client = useClient();
   const results = useQueries({
     queries: gapIDs.map((id) => ({
       queryKey: ["gap-segments", id],
       staleTime: 30_000,
       queryFn: async (): Promise<string[]> => {
-        const res = await client.GET("/manifests/{kind}/{id}", {
-          params: { path: { kind: "Gap", id } },
-        });
-        if (res.error) return [];
-        const spec = (res.data as unknown as { manifest?: { spec?: { segments?: string[] } } })
+        const view = await orUndefined(client.get("Gap", id));
+        if (!view) return [];
+        const spec = (view as unknown as { manifest?: { spec?: { segments?: string[] } } })
           .manifest?.spec;
         return spec?.segments ?? [];
       },

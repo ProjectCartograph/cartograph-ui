@@ -4,7 +4,8 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
 import { copy } from "@/copy";
 import { ProjectStoreProvider, useProjectStore } from "../store";
 import { AimSection } from "../sections/AimSection";
@@ -14,7 +15,6 @@ import type { ProjectSpec } from "../types";
 // A project may answer more than one problem, and one change may land
 // differently on different groups (Programme Lead, 2026-09-27). These
 // drive the real store with the API client faked at the module boundary.
-vi.mock("@/api/client");
 vi.mock("@tanstack/react-router", () => ({
   useBlocker: () => undefined,
   Link: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
@@ -50,27 +50,17 @@ const groups = [
   { id: "retail-partners", name: "Retail partners" },
 ];
 
-const mocked = vi.mocked(client);
+const get = vi.fn();
+const list = vi.fn();
+const saveWorking = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
   // The store loads the project through the generic manifest route
   // ("/manifests/{kind}/{id}"), not a Project-specific one.
-  mocked.GET.mockImplementation((async (url: string) => ({
-    data:
-      url === "/manifests/{kind}/{id}"
-        ? { version: { number: 0 }, manifest, yaml: "" }
-        : url === "/goals/tree"
-          ? { levels: [], nodes: [] }
-          : { items: groups },
-    error: undefined,
-    response: new Response(null, { status: 200 }),
-  })) as never);
-  mocked.PUT.mockResolvedValue({
-    data: undefined,
-    error: undefined,
-    response: new Response(null, { status: 204 }),
-  } as never);
+  get.mockResolvedValue({ version: { number: 0 }, manifest, yaml: "" });
+  list.mockResolvedValue(groups);
+  saveWorking.mockResolvedValue(undefined);
 });
 
 let spec: ProjectSpec;
@@ -83,12 +73,14 @@ function Spy() {
 async function mount(section: React.ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <ProjectStoreProvider id="p1">
-        <Spy />
-        {section}
-      </ProjectStoreProvider>
-    </QueryClientProvider>,
+    <ClientProvider client={fakeClient({ get, list, saveWorking, goalTree: async () => ({ levels: [], nodes: [] }) })}>
+      <QueryClientProvider client={queryClient}>
+        <ProjectStoreProvider id="p1">
+          <Spy />
+          {section}
+        </ProjectStoreProvider>
+      </QueryClientProvider>
+    </ClientProvider>,
   );
 }
 

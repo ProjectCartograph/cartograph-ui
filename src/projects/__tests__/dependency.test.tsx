@@ -4,14 +4,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
 import { copy } from "@/copy";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProjectStoreProvider, useProjectStore } from "../store";
 import { RisksSection } from "../sections/RisksSection";
 import { retypeRisk, type ProjectSpec, type Risk } from "../types";
 
-vi.mock("@/api/client");
 vi.mock("@tanstack/react-router", () => ({
   useBlocker: () => undefined,
   Link: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
@@ -45,7 +45,9 @@ const manifest = {
   },
 };
 
-const mocked = vi.mocked(client);
+const get = vi.fn();
+const list = vi.fn();
+const saveWorking = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -57,19 +59,9 @@ beforeEach(() => {
   for (const el of document.querySelectorAll("[aria-hidden='true']")) {
     el.removeAttribute("aria-hidden");
   }
-  mocked.GET.mockImplementation((async (url: string) => ({
-    data:
-      url === "/manifests/{kind}/{id}"
-        ? { version: { number: 0 }, manifest, yaml: "" }
-        : { items: [{ id: "emis", name: "EMIS" }] },
-    error: undefined,
-    response: new Response(null, { status: 200 }),
-  })) as never);
-  mocked.PUT.mockResolvedValue({
-    data: undefined,
-    error: undefined,
-    response: new Response(null, { status: 204 }),
-  } as never);
+  get.mockResolvedValue({ version: { number: 0 }, manifest, yaml: "" });
+  list.mockResolvedValue([{ id: "emis", name: "EMIS" }]);
+  saveWorking.mockResolvedValue(undefined);
 });
 
 let spec: ProjectSpec;
@@ -82,14 +74,16 @@ function Spy() {
 async function mount() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ProjectStoreProvider id="p1">
-          <Spy />
-          <RisksSection />
-        </ProjectStoreProvider>
-      </TooltipProvider>
-    </QueryClientProvider>,
+    <ClientProvider client={fakeClient({ get, list, saveWorking })}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ProjectStoreProvider id="p1">
+            <Spy />
+            <RisksSection />
+          </ProjectStoreProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ClientProvider>,
   );
   return userEvent.setup();
 }

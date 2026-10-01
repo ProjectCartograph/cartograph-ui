@@ -20,7 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LabelsEditor } from "@/components/LabelsEditor";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { ClientError } from "@/client/port";
 import { copy } from "@/copy";
 import { slugify } from "@/surfaces/sheet/schema";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
@@ -48,6 +49,7 @@ export function KPIAddDialog({
   onAdded?: (id: string, name: string) => void;
 }) {
   const queryClient = useQueryClient();
+  const client = useClient();
   const [name, setName] = useState("");
   const [definition, setDefinition] = useState("");
   const [unit, setUnit] = useState<string | undefined>();
@@ -89,12 +91,10 @@ export function KPIAddDialog({
       metadata: Object.keys(labels).length > 0 ? { id, name, labels } : { id, name },
       spec: { name, definition, unit, direction, source, ...(cycle ? { cycle } : {}) },
     };
-    const { error } = await client.PUT("/manifests/{kind}/{id}", {
-      params: { path: { kind: "KPI", id } },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      body: { manifest: manifest as any, reason: kc.addReason },
-    });
-    if (error) {
+    try {
+      await client.saveVersion("KPI", id, manifest, kc.addReason);
+    } catch (e) {
+      if (!(e instanceof ClientError)) throw e;
       setFailed(kc.addFailed);
       return;
     }

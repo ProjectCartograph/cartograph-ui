@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Download, ExternalLink, Printer } from "lucide-react";
 import { useRef } from "react";
 
+import { useClient } from "@/client/context";
+import type { CharterKind } from "@/client/port";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy } from "@/copy";
@@ -24,26 +26,28 @@ const cc = copy.charter;
  * page it sits in.
  */
 export function CharterView({
-  url,
-  pdfUrl,
+  kind,
+  id,
+  working = false,
   fileName,
   empty,
 }: {
-  url: string;
-  /** The same charter printed to PDF by the server. */
-  pdfUrl?: string;
+  kind: CharterKind;
+  id: string;
+  /** Render the working copy rather than the last version. */
+  working?: boolean;
   fileName?: string;
   empty: string;
 }) {
+  const client = useClient();
   const frame = useRef<HTMLIFrameElement>(null);
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["charter", url],
-    queryFn: async () => {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(String(res.status));
-      return res.text();
-    },
+    queryKey: ["charter", kind, id, working],
+    queryFn: () => client.charter(kind, id, { working }),
   });
+  const url = client.charterLink(kind, id, "html", { working });
+  // The same charter printed to PDF by the server.
+  const pdfUrl = client.charterLink(kind, id, "pdf", { working });
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (isError || !data) return <p className="text-sm text-muted-foreground">{empty}</p>;

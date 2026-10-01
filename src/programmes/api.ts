@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { orUndefined } from "@/client/port";
 
 export interface MemberSummary {
   kind: "Project" | "Operation";
@@ -26,6 +27,7 @@ export interface MemberSummary {
  * every project's and operation's goals come back too.
  */
 export function useProgrammeMembers(programmeId: string, enabled = true) {
+  const client = useClient();
   return useQuery({
     queryKey: ["programme-members", programmeId],
     enabled,
@@ -33,19 +35,17 @@ export function useProgrammeMembers(programmeId: string, enabled = true) {
     queryFn: async (): Promise<MemberSummary[]> => {
       const out: MemberSummary[] = [];
       for (const kind of ["Project", "Operation"] as const) {
-        const list = await client.GET("/manifests/{kind}", { params: { path: { kind } } });
-        if (list.error) continue;
-        const rows = (Array.isArray(list.data) ? list.data : (list.data?.items ?? [])) as {
+        const list = await orUndefined(client.list(kind));
+        if (!list) continue;
+        const rows = list as {
           id: string;
           name?: string;
         }[];
         const loaded = await Promise.all(
           rows.map(async (row) => {
-            const one = await client.GET("/manifests/{kind}/{id}", {
-              params: { path: { kind, id: row.id } },
-            });
-            if (one.error || !one.data) return null;
-            const spec = (one.data as unknown as { manifest?: { spec?: Record<string, unknown> } })
+            const one = await orUndefined(client.get(kind, row.id));
+            if (!one) return null;
+            const spec = (one as unknown as { manifest?: { spec?: Record<string, unknown> } })
               .manifest?.spec;
             if (!spec) return null;
             const programmes =
@@ -83,15 +83,10 @@ export function useProgrammeMembers(programmeId: string, enabled = true) {
  * than counted by state the way a project's is.
  */
 export function useProgrammeChecks(programmeId: string, enabled = true) {
+  const client = useClient();
   return useQuery({
     queryKey: ["programme-checks", programmeId],
     enabled,
-    queryFn: async () => {
-      const res = await client.GET("/manifests/Programme/{id}/checks", {
-        params: { path: { id: programmeId } },
-      });
-      if (res.error) throw new Error("checks");
-      return res.data ?? [];
-    },
+    queryFn: () => client.checks("Programme", programmeId),
   });
 }

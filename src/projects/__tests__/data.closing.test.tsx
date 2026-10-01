@@ -4,7 +4,9 @@ import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
+import type { Client } from "@/client/port";
 import { copy } from "@/copy";
 import { ProjectStoreProvider, useProjectStore } from "../store";
 import { DataSection } from "../sections/DataSection";
@@ -12,7 +14,6 @@ import { ClosingSection } from "../sections/ClosingSection";
 import { LandingSection } from "../sections/LandingSection";
 import type { ProjectSpec } from "../types";
 
-vi.mock("@/api/client");
 vi.mock("@tanstack/react-router", () => ({
   useBlocker: () => undefined,
   Link: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
@@ -78,34 +79,39 @@ const sources = [
   { id: "evidence-library", name: "Evidence Library" },
 ];
 
-const mocked = vi.mocked(client);
+const get = vi.fn();
+const list = vi.fn();
+const saveWorking = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocked.GET.mockImplementation((async (url: string, init?: { params?: { path?: { kind?: string } } }) => ({
-    data:
-      url === "/manifests/{kind}/{id}"
-        ? { version: { number: 0 }, manifest, yaml: "" }
-        : {
-            // A role reads as the catalogue entry it names, so the
-            // directory has to answer for a name to appear at all.
-            items:
-              init?.params?.path?.kind === "Resource"
-                ? [
-                    { id: "quality-reviewer", name: "Quality reviewer" },
-                    { id: "depot-network", name: "Depot network" },
-                  ]
-                : sources,
-          },
-    error: undefined,
-    response: new Response(null, { status: 200 }),
-  })) as never);
-  mocked.PUT.mockResolvedValue({
-    data: undefined,
-    error: undefined,
-    response: new Response(null, { status: 204 }),
-  } as never);
+  asked = [];
+  get.mockResolvedValue({ version: { number: 0 }, manifest, yaml: "" });
+  // A role reads as the catalogue entry it names, so the directory has to
+  // answer for a name to appear at all.
+  list.mockImplementation(async (kind: string) =>
+    kind === "Resource"
+      ? [
+          { id: "quality-reviewer", name: "Quality reviewer" },
+          { id: "depot-network", name: "Depot network" },
+        ]
+      : sources,
+  );
+  saveWorking.mockResolvedValue(undefined);
 });
+
+/** Every method of the Client the step called, in order. */
+let asked: string[] = [];
+function watched(client: Client): Client {
+  const seen = { ...client } as Record<string, (...a: unknown[]) => unknown>;
+  for (const [name, fn] of Object.entries(seen)) {
+    seen[name] = (...a: unknown[]) => {
+      asked.push(name);
+      return fn(...a);
+    };
+  }
+  return seen as unknown as Client;
+}
 
 let spec: ProjectSpec;
 
@@ -117,12 +123,14 @@ function Spy() {
 async function mount(section: React.ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <ProjectStoreProvider id="p1">
-        <Spy />
-        {section}
-      </ProjectStoreProvider>
-    </QueryClientProvider>,
+    <ClientProvider client={watched(fakeClient({ get, list, saveWorking }))}>
+      <QueryClientProvider client={queryClient}>
+        <ProjectStoreProvider id="p1">
+          <Spy />
+          {section}
+        </ProjectStoreProvider>
+      </QueryClientProvider>
+    </ClientProvider>,
   );
 }
 
@@ -262,8 +270,8 @@ describe("closing refines what the deliverables already promise", () => {
     await mount(<ClosingSection id="p1" />);
     await screen.findByText(cl.deliverablesTitle);
 
-    const urls = mocked.GET.mock.calls.map((c) => c[0] as string);
-    expect(urls.some((u) => u.includes("proposed"))).toBe(false);
+    // Only manifests are read: nothing the engine derives.
+    expect(asked.every((m) => m === "get" || m === "list")).toBe(true);
   });
 });
 

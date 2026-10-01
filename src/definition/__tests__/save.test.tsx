@@ -6,29 +6,33 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { parse as parseYAML } from "yaml";
 
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
+import { Refused } from "@/client/port";
 import { copy } from "@/copy";
 import { DefinitionStoreProvider, useDefinitionStore } from "../store";
 import { SaveBar } from "../SaveBar";
 
-vi.mock("@/api/client");
 vi.mock("@tanstack/react-router", () => ({
   useBlocker: () => undefined,
   Link: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
 }));
 
 const sc = copy.definition.save;
-const mocked = vi.mocked(client);
-
 const saved = { metadata: { id: "p1", name: "As the vault holds it" }, spec: { name: "As the vault holds it" } };
+const version = { kind: "Programme", id: "p1", number: 2, actor: "local", reason: "save", on: "2026-09-01T00:00:00Z" };
 
-const ok = (data: unknown) => ({ data, error: undefined, response: new Response(null, { status: 200 }) });
+const get = vi.fn();
+const saveWorking = vi.fn();
+const saveVersion = vi.fn();
+const discardWorking = vi.fn();
 
 beforeEach(() => {
   vi.resetAllMocks();
-  mocked.GET.mockImplementation((async () => ok({ number: 1, manifest: saved })) as never);
-  mocked.PUT.mockImplementation((async () => ok(undefined)) as never);
-  mocked.DELETE.mockImplementation((async () => ok(undefined)) as never);
+  get.mockResolvedValue({ number: 1, manifest: saved });
+  saveWorking.mockResolvedValue(undefined);
+  saveVersion.mockResolvedValue(version);
+  discardWorking.mockResolvedValue(undefined);
 });
 
 type Api = ReturnType<typeof useDefinitionStore<{ name?: string }>>;
@@ -41,11 +45,13 @@ async function mount() {
   }
   await act(async () => {
     render(
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <DefinitionStoreProvider kind="Programme" id="p1" blank={() => ({})}>
-          <Probe />
-        </DefinitionStoreProvider>
-      </QueryClientProvider>,
+      <ClientProvider client={fakeClient({ get, saveWorking, saveVersion, discardWorking })}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <DefinitionStoreProvider kind="Programme" id="p1" blank={() => ({})}>
+            <Probe />
+          </DefinitionStoreProvider>
+        </QueryClientProvider>
+      </ClientProvider>,
     );
   });
   return () => api as Api;
@@ -74,15 +80,15 @@ describe("the save that promotes a staged draft", () => {
     await act(async () => {
       await store().save();
     });
-    const puts = mocked.PUT.mock.calls as unknown as [string, { body: Record<string, unknown> }][];
-    const working = puts.findIndex(([url]) => url === "/manifests/{kind}/{id}/working");
-    const commit = puts.findIndex(([url]) => url === "/manifests/{kind}/{id}");
-    expect(working).toBeGreaterThanOrEqual(0);
-    expect(commit).toBeGreaterThan(working);
+    expect(saveWorking).toHaveBeenCalled();
+    expect(saveVersion).toHaveBeenCalledTimes(1);
+    expect(saveVersion.mock.invocationCallOrder[0]).toBeGreaterThan(saveWorking.mock.invocationCallOrder[0]);
     // The text, not the object: sending a manifest as JSON loses the
     // order its file was written in.
-    const body = puts[commit][1].body as { yaml: string };
-    expect(parseYAML(body.yaml).metadata.name).toBe("Typed a moment ago");
+    const [kind, id, doc] = saveVersion.mock.calls[0] as [string, string, unknown];
+    expect([kind, id]).toEqual(["Programme", "p1"]);
+    expect(typeof doc).toBe("string");
+    expect(parseYAML(doc as string).metadata.name).toBe("Typed a moment ago");
   });
 
   it("stops offering a save once there is nothing left to promote", async () => {
@@ -98,16 +104,7 @@ describe("the save that promotes a staged draft", () => {
   });
 
   it("says what went wrong when the server refuses it", async () => {
-    mocked.PUT.mockImplementation((async (url: string) => {
-      if (url === "/manifests/{kind}/{id}") {
-        return {
-          data: undefined,
-          error: { problems: [{ path: "/spec/aim", message: "An aim is needed." }] },
-          response: new Response(null, { status: 422 }),
-        };
-      }
-      return ok(undefined);
-    }) as never);
+    saveVersion.mockRejectedValue(new Refused([{ path: "/spec/aim", message: "An aim is needed." }]));
     const store = await mount();
     act(() => store().setName("Edited"));
     await act(async () => {
@@ -130,8 +127,7 @@ describe("discarding a staged draft", () => {
     await act(async () => {
       await store().discardDraft();
     });
-    const deletes = mocked.DELETE.mock.calls as unknown as [string, unknown][];
-    expect(deletes.some(([url]) => url === "/manifests/{kind}/{id}/working")).toBe(true);
+    expect(discardWorking).toHaveBeenCalledWith("Programme", "p1");
     expect(store().name).toBe("As the vault holds it");
     // And there is nothing left to save.
     expect(screen.queryByRole("button", { name: sc.button })).not.toBeInTheDocument();

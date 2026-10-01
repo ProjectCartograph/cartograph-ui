@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/select";
 
 import { Help } from "@/components/guidance";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { ClientError, Conflict } from "@/client/port";
 import type { components } from "@/api/gen/schema";
 import { copy } from "@/copy";
 import { ReferenceField } from "./ReferenceField";
@@ -106,6 +107,7 @@ export function SheetForm({
 }) {
   const isEdit = !!existing;
   const queryClient = useQueryClient();
+  const client = useClient();
 
   const [idEdited, setIdEdited] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -169,19 +171,15 @@ export function SheetForm({
       spec,
     };
 
-    const { error, response } = await client.PUT("/manifests/{kind}/{id}", {
-      params: {
-        path: { kind, id: values._id },
-      },
-      // WriteRequest.manifest is contractually "an object" (the generic
-      // manifest envelope, kind-specific per spec.schema.json), which
-      // openapi-typescript can only type as an empty object; the actual
-      // shape is validated server-side against the kind's JSON Schema.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      body: { manifest: manifest as any, reason: values._reason },
-    });
+    let refused: ClientError | undefined;
+    try {
+      await client.saveVersion(kind, values._id, manifest, values._reason);
+    } catch (e) {
+      if (!(e instanceof ClientError)) throw e;
+      refused = e;
+    }
 
-    if (!error) {
+    if (!refused) {
       queryClient.invalidateQueries({ queryKey: ["sheet-summaries", kind] });
       queryClient.invalidateQueries({ queryKey: ["sheet-ref-options", kind] });
       queryClient.invalidateQueries({ queryKey: ["sheet-row", kind, values._id] });
@@ -190,12 +188,12 @@ export function SheetForm({
       return;
     }
 
-    if (response.status === 409) {
+    if (refused instanceof Conflict) {
       setConflict(true);
       return;
     }
 
-    const problems: Problem[] = (error as any).problems ?? [];
+    const problems: Problem[] = refused.problems;
     const unmatched: string[] = [];
     for (const p of problems) {
       const field = fieldForPath(p.path, fields);

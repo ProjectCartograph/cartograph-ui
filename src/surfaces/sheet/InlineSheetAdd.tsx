@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 import { parseSpecFields, type SheetKind } from "./schema";
 import { SheetForm } from "./SheetForm";
@@ -25,13 +25,10 @@ export function SheetAddDialog({
   onOpenChange: (open: boolean) => void;
   onAdded?: (id: string, name: string) => void;
 }) {
+  const client = useClient();
   const schemaQuery = useQuery({
     queryKey: ["schema", kind],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/schemas/{kind}", { params: { path: { kind } } });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.schema(kind),
     enabled: open,
   });
   const fields = useMemo(() => parseSpecFields(schemaQuery.data), [schemaQuery.data]);

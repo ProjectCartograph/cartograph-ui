@@ -11,7 +11,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useBlocker } from "@tanstack/react-router";
 import { isCollection, parseDocument, parse as parseYAML, stringify as stringifyYAML } from "yaml";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { ClientError, Conflict, orUndefined } from "@/client/port";
 import { aliasAfterRename } from "@/alias";
 import { copy } from "@/copy";
 
@@ -231,6 +232,7 @@ export function DefinitionStoreProvider<S>({
   children: ReactNode;
 }) {
   const queryClient = useQueryClient();
+  const client = useClient();
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [name, setNameState] = useState("");
@@ -265,14 +267,14 @@ export function DefinitionStoreProvider<S>({
       setLoaded(false);
       setLoadError(false);
       try {
-        const res = await client.GET("/manifests/{kind}/{id}", { params: { path: { kind, id } } });
+        const view = await orUndefined(client.get(kind, id));
         if (cancelled) return;
-        if (res.error || !res.data) {
+        if (!view) {
           setLoadError(true);
           setLoaded(true);
           return;
         }
-        const read = readManifest<S>(res.data, blank);
+        const read = readManifest<S>(view, blank);
         const nextSpec = read.spec;
         const nextName = read.name;
         originalYAML.current = read.yaml;
@@ -313,12 +315,7 @@ export function DefinitionStoreProvider<S>({
         metadata: metadataBody(id, nameRef.current, aliasRef.current, labelsRef.current),
         spec: specRef.current,
       };
-      const { error } = await client.PUT("/manifests/{kind}/{id}/working", {
-        params: { path: { kind, id } },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        body: { yaml: mergeIntoYAML(originalYAML.current, body) } as any,
-      });
-      if (error) throw new Error("working save failed");
+      await client.saveWorking(kind, id, mergeIntoYAML(originalYAML.current, body));
       dirty.current = false;
       setStaged(true);
       queryClient.invalidateQueries({ queryKey: ["manifests", kind] });
@@ -326,7 +323,7 @@ export function DefinitionStoreProvider<S>({
     } catch {
       setSaveState("error");
     }
-  }, [kind, id, queryClient]);
+  }, [kind, id, queryClient, client]);
 
   const flushNow = useCallback((): Promise<void> => {
     const next = flushChain.current.then(flushOnce, flushOnce);
@@ -410,15 +407,17 @@ export function DefinitionStoreProvider<S>({
       metadata: metadataBody(id, nameRef.current, aliasRef.current, labelsRef.current),
       spec: specRef.current,
     };
-    const { error, response } = await client.PUT("/manifests/{kind}/{id}", {
-      params: { path: { kind, id } },
+    let refused: ClientError | undefined;
+    try {
       // The text, not the object. A manifest sent as JSON is decoded into
       // a Go map on the way in and written back out sorted, which is what
       // reordered every key in a file on every save.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      body: { yaml: mergeIntoYAML(originalYAML.current, body), reason: "save" } as any,
-    });
-    if (!error) {
+      await client.saveVersion(kind, id, mergeIntoYAML(originalYAML.current, body), "save");
+    } catch (e) {
+      if (!(e instanceof ClientError)) throw e;
+      refused = e;
+    }
+    if (!refused) {
       setStaged(false);
       setSaveState("saved");
       queryClient.invalidateQueries({ queryKey: ["manifests", kind] });
@@ -426,13 +425,12 @@ export function DefinitionStoreProvider<S>({
       return { ok: true, problems: [] };
     }
     setSaveState("error");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const problems = ((error as any).problems ?? []) as { path?: string; message: string }[];
-    if (response.status === 409) {
+    const problems: { path?: string; message: string }[] = refused.problems;
+    if (refused instanceof Conflict) {
       return { ok: false, problems: [{ message: copy.definition.save.conflict }] };
     }
     return { ok: false, problems };
-  }, [kind, id, flushNow, queryClient]);
+  }, [kind, id, flushNow, queryClient, client]);
 
   /**
    * Discard: throw the draft away and take back what the vault holds. This
@@ -445,11 +443,8 @@ export function DefinitionStoreProvider<S>({
       timer.current = null;
     }
     dirty.current = false;
-    await client.DELETE("/manifests/{kind}/{id}/working", {
-      params: { path: { kind, id } },
-    });
-    const res = await client.GET("/manifests/{kind}/{id}", { params: { path: { kind, id } } });
-    const read = readManifest<S>(res.data, blankRef.current);
+    await orUndefined(client.discardWorking(kind, id));
+    const read = readManifest<S>(await orUndefined(client.get(kind, id)), blankRef.current);
     const nextSpec = read.spec;
     const nextName = read.name;
     originalYAML.current = read.yaml;
@@ -464,7 +459,7 @@ export function DefinitionStoreProvider<S>({
     setStaged(false);
     setSaveState("saved");
     queryClient.invalidateQueries({ queryKey: ["manifests", kind] });
-  }, [kind, id, queryClient]);
+  }, [kind, id, queryClient, client]);
 
   useEffect(() => {
     return () => {

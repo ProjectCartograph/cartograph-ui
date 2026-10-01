@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { orUndefined } from "@/client/port";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { FrameworkNames, MeasureFacts } from "./derive";
 import type { Ref } from "@/projects/types";
@@ -11,18 +12,16 @@ import type { Ref } from "@/projects/types";
  * a list carries none of those. Few enough per definition that fetching
  * them is cheaper than a second endpoint. */
 function useMeasures(ids: string[]): MeasureFacts[] {
+  const client = useClient();
   const results = useQueries({
     queries: ids.map((id) => ({
       queryKey: ["framework-measure", id],
       staleTime: 30_000,
       queryFn: async (): Promise<MeasureFacts | null> => {
-        const res = await client.GET("/manifests/{kind}/{id}", {
-          params: { path: { kind: "KPI", id } },
-        });
-        if (res.error) return null;
-        const view = res.data as unknown as {
+        const view = (await orUndefined(client.get("KPI", id))) as unknown as {
           manifest?: { metadata?: { name?: string }; spec?: Omit<MeasureFacts, "id" | "name"> & { name?: string } };
-        };
+        } | undefined;
+        if (!view) return null;
         const spec = view.manifest?.spec;
         if (!spec) return null;
         return { ...spec, id, name: spec.name ?? view.manifest?.metadata?.name ?? id };

@@ -29,13 +29,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { ClientError } from "@/client/port";
 import { ErrorAlert } from "@/components/error-alert";
 
 export const Route = createFileRoute("/snapshots/")({ component: SnapshotsPage });
 
 function SnapshotsPage() {
   const queryClient = useQueryClient();
+  const client = useClient();
   const [search, setSearch] = useState("");
   const [kindFilter, setKindFilter] = useState<string | null>(null);
   const [limit] = useState(20);
@@ -43,40 +45,22 @@ function SnapshotsPage() {
 
   const vaultQuery = useQuery({
     queryKey: ["vault"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/vault");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.vault(),
   });
 
   const excludedQuery = useQuery({
     queryKey: ["vault-excluded"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/vault/excluded");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.excluded(),
   });
 
   const unappliedQuery = useQuery({
     queryKey: ["vault-unapplied"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/vault/unapplied");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.unapplied(),
   });
 
   const snapshotsQuery = useQuery({
     queryKey: ["snapshots", limit, cursor],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/snapshots", {
-        params: { query: { limit, cursor: cursor || undefined } },
-      });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.snapshots({ limit, cursor: cursor || undefined }),
   });
 
   const snapshots = snapshotsQuery.data?.snapshots ?? [];
@@ -193,13 +177,14 @@ function SnapshotsPage() {
                       size="sm"
                       variant="outline"
                       onClick={async () => {
-                        const { error } = await client.POST("/vault/recover", {
-                          body: { ref: `${item.kind}/${item.id}` },
-                        });
-                        if (!error) {
-                          queryClient.invalidateQueries({ queryKey: ["vault-excluded"] });
-                          queryClient.invalidateQueries({ queryKey: ["vault"] });
+                        try {
+                          await client.recover(`${item.kind}/${item.id}`);
+                        } catch (e) {
+                          if (e instanceof ClientError) return;
+                          throw e;
                         }
+                        queryClient.invalidateQueries({ queryKey: ["vault-excluded"] });
+                        queryClient.invalidateQueries({ queryKey: ["vault"] });
                       }}
                     >
                       <RotateCcw className="h-4 w-4" />
@@ -235,13 +220,14 @@ function SnapshotsPage() {
                       size="sm"
                       variant="outline"
                       onClick={async () => {
-                        const { error } = await client.POST("/vault/apply", {
-                          body: { ref: `${item.kind}/${item.id}` },
-                        });
-                        if (!error) {
-                          queryClient.invalidateQueries({ queryKey: ["vault-unapplied"] });
-                          queryClient.invalidateQueries({ queryKey: ["vault"] });
+                        try {
+                          await client.apply([`${item.kind}/${item.id}`]);
+                        } catch (e) {
+                          if (e instanceof ClientError) return;
+                          throw e;
                         }
+                        queryClient.invalidateQueries({ queryKey: ["vault-unapplied"] });
+                        queryClient.invalidateQueries({ queryKey: ["vault"] });
                       }}
                     >
                       <Plus className="h-4 w-4" />

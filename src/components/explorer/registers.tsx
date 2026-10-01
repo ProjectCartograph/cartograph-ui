@@ -18,7 +18,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
 import type { GoalNode } from "@/surfaces/goals/tree-types";
@@ -37,27 +37,19 @@ const rc = copy.registers;
 
 /** Every record of a kind with its spec, in one request (expand=spec). */
 export function useRegister(kind: string) {
+  const client = useClient();
   return useQuery({
     queryKey: ["manifests", kind, "expanded"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}", {
-        params: { path: { kind }, query: { expand: "spec" } },
-      });
-      if (error) throw error;
-      return (Array.isArray(data) ? data : (data?.items ?? [])) as Item[];
-    },
+    queryFn: async () => (await client.list(kind, { expand: "spec" })) as Item[],
   });
 }
 
 /** id to name for a kind a register refers to. */
 function useNames(kind: string): Map<string, string> {
+  const client = useClient();
   const { data } = useQuery({
     queryKey: ["manifests", kind],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}", { params: { path: { kind } } });
-      if (error) throw error;
-      return (Array.isArray(data) ? data : (data?.items ?? [])) as { id: string; name: string }[];
-    },
+    queryFn: async () => (await client.list(kind)) as { id: string; name: string }[],
   });
   return new Map((data ?? []).map((d) => [d.id, d.name]));
 }

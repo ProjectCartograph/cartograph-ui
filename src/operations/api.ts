@@ -1,16 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 
 /** An operation's advisory checks, one list for every step. */
 export function useOperationChecks(id: string, enabled = true) {
+  const client = useClient();
   return useQuery({
     queryKey: ["operation-checks", id],
     enabled,
-    queryFn: async () => {
-      const res = await client.GET("/manifests/Operation/{id}/checks", { params: { path: { id } } });
-      if (res.error) throw new Error("checks");
-      return res.data ?? [];
-    },
+    queryFn: () => client.checks("Operation", id),
   });
 }

@@ -6,7 +6,8 @@ import { stringify as stringifyYAML } from "yaml";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { ClientError } from "@/client/port";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 
@@ -64,6 +65,7 @@ export function NewDefinition({
   firstStep: LinkProps["to"];
 }) {
   const navigate = useNavigate();
+  const client = useClient();
   const { data: teams, isLoading: teamsLoading } = useReferenceOptions("Team");
 
   const [name, setName] = useState("");
@@ -84,15 +86,15 @@ export function NewDefinition({
       metadata: { id, name: name.trim() },
       spec: specFrom(name.trim(), team),
     };
-    const { error: err } = await client.PUT("/manifests/{kind}/{id}/working", {
-      params: { path: { kind, id } },
-      body: { yaml: stringifyYAML(body) },
-    });
-    setCreating(false);
-    if (err) {
+    try {
+      await client.saveWorking(kind, id, stringifyYAML(body));
+    } catch (e) {
+      if (!(e instanceof ClientError)) throw e;
+      setCreating(false);
       setError(errorLabel);
       return;
     }
+    setCreating(false);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     void navigate({ to: firstStep, params: { id } } as any);
   }

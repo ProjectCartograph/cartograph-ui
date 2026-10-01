@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 import { copy, manifestKindLabels } from "@/copy";
 import { ErrorAlert } from "@/components/error-alert";
 
@@ -19,22 +19,12 @@ export const Route = createFileRoute("/manifests/$kind")({ component: ManifestsP
 function ManifestsPage() {
   const { kind } = Route.useParams();
   const kindLabel = manifestKindLabels[kind] ?? kind;
+  const client = useClient();
 
-  const { data: raw, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["manifests", kind],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}", {
-        params: { path: { kind } },
-      });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.list(kind),
   });
-
-  // Neither limit nor cursor is passed above, so the API always answers with
-  // the bare array; the union in the generated type only exists because the
-  // same endpoint can also return the paginated envelope.
-  const data = Array.isArray(raw) ? raw : (raw?.items ?? undefined);
 
   return (
     <div className="flex flex-col gap-6">

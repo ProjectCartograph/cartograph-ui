@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 import { ErrorAlert } from "@/components/error-alert";
 import { goalReferencesQueryOptions, projectReferencesQueryOptions, useGoalTree } from "./api";
@@ -270,7 +270,8 @@ function FunctionalGoalCard({
   strategicGoals: GoalNode[];
 }) {
   const queryClient = useQueryClient();
-  const refsQuery = useQuery(goalReferencesQueryOptions(node.id));
+  const client = useClient();
+  const refsQuery = useQuery(goalReferencesQueryOptions(client, node.id));
   const items = (refsQuery.data?.incoming ?? []).filter((s) =>
     (ALIGN_KINDS as readonly string[]).includes(s.kind)
   );
@@ -285,7 +286,7 @@ function FunctionalGoalCard({
 
   async function handleDelete() {
     setConfirmOpen(false);
-    const result = await deleteGoal(node.id, deleteReason);
+    const result = await deleteGoal(client, node.id, deleteReason);
     setDeleteReason("");
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
@@ -295,7 +296,7 @@ function FunctionalGoalCard({
   }
 
   async function handleMove(newParentId: string) {
-    const result = await moveGoal(node.id, newParentId);
+    const result = await moveGoal(client, node.id, newParentId);
     if (!result.ok) {
       setMoveError(result.problems);
     } else {
@@ -306,7 +307,7 @@ function FunctionalGoalCard({
 
   async function handleRename(next: string) {
     try {
-      const result = await renameGoal(node.id, next);
+      const result = await renameGoal(client, node.id, next);
       if (!result.ok) {
         setRenameError(result.problems);
       } else {
@@ -449,7 +450,8 @@ function StrategicGoalCard({
   pillars: GoalNode[];
 }) {
   const queryClient = useQueryClient();
-  const refsQuery = useQuery(goalReferencesQueryOptions(node.id));
+  const client = useClient();
+  const refsQuery = useQuery(goalReferencesQueryOptions(client, node.id));
   const items = (refsQuery.data?.incoming ?? []).filter((s) =>
     (ALIGN_KINDS as readonly string[]).includes(s.kind)
   );
@@ -473,7 +475,7 @@ function StrategicGoalCard({
 
   async function handleDelete() {
     setConfirmOpen(false);
-    const result = await deleteGoal(node.id, deleteReason);
+    const result = await deleteGoal(client, node.id, deleteReason);
     setDeleteReason("");
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
@@ -483,7 +485,7 @@ function StrategicGoalCard({
   }
 
   async function handleMove(newParentId: string) {
-    const result = await moveGoal(node.id, newParentId);
+    const result = await moveGoal(client, node.id, newParentId);
     if (!result.ok) {
       setMoveError(result.problems);
     } else {
@@ -494,7 +496,7 @@ function StrategicGoalCard({
 
   async function handleRename(next: string) {
     try {
-      const result = await renameGoal(node.id, next);
+      const result = await renameGoal(client, node.id, next);
       if (!result.ok) {
         setRenameError(result.problems);
       } else {
@@ -509,7 +511,7 @@ function StrategicGoalCard({
   async function handleAddFunctional(name: string) {
     const id = slugify(name);
     if (!id) return;
-    const result = await createGoal(id, name, "outcome", node.id);
+    const result = await createGoal(client, id, name, "outcome", node.id);
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
     } else if (result.conflict) {
@@ -578,7 +580,7 @@ function StrategicGoalCard({
           setDragOver(false);
           const goalId = e.dataTransfer.getData(GOAL_DRAG_TYPE);
           if (!goalId || goalId === node.id || node.children.some((c) => c.id === goalId)) return;
-          const result = await moveGoal(goalId, node.id);
+          const result = await moveGoal(client, goalId, node.id);
           if (!result.ok) {
             setDropError(result.problems);
           } else {
@@ -758,6 +760,7 @@ function PillarColumn({
   pillars: GoalNode[];
 }) {
   const queryClient = useQueryClient();
+  const client = useClient();
   const [dragOver, setDragOver] = useState(false);
   // dragenter/dragleave fire for every child the pointer crosses; the depth
   // counter keeps the highlight steady until the pointer leaves the column.
@@ -771,7 +774,7 @@ function PillarColumn({
 
   async function handleRename(next: string) {
     try {
-      const result = await renameGoal(node.id, next);
+      const result = await renameGoal(client, node.id, next);
       if (!result.ok) {
         setRenameError(result.problems);
       } else {
@@ -786,7 +789,7 @@ function PillarColumn({
   async function handleAddStrategic(name: string) {
     const id = slugify(name);
     if (!id) return;
-    const result = await createGoal(id, name, "objective", node.id);
+    const result = await createGoal(client, id, name, "objective", node.id);
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
     } else if (result.conflict) {
@@ -798,7 +801,7 @@ function PillarColumn({
 
   async function handleDelete() {
     setConfirmOpen(false);
-    const result = await deleteGoal(node.id, deleteReason);
+    const result = await deleteGoal(client, node.id, deleteReason);
     setDeleteReason("");
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
@@ -844,7 +847,7 @@ function PillarColumn({
         setDragOver(false);
         const goalId = e.dataTransfer.getData(GOAL_DRAG_TYPE);
         if (!goalId || goalId === node.id || node.children.some((c) => c.id === goalId)) return;
-        const result = await moveGoal(goalId, node.id);
+        const result = await moveGoal(client, goalId, node.id);
         if (result.ok) {
           queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
         } else {
@@ -1024,16 +1027,13 @@ function PillarColumn({
 }
 
 function UnalignedTray() {
+  const client = useClient();
   const projectsQuery = useQuery({
     queryKey: ["sheet-ref-options", "Project"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}", { params: { path: { kind: "Project" } } });
-      if (error) throw error;
-      return Array.isArray(data) ? data : (data?.items ?? []);
-    },
+    queryFn: () => client.list("Project"),
   });
   const projects = projectsQuery.data ?? [];
-  const refQueries = useQueries({ queries: projects.map((p) => projectReferencesQueryOptions(p.id)) });
+  const refQueries = useQueries({ queries: projects.map((p) => projectReferencesQueryOptions(client, p.id)) });
 
   const unaligned = projects.filter((_, i) => {
     const refs = refQueries[i]?.data;
@@ -1059,6 +1059,7 @@ function UnalignedTray() {
 
 export function GoalsHome() {
   const queryClient = useQueryClient();
+  const client = useClient();
   const treeQuery = useGoalTree();
   const [activeFilters, setActiveFilters] = useState<Set<AlignKind>>(new Set());
   const [addError, setAddError] = useState<{ path: string; message: string }[] | null>(null);
@@ -1078,7 +1079,7 @@ export function GoalsHome() {
   async function handleAddPillar(name: string) {
     const id = slugify(name);
     if (!id) return;
-    const result = await createGoal(id, name, "goal");
+    const result = await createGoal(client, id, name, "goal");
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
     } else if (result.conflict) {

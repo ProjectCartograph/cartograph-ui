@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { aliasFor } from "@/alias";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { ClientError } from "@/client/port";
 import { copy } from "@/copy";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
@@ -42,6 +43,7 @@ function slugify(name: string): string {
  */
 function NewProjectPage() {
   const navigate = useNavigate();
+  const client = useClient();
   const { partOf: isComponent } = Route.useSearch();
   const { data: teams, isLoading: teamsLoading } = useReferenceOptions("Team");
   const [parent, setParent] = useState<string | undefined>(undefined);
@@ -69,12 +71,15 @@ function NewProjectPage() {
         ...(isComponent && parent ? { alignment: { partOf: parent } } : {}),
       },
     };
-    const { error: err } = await client.PUT("/manifests/{kind}/{id}/working", {
-      params: { path: { kind: "Project", id } },
-      body: { yaml: stringifyYAML(body) },
-    });
+    let saved = true;
+    try {
+      await client.saveWorking("Project", id, stringifyYAML(body));
+    } catch (e) {
+      if (!(e instanceof ClientError)) throw e;
+      saved = false;
+    }
     setCreating(false);
-    if (!err) {
+    if (saved) {
       // A definition opens on Align: what larger goals this is part of,
       // before what it is. The rest of the walk follows STEPS from there.
       void navigate({ to: "/projects/$id/initiation/goals", params: { id } });

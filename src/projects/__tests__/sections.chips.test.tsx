@@ -4,7 +4,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
 import { copy } from "@/copy";
 import { ProjectStoreProvider, useProjectStore } from "../store";
 import { AlignmentSection, MeasuresSection } from "../sections/GoalsSection";
@@ -14,7 +15,6 @@ import { BeneficiariesSection } from "../sections/BeneficiariesSection";
 // goals as chips (no tree, no drop zone), Beneficiaries picks groups as
 // chips (no counts at all). Both are driven against the real store with
 // the API client faked at the module boundary.
-vi.mock("@/api/client");
 vi.mock("@tanstack/react-router", () => ({
   useBlocker: () => undefined,
   Link: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
@@ -66,29 +66,15 @@ const groups = [
   { id: "depot-staff", name: "Depot staff" },
 ];
 
-const mocked = vi.mocked(client);
-
-function route(url: string, kind?: string) {
-  if (url === "/manifests/Project/{id}") {
-    return { data: { version: { number: 0 }, manifest, yaml: "" } };
-  }
-  if (url === "/goals/tree") return { data: tree };
-  if (url === "/manifests/{kind}") return { data: { items: kind === "KPI" ? kpis : groups } };
-  return { data: { items: [] } };
-}
+const get = vi.fn();
+const list = vi.fn();
+const saveWorking = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocked.GET.mockImplementation((async (url: string, init?: { params?: { path?: { kind?: string } } }) => ({
-    ...route(url, init?.params?.path?.kind),
-    error: undefined,
-    response: new Response(null, { status: 200 }),
-  })) as never);
-  mocked.PUT.mockResolvedValue({
-    data: undefined,
-    error: undefined,
-    response: new Response(null, { status: 204 }),
-  } as never);
+  get.mockResolvedValue({ version: { number: 0 }, manifest, yaml: "" });
+  list.mockImplementation(async (kind: string) => (kind === "KPI" ? kpis : groups));
+  saveWorking.mockResolvedValue(undefined);
 });
 
 let spec: Record<string, unknown> = {};
@@ -101,12 +87,14 @@ function Spy() {
 async function mount(section: React.ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <ProjectStoreProvider id="p1">
-        <Spy />
-        {section}
-      </ProjectStoreProvider>
-    </QueryClientProvider>,
+    <ClientProvider client={fakeClient({ get, list, saveWorking, goalTree: async () => tree })}>
+      <QueryClientProvider client={queryClient}>
+        <ProjectStoreProvider id="p1">
+          <Spy />
+          {section}
+        </ProjectStoreProvider>
+      </QueryClientProvider>
+    </ClientProvider>,
   );
 }
 

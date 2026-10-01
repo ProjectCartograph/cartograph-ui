@@ -4,20 +4,19 @@ import { render, screen, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { parse as parseYAML } from "yaml";
 
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
 import { copy } from "@/copy";
 import { DefinitionStoreProvider, useDefinitionStore } from "@/definition/store";
 import { ComponentsSection } from "../sections/ComponentsSection";
 import { blankProgrammeSpec, type ProgrammeSpec } from "../types";
 
-vi.mock("@/api/client");
 vi.mock("@tanstack/react-router", () => ({
   useBlocker: () => undefined,
   Link: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
 }));
 
 const pc = copy.programmes;
-const mocked = vi.mocked(client);
 
 const programme = {
   metadata: { id: "prog-1", name: "A programme" },
@@ -42,30 +41,21 @@ const names: Record<string, string> = {
   "o-inside": "Inside operation",
 };
 
+const list = vi.fn();
+const get = vi.fn();
+const saveWorking = vi.fn();
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mocked.GET.mockImplementation((async (
-    url: string,
-    init?: { params?: { path?: { kind?: string; id?: string } } },
-  ) => {
-    const ok = (data: unknown) => ({ data, error: undefined, response: new Response(null, { status: 200 }) });
-    const kind = init?.params?.path?.kind;
-    const id = init?.params?.path?.id;
-    if (url === "/manifests/{kind}" && kind) {
-      return ok((work[kind] ?? []).map((w) => ({ id: w.id, name: names[w.id] })));
-    }
-    if (url === "/manifests/{kind}/{id}") {
-      if (kind === "Programme") return ok({ version: { number: 1 }, manifest: programme });
-      const row = (work[kind ?? ""] ?? []).find((w) => w.id === id);
-      return row ? ok({ version: { number: 1 }, manifest: { spec: row.spec } }) : ok({});
-    }
-    return ok({ items: [] });
-  }) as never);
-  mocked.PUT.mockResolvedValue({
-    data: undefined,
-    error: undefined,
-    response: new Response(null, { status: 204 }),
-  } as never);
+  list.mockImplementation(async (kind: string) =>
+    (work[kind] ?? []).map((w) => ({ id: w.id, name: names[w.id] })),
+  );
+  get.mockImplementation(async (kind: string, id: string) => {
+    if (kind === "Programme") return { version: { number: 1 }, manifest: programme };
+    const row = (work[kind] ?? []).find((w) => w.id === id);
+    return row ? { version: { number: 1 }, manifest: { spec: row.spec } } : {};
+  });
+  saveWorking.mockResolvedValue(undefined);
 });
 
 let api: ReturnType<typeof useDefinitionStore<ProgrammeSpec>> | null = null;
@@ -77,12 +67,14 @@ function Probe() {
 async function mount() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <DefinitionStoreProvider kind="Programme" id="prog-1" blank={blankProgrammeSpec}>
-        <Probe />
-        <ComponentsSection />
-      </DefinitionStoreProvider>
-    </QueryClientProvider>,
+    <ClientProvider client={fakeClient({ list, get, saveWorking })}>
+      <QueryClientProvider client={queryClient}>
+        <DefinitionStoreProvider kind="Programme" id="prog-1" blank={blankProgrammeSpec}>
+          <Probe />
+          <ComponentsSection />
+        </DefinitionStoreProvider>
+      </QueryClientProvider>
+    </ClientProvider>,
   );
   await screen.findByText("Inside project");
 }
@@ -113,8 +105,8 @@ describe("a programme reads its members back from the work", () => {
     await act(async () => {
       await api?.flushNow();
     });
-    for (const call of mocked.PUT.mock.calls as unknown as [string, { body: { yaml: string } }][]) {
-      const written = parseYAML(call[1].body.yaml) as { spec?: Record<string, unknown> };
+    for (const call of saveWorking.mock.calls as [string, string, string][]) {
+      const written = parseYAML(call[2]) as { spec?: Record<string, unknown> };
       expect(written.spec).not.toHaveProperty("projects");
       expect(written.spec).not.toHaveProperty("operations");
     }

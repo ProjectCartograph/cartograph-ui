@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
 import { moveGoal } from "../mutations";
 import { GoalsHome } from "../GoalsHome";
 
-// The page is rendered for real over a faked API client; the router's Link
+// The page is rendered for real over a faked Client; the router's Link
 // becomes a plain anchor and the mutations are observed, nothing else.
-vi.mock("@/api/client");
 vi.mock("../mutations");
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, draggable, className }: { children: ReactNode; draggable?: boolean; className?: string }) => (
@@ -44,6 +44,12 @@ const tree = {
   ],
 };
 
+const client = fakeClient({
+  goalTree: async () => tree,
+  references: async () => ({ incoming: [], outgoing: [] }),
+  list: async () => [],
+});
+
 const GOAL_TYPE = "text/cartograph-goal-id";
 
 function fakeTransfer(payload: Record<string, string>) {
@@ -60,9 +66,11 @@ function fakeTransfer(payload: Record<string, string>) {
 async function mountHome() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <GoalsHome />
-    </QueryClientProvider>,
+    <ClientProvider client={client}>
+      <QueryClientProvider client={queryClient}>
+        <GoalsHome />
+      </QueryClientProvider>
+    </ClientProvider>,
   );
   await screen.findByText("Pillar Two");
 }
@@ -76,11 +84,6 @@ function columnOf(pillarName: string): HTMLElement {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(client).GET.mockImplementation(async (path: string) => {
-    if (path === "/goals/tree") return { data: tree, error: undefined, response: new Response() } as never;
-    if (path.endsWith("/references")) return { data: { incoming: [], outgoing: [] }, error: undefined, response: new Response() } as never;
-    return { data: [], error: undefined, response: new Response() } as never;
-  });
   vi.mocked(moveGoal).mockResolvedValue({ ok: true, problems: [] });
 });
 
@@ -129,7 +132,7 @@ describe("Goals home drag and drop", () => {
 
     fireEvent.drop(column, { dataTransfer: fakeTransfer({ [GOAL_TYPE]: "strategic-1", "text/cartograph-goal-level-objective": "objective" }) });
 
-    await vi.waitFor(() => expect(moveGoal).toHaveBeenCalledWith("strategic-1", "pillar-2"));
+    await vi.waitFor(() => expect(moveGoal).toHaveBeenCalledWith(client, "strategic-1", "pillar-2"));
   });
 
   it("a pillar column claims a functional goal drag too, but highlights only a strategic one", async () => {
@@ -167,7 +170,7 @@ describe("Goals home drag and drop", () => {
 
     fireEvent.drop(zone, { dataTransfer: fakeTransfer({ [GOAL_TYPE]: "functional-1", "text/cartograph-goal-level-outcome": "outcome" }) });
 
-    await vi.waitFor(() => expect(moveGoal).toHaveBeenCalledWith("functional-1", "strategic-2"));
+    await vi.waitFor(() => expect(moveGoal).toHaveBeenCalledWith(client, "functional-1", "strategic-2"));
     expect(moveGoal).toHaveBeenCalledTimes(1);
   });
 
@@ -179,7 +182,7 @@ describe("Goals home drag and drop", () => {
 
     fireEvent.drop(zone, { dataTransfer: fakeTransfer({ [GOAL_TYPE]: "strategic-1", "text/cartograph-goal-level-objective": "objective" }) });
 
-    await vi.waitFor(() => expect(moveGoal).toHaveBeenCalledWith("strategic-1", "pillar-2"));
+    await vi.waitFor(() => expect(moveGoal).toHaveBeenCalledWith(client, "strategic-1", "pillar-2"));
     expect(moveGoal).toHaveBeenCalledTimes(1);
   });
 

@@ -1,42 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import type { Client } from "@/client/port";
 import type { GoalManifest } from "./types";
 
 export function useGoalTree() {
+  const client = useClient();
   return useQuery({
     queryKey: ["goal-tree"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/goals/tree");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.goalTree(),
   });
 }
 
 export function useSettings() {
+  const client = useClient();
   return useQuery({
     queryKey: ["settings"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/settings");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.settings(),
     staleTime: 60_000,
   });
 }
 
 export function useGoalChecks(id: string | undefined) {
+  const client = useClient();
   return useQuery({
     queryKey: ["goal-checks", id],
     enabled: !!id,
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/Goal/{id}/checks", {
-        params: { path: { id: id as string } },
-      });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.checks("Goal", id as string),
   });
 }
 
@@ -46,45 +36,32 @@ export function useGoalChecks(id: string | undefined) {
  * bulk (the Goals home page's per-card aligned chips, via useQueries), so
  * a single fetch's cache entry serves both.
  */
-export function goalReferencesQueryOptions(id: string) {
+export function goalReferencesQueryOptions(client: Client, id: string) {
   return {
     queryKey: ["goal-references", id] as const,
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}/{id}/references", {
-        params: { path: { kind: "Goal", id } },
-      });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.references("Goal", id),
   };
 }
 
 export function useGoalReferences(id: string | undefined) {
-  return useQuery({ ...goalReferencesQueryOptions(id ?? ""), enabled: !!id });
+  const client = useClient();
+  return useQuery({ ...goalReferencesQueryOptions(client, id ?? ""), enabled: !!id });
 }
 
-export function projectReferencesQueryOptions(id: string) {
+export function projectReferencesQueryOptions(client: Client, id: string) {
   return {
     queryKey: ["project-references", id] as const,
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}/{id}/references", {
-        params: { path: { kind: "Project", id } },
-      });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.references("Project", id),
   };
 }
 
 export function useGoalManifest(id: string | undefined) {
+  const client = useClient();
   return useQuery({
     queryKey: ["goal-manifest", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}/{id}", {
-        params: { path: { kind: "Goal", id: id as string } },
-      });
-      if (error) throw error;
+      const data = await client.get("Goal", id as string);
       // Manifest.spec is contractually generic; this project's kind-specific
       // surfaces read it back into their own typed shape (see types.ts).
       return data as unknown as { version: { number: number }; manifest: GoalManifest; yaml: string };

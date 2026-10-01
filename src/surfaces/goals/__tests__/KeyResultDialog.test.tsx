@@ -4,6 +4,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
 import { copy } from "@/copy";
 import { KeyResultDialog } from "../KeyResultDialog";
 
@@ -13,9 +15,11 @@ function renderDialog(props: Partial<React.ComponentProps<typeof KeyResultDialog
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const onSave = vi.fn();
   render(
-    <QueryClientProvider client={client}>
-      <KeyResultDialog open onOpenChange={vi.fn()} onSave={onSave} allowSource={false} {...props} />
-    </QueryClientProvider>,
+    <ClientProvider client={fakeClient()}>
+      <QueryClientProvider client={client}>
+        <KeyResultDialog open onOpenChange={vi.fn()} onSave={onSave} allowSource={false} {...props} />
+      </QueryClientProvider>
+    </ClientProvider>,
   );
   return { onSave };
 }

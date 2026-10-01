@@ -5,7 +5,8 @@ import { ComboboxMultiple } from "@/components/ui/combobox";
 import { useGoalTree } from "@/surfaces/goals/api";
 import type { GoalNode } from "@/surfaces/goals/tree-types";
 import { Input } from "@/components/ui/input";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { orUndefined } from "@/client/port";
 import { copy } from "@/copy";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { PartText } from "@/projects/StatementEditor";
@@ -109,13 +110,14 @@ function useOutcomeOptions() {
 
 /** A KPI's baseline and target, as short readings like "62, March 2025". */
 function useKPIStates(id: string | undefined) {
+  const client = useClient();
   const { data } = useQuery({
     queryKey: ["kpi-states", id],
     enabled: !!id,
     queryFn: async () => {
-      const res = await client.GET("/manifests/{kind}/{id}", { params: { path: { kind: "KPI", id: id! } } });
-      if (res.error || !res.data) return null;
-      const spec = (res.data as unknown as { manifest?: { spec?: Record<string, unknown> } }).manifest?.spec ?? {};
+      const view = await orUndefined(client.get("KPI", id!));
+      if (!view) return null;
+      const spec = (view as unknown as { manifest?: { spec?: Record<string, unknown> } }).manifest?.spec ?? {};
       const read = (v: unknown) => {
         const p = v as { value?: number | string; date?: string } | undefined;
         if (p?.value === undefined || p.value === "") return "";

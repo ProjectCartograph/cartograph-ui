@@ -43,7 +43,8 @@ import { useBlocker } from "@tanstack/react-router";
 import { stringify as stringifyYAML } from "yaml";
 
 import { aliasAfterRename } from "@/alias";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import { ClientError, Refused, orUndefined, type Client } from "@/client/port";
 import {
   blankProjectSpec,
   type ProjectManifest,
@@ -90,11 +91,11 @@ interface RevertedManifest {
  * back to a blank -- which is the honest result rather than a version that
  * does not exist.
  */
-async function discardWorkingCopy(kind: string, id: string): Promise<RevertedManifest | null> {
-  await client.DELETE("/manifests/{kind}/{id}/working", { params: { path: { kind, id } } });
-  const res = await client.GET("/manifests/{kind}/{id}", { params: { path: { kind, id } } });
-  if (res.error || !res.data) return null;
-  const view = res.data as unknown as RevertedManifest;
+async function discardWorkingCopy(client: Client, kind: string, id: string): Promise<RevertedManifest | null> {
+  await orUndefined(client.discardWorking(kind, id));
+  const read = await orUndefined(client.get(kind, id));
+  if (!read) return null;
+  const view = read as unknown as RevertedManifest;
   return { number: view.number ?? 0, manifest: view.manifest };
 }
 
@@ -106,6 +107,15 @@ export interface Problem {
 }
 
 export type SaveVersionResult = { ok: true } | { ok: false; conflict?: boolean; problems: Problem[] };
+/** What a refused write answers: the problems on their fields when the
+ * engine named them (422), none otherwise. A transport failure is not an
+ * answer, and still throws. */
+function refusedProblems(e: unknown): Problem[] {
+  if (e instanceof Refused) return e.problems;
+  if (e instanceof ClientError) return [];
+  throw e;
+}
+
 export type HandoffResult = { ok: true; snapshot: number; bundle: string } | { ok: false; problems: Problem[] };
 
 const DEBOUNCE_MS = 800;
@@ -159,6 +169,7 @@ export function useSectionAutosave() {
 
 export function ProjectStoreProvider({ id, children }: { id: string; children: ReactNode }) {
   const queryClient = useQueryClient();
+  const client = useClient();
 
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -216,11 +227,9 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         let loadedAlias = "";
         let loadedVersion = 0;
 
-        const manifestRes = await client.GET("/manifests/{kind}/{id}", {
-          params: { path: { kind: "Project", id } },
-        });
-        if (!manifestRes.error && manifestRes.data) {
-          const view = manifestRes.data as unknown as { version: { number: number }; manifest: ProjectManifest };
+        const manifest = await orUndefined(client.get("Project", id));
+        if (manifest) {
+          const view = manifest as unknown as { version: { number: number }; manifest: ProjectManifest };
           loadedSpec = view.manifest.spec ?? blankProjectSpec();
           loadedName = view.manifest.metadata?.name ?? "";
           loadedAlias = view.manifest.metadata?.alias ?? "";
@@ -245,12 +254,10 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         // The map is optional: most projects have never been scored, and a
         // 404 here is that ordinary state, not a failure to load the
         // project. Its absence leaves the blank one already in state.
-        const mapRes = await client.GET("/manifests/{kind}/{id}", {
-          params: { path: { kind: "StakeholderMap", id: stakeholderMapID(id) } },
-        });
+        const map = await orUndefined(client.get("StakeholderMap", stakeholderMapID(id)));
         if (cancelled) return;
-        if (!mapRes.error && mapRes.data) {
-          const mapView = mapRes.data as unknown as {
+        if (map) {
+          const mapView = map as unknown as {
             manifest?: { spec?: StakeholderMapSpec };
           };
           const loadedMap = mapView.manifest?.spec;
@@ -298,14 +305,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
           metadata: { id: stakeholderMapID(id), name: `${nameRef.current.trim() || id} stakeholders` },
           spec: mapSpecRef.current,
         };
-        const { error: mapError } = await client.PUT("/manifests/{kind}/{id}/working", {
-          params: {
-            path: { kind: "StakeholderMap", id: stakeholderMapID(id) },
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          body: { yaml: stringifyYAML(mapBody) } as any,
-        });
-        if (mapError) throw new Error("stakeholder map save failed");
+        await client.saveWorking("StakeholderMap", stakeholderMapID(id), stringifyYAML(mapBody));
         mapDirty.current = false;
       }
       if (specDirty.current) {
@@ -322,14 +322,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
           },
           spec: specRef.current,
         };
-        const { error } = await client.PUT("/manifests/{kind}/{id}/working", {
-          params: {
-            path: { kind: "Project", id },
-          },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          body: { yaml: stringifyYAML(body) },
-        });
-        if (error) throw new Error("working save failed");
+        await client.saveWorking("Project", id, stringifyYAML(body));
         specDirty.current = false;
       }
       queryClient.invalidateQueries({ queryKey: ["project-checks", id] });
@@ -338,7 +331,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     } catch {
       setSaveState("error");
     }
-  }, [id, queryClient]);
+  }, [id, queryClient, client]);
 
   /** Every caller (the 800ms debounce, a section's own unmount, the
    * beforeunload handler and the router's own useBlocker guard below) goes
@@ -423,31 +416,17 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
       // than versioned empty.
       await flushNow();
       if (!mapIsEmpty(mapSpecRef.current)) {
-        const mapRes = await client.POST("/manifests/{kind}/{id}/snapshots", {
-          params: { path: { kind: "StakeholderMap", id: stakeholderMapID(id) } },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          body: { reason } as any,
-        });
-        if (mapRes.error) {
-          if (mapRes.response.status === 422) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return { ok: false, problems: (mapRes.error as any).problems ?? [] };
-          }
-          return { ok: false, problems: [] };
+        try {
+          await client.snapshot("StakeholderMap", stakeholderMapID(id), reason);
+        } catch (e) {
+          return { ok: false, problems: refusedProblems(e) };
         }
       }
-      const { error, response, data } = await client.POST("/manifests/{kind}/{id}/snapshots", {
-        params: {
-          path: { kind: "Project", id },
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        body: { reason },
-      });
-      if (error) {
-        if (response.status === 422) {
-          return { ok: false, problems: (error as any).problems ?? [] };
-        }
-        return { ok: false, problems: [] };
+      let data;
+      try {
+        data = await client.snapshot("Project", id, reason);
+      } catch (e) {
+        return { ok: false, problems: refusedProblems(e) };
       }
       specDirty.current = false;
       if (data?.number) {
@@ -463,33 +442,26 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
       queryClient.invalidateQueries({ queryKey: ["project-versions", id] });
       return { ok: true };
     },
-    [id, queryClient, flushNow],
+    [id, queryClient, flushNow, client],
   );
 
   const handoff = useCallback(
     async (): Promise<HandoffResult> => {
-      const { error, response, data } = await client.POST("/manifests/Project/{id}/state", {
-        params: {
-          path: { id },
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        body: { to: "handed off" },
-      });
-      if (error) {
-        if (response.status === 422) {
-          return { ok: false, problems: (error as any).problems ?? [] };
-        }
-        return { ok: false, problems: [] };
+      let data;
+      try {
+        data = await client.transition(id, "handed off");
+      } catch (e) {
+        return { ok: false, problems: refusedProblems(e) };
       }
       queryClient.invalidateQueries({ queryKey: ["project-state", id] });
-      const history = (data as any)?.history ?? [];
+      const history = data?.history ?? [];
       if (history.length > 0) {
         const lastEntry = history[history.length - 1];
         return { ok: true, snapshot: lastEntry.snapshot ?? 0, bundle: lastEntry.bundle ?? "" };
       }
       return { ok: true, snapshot: 0, bundle: "" };
     },
-    [id, queryClient],
+    [id, queryClient, client],
   );
 
   const discardDraft = useCallback(async (): Promise<void> => {
@@ -501,8 +473,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     mapDirty.current = false;
 
     const [project, map] = await Promise.all([
-      discardWorkingCopy("Project", id),
-      discardWorkingCopy("StakeholderMap", stakeholderMapID(id)),
+      discardWorkingCopy(client, "Project", id),
+      discardWorkingCopy(client, "StakeholderMap", stakeholderMapID(id)),
     ]);
 
     const nextSpec = (project?.manifest?.spec as ProjectSpec | undefined) ?? blankProjectSpec();
@@ -522,7 +494,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     queryClient.invalidateQueries({ queryKey: ["project-manifest", id] });
     queryClient.invalidateQueries({ queryKey: ["project-checks", id] });
     queryClient.invalidateQueries({ queryKey: ["project-proposed-criteria", id] });
-  }, [id, queryClient]);
+  }, [id, queryClient, client]);
 
   // Ask once before leaving the app entirely with unsaved changes.
   useEffect(() => {

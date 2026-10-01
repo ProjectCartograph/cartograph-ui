@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileQuestion } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 
 export interface UnappliedRef {
@@ -14,13 +14,10 @@ export interface UnappliedRef {
 
 /** Everything in the vault directory that the vault does not yet include. */
 export function useUnapplied() {
+  const client = useClient();
   return useQuery({
     queryKey: ["vault-unapplied"],
-    queryFn: async (): Promise<UnappliedRef[]> => {
-      const { data, error } = await client.GET("/vault/unapplied");
-      if (error) throw error;
-      return (Array.isArray(data) ? data : []) as UnappliedRef[];
-    },
+    queryFn: (): Promise<UnappliedRef[]> => client.unapplied(),
   });
 }
 
@@ -40,6 +37,7 @@ export function useUnapplied() {
 export function UnappliedBar({ kind }: { kind: string }) {
   const { data } = useUnapplied();
   const queryClient = useQueryClient();
+  const client = useClient();
   const [failed, setFailed] = useState(false);
   const c = copy.sheets.unapplied;
 
@@ -51,10 +49,7 @@ export function UnappliedBar({ kind }: { kind: string }) {
       // rehydrated the whole store and reindexed every reference each
       // time, so applying seventy files did seventy full walks and felt
       // exactly as slow as that sounds (Programme Lead, 2026-09-29).
-      const { error } = await client.POST("/vault/apply", {
-        body: { refs: refs.map((r) => `${r.kind}/${r.id}`) },
-      });
-      if (error) throw error;
+      await client.apply(refs.map((r) => `${r.kind}/${r.id}`));
     },
     onSuccess: async () => {
       setFailed(false);

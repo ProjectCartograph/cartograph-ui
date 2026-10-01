@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as client from '@/api/client';
+import { ClientProvider } from '@/client/context';
+import { fakeClient } from '@/client/fake';
 import { useReferenceOptions, refOptionsQuery } from '../useReferenceOptions';
 
-// Mock the client module
-vi.mock('@/api/client');
+const list = vi.fn();
+const client = fakeClient({ list });
 
 describe('useReferenceOptions and refOptionsQuery', () => {
   let queryClient: QueryClient;
@@ -21,7 +22,7 @@ describe('useReferenceOptions and refOptionsQuery', () => {
 
   describe('refOptionsQuery', () => {
     it('includes staleTime of 30 seconds', () => {
-      const query = refOptionsQuery('Team');
+      const query = refOptionsQuery(client, 'Team');
       expect(query.staleTime).toBe(30_000);
     });
 
@@ -31,12 +32,9 @@ describe('useReferenceOptions and refOptionsQuery', () => {
         { id: 'team-2', name: 'Team Two' },
       ];
 
-      vi.mocked(client.client).GET.mockResolvedValueOnce({
-        data: mockData,
-        error: null,
-      } as any);
+      list.mockResolvedValueOnce(mockData);
 
-      const query = refOptionsQuery('Team');
+      const query = refOptionsQuery(client, 'Team');
       const result = await query.queryFn();
 
       expect(result.options).toEqual([
@@ -50,12 +48,9 @@ describe('useReferenceOptions and refOptionsQuery', () => {
     });
 
     it('returns empty options when no manifests exist', async () => {
-      vi.mocked(client.client).GET.mockResolvedValueOnce({
-        data: [],
-        error: null,
-      } as any);
+      list.mockResolvedValueOnce([]);
 
-      const query = refOptionsQuery('DataSource');
+      const query = refOptionsQuery(client, 'DataSource');
       const result = await query.queryFn();
 
       expect(result.options).toEqual([]);
@@ -67,15 +62,14 @@ describe('useReferenceOptions and refOptionsQuery', () => {
     it('uses the refOptionsQuery with staleTime', async () => {
       const mockData = [{ id: 'ds-1', name: 'Data Source 1' }];
 
-      vi.mocked(client.client).GET.mockResolvedValueOnce({
-        data: mockData,
-        error: null,
-      } as any);
+      list.mockResolvedValueOnce(mockData);
 
       const wrapper = ({ children }: { children: React.ReactNode }) => (
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
+        <ClientProvider client={client}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </ClientProvider>
       );
 
       const { result } = renderHook(() => useReferenceOptions('DataSource'), {
@@ -101,9 +95,11 @@ describe('useReferenceOptions and refOptionsQuery', () => {
     it('is disabled when kind is undefined', async () => {
       const { result } = renderHook(() => useReferenceOptions(undefined), {
         wrapper: ({ children }: { children: React.ReactNode }) => (
-          <QueryClientProvider client={queryClient}>
-            {children}
-          </QueryClientProvider>
+          <ClientProvider client={client}>
+            <QueryClientProvider client={queryClient}>
+              {children}
+            </QueryClientProvider>
+          </ClientProvider>
         ),
       });
 

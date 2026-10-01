@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
+import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 import { ErrorAlert } from "@/components/error-alert";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
@@ -72,6 +73,7 @@ function FieldError({ message }: { message?: string }) {
 
 export function GoalEditor({ id }: { id: string }) {
   const queryClient = useQueryClient();
+  const client = useClient();
   const manifestQuery = useGoalManifest(id);
   const checksQuery = useGoalChecks(id);
   const referencesQuery = useGoalReferences(id);
@@ -180,7 +182,7 @@ export function GoalEditor({ id }: { id: string }) {
 
   async function handleRename(next: string) {
     if (!manifest) return;
-    const result = await renameGoal(id, next);
+    const result = await renameGoal(client, id, next);
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-manifest", id] });
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
@@ -190,7 +192,7 @@ export function GoalEditor({ id }: { id: string }) {
   async function handleMoveTo(newParentId: string) {
     setParent(newParentId);
     if (!manifest) return;
-    const result = await saveGoalFields(id, manifest.metadata.name, {
+    const result = await saveGoalFields(client, id, manifest.metadata.name, {
       level, parent: newParentId, objective, whyItMatters, evidence, keyResults,
     }, "edited on the tree");
     if (result.ok) {
@@ -206,7 +208,7 @@ export function GoalEditor({ id }: { id: string }) {
     setSaveError(null);
     setFieldErrors({});
     setConflict(false);
-    const result = await saveGoalFields(id, manifest.metadata.name, {
+    const result = await saveGoalFields(client, id, manifest.metadata.name, {
       level,
       ...(parent ? { parent } : {}),
       objective, whyItMatters, evidence, keyResults,

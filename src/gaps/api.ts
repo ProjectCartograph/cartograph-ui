@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 
 export interface GapClaim {
   kind: string;
@@ -29,29 +29,19 @@ export interface GapCoverage {
  * and this reads it back, the same way a programme's members are derived.
  */
 export function useGapCoverage(id: string) {
+  const client = useClient();
   return useQuery({
     queryKey: ["gap-coverage", id],
-    queryFn: async (): Promise<GapCoverage> => {
-      const res = await client.GET("/manifests/Gap/{id}/coverage", {
-        params: { path: { id } },
-      });
-      if (res.error) throw new Error("coverage");
-      return res.data as GapCoverage;
-    },
+    queryFn: (): Promise<GapCoverage> => client.gapCoverage(id),
   });
 }
 
 /** A gap's advisory checks. */
 export function useGapChecks(id: string, enabled = true) {
+  const client = useClient();
   return useQuery({
     queryKey: ["gap-checks", id],
     enabled,
-    queryFn: async () => {
-      const res = await client.GET("/manifests/Gap/{id}/checks", {
-        params: { path: { id } },
-      });
-      if (res.error) throw new Error("checks");
-      return res.data ?? [];
-    },
+    queryFn: () => client.checks("Gap", id),
   });
 }

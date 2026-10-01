@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 import { ErrorAlert } from "@/components/error-alert";
 import { type FieldDef, type SheetKind, parseSpecFields, unitHint } from "./schema";
@@ -142,6 +142,7 @@ function SpecCell({
  * all seven directory kinds.
  */
 export function Sheet({ kind }: { kind: SheetKind }) {
+  const client = useClient();
   const kindLabel = copy.sheets.kinds[kind] ?? kind;
   const kindLabelSingular = copy.sheets.kindsSingular[kind] ?? kind;
 
@@ -158,11 +159,7 @@ export function Sheet({ kind }: { kind: SheetKind }) {
 
   const schemaQuery = useQuery({
     queryKey: ["schema", kind],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/schemas/{kind}", { params: { path: { kind } } });
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.schema(kind),
   });
 
   const fields = useMemo(() => parseSpecFields(schemaQuery.data), [schemaQuery.data]);
@@ -176,7 +173,7 @@ export function Sheet({ kind }: { kind: SheetKind }) {
     [refFields]
   );
 
-  const refQueries = useQueries({ queries: refKinds.map((rk) => refOptionsQuery(rk)) });
+  const refQueries = useQueries({ queries: refKinds.map((rk) => refOptionsQuery(client, rk)) });
   const refNames = useMemo(() => {
     const m = new Map<string, Map<string, string>>();
     refKinds.forEach((rk, i) => m.set(rk, refQueries[i]?.data?.names ?? new Map()));
@@ -199,29 +196,15 @@ export function Sheet({ kind }: { kind: SheetKind }) {
 
   const summariesQuery = useQuery({
     queryKey: ["sheet-summaries", kind, debouncedQ, refParams.join(",")],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/manifests/{kind}", {
-        params: {
-          path: { kind },
-          query: { q: debouncedQ || undefined, ref: refParams.length ? refParams : undefined },
-        },
-      });
-      if (error) throw error;
-      return Array.isArray(data) ? data : (data?.items ?? []);
-    },
+    queryFn: () =>
+      client.list(kind, { q: debouncedQ || undefined, ref: refParams.length ? refParams : undefined }),
   });
   const summaries = summariesQuery.data ?? [];
 
   const rowQueries = useQueries({
     queries: summaries.map((s) => ({
       queryKey: ["sheet-row", kind, s.id, s.version],
-      queryFn: async () => {
-        const { data, error } = await client.GET("/manifests/{kind}/{id}", {
-          params: { path: { kind, id: s.id } },
-        });
-        if (error) throw error;
-        return data;
-      },
+      queryFn: () => client.get(kind, s.id),
       staleTime: 30_000,
     })),
   });

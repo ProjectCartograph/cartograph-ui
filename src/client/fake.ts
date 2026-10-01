@@ -1,0 +1,48 @@
+import type { Client } from "./port";
+
+// Every method, so a method added to the port and not here fails the
+// type check rather than a test.
+const every: Record<keyof Client, true> = {
+  kinds: true,
+  schema: true,
+  settings: true,
+  list: true,
+  get: true,
+  versions: true,
+  references: true,
+  saveWorking: true,
+  discardWorking: true,
+  saveVersion: true,
+  snapshot: true,
+  checks: true,
+  goalTree: true,
+  gapCoverage: true,
+  deleteGoal: true,
+  projectState: true,
+  transition: true,
+  vault: true,
+  unapplied: true,
+  excluded: true,
+  apply: true,
+  recover: true,
+  snapshots: true,
+  charter: true,
+  charterLink: true,
+};
+
+/**
+ * A Client for a test: the methods given, and every other one rejecting
+ * with its own name, so a test that reaches for something it did not
+ * fake says which. What a fake returns is what the real client returns.
+ */
+export function fakeClient(given: Partial<Client> = {}): Client {
+  const client: Record<string, unknown> = {};
+  for (const name of Object.keys(every) as (keyof Client)[]) {
+    client[name] =
+      given[name] ??
+      (name === "charterLink"
+        ? () => ""
+        : () => Promise.reject(new Error(`fake client: ${name} not faked`)));
+  }
+  return client as unknown as Client;
+}

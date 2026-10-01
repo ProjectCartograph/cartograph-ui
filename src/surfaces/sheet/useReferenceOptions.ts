@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
+import type { Client } from "@/client/port";
 
 export interface RefOption {
   value: string;
@@ -24,15 +25,11 @@ export interface RefOptions {
  * immediately invalidated after every sheet write (create/edit) to ensure
  * fresh options are shown after mutations.
  */
-export function refOptionsQuery(kind: string) {
+export function refOptionsQuery(client: Client, kind: string) {
   return {
     queryKey: ["sheet-ref-options", kind] as const,
     queryFn: async (): Promise<RefOptions> => {
-      const { data, error } = await client.GET("/manifests/{kind}", {
-        params: { path: { kind } },
-      });
-      if (error) throw error;
-      const items = Array.isArray(data) ? data : (data?.items ?? []);
+      const items = await client.list(kind);
       const options = items.map((s) => ({ value: s.id, label: s.name }));
       const names = new Map(options.map((o) => [o.value, o.label]));
       const labels = new Map(
@@ -49,8 +46,9 @@ export function refOptionsQuery(kind: string) {
  * the reference pickers in the Add and edit dialog.
  */
 export function useReferenceOptions(kind: string | undefined) {
+  const client = useClient();
   return useQuery({
-    ...refOptionsQuery(kind ?? ""),
+    ...refOptionsQuery(client, kind ?? ""),
     enabled: !!kind,
   });
 }

@@ -2,10 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
+import type { Settings } from "@/client/port";
 import { StrategyView } from "../StrategyView";
 
-vi.mock("@/api/client");
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, className }: { children: ReactNode; className?: string }) => (
     <a href="#" className={className}>
@@ -42,17 +43,19 @@ const tree = {
   ],
 };
 
-function renderView(settings: object) {
-  vi.mocked(client).GET.mockImplementation(async (path: string) => {
-    if (path === "/goals/tree") return { data: tree, error: undefined, response: new Response() } as never;
-    if (path === "/settings") return { data: settings, error: undefined, response: new Response() } as never;
-    return { data: [], error: undefined, response: new Response() } as never;
+function renderView(settings: Settings) {
+  const client = fakeClient({
+    goalTree: async () => tree,
+    settings: async () => settings,
+    list: async () => [],
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <StrategyView />
-    </QueryClientProvider>,
+    <ClientProvider client={client}>
+      <QueryClientProvider client={queryClient}>
+        <StrategyView />
+      </QueryClientProvider>
+    </ClientProvider>,
   );
 }
 

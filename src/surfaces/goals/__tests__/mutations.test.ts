@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as mutations from '../mutations';
-import * as client from '@/api/client';
+import { fakeClient } from '@/client/fake';
+import { NotFound, Refused } from '@/client/port';
 
-// Mock the client module at the boundary
-vi.mock('@/api/client');
+// The Client is faked at the port: what it returns is what the real one does.
+const get = vi.fn();
+const saveVersion = vi.fn();
+const deleteGoal = vi.fn();
+const client = fakeClient({ get, saveVersion, deleteGoal });
+const version = { kind: 'Goal', id: 'goal-1', number: 2, actor: 'local', reason: 'r', on: '2026-09-01T00:00:00Z' };
 
 describe('Goal mutations', () => {
   beforeEach(() => {
@@ -29,30 +34,19 @@ describe('Goal mutations', () => {
         },
       };
 
-      // Mock GET to return the current manifest
-      // Like the real client: the body is already parsed into data, and a
-      // second response.json() throws "body used".
-      vi.mocked(client.client).GET.mockResolvedValueOnce({
-        data: { manifest: mockManifest, version: { number: 1 }, yaml: '' },
-        response: { status: 200, json: () => Promise.reject(new Error('body used')) },
-      } as any);
+      get.mockResolvedValueOnce({ manifest: mockManifest, version: { number: 1 }, yaml: '' });
 
-      // Mock PUT to succeed
-      vi.mocked(client.client).PUT.mockResolvedValueOnce({
-        error: null,
-        response: { status: 200 } as any,
-        data: null,
-      } as any);
+      saveVersion.mockResolvedValueOnce(version);
 
-      const result = await mutations.renameGoal('goal-1', 'New Name');
+      const result = await mutations.renameGoal(client, 'goal-1', 'New Name');
 
       expect(result.ok).toBe(true);
       expect(result.problems).toEqual([]);
 
       // Verify PUT body: manifest with only name changed, spec fields preserved
-      const putCall = vi.mocked(client.client).PUT.mock.calls[0];
+      const putCall = saveVersion.mock.calls[0];
       expect(putCall).toBeDefined();
-      const sentManifest = (putCall[1].body as any).manifest;
+      const sentManifest = putCall[2];
       expect(sentManifest.metadata.name).toBe('New Name');
       expect(sentManifest.spec.objective).toBe('Test objective');
       expect(sentManifest.spec.evidence).toBe('Test evidence');
@@ -62,13 +56,9 @@ describe('Goal mutations', () => {
     });
 
     it('returns error when manifest not found', async () => {
-      vi.mocked(client.client).GET.mockResolvedValueOnce({
-        data: undefined,
-        error: { problems: [{ path: '', message: 'not found: Goal/missing' }] },
-        response: { status: 404, json: () => Promise.reject(new Error('body used')) },
-      } as any);
+      get.mockRejectedValueOnce(new NotFound([{ path: '', message: 'not found: Goal/missing' }]));
 
-      const result = await mutations.renameGoal('missing', 'New Name');
+      const result = await mutations.renameGoal(client, 'missing', 'New Name');
 
       expect(result.ok).toBe(false);
       expect(result.problems.length).toBeGreaterThan(0);
@@ -91,28 +81,19 @@ describe('Goal mutations', () => {
         },
       };
 
-      // Like the real client: the body is already parsed into data, and a
-      // second response.json() throws "body used".
-      vi.mocked(client.client).GET.mockResolvedValueOnce({
-        data: { manifest: mockManifest, version: { number: 1 }, yaml: '' },
-        response: { status: 200, json: () => Promise.reject(new Error('body used')) },
-      } as any);
+      get.mockResolvedValueOnce({ manifest: mockManifest, version: { number: 1 }, yaml: '' });
 
-      vi.mocked(client.client).PUT.mockResolvedValueOnce({
-        error: null,
-        response: { status: 200 } as any,
-        data: null,
-      } as any);
+      saveVersion.mockResolvedValueOnce(version);
 
-      const result = await mutations.moveGoal('goal-1', 'pillar-b');
+      const result = await mutations.moveGoal(client, 'goal-1', 'pillar-b');
 
       expect(result.ok).toBe(true);
       expect(result.problems).toEqual([]);
 
       // Verify PUT body: manifest with only parent changed, spec fields preserved
-      const putCall = vi.mocked(client.client).PUT.mock.calls[0];
+      const putCall = saveVersion.mock.calls[0];
       expect(putCall).toBeDefined();
-      const sentManifest = (putCall[1].body as any).manifest;
+      const sentManifest = putCall[2];
       expect(sentManifest.spec.parent).toBe('pillar-b');
       expect(sentManifest.spec.objective).toBe('Test objective');
       expect(sentManifest.spec.evidence).toBe('Test evidence');
@@ -139,24 +120,14 @@ describe('Goal mutations', () => {
         },
       };
 
-      // Like the real client: the body is already parsed into data, and a
-      // second response.json() throws "body used".
-      vi.mocked(client.client).GET.mockResolvedValueOnce({
-        data: { manifest: mockManifest, version: { number: 1 }, yaml: '' },
-        response: { status: 200, json: () => Promise.reject(new Error('body used')) },
-      } as any);
+      get.mockResolvedValueOnce({ manifest: mockManifest, version: { number: 1 }, yaml: '' });
 
-      vi.mocked(client.client).PUT.mockResolvedValueOnce({
-        error: null,
-        response: { status: 200 } as any,
-        data: null,
-      } as any);
+      saveVersion.mockResolvedValueOnce(version);
 
-      await mutations.moveGoal('goal-1', 'pillar-c');
+      await mutations.moveGoal(client, 'goal-1', 'pillar-c');
 
       // Verify PUT body preserves all fields
-      const putCall = vi.mocked(client.client).PUT.mock.calls[0];
-      const sentManifest = (putCall[1].body as any).manifest;
+      const sentManifest = saveVersion.mock.calls[0][2];
       expect(sentManifest.spec.parent).toBe('pillar-c');
       expect(sentManifest.spec.objective).toBe('Improve user engagement');
       expect(sentManifest.spec.evidence).toBe('Based on user interviews');
@@ -170,46 +141,33 @@ describe('Goal mutations', () => {
 
   describe('deleteGoal', () => {
     it('sends DELETE with custom reason', async () => {
-      vi.mocked(client.client).DELETE.mockResolvedValueOnce({
-        error: null,
-        response: { status: 204 } as any,
-        data: null,
-      } as any);
+      deleteGoal.mockResolvedValueOnce(undefined);
 
-      const result = await mutations.deleteGoal('goal-1', 'leaf goal cleanup');
+      const result = await mutations.deleteGoal(client, 'goal-1', 'leaf goal cleanup');
 
       expect(result.ok).toBe(true);
       expect(result.problems).toEqual([]);
 
-      const deleteCall = vi.mocked(client.client).DELETE.mock.calls[0];
-      expect(deleteCall).toBeDefined();
-      expect((deleteCall[1].body as any).reason).toBe('leaf goal cleanup');
+      expect(deleteGoal).toHaveBeenCalledWith('goal-1', 'leaf goal cleanup');
     });
 
     it('sends DELETE with default reason when not provided', async () => {
-      vi.mocked(client.client).DELETE.mockResolvedValueOnce({
-        error: null,
-        response: { status: 204 } as any,
-        data: null,
-      } as any);
+      deleteGoal.mockResolvedValueOnce(undefined);
 
-      const result = await mutations.deleteGoal('goal-1');
+      const result = await mutations.deleteGoal(client, 'goal-1');
 
       expect(result.ok).toBe(true);
       expect(result.problems).toEqual([]);
 
-      const deleteCall = vi.mocked(client.client).DELETE.mock.calls[0];
-      expect((deleteCall[1].body as any).reason).toBe('edited on the tree');
+      expect(deleteGoal).toHaveBeenCalledWith('goal-1', 'edited on the tree');
     });
 
     it('returns error when deletion is refused', async () => {
-      vi.mocked(client.client).DELETE.mockResolvedValueOnce({
-        error: { problems: [{ message: 'Project/p1 (Project One) still references this goal' }] },
-        response: { status: 422 } as any,
-        data: null,
-      } as any);
+      deleteGoal.mockRejectedValueOnce(
+        new Refused([{ path: '', message: 'Project/p1 (Project One) still references this goal' }]),
+      );
 
-      const result = await mutations.deleteGoal('goal-1', 'test');
+      const result = await mutations.deleteGoal(client, 'goal-1', 'test');
 
       expect(result.ok).toBe(false);
       expect(result.problems).toEqual([
@@ -220,8 +178,8 @@ describe('Goal mutations', () => {
 
   describe('saveGoalFields', () => {
     it('keeps the source wording and the links above through a save', async () => {
-      vi.mocked(client.client).PUT.mockResolvedValueOnce({ error: null, response: { status: 200 } as any, data: null } as any);
-      await mutations.saveGoalFields('c1', 'Outcome', {
+      saveVersion.mockResolvedValueOnce(version);
+      await mutations.saveGoalFields(client, 'c1', 'Outcome', {
         level: 'outcome',
         parent: 'o1',
         objective: 'Faults found at intake',
@@ -229,7 +187,7 @@ describe('Goal mutations', () => {
         source: 'Plan, section 4',
         contributesTo: [{ goal: 'o2', because: 'Fewer returns' }, { goal: '' }],
       }, 'edit');
-      const spec = (vi.mocked(client.client).PUT.mock.calls[0][1].body as any).manifest.spec;
+      const spec = saveVersion.mock.calls[0][2].spec;
       expect(spec.statedAs).toBe('Faults are found at intake.');
       expect(spec.source).toBe('Plan, section 4');
       // A row with no objective picked is not saved.

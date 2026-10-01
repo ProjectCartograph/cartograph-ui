@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 
 export interface KPISpec {
   name?: string;
@@ -17,14 +17,11 @@ export interface KPISpec {
 /** A KPI's own definition. Read-only here: what is measured is decided
  * where the KPI is defined, and this surface is for the numbers. */
 export function useKPI(id: string) {
+  const client = useClient();
   return useQuery({
     queryKey: ["kpi", id],
     queryFn: async () => {
-      const res = await client.GET("/manifests/{kind}/{id}", {
-        params: { path: { kind: "KPI", id } },
-      });
-      if (res.error) throw new Error("kpi");
-      const view = res.data as unknown as {
+      const view = (await client.get("KPI", id)) as unknown as {
         manifest?: { metadata?: { name?: string }; spec?: KPISpec };
       };
       return { name: view.manifest?.metadata?.name ?? id, spec: view.manifest?.spec ?? {} };
@@ -34,15 +31,12 @@ export function useKPI(id: string) {
 
 /** The cycle a KPI is read on, which is what says what its periods are. */
 export function useCycle(id: string | undefined) {
+  const client = useClient();
   return useQuery({
     enabled: !!id,
     queryKey: ["cycle", id],
     queryFn: async () => {
-      const res = await client.GET("/manifests/{kind}/{id}", {
-        params: { path: { kind: "ReportingCycle", id: id! } },
-      });
-      if (res.error) throw new Error("cycle");
-      const view = res.data as unknown as {
+      const view = (await client.get("ReportingCycle", id!)) as unknown as {
         manifest?: { metadata?: { name?: string }; spec?: { periodMonths?: number; startMonth?: number } };
       };
       return {

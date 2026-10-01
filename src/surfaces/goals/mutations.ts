@@ -2,9 +2,10 @@
 // a normal versioned PUT (or the dedicated DELETE), actor always "local"
 // (I3.2 delta: no actor picker anywhere), reason always the fixed string
 // below. No draft mechanism for goals (card I3.2 section 5): every one of
-// these lands immediately as a new version.
+// these lands immediately as a new version. Each takes the Client it
+// works through, which a component reads with useClient.
 
-import { client } from "@/api/client";
+import { ClientError, Conflict, type Client } from "@/client/port";
 import type { GoalLevel, GoalManifest, GoalSpec } from "./types";
 
 export const TREE_EDIT_REASON = "edited on the tree";
@@ -31,16 +32,24 @@ function goalSafeKeyResults(spec: GoalSpec): GoalSpec["keyResults"] {
   }));
 }
 
+/** What a refused write answers: a conflict, or the problems on their
+ * fields. A transport failure is not an answer, and still throws. */
+function refusal(e: unknown): GoalMutationResult {
+  if (e instanceof Conflict) return { ok: false, conflict: true, problems: [] };
+  if (e instanceof ClientError) {
+    return { ok: false, problems: e.problems.map((p) => ({ path: p.path, message: p.message })) };
+  }
+  throw e;
+}
+
 /** Fetches the current Goal manifest from the server. */
-async function getGoalManifest(id: string): Promise<GoalManifest | null> {
-  // openapi-fetch has already read the body into `data`; reading
-  // `response.json()` again throws "body used", which is how every inline
-  // rename silently failed before (ISSUES_LOG #27 follow-up).
-  const { data, response } = await client.GET("/manifests/{kind}/{id}", {
-    params: { path: { kind: "Goal", id } },
-  });
-  if (response.status !== 200) {
-    console.error(`getGoalManifest: GET returned ${response.status} for Goal/${id}`);
+async function getGoalManifest(client: Client, id: string): Promise<GoalManifest | null> {
+  let data;
+  try {
+    data = await client.get("Goal", id);
+  } catch (e) {
+    if (!(e instanceof ClientError)) throw e;
+    console.error(`getGoalManifest: GET returned ${e.status} for Goal/${id}`);
     return null;
   }
   if (!data) {
@@ -55,7 +64,13 @@ async function getGoalManifest(id: string): Promise<GoalManifest | null> {
   return view.manifest;
 }
 
-async function putGoal(id: string, metadataName: string, spec: GoalSpec, reason: string): Promise<GoalMutationResult> {
+async function putGoal(
+  client: Client,
+  id: string,
+  metadataName: string,
+  spec: GoalSpec,
+  reason: string,
+): Promise<GoalMutationResult> {
   const body: GoalManifest = {
     apiVersion: "cartograph/v1",
     kind: "Goal",
@@ -79,66 +94,70 @@ async function putGoal(id: string, metadataName: string, spec: GoalSpec, reason:
     },
   };
   if (!body.spec.keyResults?.length) delete body.spec.keyResults;
-  const { error, response } = await client.PUT("/manifests/{kind}/{id}", {
-    params: { path: { kind: "Goal", id } },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    body: { manifest: body as any, reason },
-  });
-  if (!error) return { ok: true, problems: [] };
-  if (response.status === 409) return { ok: false, conflict: true, problems: [] };
-  return { ok: false, problems: ((error as any).problems ?? []).map((p: any) => ({ path: p.path, message: p.message })) };
+  try {
+    await client.saveVersion("Goal", id, body, reason);
+    return { ok: true, problems: [] };
+  } catch (e) {
+    return refusal(e);
+  }
 }
 
 /** Creates a pillar (no parent) or a strategic goal or functional goal (parentId required):
  * title only, per card section 5's "ask for the title only, inline". */
-export function createGoal(id: string, name: string, level: GoalLevel, parentId?: string): Promise<GoalMutationResult> {
-  return putGoal(id, name, { level, ...((level === "objective" || level === "outcome") && parentId ? { parent: parentId } : {}) }, TREE_EDIT_REASON);
+export function createGoal(
+  client: Client,
+  id: string,
+  name: string,
+  level: GoalLevel,
+  parentId?: string,
+): Promise<GoalMutationResult> {
+  return putGoal(client, id, name, { level, ...((level === "objective" || level === "outcome") && parentId ? { parent: parentId } : {}) }, TREE_EDIT_REASON);
 }
 
 /** Renames a goal in place: the id (slug) never changes, only
  * metadata.name, keeping every existing spec field untouched.
  * Implements read-modify-write to preserve all goal fields exactly. */
-export async function renameGoal(id: string, newName: string): Promise<GoalMutationResult> {
-  const current = await getGoalManifest(id);
+export async function renameGoal(client: Client, id: string, newName: string): Promise<GoalMutationResult> {
+  const current = await getGoalManifest(client, id);
   if (!current) {
     return { ok: false, problems: [{ path: "manifest", message: "Goal not found" }] };
   }
   const updated = JSON.parse(JSON.stringify(current)) as GoalManifest;
   updated.metadata.name = newName;
-  const { error, response } = await client.PUT("/manifests/{kind}/{id}", {
-    params: { path: { kind: "Goal", id } },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    body: { manifest: updated as any, reason: TREE_EDIT_REASON },
-  });
-  if (!error) return { ok: true, problems: [] };
-  if (response.status === 409) return { ok: false, conflict: true, problems: [] };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return { ok: false, problems: ((error as any).problems ?? []).map((p: any) => ({ path: p.path, message: p.message })) };
+  try {
+    await client.saveVersion("Goal", id, updated, TREE_EDIT_REASON);
+    return { ok: true, problems: [] };
+  } catch (e) {
+    return refusal(e);
+  }
 }
 
 /** Re-parents a goal to a different parent (drag and drop, or the "Move to" control).
  * Implements read-modify-write to preserve all goal fields including key results exactly.
  * Only the parent is changed. */
-export async function moveGoal(id: string, newParentId: string): Promise<GoalMutationResult> {
-  const current = await getGoalManifest(id);
+export async function moveGoal(client: Client, id: string, newParentId: string): Promise<GoalMutationResult> {
+  const current = await getGoalManifest(client, id);
   if (!current) return { ok: false, problems: [{ path: "manifest", message: "Goal not found" }] };
   const updated = JSON.parse(JSON.stringify(current)) as GoalManifest;
   updated.spec.parent = newParentId;
-  const { error, response } = await client.PUT("/manifests/{kind}/{id}", {
-    params: { path: { kind: "Goal", id } },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    body: { manifest: updated as any, reason: TREE_EDIT_REASON },
-  });
-  if (!error) return { ok: true, problems: [] };
-  if (response.status === 409) return { ok: false, conflict: true, problems: [] };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return { ok: false, problems: ((error as any).problems ?? []).map((p: any) => ({ path: p.path, message: p.message })) };
+  try {
+    await client.saveVersion("Goal", id, updated, TREE_EDIT_REASON);
+    return { ok: true, problems: [] };
+  } catch (e) {
+    return refusal(e);
+  }
 }
 
 /** Saves every field the editor exposes (objective, why it matters,
  * evidence, key results), keeping level and parent untouched. */
-export function saveGoalFields(id: string, name: string, spec: GoalSpec, reason: string): Promise<GoalMutationResult> {
-  return putGoal(id, name, spec, reason);
+export function saveGoalFields(
+  client: Client,
+  id: string,
+  name: string,
+  spec: GoalSpec,
+  reason: string,
+): Promise<GoalMutationResult> {
+  return putGoal(client, id, name, spec, reason);
 }
 
 export interface DeleteGoalResult {
@@ -150,11 +169,16 @@ export interface DeleteGoalResult {
 
 /** Deletes a goal (allowed only when nothing references it); refused with
  * the list of what references it otherwise. */
-export async function deleteGoal(id: string, reason: string = TREE_EDIT_REASON): Promise<DeleteGoalResult> {
-  const { error } = await client.DELETE("/manifests/Goal/{id}", {
-    params: { path: { id } },
-    body: { reason },
-  });
-  if (!error) return { ok: true, problems: [] };
-  return { ok: false, problems: (error.problems ?? []).map((p) => p.message) };
+export async function deleteGoal(
+  client: Client,
+  id: string,
+  reason: string = TREE_EDIT_REASON,
+): Promise<DeleteGoalResult> {
+  try {
+    await client.deleteGoal(id, reason);
+    return { ok: true, problems: [] };
+  } catch (e) {
+    if (!(e instanceof ClientError)) throw e;
+    return { ok: false, problems: e.problems.map((p) => p.message) };
+  }
 }

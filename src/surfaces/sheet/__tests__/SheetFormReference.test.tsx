@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as client from '@/api/client';
+import { ClientProvider } from '@/client/context';
+import { fakeClient } from '@/client/fake';
 import { SheetForm } from '../SheetForm';
 import type { FieldDef } from '../schema';
 
-vi.mock('@/api/client');
+const list = vi.fn();
 
 // DataSource.spec.team: the one required reference in any sheet dialog. A
 // combobox only selects what exists, so a dialog that cannot also create a
@@ -15,15 +16,17 @@ const TEAM_FIELD: FieldDef = { name: 'team', kind: 'ref', refKind: 'Team', requi
 function renderDialog() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={queryClient}>
-      <SheetForm
-        kind="DataSource"
-        kindLabel="Data source"
-        fields={[TEAM_FIELD]}
-        open
-        onOpenChange={() => {}}
-      />
-    </QueryClientProvider>,
+    <ClientProvider client={fakeClient({ list })}>
+      <QueryClientProvider client={queryClient}>
+        <SheetForm
+          kind="DataSource"
+          kindLabel="Data source"
+          fields={[TEAM_FIELD]}
+          open
+          onOpenChange={() => {}}
+        />
+      </QueryClientProvider>
+    </ClientProvider>,
   );
 }
 
@@ -33,10 +36,7 @@ describe('a reference field inside the Add sheet dialog', () => {
   });
 
   it('offers to add the referenced entry when the directory has some', async () => {
-    vi.mocked(client.client).GET.mockResolvedValue({
-      data: [{ id: 'team-1', name: 'Team One' }],
-      error: null,
-    } as any);
+    list.mockResolvedValue([{ id: 'team-1', name: 'Team One' }]);
 
     renderDialog();
 
@@ -46,7 +46,7 @@ describe('a reference field inside the Add sheet dialog', () => {
   });
 
   it('offers to add one in place when the directory is empty, rather than a link away', async () => {
-    vi.mocked(client.client).GET.mockResolvedValue({ data: [], error: null } as any);
+    list.mockResolvedValue([]);
 
     renderDialog();
 

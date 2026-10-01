@@ -2,12 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { parse as parseYAML } from "yaml";
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
+import { NotFound, Refused } from "@/client/port";
 import { ProjectStoreProvider, useProjectStore } from "../store";
 
-// The store is exercised for real: the API client is faked at the module
-// boundary and the router's navigation guard is a no-op, nothing else.
-vi.mock("@/api/client");
+// The store is exercised for real: the Client is faked at the port and the
+// router's navigation guard is a no-op, nothing else.
 vi.mock("@tanstack/react-router", () => ({ useBlocker: () => undefined }));
 
 const manifest = {
@@ -28,32 +29,31 @@ function Probe() {
 async function mountStore() {
   const queryClient = new QueryClient();
   render(
-    <QueryClientProvider client={queryClient}>
-      <ProjectStoreProvider id="p1">
-        <Probe />
-      </ProjectStoreProvider>
-    </QueryClientProvider>,
+    <ClientProvider client={fakeClient({ get, saveWorking, saveVersion, snapshot, discardWorking })}>
+      <QueryClientProvider client={queryClient}>
+        <ProjectStoreProvider id="p1">
+          <Probe />
+        </ProjectStoreProvider>
+      </QueryClientProvider>
+    </ClientProvider>,
   );
   await screen.findByText("loaded");
   if (!api) throw new Error("store not mounted");
   return api;
 }
 
-const mocked = vi.mocked(client);
+const get = vi.fn();
+const saveWorking = vi.fn();
+const saveVersion = vi.fn();
+const snapshot = vi.fn();
+const discardWorking = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
   api = null;
-  mocked.GET.mockResolvedValue({
-    data: { version: { number: 0 }, manifest, yaml: "" },
-    error: undefined,
-    response: new Response(null, { status: 200 }),
-  } as never);
-  mocked.PUT.mockResolvedValue({
-    data: undefined,
-    error: undefined,
-    response: new Response(null, { status: 204 }),
-  } as never);
+  get.mockResolvedValue({ version: { number: 0 }, manifest, yaml: "" });
+  saveWorking.mockResolvedValue(undefined);
+  discardWorking.mockResolvedValue(undefined);
 });
 
 describe("ProjectStore", () => {
@@ -65,26 +65,20 @@ describe("ProjectStore", () => {
       await store.flushNow();
     });
 
-    const puts = mocked.PUT.mock.calls;
-    expect(puts.length).toBe(1);
-    const [path, options] = puts[0] as unknown as [string, { params: { path: { kind: string; id: string } }; body: { yaml: string } }];
-    expect(path).toBe("/manifests/{kind}/{id}/working");
-    expect(options.params.path).toEqual({ kind: "Project", id: "p1" });
-    const written = parseYAML(options.body.yaml) as typeof manifest;
+    expect(saveWorking).toHaveBeenCalledTimes(1);
+    const [kind, id, text] = saveWorking.mock.calls[0] as [string, string, string];
+    expect([kind, id]).toEqual(["Project", "p1"]);
+    const written = parseYAML(text) as typeof manifest;
     expect(written.metadata.name).toBe("Renamed project");
     expect(written.spec.summary).toEqual(manifest.spec.summary);
     expect(written.spec.team).toBe("t1");
-    expect(puts.some(([p]) => p === "/manifests/{kind}/{id}")).toBe(false);
+    expect(saveVersion).not.toHaveBeenCalled();
   });
 
   it("Save as version posts the reason and surfaces the 422 problems without a new version", async () => {
     const store = await mountStore();
     const problems = [{ path: "/spec", message: "missing property 'deliverables'" }];
-    mocked.POST.mockResolvedValueOnce({
-      data: undefined,
-      error: { problems },
-      response: new Response(null, { status: 422 }),
-    } as never);
+    snapshot.mockRejectedValueOnce(new Refused(problems));
 
     let result: Awaited<ReturnType<Api["saveVersion"]>> | undefined;
     await act(async () => {
@@ -92,19 +86,13 @@ describe("ProjectStore", () => {
     });
 
     expect(result).toEqual({ ok: false, problems });
-    const [path, options] = mocked.POST.mock.calls[0] as unknown as [string, { body: { reason: string } }];
-    expect(path).toBe("/manifests/{kind}/{id}/snapshots");
-    expect(options.body).toEqual({ reason: "first attempt" });
+    expect(snapshot).toHaveBeenCalledWith("Project", "p1", "first attempt");
     expect(api?.version).toBe(0);
   });
 
   it("Save as version records the new version number on success", async () => {
     const store = await mountStore();
-    mocked.POST.mockResolvedValueOnce({
-      data: { kind: "Project", id: "p1", number: 1, reason: "first", actor: "local", on: "2026-09-19T00:00:00Z" },
-      error: undefined,
-      response: new Response(null, { status: 200 }),
-    } as never);
+    snapshot.mockResolvedValueOnce({ kind: "Project", id: "p1", number: 1, reason: "first", actor: "local", on: "2026-09-19T00:00:00Z" });
 
     let result: Awaited<ReturnType<Api["saveVersion"]>> | undefined;
     await act(async () => {
@@ -121,34 +109,16 @@ describe("ProjectStore", () => {
 // one flush chain, one "Saved", one discard. A map saving on its own
 // cadence would sit outside "Discard draft" and quietly survive it.
 describe("the project's draft carries its stakeholder map too", () => {
-  /** A GET mock that answers per kind, since the store now loads two
-   * manifests and reverts two on discard. */
-  function routeGets(opts: {
-    map?: { spec: unknown } | null;
-    projectVersions?: { number: number }[];
-    mapVersions?: { number: number }[];
-    projectVersionYAML?: string;
-    mapVersionYAML?: string;
-  }) {
-    mocked.GET.mockImplementation((async (url: string, init?: { params?: { path?: { kind?: string } } }) => {
-      const kind = init?.params?.path?.kind;
-      const ok = (data: unknown) => ({ data, error: undefined, response: new Response(null, { status: 200 }) });
-      if (url === "/manifests/{kind}/{id}/versions") {
-        return ok(kind === "StakeholderMap" ? (opts.mapVersions ?? []) : (opts.projectVersions ?? []));
-      }
-      if (url === "/manifests/{kind}/{id}/versions/{n}") {
-        return ok(
-          kind === "StakeholderMap"
-            ? { manifest: { spec: { scope: { kind: "Project", id: "p1" }, entries: [] } }, yaml: opts.mapVersionYAML ?? "" }
-            : { manifest, yaml: opts.projectVersionYAML ?? "" },
-        );
-      }
+  /** A read that answers per kind, since the store loads two manifests
+   * and reverts two on discard. */
+  function routeGets(opts: { map?: { spec: unknown } | null }) {
+    get.mockImplementation(async (kind: string) => {
       if (kind === "StakeholderMap") {
-        if (!opts.map) return { data: undefined, error: { problems: [] }, response: new Response(null, { status: 404 }) };
-        return ok({ version: { number: 0 }, manifest: { spec: opts.map.spec }, yaml: "" });
+        if (!opts.map) throw new NotFound();
+        return { version: { number: 0 }, manifest: { spec: opts.map.spec }, yaml: "" };
       }
-      return ok({ version: { number: 0 }, manifest, yaml: "" });
-    }) as never);
+      return { version: { number: 0 }, manifest, yaml: "" };
+    });
   }
 
   it("writes nothing for a map nobody has scored", async () => {
@@ -160,9 +130,8 @@ describe("the project's draft carries its stakeholder map too", () => {
       await store.flushNow();
     });
 
-    const puts = mocked.PUT.mock.calls as unknown as [string, { params: { path: { kind: string } } }][];
-    expect(puts.length).toBe(1);
-    expect(puts[0][1].params.path.kind).toBe("Project");
+    expect(saveWorking).toHaveBeenCalledTimes(1);
+    expect(saveWorking.mock.calls[0][0]).toBe("Project");
   });
 
   it("writes the map first, then the project, in one flush", async () => {
@@ -177,10 +146,10 @@ describe("the project's draft carries its stakeholder map too", () => {
       await store.flushNow();
     });
 
-    const puts = mocked.PUT.mock.calls as unknown as [string, { params: { path: { kind: string; id: string } }; body: { yaml: string } }][];
-    expect(puts.map((p) => p[1].params.path.kind)).toEqual(["StakeholderMap", "Project"]);
-    expect(puts[0][1].params.path.id).toBe("p1-stakeholders");
-    const written = parseYAML(puts[0][1].body.yaml) as { kind: string; spec: { scope: unknown; entries: unknown[] } };
+    const puts = saveWorking.mock.calls as [string, string, string][];
+    expect(puts.map((p) => p[0])).toEqual(["StakeholderMap", "Project"]);
+    expect(puts[0][1]).toBe("p1-stakeholders");
+    const written = parseYAML(puts[0][2]) as { kind: string; spec: { scope: unknown; entries: unknown[] } };
     expect(written.kind).toBe("StakeholderMap");
     expect(written.spec.scope).toEqual({ kind: "Project", id: "p1" });
     expect(written.spec.entries).toHaveLength(1);
@@ -205,8 +174,8 @@ describe("the project's draft carries its stakeholder map too", () => {
       await store.flushNow();
     });
 
-    const puts = mocked.PUT.mock.calls as unknown as [string, { body: { yaml: string } }][];
-    const written = parseYAML(puts[0][1].body.yaml) as { spec: { entries: Record<string, unknown>[] } };
+    const puts = saveWorking.mock.calls as [string, string, string][];
+    const written = parseYAML(puts[0][2]) as { spec: { entries: Record<string, unknown>[] } };
     expect(written.spec.entries[0]).toEqual({ resource: "other-ministries" });
   });
 });
@@ -218,14 +187,10 @@ describe("the project's draft carries its stakeholder map too", () => {
 // now, so it deletes the draft and reads back the file the vault was holding.
 describe("discarding a draft actually discards it", () => {
   it("deletes the draft and takes back what the vault holds", async () => {
-    mocked.GET.mockImplementation((async (url: string, init?: { params?: { path?: { kind?: string } } }) => {
-      const kind = init?.params?.path?.kind;
-      const ok = (data: unknown) => ({ data, error: undefined, response: new Response(null, { status: 200 }) });
-      if (kind === "StakeholderMap") {
-        return { data: undefined, error: { problems: [] }, response: new Response(null, { status: 404 }) };
-      }
-      return ok({ version: { number: 2 }, number: 2, manifest, yaml: "" });
-    }) as never);
+    get.mockImplementation(async (kind: string) => {
+      if (kind === "StakeholderMap") throw new NotFound();
+      return { version: { number: 2 }, number: 2, manifest, yaml: "" };
+    });
 
     const store = await mountStore();
     act(() => store.setName("A name nobody wanted"));
@@ -234,20 +199,14 @@ describe("discarding a draft actually discards it", () => {
     });
 
     // Both halves of a project are drafts, so both are deleted.
-    const deletes = mocked.DELETE.mock.calls as unknown as [
-      string,
-      { params: { path: { kind: string } } },
-    ][];
-    const kinds = deletes
-      .filter(([url]) => url === "/manifests/{kind}/{id}/working")
-      .map(([, o]) => o.params.path.kind);
+    const kinds = discardWorking.mock.calls.map(([kind]) => kind);
     expect(kinds).toContain("Project");
     expect(kinds).toContain("StakeholderMap");
 
     // And nothing is written: a discard writes nothing anywhere. The old
     // shape wrote the last version back over the draft, which is what made
     // it look like a save in the vault's history.
-    expect(mocked.PUT).not.toHaveBeenCalled();
+    expect(saveWorking).not.toHaveBeenCalled();
 
     // What comes back is what the vault holds, not the name just typed.
     expect(store.name).not.toBe("A name nobody wanted");
@@ -257,16 +216,12 @@ describe("discarding a draft actually discards it", () => {
   // goes and a blank is what is left -- honest, rather than a version that
   // does not exist.
   it("leaves nothing behind for a never-saved draft", async () => {
-    mocked.GET.mockImplementation((async () => ({
-      data: undefined,
-      error: { problems: [] },
-      response: new Response(null, { status: 404 }),
-    })) as never);
+    get.mockRejectedValue(new NotFound());
 
     const store = await mountStore();
     await act(async () => {
       await store.discardDraft();
     });
-    expect(mocked.PUT).not.toHaveBeenCalled();
+    expect(saveWorking).not.toHaveBeenCalled();
   });
 });

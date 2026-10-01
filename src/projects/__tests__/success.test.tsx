@@ -4,14 +4,14 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { client } from "@/api/client";
+import { ClientProvider } from "@/client/context";
+import { fakeClient } from "@/client/fake";
 import { copy } from "@/copy";
 import { ProjectStoreProvider, useProjectStore } from "../store";
 import { SuccessSection } from "../sections/SuccessSection";
 import { composeStandard, parseStandard } from "../StandardPicker";
 import type { ProjectSpec } from "../types";
 
-vi.mock("@/api/client");
 vi.mock("@tanstack/react-router", () => ({
   useBlocker: () => undefined,
   Link: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
@@ -65,30 +65,17 @@ const catalogue = [
 ];
 const cycles = [{ id: "seasonal-cycle", name: "Seasonal cycle" }];
 
-const mocked = vi.mocked(client);
+const get = vi.fn();
+const list = vi.fn();
+const saveWorking = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocked.GET.mockImplementation((async (url: string, init?: { params?: { path?: { kind?: string } } }) => ({
-    data:
-      url === "/manifests/{kind}/{id}"
-        ? { version: { number: 0 }, manifest, yaml: "" }
-        : {
-            items:
-              init?.params?.path?.kind === "ReportingCycle"
-                ? cycles
-                : init?.params?.path?.kind === "Resource"
-                  ? catalogue
-                  : sources,
-          },
-    error: undefined,
-    response: new Response(null, { status: 200 }),
-  })) as never);
-  mocked.PUT.mockResolvedValue({
-    data: undefined,
-    error: undefined,
-    response: new Response(null, { status: 204 }),
-  } as never);
+  get.mockResolvedValue({ version: { number: 0 }, manifest, yaml: "" });
+  list.mockImplementation(async (kind: string) =>
+    kind === "ReportingCycle" ? cycles : kind === "Resource" ? catalogue : sources,
+  );
+  saveWorking.mockResolvedValue(undefined);
 });
 
 let spec: ProjectSpec;
@@ -101,12 +88,14 @@ function Spy() {
 async function mount() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
-    <QueryClientProvider client={queryClient}>
-      <ProjectStoreProvider id="p1">
-        <Spy />
-        <SuccessSection />
-      </ProjectStoreProvider>
-    </QueryClientProvider>,
+    <ClientProvider client={fakeClient({ get, list, saveWorking })}>
+      <QueryClientProvider client={queryClient}>
+        <ProjectStoreProvider id="p1">
+          <Spy />
+          <SuccessSection />
+        </ProjectStoreProvider>
+      </QueryClientProvider>
+    </ClientProvider>,
   );
 }
 

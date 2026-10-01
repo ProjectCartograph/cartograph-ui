@@ -6,7 +6,7 @@ import { FileQuestion } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { client } from "@/api/client";
+import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 import { ErrorAlert } from "@/components/error-alert";
 import { kindIcon } from "@/components/vocab";
@@ -16,13 +16,10 @@ import { useUnapplied } from "@/surfaces/sheet/Unapplied";
 export const Route = createFileRoute("/sheets/")({ component: SheetsIndexPage });
 
 function SheetsIndexPage() {
+  const client = useClient();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["kinds"],
-    queryFn: async () => {
-      const { data, error } = await client.GET("/kinds");
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => client.kinds(),
   });
 
   const counts = new Map((data ?? []).map((k) => [k.kind, k.count]));
