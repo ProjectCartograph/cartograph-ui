@@ -80,7 +80,13 @@ commit-check base="origin/main":
 
 # Package the build the engine embeds (what a release attaches)
 dist-tarball: build
-    tar -czf dist.tar.gz -C dist .
+    #!{{toolchain}} bash
+    set -euo pipefail
+    # Byte for byte the same wherever it is built: entries sorted, times,
+    # owners and modes fixed, no timestamp in the gzip header. The engine
+    # pins a release by the SHA-256 of this file (its UI_SHA256).
+    tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+        --mode='a+rX,u+w,go-w' --format=gnu -C dist -cf - . | gzip -9n > dist.tar.gz
     echo dist.tar.gz
 
 clean:
