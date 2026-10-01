@@ -22,7 +22,7 @@ test: deps
     npx tsc -b --force
 
 # What CI runs, in this order
-ci: deps generate drift lint test build words clean-tree
+ci: deps generate drift lint test build words wire clean-tree
 
 # Regenerate the client types from the contract copy
 generate: deps
@@ -53,6 +53,16 @@ words:
     d=$(grep -rnE '—|\\u2014' src/copy.ts | grep -vE '^[^:]+:[0-9]+:\s*//' | wc -l)
     echo "domain words: $n, em dashes in what a person reads: $d"
     test "$n" -eq 0 && test "$d" -eq 0
+
+# No component talks to a wire: an API path, a fetch or openapi-fetch only in the HTTP adapter (src/client/http.ts)
+wire:
+    #!{{toolchain}} bash
+    set -uo pipefail
+    hits=$(grep -rnE '(^|[^@])/api/|openapi-fetch|\bfetch\(' src | grep -vE '^src/api/gen/|^src/client/http(\.test)?\.ts:')
+    n=$(printf '%s' "$hits" | grep -c . || true)
+    test "$n" -eq 0 || printf '%s\n' "$hits"
+    echo "wire outside the adapter: $n"
+    test "$n" -eq 0
 
 clean-tree:
     scripts/check-clean-tree
