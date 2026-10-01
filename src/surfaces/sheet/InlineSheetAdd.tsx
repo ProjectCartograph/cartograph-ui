@@ -1,0 +1,77 @@
+import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+
+import { Button } from "@/components/ui/button";
+import { client } from "@/api/client";
+import { copy } from "@/copy";
+import { parseSpecFields, type SheetKind } from "./schema";
+import { SheetForm } from "./SheetForm";
+
+/**
+ * Adds one entry to a directory without leaving the screen that needed it.
+ * The project flow never sends a person to the Sheets pages mid-definition:
+ * a missing data source, team or resource is added here, in a dialog, and
+ * the picker that asked for it selects what was just created.
+ */
+export function SheetAddDialog({
+  kind,
+  open,
+  onOpenChange,
+  onAdded,
+}: {
+  kind: SheetKind;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdded?: (id: string, name: string) => void;
+}) {
+  const schemaQuery = useQuery({
+    queryKey: ["schema", kind],
+    queryFn: async () => {
+      const { data, error } = await client.GET("/schemas/{kind}", { params: { path: { kind } } });
+      if (error) throw error;
+      return data;
+    },
+    enabled: open,
+  });
+  const fields = useMemo(() => parseSpecFields(schemaQuery.data), [schemaQuery.data]);
+
+  return (
+    <SheetForm
+      kind={kind}
+      kindLabel={copy.sheets.kindsSingular[kind] ?? kind}
+      fields={fields}
+      open={open}
+      onOpenChange={onOpenChange}
+      onSaved={onAdded}
+    />
+  );
+}
+
+/** The dialog above, with its own button. */
+export function InlineSheetAdd({
+  kind,
+  label,
+  variant = "outline",
+  size = "sm",
+  onAdded,
+}: {
+  kind: SheetKind;
+  label?: string;
+  variant?: "outline" | "ghost" | "link";
+  size?: "sm" | "xs" | "default";
+  onAdded?: (id: string, name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const kindLabel = copy.sheets.kindsSingular[kind] ?? kind;
+
+  return (
+    <>
+      <Button type="button" variant={variant} size={size} onClick={() => setOpen(true)}>
+        <Plus />
+        {label ?? `${copy.sheets.add} ${kindLabel.toLowerCase()}`}
+      </Button>
+      <SheetAddDialog kind={kind} open={open} onOpenChange={setOpen} onAdded={onAdded} />
+    </>
+  );
+}

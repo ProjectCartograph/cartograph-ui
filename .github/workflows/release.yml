@@ -1,0 +1,23 @@
+name: release
+
+# A release is a tag v<version> (VERSIONING.md in cartograph-engine
+# describes the scheme). The build the engine embeds is attached.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  dist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix develop --command just dist-tarball
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist.tar.gz
+          generate_release_notes: true

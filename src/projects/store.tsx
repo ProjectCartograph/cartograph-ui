@@ -1,0 +1,587 @@
+// One project store per open project: the working copy is loaded once
+// (draft, falling back to the current version), every section reads and
+// writes the same in-memory manifest, and saving is debounced 800ms after
+// the last edit and flushed immediately on every navigation away from a
+// section (each section calls useSectionAutosave, below, whose cleanup
+// effect flushes on unmount) and before any client-side route change (see
+// the useBlocker call below). No screen ever holds state the store does
+// not; switching screens re-renders from the store, never from a
+// component's own state.
+//
+// Since 2026-09-28 the store carries a second manifest as well: the
+// StakeholderMap bound to this project, which holds how much power each
+// stakeholder has over it. That is a fact about the link, so it lives on
+// neither the project nor the Resource catalogue -- but it is edited on
+// the project's Resources step, so it has to share the project's draft.
+// One debounce, one flush chain, one save indicator, one discard: a map
+// saving on its own cadence would sit outside "Discard draft" and quietly
+// survive it. The map is created lazily, by the first flush that has
+// something to score, so a vault does not fill with empty maps for
+// projects nobody assessed.
+//
+// The project's own working copy is a real server-side draft
+// (X-Cartograph-Draft: true; see cartograph/HANDOFF-I0.md's I3a section). I3.2 (the
+// delta on top of the goals-as-root card) removed RoleBinding from the
+// interface entirely: the People and resources section is now an ordinary
+// part of the project's own spec (spec.resources), so it saves through
+// this exact same rhythm as every other section -- no second working
+// copy, no RoleBinding draft, no carried-along commit. It also removed the
+// actor concept: every write here carries the literal actor "local"
+// (lib/actor.ts), never asked of the person using the interface.
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useBlocker } from "@tanstack/react-router";
+import { stringify as stringifyYAML } from "yaml";
+
+import { aliasAfterRename } from "@/alias";
+import { client } from "@/api/client";
+import {
+  blankProjectSpec,
+  type ProjectManifest,
+  type ProjectSpec,
+  type StakeholderMapSpec,
+} from "./types";
+
+/** The map bound to a project, by the convention the corpus already uses
+ * (examples/minimal/StakeholderMap/quality-check-rollout-stakeholders.yaml).
+ * Derived rather than looked up: the store needs an id to write to before
+ * the manifest exists. */
+function stakeholderMapID(projectID: string): string {
+  return `${projectID}-stakeholders`;
+}
+
+function blankStakeholderMap(projectID: string): StakeholderMapSpec {
+  return { scope: { kind: "Project", id: projectID }, entries: [] };
+}
+
+/** A manifest with no entries is one nobody has scored. It is never
+ * written, so a project whose stakeholders were never assessed leaves no
+ * empty manifest behind in the vault. */
+function mapIsEmpty(spec: StakeholderMapSpec): boolean {
+  return (spec.entries ?? []).length === 0;
+}
+
+interface RevertedManifest {
+  number: number;
+  manifest?: { metadata?: { name?: string }; spec?: unknown };
+}
+
+/**
+ * Throws one manifest's draft away and returns whatever the vault holds.
+ *
+ * Discard first cleared the dirty flag and re-read, which discarded nothing:
+ * a read answers with the draft when there is one, so it came straight back
+ * (Programme Lead, 2026-09-28). The fix then was to overwrite the draft with
+ * the last version's text, because nothing on the server removed a draft --
+ * the draft *was* the file.
+ *
+ * Drafts are staged now, so there is a real answer: delete the draft, and
+ * read back the file the vault has been holding all along, untouched. A
+ * manifest that was never saved has nothing to hold, so the caller falls
+ * back to a blank -- which is the honest result rather than a version that
+ * does not exist.
+ */
+async function discardWorkingCopy(kind: string, id: string): Promise<RevertedManifest | null> {
+  await client.DELETE("/manifests/{kind}/{id}/working", { params: { path: { kind, id } } });
+  const res = await client.GET("/manifests/{kind}/{id}", { params: { path: { kind, id } } });
+  if (res.error || !res.data) return null;
+  const view = res.data as unknown as RevertedManifest;
+  return { number: view.number ?? 0, manifest: view.manifest };
+}
+
+export type SaveState = "idle" | "saving" | "saved" | "unsaved" | "error";
+
+export interface Problem {
+  path: string;
+  message: string;
+}
+
+export type SaveVersionResult = { ok: true } | { ok: false; conflict?: boolean; problems: Problem[] };
+export type HandoffResult = { ok: true; snapshot: number; bundle: string } | { ok: false; problems: Problem[] };
+
+const DEBOUNCE_MS = 800;
+
+interface ProjectStoreApi {
+  id: string;
+  loaded: boolean;
+  loadError: boolean;
+  name: string;
+  setName: (v: string) => void;
+  /** metadata.alias: the short reference people quote this by, which
+   * follows the name until somebody changes it (see @/alias). */
+  alias: string;
+  setAlias: (v: string) => void;
+  spec: ProjectSpec;
+  updateSpec: (updater: (spec: ProjectSpec) => ProjectSpec) => void;
+  /** The StakeholderMap bound to this project. Always present to read;
+   * only written to the server once something is scored. */
+  mapSpec: StakeholderMapSpec;
+  updateMap: (updater: (spec: StakeholderMapSpec) => StakeholderMapSpec) => void;
+  version: number;
+  saveState: SaveState;
+  flushNow: () => Promise<void>;
+  saveVersion: (reason: string) => Promise<SaveVersionResult>;
+  handoff: () => Promise<HandoffResult>;
+  discardDraft: () => Promise<void>;
+}
+
+const ProjectStoreContext = createContext<ProjectStoreApi | null>(null);
+
+export function useProjectStore(): ProjectStoreApi {
+  const ctx = useContext(ProjectStoreContext);
+  if (!ctx) throw new Error("useProjectStore must be used inside a ProjectStoreProvider");
+  return ctx;
+}
+
+/**
+ * Every section calls this once. Its cleanup effect flushes any pending
+ * debounced save immediately when the section unmounts, i.e. on every
+ * navigation away from a section, per the card's own save rhythm.
+ */
+export function useSectionAutosave() {
+  const { flushNow } = useProjectStore();
+  useEffect(() => {
+    return () => {
+      void flushNow();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}
+
+export function ProjectStoreProvider({ id, children }: { id: string; children: ReactNode }) {
+  const queryClient = useQueryClient();
+
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [name, setNameState] = useState("");
+  const [alias, setAliasState] = useState("");
+  const [spec, setSpec] = useState<ProjectSpec>(blankProjectSpec());
+  const [mapSpec, setMapSpec] = useState<StakeholderMapSpec>(() => blankStakeholderMap(id));
+  const [version, setVersion] = useState(0);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+
+  const specDirty = useRef(false);
+  const mapDirty = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // A mirror of spec/name, updated synchronously alongside their setState
+  // calls (never lagging a render behind). flushNow and saveVersion read
+  // these, not the state variables directly: a useCallback-memoized
+  // flushNow that instead closed over the spec/name *state values* would
+  // capture whichever version was current when scheduleSave() last
+  // rescheduled the timer, which is one render behind the edit that
+  // triggered that very reschedule (setSpec and scheduleSave both run
+  // synchronously in the same handler, before React re-renders) -- the
+  // debounced save would then always silently drop the most recent edit
+  // in a section unless a further, unrelated edit happened to "carry it
+  // forward" through a later flush. Refs sidestep this: they are mutated
+  // at the same point as the state update, so they are always current
+  // regardless of which render's closure flushNow happens to be.
+  const specRef = useRef(spec);
+  const nameRef = useRef(name);
+  const aliasRef = useRef(alias);
+  // The same ref discipline as specRef, for the same reason: a debounced
+  // flush must read the edit that scheduled it, not the render before it.
+  const mapSpecRef = useRef(mapSpec);
+  // The last committed version number, shown in the header ("version N")
+  // and used to pick "Draft, unsaved as a version" (0) vs a real version.
+  const versionRef = useRef(0);
+  // Every flush (debounced, on-navigation, or the useBlocker guard below)
+  // runs through this chain so two flushes never have their PUTs in
+  // flight at once: each call is queued after whichever is currently
+  // running, so an edit made in a brand-new section immediately after
+  // navigating away from a previous one can never have its PUT's response
+  // overtake and be overwritten by the previous section's own, still
+  // in-flight, flush.
+  const flushChain = useRef<Promise<void>>(Promise.resolve());
+
+  // Initial hydration: load the current committed version.
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoaded(false);
+      setLoadError(false);
+      try {
+        let loadedSpec: ProjectSpec | undefined;
+        let loadedName = "";
+        let loadedAlias = "";
+        let loadedVersion = 0;
+
+        const manifestRes = await client.GET("/manifests/{kind}/{id}", {
+          params: { path: { kind: "Project", id } },
+        });
+        if (!manifestRes.error && manifestRes.data) {
+          const view = manifestRes.data as unknown as { version: { number: number }; manifest: ProjectManifest };
+          loadedSpec = view.manifest.spec ?? blankProjectSpec();
+          loadedName = view.manifest.metadata?.name ?? "";
+          loadedAlias = view.manifest.metadata?.alias ?? "";
+          loadedVersion = view.version.number;
+        }
+
+        if (cancelled) return;
+        if (!loadedSpec) {
+          setLoadError(true);
+          setLoaded(true);
+          return;
+        }
+        setSpec(loadedSpec);
+        specRef.current = loadedSpec;
+        setNameState(loadedName);
+        nameRef.current = loadedName;
+        setAliasState(loadedAlias);
+        aliasRef.current = loadedAlias;
+        setVersion(loadedVersion);
+        versionRef.current = loadedVersion;
+
+        // The map is optional: most projects have never been scored, and a
+        // 404 here is that ordinary state, not a failure to load the
+        // project. Its absence leaves the blank one already in state.
+        const mapRes = await client.GET("/manifests/{kind}/{id}", {
+          params: { path: { kind: "StakeholderMap", id: stakeholderMapID(id) } },
+        });
+        if (cancelled) return;
+        if (!mapRes.error && mapRes.data) {
+          const mapView = mapRes.data as unknown as {
+            manifest?: { spec?: StakeholderMapSpec };
+          };
+          const loadedMap = mapView.manifest?.spec;
+          if (loadedMap?.scope) {
+            setMapSpec(loadedMap);
+            mapSpecRef.current = loadedMap;
+          }
+        }
+
+        if (!cancelled) setLoaded(true);
+      } catch {
+        if (!cancelled) {
+          setLoadError(true);
+          setLoaded(true);
+        }
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // The actual flush body; always invoked through flushNow's own chain
+  // (below), never directly, so two flushes never race each other's PUTs.
+  const flushOnce = useCallback(async (): Promise<void> => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (!specDirty.current && !mapDirty.current) return;
+    setSaveState("saving");
+    try {
+      // Both PUTs happen inside this one chain link, so "at most one
+      // working-copy write in flight" stays true across the pair. The map
+      // goes first: it is the smaller write, and if it is refused the
+      // project has not been touched yet.
+      if (mapDirty.current) {
+        // mapSpecRef, not the mapSpec state: same stale-closure reason as
+        // specRef, which the refs' own comment sets out above.
+        const mapBody = {
+          apiVersion: "cartograph/v1",
+          kind: "StakeholderMap",
+          metadata: { id: stakeholderMapID(id), name: `${nameRef.current.trim() || id} stakeholders` },
+          spec: mapSpecRef.current,
+        };
+        const { error: mapError } = await client.PUT("/manifests/{kind}/{id}/working", {
+          params: {
+            path: { kind: "StakeholderMap", id: stakeholderMapID(id) },
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          body: { yaml: stringifyYAML(mapBody) } as any,
+        });
+        if (mapError) throw new Error("stakeholder map save failed");
+        mapDirty.current = false;
+      }
+      if (specDirty.current) {
+        // specRef/nameRef, not the spec/name state variables: see the refs'
+        // own doc comment above for why (avoids a stale closure silently
+        // dropping the most recent edit).
+        const body: ProjectManifest = {
+          apiVersion: "cartograph/v1",
+          kind: "Project",
+          metadata: {
+            id,
+            name: nameRef.current.trim() || id,
+            ...(aliasRef.current.trim() ? { alias: aliasRef.current.trim() } : {}),
+          },
+          spec: specRef.current,
+        };
+        const { error } = await client.PUT("/manifests/{kind}/{id}/working", {
+          params: {
+            path: { kind: "Project", id },
+          },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          body: { yaml: stringifyYAML(body) },
+        });
+        if (error) throw new Error("working save failed");
+        specDirty.current = false;
+      }
+      queryClient.invalidateQueries({ queryKey: ["project-checks", id] });
+      queryClient.invalidateQueries({ queryKey: ["project-proposed-criteria", id] });
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
+  }, [id, queryClient]);
+
+  /** Every caller (the 800ms debounce, a section's own unmount, the
+   * beforeunload handler and the router's own useBlocker guard below) goes
+   * through this: chained after whatever flush is already in flight, so
+   * awaiting it always means "every edit made up to the moment this was
+   * called has reached the server", never "started reaching the server". */
+  const flushNow = useCallback((): Promise<void> => {
+    const next = flushChain.current.then(flushOnce, flushOnce);
+    flushChain.current = next;
+    return next;
+  }, [flushOnce]);
+
+  const scheduleSave = useCallback(() => {
+    setSaveState("unsaved");
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      void flushNow();
+    }, DEBOUNCE_MS);
+  }, [flushNow]);
+
+  const updateSpec = useCallback(
+    (updater: (s: ProjectSpec) => ProjectSpec) => {
+      setSpec((prev) => {
+        const next = updater(prev);
+        specRef.current = next;
+        return next;
+      });
+      specDirty.current = true;
+      scheduleSave();
+    },
+    [scheduleSave],
+  );
+
+  /** Scores a stakeholder. Rides the project's own debounce and flush
+   * chain, so one edit anywhere in the step produces one "Saved". */
+  const updateMap = useCallback(
+    (updater: (m: StakeholderMapSpec) => StakeholderMapSpec) => {
+      setMapSpec((prev) => {
+        const next = updater(prev);
+        mapSpecRef.current = next;
+        return next;
+      });
+      mapDirty.current = true;
+      scheduleSave();
+    },
+    [scheduleSave],
+  );
+
+  const setAlias = useCallback(
+    (v: string) => {
+      setAliasState(v);
+      aliasRef.current = v;
+      specDirty.current = true;
+      scheduleSave();
+    },
+    [scheduleSave],
+  );
+
+  const setName = useCallback(
+    (v: string) => {
+      // The alias follows the name until somebody changes it, which is
+      // what makes it a default rather than a second thing to maintain.
+      const nextAlias = aliasAfterRename(aliasRef.current, nameRef.current, v);
+      if (nextAlias !== aliasRef.current) {
+        setAliasState(nextAlias);
+        aliasRef.current = nextAlias;
+      }
+      setNameState(v);
+      nameRef.current = v;
+      specDirty.current = true;
+      scheduleSave();
+    },
+    [scheduleSave],
+  );
+
+  const saveVersion = useCallback(
+    async (reason: string): Promise<SaveVersionResult> => {
+      // Two snapshots cannot be atomic, so the order is chosen to fail
+      // safely: the map goes first, and if it is refused nothing has been
+      // versioned yet. The reverse would leave a versioned project whose
+      // map is not. A map nobody has scored is skipped entirely rather
+      // than versioned empty.
+      await flushNow();
+      if (!mapIsEmpty(mapSpecRef.current)) {
+        const mapRes = await client.POST("/manifests/{kind}/{id}/snapshots", {
+          params: { path: { kind: "StakeholderMap", id: stakeholderMapID(id) } },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          body: { reason } as any,
+        });
+        if (mapRes.error) {
+          if (mapRes.response.status === 422) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return { ok: false, problems: (mapRes.error as any).problems ?? [] };
+          }
+          return { ok: false, problems: [] };
+        }
+      }
+      const { error, response, data } = await client.POST("/manifests/{kind}/{id}/snapshots", {
+        params: {
+          path: { kind: "Project", id },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        body: { reason },
+      });
+      if (error) {
+        if (response.status === 422) {
+          return { ok: false, problems: (error as any).problems ?? [] };
+        }
+        return { ok: false, problems: [] };
+      }
+      specDirty.current = false;
+      if (data?.number) {
+        setVersion(data.number);
+        versionRef.current = data.number;
+      }
+      setSaveState("saved");
+
+      queryClient.invalidateQueries({ queryKey: ["project-manifest", id] });
+      queryClient.invalidateQueries({ queryKey: ["project-checks", id] });
+      queryClient.invalidateQueries({ queryKey: ["project-proposed-criteria", id] });
+      queryClient.invalidateQueries({ queryKey: ["project-state", id] });
+      queryClient.invalidateQueries({ queryKey: ["project-versions", id] });
+      return { ok: true };
+    },
+    [id, queryClient, flushNow],
+  );
+
+  const handoff = useCallback(
+    async (): Promise<HandoffResult> => {
+      const { error, response, data } = await client.POST("/manifests/Project/{id}/state", {
+        params: {
+          path: { id },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        body: { to: "handed off" },
+      });
+      if (error) {
+        if (response.status === 422) {
+          return { ok: false, problems: (error as any).problems ?? [] };
+        }
+        return { ok: false, problems: [] };
+      }
+      queryClient.invalidateQueries({ queryKey: ["project-state", id] });
+      const history = (data as any)?.history ?? [];
+      if (history.length > 0) {
+        const lastEntry = history[history.length - 1];
+        return { ok: true, snapshot: lastEntry.snapshot ?? 0, bundle: lastEntry.bundle ?? "" };
+      }
+      return { ok: true, snapshot: 0, bundle: "" };
+    },
+    [id, queryClient],
+  );
+
+  const discardDraft = useCallback(async (): Promise<void> => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    specDirty.current = false;
+    mapDirty.current = false;
+
+    const [project, map] = await Promise.all([
+      discardWorkingCopy("Project", id),
+      discardWorkingCopy("StakeholderMap", stakeholderMapID(id)),
+    ]);
+
+    const nextSpec = (project?.manifest?.spec as ProjectSpec | undefined) ?? blankProjectSpec();
+    const nextName = project?.manifest?.metadata?.name ?? "";
+    setSpec(nextSpec);
+    specRef.current = nextSpec;
+    setNameState(nextName);
+    nameRef.current = nextName;
+    setVersion(project?.number ?? 0);
+    versionRef.current = project?.number ?? 0;
+
+    const nextMap = (map?.manifest?.spec as StakeholderMapSpec | undefined) ?? blankStakeholderMap(id);
+    setMapSpec(nextMap);
+    mapSpecRef.current = nextMap;
+
+    setSaveState("saved");
+    queryClient.invalidateQueries({ queryKey: ["project-manifest", id] });
+    queryClient.invalidateQueries({ queryKey: ["project-checks", id] });
+    queryClient.invalidateQueries({ queryKey: ["project-proposed-criteria", id] });
+  }, [id, queryClient]);
+
+  // Ask once before leaving the app entirely with unsaved changes.
+  useEffect(() => {
+    function handler(e: BeforeUnloadEvent) {
+      if (saveState === "unsaved" || saveState === "saving") {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    }
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [saveState]);
+
+  // Flush on final unmount too (leaving the project subtree entirely),
+  // belt and suspenders alongside each section's own useSectionAutosave.
+  useEffect(() => {
+    return () => {
+      void flushNow();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Every client-side route change inside this project (Back/Next, a rail
+  // link, a check's "Fix" link, the breadcrumb, a browser back/forward)
+  // flushes any pending debounced save first and awaits it before the
+  // navigation actually proceeds: shouldBlockFn's own promise return is
+  // exactly "wait for this, then decide", so returning false here after
+  // the await means "never actually block, just never leave before the
+  // save has landed" -- the literal "flushes it first (await), never
+  // drops it" the card asks for. flushNow is idempotent when nothing is
+  // dirty (flushOnce's own first check returns immediately), so this runs
+  // on every navigation, not only ones known in advance to matter.
+  useBlocker({
+    shouldBlockFn: async () => {
+      await flushNow();
+      return false;
+    },
+    enableBeforeUnload: false,
+  });
+
+  const value: ProjectStoreApi = {
+    id,
+    loaded,
+    loadError,
+    name,
+    setName,
+    alias,
+    setAlias,
+    spec,
+    updateSpec,
+    mapSpec,
+    updateMap,
+    version,
+    saveState,
+    flushNow,
+    saveVersion,
+    handoff,
+    discardDraft,
+  };
+
+  return <ProjectStoreContext.Provider value={value}>{children}</ProjectStoreContext.Provider>;
+}

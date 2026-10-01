@@ -1,0 +1,20 @@
+node_modules/
+dist/
+dist.tar.gz
+/result
+/result-*
+/.direnv/
+.tanstack/
+*.log
+
+# Agent and editor working files never go upstream (scripts/check-clean-tree)
+.claude/
+.cursor/
+.codex/
+.aider*
+.idea/
+.vscode/
+HANDOFF*.md
+SESSION_LOG.md
+NOTES.md
+.DS_Store
