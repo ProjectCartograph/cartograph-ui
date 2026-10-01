@@ -54,7 +54,8 @@ first.
 
 `src/copy.ts` (words), `src/components/vocab.tsx` (marks for fixed
 choices), `src/routes` (file-based routes), `src/surfaces` (screens),
-`src/definition` (the shared save bar and check panel), `scripts/`
+`src/definition` (the shared save bar and check panel), `src/client`
+(the `Client` port and its HTTP adapter), `scripts/`
 (the harness and the checks). The engine's `docs/UI_CONTRACT.md` and
 `docs/DESIGN_RULES.md` are the design of record.
 

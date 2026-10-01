@@ -19,8 +19,8 @@ it alongside the API, so what ships is one binary.
 `npm run dev` starts the Vite dev server with hot reload, but it doesn't
 proxy to a backend (`vite.config.ts` sets no `server.proxy`), so a request
 to `/api/v1/...` gets Vite's HTML fallback, not JSON. Fine for layout and
-component work; useless for real manifests, since the API client
-(`src/api/client.ts`) calls `createClient` with a same-origin
+component work; useless for real manifests, since the HTTP adapter
+(`src/client/http.ts`) calls `createClient` with a same-origin
 `baseUrl: "/api/v1"`.
 
 To work against a live API, build the SPA and let the Go server serve both
@@ -37,7 +37,8 @@ Re-run the recipe after a frontend change; there's no watch mode here.
 
 One line per top-level directory under `src/`:
 
-- `api/`: the generated OpenAPI client and types, plus `names.ts`.
+- `api/`: the generated OpenAPI types, plus `names.ts`.
+- `client/`: the `Client` port, its HTTP adapter (the one place a path appears), the provider and a fake for tests.
 - `charter/`, `definition/`, `framework/`: the rendered charter, the save
   bar and check panel every editor shares, and the goal-alignment table.
 - `gaps/`, `kpis/`, `operations/`, `programmes/`, `projects/`: one register
