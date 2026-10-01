@@ -102,4 +102,23 @@ describe("the HTTP adapter", () => {
       "/api/v1/manifests/Project/p1/charter.html?working=true",
     );
   });
+
+  it("asks who this session is, and where a manifest's draft and presence live", async () => {
+    const session = wire(200, { actor: "ada", canWrite: true });
+    expect(await session.client.session()).toEqual({ actor: "ada", canWrite: true });
+    expect(new URL(session.asked[0].url).pathname).toBe("/api/v1/session");
+
+    const doc = { documentId: "2xQ", url: "automerge:2xQ" };
+    const draft = wire(200, doc);
+    expect(await draft.client.sharedDocument("Goal", "g1")).toEqual(doc);
+    expect(new URL(draft.asked[0].url).pathname).toBe("/api/v1/manifests/Goal/g1/document");
+
+    const presence = wire(200, doc);
+    expect(await presence.client.presenceDocument()).toEqual(doc);
+    expect(new URL(presence.asked[0].url).pathname).toBe("/api/v1/presence");
+  });
+
+  it("throws NotFound for a manifest with no draft", async () => {
+    await expect(wire(404).client.sharedDocument("Goal", "nope")).rejects.toBeInstanceOf(NotFound);
+  });
 });

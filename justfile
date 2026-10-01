@@ -54,7 +54,7 @@ words:
     echo "domain words: $n, em dashes in what a person reads: $d"
     test "$n" -eq 0 && test "$d" -eq 0
 
-# No component talks to a wire: an API path, a fetch or openapi-fetch only in the HTTP adapter (src/client/http.ts)
+# No component talks to a wire: an API path, a fetch or openapi-fetch only in the HTTP adapter (src/client/http.ts), and Automerge only behind the port (src/client)
 wire:
     #!{{toolchain}} bash
     set -uo pipefail
@@ -62,7 +62,11 @@ wire:
     n=$(printf '%s' "$hits" | grep -c . || true)
     test "$n" -eq 0 || printf '%s\n' "$hits"
     echo "wire outside the adapter: $n"
-    test "$n" -eq 0
+    crdt=$(grep -rnE "(from|import|require)[[:space:](]*['\"]@automerge/" src | grep -vE '^src/client/')
+    m=$(printf '%s' "$crdt" | grep -c . || true)
+    test "$m" -eq 0 || printf '%s\n' "$crdt"
+    echo "automerge outside the client: $m"
+    test "$n" -eq 0 && test "$m" -eq 0
 
 clean-tree:
     scripts/check-clean-tree

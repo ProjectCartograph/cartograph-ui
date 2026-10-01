@@ -30,6 +30,8 @@ export type Vault = Schemas["Vault"];
 export type ManifestRef = Schemas["ManifestRef"];
 export type Exclusion = Schemas["Exclusion"];
 export type SnapshotList = Schemas["SnapshotList"];
+export type SharedDocument = Schemas["SharedDocument"];
+export type Session = Schemas["Session"];
 /** A kind's JSON Schema, as the contract types it. */
 export type KindSchema = Record<string, never>;
 
@@ -42,6 +44,133 @@ export interface ListQuery {
   /** "spec" carries each manifest's spec on its summary. */
   expand?: "spec";
 }
+
+/** A manifest, as the shared draft holds it: plain JSON. */
+export type ManifestDocument = Record<string, unknown>;
+
+/**
+ * How the sync connection stands. "connecting" until the engine first
+ * answers; "offline" once it has gone, while edits keep landing on this
+ * device.
+ */
+export type ConnectionStatus = "connecting" | "online" | "offline";
+
+/**
+ * One edit to a shared draft, by JSON pointer (the control's
+ * data-cartograph-field). Every method writes only what differs, so two
+ * people editing different fields of one item never touch each other's.
+ */
+export interface DraftEditor {
+  /** Brings the value at path to `value`. A field the document holds as
+   * text is spliced character by character; anything else is assigned. An
+   * object or a list is walked, so only the leaves that differ change. */
+  set(path: string, value: unknown): void;
+  /** Writes value over whatever the field holds, in one assignment. This
+   * is what settles a conflict: the field holds one value again. */
+  replace(path: string, value: unknown): void;
+  /** Removes a key or a list item. */
+  remove(path: string): void;
+}
+
+/** What changed, as a subscriber hears it. */
+export interface DraftChange {
+  /** False when the change arrived from someone else (or from storage). */
+  local: boolean;
+  /** Where a position in a text field before this change sits after it,
+   * following its character; undefined for a field that is not text. */
+  moved(path: string, index: number): number | undefined;
+}
+
+/** A field written by two sessions at once: the value the document shows
+ * and every other value written concurrently, any of which can be put back. */
+export interface FieldConflict {
+  path: string;
+  value: unknown;
+  others: unknown[];
+}
+
+/**
+ * A manifest's shared draft between versions (docs/adr/0007): one
+ * Automerge document, kept on this device and synced with everyone who has
+ * it open. Components see plain JSON and JSON pointers, never Automerge.
+ */
+export interface SharedDraft {
+  readonly kind: string;
+  readonly id: string;
+  /** The manifest as the draft holds it now. */
+  doc(): ManifestDocument;
+  /** One edit, applied at once and synced. */
+  change(fn: (edit: DraftEditor) => void): void;
+  /** Every change from now on, local or remote. Returns the unsubscribe. */
+  subscribe(listener: (change: DraftChange) => void): () => void;
+  /** Whether the document holds the field at path as collaborative text. */
+  isText(path: string): boolean;
+  /** Every field under path (all of the draft when omitted) that two
+   * sessions wrote at once. */
+  conflicts(path?: string): FieldConflict[];
+  /** A stable position in a text field that follows its character while
+   * others type; undefined when the field is not text. */
+  cursor(path: string, index: number): string | undefined;
+  /** Where a cursor from `cursor` sits now. */
+  cursorPosition(path: string, cursor: string): number | undefined;
+  /** Gives the draft back; the last holder closes it. */
+  release(): void;
+}
+
+/** A field being edited, a selection in it and the pointer, as one
+ * session publishes them (contract/schemas/presence.schema.json). */
+export interface PresenceFocus {
+  path: string;
+}
+export interface PresenceCaret {
+  path: string;
+  anchor: string;
+  head: string;
+}
+export interface PresencePointer {
+  target: string;
+  x: number;
+  y: number;
+}
+
+/** What a screen publishes about itself; each call merges into the last. */
+export interface PresenceState {
+  route?: string;
+  focus?: PresenceFocus | null;
+  caret?: PresenceCaret | null;
+  pointer?: PresencePointer | null;
+}
+
+/** Another session on the same screen, as its last message said. */
+export interface Peer {
+  session: string;
+  actor: string;
+  name?: string;
+  color: string;
+  route?: string;
+  focus: PresenceFocus | null;
+  caret: PresenceCaret | null;
+  pointer: PresencePointer | null;
+  /** When this was last heard, by this device's clock. */
+  heard: number;
+}
+
+/**
+ * Presence on one screen's document: what this session publishes and the
+ * live set of the others. Relayed, never stored; a session nobody has heard
+ * from for ten seconds drops out, and one that closes says so.
+ */
+export interface PresenceChannel {
+  publish(state: PresenceState): void;
+  /** The other sessions, now and on every change. Returns the unsubscribe. */
+  subscribe(listener: (peers: Peer[]) => void): () => void;
+  /** Says leaving and stops. */
+  close(): void;
+}
+
+/** Which document a screen's presence travels on: a manifest's own, or
+ * the engine's presence document for every screen that is not one. */
+export type PresenceScreen = { kind: string; id: string } | null;
 
 /** The kinds that have a charter the engine renders. */
 export type CharterKind = "Project" | "Programme" | "Operation";
@@ -176,4 +305,21 @@ export interface Client {
   charter(kind: CharterKind, id: string, opts?: CharterOptions): Promise<string>;
   /** Where a browser opens or downloads the charter. */
   charterLink(kind: CharterKind, id: string, format: "html" | "pdf", opts?: CharterOptions): string;
+
+  // Working together (docs/adr/0007).
+  /** Who this interface acts as, and whether it may write. */
+  session(): Promise<Session>;
+  /** The id of a manifest's shared draft. */
+  sharedDocument(kind: string, id: string): Promise<SharedDocument>;
+  /** The id of the document presence travels on away from a manifest. */
+  presenceDocument(): Promise<SharedDocument>;
+  /** Opens a manifest's shared draft, from this device when it has one
+   * and over the sync socket otherwise. Throws when neither has it. Two
+   * opens of one manifest share one draft; each releases its own. */
+  openDraft(kind: string, id: string): Promise<SharedDraft>;
+  /** Joins presence on a screen's document. */
+  joinPresence(screen: PresenceScreen): Promise<PresenceChannel>;
+  /** How the sync connection stands, now and on every change. Returns the
+   * unsubscribe. */
+  watchConnection(listener: (status: ConnectionStatus) => void): () => void;
 }

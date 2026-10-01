@@ -17,6 +17,7 @@ import {
   type KindSchema,
   type Problem,
 } from "./port";
+import type { Live } from "./live";
 
 /** Where the API sits: the SPA is always served by the same binary as the
  * API, under /api/v1. */
@@ -99,7 +100,43 @@ export function httpClient(
     }
   }
 
+  const session = () => answer(wire.GET("/session"));
+  const sharedDocument = (kind: string, id: string) =>
+    answer(wire.GET("/manifests/{kind}/{id}/document", { params: { path: { kind, id } } }));
+  const presenceDocument = () => answer(wire.GET("/presence"));
+
+  // The collaboration side, made once and on first use: Automerge and its
+  // WebAssembly load when a screen first asks for a draft or presence, not
+  // with the first download.
+  let live: Promise<Live> | undefined;
+  function collaboration(): Promise<Live> {
+    live ??= import("./browser-live").then((m) =>
+      m.browserLive(baseUrl, { locate: sharedDocument, presenceDocument, session }),
+    );
+    return live;
+  }
+  // Listeners asked for before the Repo exists are joined to it once it does.
+  function watchConnection(listener: (status: "connecting" | "online" | "offline") => void) {
+    let stop: (() => void) | undefined;
+    let stopped = false;
+    listener("connecting");
+    void collaboration().then((l) => {
+      if (!stopped) stop = l.watchConnection(listener);
+    });
+    return () => {
+      stopped = true;
+      stop?.();
+    };
+  }
+
   return {
+    session,
+    sharedDocument,
+    presenceDocument,
+    openDraft: async (kind, id) => (await collaboration()).openDraft(kind, id),
+    joinPresence: async (screen) => (await collaboration()).joinPresence(screen),
+    watchConnection,
+
     kinds: () => answer(wire.GET("/kinds")),
     schema: (kind) =>
       answer<KindSchema>(wire.GET("/schemas/{kind}", { params: { path: { kind } } })),

@@ -28,6 +28,12 @@ const every: Record<keyof Client, true> = {
   snapshots: true,
   charter: true,
   charterLink: true,
+  session: true,
+  sharedDocument: true,
+  presenceDocument: true,
+  openDraft: true,
+  joinPresence: true,
+  watchConnection: true,
 };
 
 /**
@@ -42,7 +48,14 @@ export function fakeClient(given: Partial<Client> = {}): Client {
       given[name] ??
       (name === "charterLink"
         ? () => ""
-        : () => Promise.reject(new Error(`fake client: ${name} not faked`)));
+        : name === "watchConnection"
+          ? // A test that does not ask about the connection is online and
+            // stays so.
+            (listener: (s: string) => void) => {
+              listener("online");
+              return () => {};
+            }
+          : () => Promise.reject(new Error(`fake client: ${name} not faked`)));
   }
   return client as unknown as Client;
 }
