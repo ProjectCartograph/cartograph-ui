@@ -23,15 +23,20 @@ component work; useless for real manifests, since the HTTP adapter
 (`src/client/http.ts`) calls `createClient` with a same-origin
 `baseUrl: "/api/v1"`.
 
-To work against a live API, build the SPA and let the Go server serve both
-from one port:
+To work against a live API, build the SPA, embed it in an engine
+checkout beside this one, and let the Go server serve both from one
+port:
 
 ```
-npm run build
-cartograph serve ./examples/minimal   # from cartograph-engine; it serves this build
+just build                                  # here: ./dist
+cd ../cartograph-engine
+just ui ../cartograph-ui/dist               # embed this build instead of the pinned release
+just serve                                  # a copy of the example on 127.0.0.1:8080
 ```
 
-Re-run the recipe after a frontend change; there's no watch mode here.
+Re-run `just build` and `just ui ../cartograph-ui/dist` after a frontend
+change; there's no watch mode here. `just ui` with no argument puts the
+engine's pinned release back.
 
 ## Layout
 

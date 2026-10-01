@@ -26,7 +26,7 @@ aarch64. Nix is required (`docs/SETUP.md`); there is no Makefile.
 | Lint, build | `just lint`, `just build` |
 | Regenerate the client types | `just generate` |
 | Pull the contract and the example from an engine release | `just sync-contract vX.Y.Z` |
-| Run against an engine | `just build`, then `cartograph serve <vault>` from cartograph-engine serves this build |
+| Run against an engine | `just build`, then in cartograph-engine `just ui ../cartograph-ui/dist && just serve` |
 
 ## Rules that are not negotiable
 
