@@ -45,6 +45,10 @@ sync-contract version:
 dev: deps
     npm run dev
 
+# Drive this build headless against an engine already serving it (README: The smoke test); Chromium is $CHROMIUM or chromium on PATH
+smoke url="http://127.0.0.1:8080" *args="":
+    node scripts/smoke.mjs {{url}} {{args}}
+
 # No organisation's words in the interface, no em dashes in what a person reads
 words:
     #!{{toolchain}} bash

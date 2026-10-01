@@ -69,6 +69,35 @@ gate, run after every edit. `npx tsc -b --force` type-checks the project
 (plain `tsc --noEmit` checks nothing here, given the layout). `npx oxlint`
 lints; it reports warnings only, so it isn't a gate by itself.
 
+## The smoke test
+
+`scripts/smoke.mjs` drives the built interface in headless Chromium over
+the DevTools protocol, against a real engine: every route with zero
+console errors, a Sheet create and edit, Arrange and the goal editor, a
+project from its first screen to a saved version and a handoff, the goal
+tree's renames, moves, deletes and drags, and the collapsed-rail,
+1024-wide and keyboard-only passes. It changes the vault it runs against,
+so point it at a copy of the example, which is what `just serve` gives
+you:
+
+```
+just build                                  # here: ./dist
+cd ../cartograph-engine
+just ui ../cartograph-ui/dist               # embed this build
+just serve                                  # a copy of the example on 127.0.0.1:8080
+cd ../cartograph-ui                         # in another terminal
+just smoke http://127.0.0.1:8080            # prints "smoke ok" and exits 0, or what failed
+```
+
+Chromium comes from `$CHROMIUM` (the engine's devShell, and this one on
+Linux, set it) or from `chromium` on your PATH. `just smoke <url> shots`
+also saves screenshots under `scripts/shots/`; `just smoke <url>
+bootstrap` runs only the first-run flow (a Team, then a pillar, an
+objective and an outcome) and expects a vault with nothing in it, such as
+`just serve-vault <empty dir>` in the engine. `CARTOGRAPH_SMOKE_SEED`
+replays the randomised navigation pass with the seed a failure printed.
+Run `just ui` in the engine afterwards to put its pinned release back.
+
 ## Generated files: don't hand-edit
 
 `src/api/gen/schema.d.ts` comes from `npm run generate`
