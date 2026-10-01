@@ -8,7 +8,7 @@
       "pattern": "^[a-z0-9][a-z0-9-]{1,63}$"
     },
     "Ref": {
-      "description": "A link to something else, in the one shape Cartograph uses everywhere it points at anything. Exactly one of three forms is filled in: kind+id for another manifest in the vault, local+id for an item inside this manifest (a role in spec.resources, a phase in the timeline), and external for something Cartograph will never hold, such as a the board approval or a vendor. One shape means one walk compiles every edge in the vault into a dependency tree, and one picker edits them all. The id of the kind+id form carries x-cartograph-ref \"*\", so the generic reference walker reads the sibling kind and checks the target exists; the other two forms have no sibling kind and are skipped by it, which is correct, since neither points at a manifest. A local reference is resolved by a kind rule instead.",
+      "description": "A link to something else, in the one shape Cartograph uses everywhere it points at anything. Exactly one of three forms is filled in: kind+id for another manifest in the vault, local+id for an item inside this manifest (a role in spec.resources, a phase in the timeline), and external for something Cartograph will never hold, such as a board approval or a vendor. One shape means one walk compiles every edge in the vault into a dependency tree, and one picker edits them all. The id of the kind+id form carries x-cartograph-ref \"*\", so the generic reference walker reads the sibling kind and checks the target exists; the other two forms have no sibling kind and are skipped by it, which is correct, since neither points at a manifest. A local reference is resolved by a kind rule instead.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
@@ -115,7 +115,7 @@
       "additionalProperties": {
         "type": "string"
       },
-      "description": "Free-form key and value pairs for grouping and filtering, the same shape and the same purpose Kubernetes gives them. Deliberately unvalidated: a label is for the cuts somebody wants to make later and nobody anticipated: which pillar, whose directorate, which reporting pack. A fact that belongs to what the thing *is* is a property with a name and a check, not a label; putting an anticipated fact here loses the check that would have caught it missing. The cost is that a typo makes a new group, which is the right way round for a cut nobody planned. See TAXONOMY.md D11."
+      "description": "Free-form key and value pairs for grouping and filtering, the same shape and the same purpose Kubernetes gives them. Deliberately unvalidated: a label is for the cuts somebody wants to make later and nobody anticipated: which region, which office, which reporting pack. A fact that belongs to what the thing *is* is a property with a name and a check, not a label; putting an anticipated fact here loses the check that would have caught it missing. The cost is that a typo makes a new group, which is the right way round for a cut nobody planned. See TAXONOMY.md D11."
     },
     "Metadata": {
       "type": "object",
