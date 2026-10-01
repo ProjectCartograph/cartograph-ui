@@ -103,3 +103,45 @@ describe("a project version saved from its shared draft", () => {
     expect(result).toEqual({ ok: false, problems });
   });
 });
+
+// The stakeholder map names the project, and a reference to a project
+// with no version is refused. So the map goes first only once the project
+// has a version, which keeps a refused map from leaving a versioned
+// project behind; on the first save the project has to go first.
+describe("the order a project and its stakeholder map are versioned in", () => {
+  const scoredSaves = async (versioned: boolean) => {
+    const snapshotted: string[] = [];
+    const store = await mount({
+      saveWorking: vi.fn(async () => {}),
+      snapshot: vi.fn(async (kind: string) => {
+        snapshotted.push(kind);
+        return { kind, id: "p1", number: 1, actor: "local", reason: "r", on: "" } as never;
+      }),
+      ...(versioned
+        ? {}
+        : {
+            get: vi.fn(async () => {
+              throw new NotFound();
+            }),
+          }),
+    });
+    act(() => store().updateMap((m) => ({ ...m, entries: [{ resource: "r1", influence: 2, interest: 3 }] })));
+    let result: Awaited<ReturnType<Api["saveVersion"]>> | undefined;
+    await act(async () => {
+      result = await store().saveVersion("save");
+    });
+    return { result, snapshotted };
+  };
+
+  it("versions the project first when it has no version yet", async () => {
+    const { result, snapshotted } = await scoredSaves(false);
+    expect(result).toEqual({ ok: true });
+    expect(snapshotted).toEqual(["Project", "StakeholderMap"]);
+  });
+
+  it("versions the map first once the project has a version", async () => {
+    const { result, snapshotted } = await scoredSaves(true);
+    expect(result).toEqual({ ok: true });
+    expect(snapshotted).toEqual(["StakeholderMap", "Project"]);
+  });
+});

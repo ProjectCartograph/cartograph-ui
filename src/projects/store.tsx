@@ -536,7 +536,14 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         if (shared) await client.saveWorking(kind, ref, stringifyYAML(shared.doc()));
         return client.snapshot(kind, ref, reason);
       };
-      if (!mapIsEmpty(mapSpecRef.current)) {
+      // A project's first version is the exception: the map names the
+      // project, and a reference to a project with no version is refused,
+      // so the map can only be versioned after it. If the map is then
+      // refused, the project's version stands and the map's problems are
+      // reported, to be fixed and saved again.
+      const scored = !mapIsEmpty(mapSpecRef.current);
+      const first = !versionRef.current;
+      if (scored && !first) {
         try {
           await version("StakeholderMap", stakeholderMapID(id), mapDraftRef.current);
         } catch (e) {
@@ -555,6 +562,14 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         versionRef.current = data.number;
       }
       setSaveState("saved");
+      if (scored && first) {
+        try {
+          await version("StakeholderMap", stakeholderMapID(id), mapDraftRef.current);
+        } catch (e) {
+          queryClient.invalidateQueries({ queryKey: ["project-versions", id] });
+          return { ok: false, problems: refusedProblems(e) };
+        }
+      }
 
       queryClient.invalidateQueries({ queryKey: ["project-manifest", id] });
       queryClient.invalidateQueries({ queryKey: ["project-checks", id] });
