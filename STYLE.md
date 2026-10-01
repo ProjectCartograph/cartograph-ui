@@ -37,19 +37,24 @@ What the guide leaves to us:
 
 ## Commits
 
-**[Google's CL description guidance](https://google.github.io/eng-practices/review/developer/cl-descriptions.html)**,
+`CONTRIBUTING.md` ("Commit messages") is the full rule, with an
+example; this is the summary.
+
+**[Google's Angular commit message format](https://github.com/angular/angular/blob/main/contributing-docs/commit-message-guidelines.md)**,
 checked by `just commit-check` (`scripts/check-commit-msg`) in CI on
 every pull request.
 
-- **First line**: a short summary of what the change does, as an
-  imperative sentence without a trailing period, under 72 characters.
-  Not a type prefix (`feat:`, `fix:`): this repository does not use
-  Conventional Commits.
+- **Header**: `<type>(<scope>): <summary>`, at most 72 characters. The
+  type is Angular's (`build`, `ci`, `docs`, `feat`, `fix`, `perf`,
+  `refactor`, `test`); the scope is one of this repository's areas, or
+  none. The summary is imperative, lower-case, with no period.
 - **A blank line.**
-- **The body**: what the change does and why, for the reader who was
-  not there; what was considered; what to look at. `Fixes #12` on its
-  own line at the end. What you ran and what it printed, when it
-  matters.
+- **The body**, for every type but `docs`: what the change does and
+  why, for the reader who was not there; what was considered; what to
+  look at. What you ran and what it printed, when it matters.
+- **The footer**: `BREAKING CHANGE:` or `DEPRECATED:` with what to do
+  instead, when the change breaks or deprecates something. Then
+  `Fixes #12` on its own line, where an issue exists.
 - **`Signed-off-by`** (`git commit -s`): the Developer Certificate of
   Origin.
 

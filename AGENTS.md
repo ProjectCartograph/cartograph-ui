@@ -37,7 +37,7 @@ aarch64. Nix is required (`docs/SETUP.md`); there is no Makefile.
 - **Text is the last resort.** Every word a person reads lives in `src/copy.ts`, standard nouns, no em dashes, no placeholders inside controls. `just words` checks.
 - **One UI library.** Radix through shadcn/ui, plus cmdk. Nothing else.
 - **A check never blocks a save; a refused version lands its problems on the fields.** The server's message, nowhere else.
-- **Style is Google's, enforced.** `STYLE.md`: the TypeScript style guide, oxlint, strict tsc; commit messages as Google CL descriptions, checked by `just commit-check`. No Conventional Commits prefixes.
+- **Style is Google's, enforced.** `STYLE.md`: the TypeScript style guide, oxlint, strict tsc; commit messages in Google's Angular format (`<type>(<scope>): <summary>`; `CONTRIBUTING.md` has the types and scopes), checked by `just commit-check`.
 - **Upstream is the product and nothing else.** No notes, logs, plans, transcripts, screenshots, scratch files or editor and agent state are committed (`just clean-tree`). What you did goes in the pull request description.
 - **Generated files are not edited**: `src/api/gen/schema.d.ts`, `src/routeTree.gen.ts`.
 - **Never run `git` or `jj` write commands** unless the person asks for that in so many words.
