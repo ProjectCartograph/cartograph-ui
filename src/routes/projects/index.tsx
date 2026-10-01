@@ -12,7 +12,7 @@ export const Route = createFileRoute("/projects/")({ component: Page });
 function Page() {
   const { rows, loading } = useProjectRows();
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-cartograph-region="project-list">
       <Explorer
         title={copy.rail.projects}
         icon={FolderKanban}

@@ -263,7 +263,7 @@ export function Sheet({ kind }: { kind: SheetKind }) {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2" data-cartograph-region="sheet-filters">
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -360,7 +360,7 @@ export function Sheet({ kind }: { kind: SheetKind }) {
           {noResults ? <p className="text-muted-foreground">{copy.sheets.noResults}</p> : null}
 
           {!noResults && !kindIsEmpty ? (
-            <Table>
+            <Table data-cartograph-region="sheet-table">
               <TableHeader>
                 <TableRow>
                   <TableHead>{copy.sheets.fields[kind]?.name ?? "Name"}</TableHead>

@@ -89,7 +89,7 @@ export function AlignmentSection() {
 
 
   return (
-    <div className="flex max-w-3xl flex-col gap-8">
+    <div className="flex max-w-3xl flex-col gap-8" data-cartograph-region="programme-alignment">
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.goalsLabel} />
         <ChipPicker
@@ -99,6 +99,7 @@ export function AlignmentSection() {
           placeholder={copy.projects.goals.searchPlaceholder}
           empty={pc.goalsEmpty}
           slot="programme-goal-chips"
+          data-cartograph-field="/spec/goals"
         />
       </div>
 
@@ -139,6 +140,7 @@ export function AlignmentSection() {
           placeholder={pc.kpisSearchPlaceholder}
           empty={pc.kpisEmpty}
           slot="programme-kpi-chips"
+          data-cartograph-field="/spec/kpis"
         />
         <KPIAddDialog
           open={addKpi}

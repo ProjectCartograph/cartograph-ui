@@ -45,7 +45,7 @@ export function DefinitionCheckPanel({
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-2 rounded-lg border p-4">
+      <div className="flex flex-col gap-2 rounded-lg border p-4" data-cartograph-region="checks">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-4/6" />
       </div>
@@ -69,7 +69,7 @@ export function DefinitionCheckPanel({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-4">
+    <div className="flex flex-col gap-3 rounded-lg border p-4" data-cartograph-region="checks">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{c.title}</h2>
         <div className="flex items-center gap-1">

@@ -38,6 +38,7 @@ function LandsInField() {
       emptyText={copy.sheets.dialog.noMatches}
       clearLabel={copy.common.clear}
       aria-label={lc.landsInTitle}
+      data-cartograph-field="/spec/operation"
     />
   );
 }
@@ -52,7 +53,7 @@ function LandingExtras() {
   const resourceName = useResourceNames();
 
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2" data-cartograph-region="landing-extras">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1">
           <Label>{lc.landsInTitle}</Label>

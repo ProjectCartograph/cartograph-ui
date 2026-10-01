@@ -32,10 +32,11 @@ export function ShortfallSection() {
   const outcomeOptions = useOutcomeOptions();
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div data-cartograph-region="gap-shortfall" className="flex max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-2">
         <FieldHeading label={gc.nameLabel} hint={gc.nameHint} htmlFor="gap-name" />
         <Input
+          data-cartograph-field="/metadata/name"
           id="gap-name"
           value={store.name}
           maxLength={80}
@@ -46,6 +47,7 @@ export function ShortfallSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={gc.measureLabel} hint={gc.measureHint} />
         <ReferencePicker
+          data-cartograph-field="/spec/measure"
           refKind="KPI"
           value={spec.measure}
           onChange={(v) => store.updateSpec((s) => ({ ...s, measure: v || undefined }))}
@@ -59,6 +61,7 @@ export function ShortfallSection() {
           <FieldHeading label={gc.currentLabel} hint={gc.currentHint} examples={gc.currentExamples} exampleKey="gap.current" />
           {kpi?.baseline ? <p className="text-sm text-muted-foreground" data-slot="kpi-baseline">{gc.fromKpi(kpi.baseline)}</p> : null}
           <PartText
+            data-cartograph-field="/spec/current"
             value={spec.current}
             label={gc.currentLabel}
             onChange={(v) => store.updateSpec((s) => ({ ...s, current: v.slice(0, 200) || undefined }))}
@@ -68,6 +71,7 @@ export function ShortfallSection() {
           <FieldHeading label={gc.desiredLabel} hint={gc.desiredHint} examples={gc.desiredExamples} exampleKey="gap.desired" />
           {kpi?.target ? <p className="text-sm text-muted-foreground" data-slot="kpi-target">{gc.fromKpi(kpi.target)}</p> : null}
           <PartText
+            data-cartograph-field="/spec/desired"
             value={spec.desired}
             label={gc.desiredLabel}
             onChange={(v) => store.updateSpec((s) => ({ ...s, desired: v.slice(0, 200) || undefined }))}
@@ -81,6 +85,7 @@ export function ShortfallSection() {
           <p className="text-sm text-muted-foreground">{gc.outcomesNone}</p>
         ) : (
           <ComboboxMultiple
+            data-cartograph-field="/spec/outcomes"
             options={outcomeOptions}
             value={spec.outcomes ?? []}
             onValueChange={(next) => store.updateSpec((s) => ({ ...s, outcomes: next.length > 0 ? next : undefined }))}

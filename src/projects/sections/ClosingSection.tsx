@@ -32,7 +32,7 @@ export function ClosingSection({ id }: { id: string }) {
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3" data-cartograph-region="closing-deliverables">
         <div className="flex items-center justify-between gap-2">
           <Label>{cl.deliverablesTitle}</Label>
           <Link
@@ -52,6 +52,7 @@ export function ClosingSection({ id }: { id: string }) {
             <div
               key={d.id}
               data-slot="closing-deliverable"
+              data-cartograph-region={`deliverable-${idx}`}
               className="flex flex-col gap-3 rounded-xl p-3 ring-1 ring-foreground/10"
             >
               <div className="flex items-center gap-2">
@@ -81,7 +82,7 @@ export function ClosingSection({ id }: { id: string }) {
       {/* The criteria themselves are written on the Success step, so
           the whole standard is one thing; this is the slice due on the
           day, read-only, with a way back to where it is owned. */}
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3" data-cartograph-region="closing-criteria">
         <div className="flex items-center justify-between gap-2">
           <Label>{cl.criteriaTitle}</Label>
           <Link

@@ -74,7 +74,7 @@ export function RiskMatrix({
   const unplaced = risks.filter((r) => !r.impact || !r.likelihood).length;
 
   return (
-    <div className="flex flex-col gap-2" data-slot="risk-matrix">
+    <div className="flex flex-col gap-2" data-slot="risk-matrix" data-cartograph-region="risk-matrix">
       <div className="flex items-stretch gap-2">
         {/* The impact axis, read up the side. A grid of the same three
             rows as the cells, so each label sits against its own row

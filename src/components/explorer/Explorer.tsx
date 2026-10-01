@@ -95,7 +95,7 @@ export function Explorer({
     });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-cartograph-region="explorer">
       <div className="flex items-center justify-between gap-4">
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
           <Icon className="size-5 text-muted-foreground" aria-hidden="true" />
@@ -134,6 +134,7 @@ export function Explorer({
               ref={listRef}
               role="tree"
               aria-label={title}
+              data-cartograph-region="explorer-list"
               tabIndex={0}
               className="flex flex-col rounded-lg border p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onKeyDown={(e) => {
@@ -188,7 +189,7 @@ export function Explorer({
           )}
         </div>
 
-        <aside aria-label={ec.preview} className="sticky top-4 hidden rounded-lg border p-4 lg:block">
+        <aside aria-label={ec.preview} data-cartograph-region="explorer-preview" className="sticky top-4 hidden rounded-lg border p-4 lg:block">
           {selectedRow ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">

@@ -6,6 +6,7 @@ export function SectionNotes({ section }: { section: string }) {
   const store = useDefinitionStore<{ notes?: Record<string, string> }>();
   return (
     <NotesField
+      data-cartograph-field={`/spec/notes/${section}`}
       value={store.spec.notes?.[section]}
       onChange={(next) => store.updateSpec((spec) => withNote(spec, section, next))}
     />

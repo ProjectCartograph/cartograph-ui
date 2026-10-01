@@ -36,7 +36,7 @@ function SectionRail({ id, current }: { id: string; current: InitiationSection }
   const here = stageOfSection(current);
 
   return (
-    <div className="flex w-56 shrink-0 flex-col gap-1 rounded-lg border p-2">
+    <div className="flex w-56 shrink-0 flex-col gap-1 rounded-lg border p-2" data-cartograph-region="section-rail">
       {/* The whole walk, not the stage in hand. Somebody filling a
           definition in wants to see what there is to assemble before
           assembling it (Programme Lead, 2026-09-29), and a rail that
@@ -175,7 +175,7 @@ export function InitiationShell({
       <AssemblyStrip id={id} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr_18rem]">
         <SectionRail id={id} current={section} />
-        <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4" data-cartograph-region="section">
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
           ) : !store.loaded ? (

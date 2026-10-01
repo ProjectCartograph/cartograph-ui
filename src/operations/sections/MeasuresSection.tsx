@@ -15,9 +15,10 @@ export function MeasuresSection() {
   const { data: kpis } = useReferenceOptions("KPI");
 
   return (
-    <div className="flex max-w-3xl flex-col gap-2">
+    <div data-cartograph-region="operation-measures" className="flex max-w-3xl flex-col gap-2">
       <FieldHeading label={oc.kpisLabel} />
       <ChipPicker
+        data-cartograph-field="/spec/kpis"
         items={(kpis?.options ?? []).map((o) => ({ id: o.value, label: o.label }))}
         selected={store.spec.kpis ?? []}
         onToggle={(id) =>

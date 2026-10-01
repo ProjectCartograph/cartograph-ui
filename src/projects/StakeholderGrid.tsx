@@ -74,7 +74,7 @@ export function StakeholderGrid({
   const nameOf = (id: string) => resources?.names.get(id) ?? id;
 
   return (
-    <div className="flex flex-col gap-3" data-slot="stakeholder-grid">
+    <div className="flex flex-col gap-3" data-slot="stakeholder-grid" data-cartograph-region="stakeholder-grid">
       <div className="flex items-center gap-1">
         <h3 className="text-sm font-medium">{pc.gridTitle}</h3>
         <Help label={pc.gridTitle} hint={pc.gridHint} />
@@ -82,7 +82,7 @@ export function StakeholderGrid({
 
       <div className="flex flex-col gap-2">
         {entries.map((e, idx) => (
-          <div key={e.resource} className="flex flex-wrap items-center gap-2 rounded-lg border p-2">
+          <div key={e.resource} data-cartograph-region={`stakeholder-${idx}`} className="flex flex-wrap items-center gap-2 rounded-lg border p-2">
             <span className="min-w-0 flex-1 truncate text-sm">{nameOf(e.resource)}</span>
 
             <ToggleGroup
@@ -92,6 +92,7 @@ export function StakeholderGrid({
               value={e.tier ?? ""}
               onValueChange={(v) => updateAt(idx, { tier: (v || undefined) as StakeholderTier })}
               aria-label={`${pc.tierLabel} ${nameOf(e.resource)}`}
+              data-cartograph-field={`/spec/entries/${idx}/tier`}
             >
               {TIERS.map((t) => (
                 <ToggleGroupItem key={t} value={t}>
@@ -124,7 +125,7 @@ export function StakeholderGrid({
             value=""
             onValueChange={(v) => v && setEntries([...entries, { resource: v }])}
           >
-            <SelectTrigger className="w-64" aria-label={pc.addToGrid}>
+            <SelectTrigger className="w-64" aria-label={pc.addToGrid} data-cartograph-field="/spec/entries/-">
               <SelectValue placeholder={pc.addToGrid} />
             </SelectTrigger>
             <SelectContent>
@@ -159,7 +160,7 @@ function Grid({
     .filter(({ e }) => e.influence === undefined || e.interest === undefined);
 
   return (
-    <div className="flex flex-col gap-2 2xl:max-w-80">
+    <div className="flex flex-col gap-2 2xl:max-w-80" data-cartograph-region="stakeholder-matrix">
       <div className="flex gap-2">
         <span className="flex items-center justify-center text-[10px] text-muted-foreground [writing-mode:vertical-rl] rotate-180">
           {pc.influenceLabel}
@@ -195,7 +196,7 @@ function Grid({
       </div>
 
       {unplaced.map(({ e, idx }) => (
-        <div key={e.resource} className="flex flex-wrap items-center gap-1.5">
+        <div key={e.resource} data-cartograph-region={`stakeholder-place-${idx}`} className="flex flex-wrap items-center gap-1.5">
           <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
             {pc.placePrompt(nameOf(e.resource))}
           </span>

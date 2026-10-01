@@ -48,6 +48,7 @@ export function BeneficiariesSection() {
     <>
       <ChipPicker
         slot="beneficiary-chips"
+        data-cartograph-field="/spec/summary/beneficiaries"
         items={chips}
         selected={picked}
         onToggle={toggle}

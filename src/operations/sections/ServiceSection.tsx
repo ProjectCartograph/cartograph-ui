@@ -15,10 +15,11 @@ export function ServiceSection() {
   const spec = store.spec;
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div data-cartograph-region="operation-service" className="flex max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-2">
         <FieldHeading label={oc.nameLabel} htmlFor="operation-name" />
         <Input
+          data-cartograph-field="/metadata/name"
           id="operation-name"
           value={spec.name ?? store.name}
           onChange={(e) => {
@@ -33,6 +34,7 @@ export function ServiceSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={oc.purposeLabel} hint={oc.purposeHint} htmlFor="operation-purpose" />
         <Textarea
+          data-cartograph-field="/spec/purpose"
           id="operation-purpose"
           value={spec.purpose ?? ""}
           onChange={(e) => store.updateSpec((s) => ({ ...s, purpose: e.target.value }))}
@@ -43,6 +45,7 @@ export function ServiceSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={oc.serviceOwnerLabel} hint={oc.serviceOwnerHint} />
         <ReferencePicker
+          data-cartograph-field="/spec/serviceOwner"
           refKind="Resource"
           value={spec.serviceOwner}
           onChange={(v) => store.updateSpec((s) => ({ ...s, serviceOwner: v }))}
@@ -52,6 +55,7 @@ export function ServiceSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={oc.teamLabel} />
         <ReferencePicker
+          data-cartograph-field="/spec/team"
           refKind="Team"
           value={spec.team}
           onChange={(v) => store.updateSpec((s) => ({ ...s, team: v }))}
@@ -61,6 +65,7 @@ export function ServiceSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={oc.windowLabel} hint={oc.windowHint} htmlFor="operation-window" />
         <Input
+          data-cartograph-field="/spec/serviceWindow"
           id="operation-window"
           value={spec.serviceWindow ?? ""}
           onChange={(e) =>

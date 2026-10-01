@@ -43,7 +43,7 @@ export function RisksSection() {
           step was hardest in (Programme Lead, 2026-09-27). */}
       <ContextRecap omit={["risks"]} />
 
-      <div className="flex flex-col items-start gap-3">
+      <div className="flex flex-col items-start gap-3" data-cartograph-region="risk-placing">
         <RiskMatrix
           risks={risks}
           selected={gridPick}

@@ -56,7 +56,7 @@ export function StrategyView() {
   const purpose = settings.data?.purpose;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" data-cartograph-region="strategy">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">{sc.title}</h1>
@@ -140,7 +140,7 @@ function LevelIcon({ node, levels }: { node: GoalNode; levels: string[] }) {
 function Column({ node, levels, onOpen }: { node: GoalNode; levels: string[]; onOpen: (n: GoalNode) => void }) {
   const objectives = node.children ?? [];
   return (
-    <section aria-label={node.name} className="flex flex-col gap-2">
+    <section aria-label={node.name} className="flex flex-col gap-2" data-cartograph-region={`goal-${node.id}`}>
       <button
         type="button"
         onClick={() => onOpen(node)}
@@ -231,7 +231,7 @@ function Detail({ node, levels, names, onClose }: {
 }) {
   return (
     <Sheet open={node !== null} onOpenChange={(o) => { if (!o) onClose(); }}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-md" data-cartograph-region="goal-detail">
         {node ? (
           <>
             <SheetHeader>

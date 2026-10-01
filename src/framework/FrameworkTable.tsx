@@ -144,7 +144,7 @@ export function FrameworkTable({
   if (rows.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-cartograph-region="framework-table">
       <div className="flex justify-end">
         <Button type="button" variant="outline" size="sm" onClick={() => download(rows, filename)}>
           <Download />

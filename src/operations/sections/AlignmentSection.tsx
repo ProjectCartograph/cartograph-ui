@@ -22,10 +22,11 @@ export function AlignmentSection() {
   const { data: programmes } = useReferenceOptions("Programme");
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div data-cartograph-region="operation-alignment" className="flex max-w-2xl flex-col gap-6">
       <div className="flex flex-col gap-2">
         <FieldHeading label={oc.programmesLabel} hint={oc.programmesHint} />
         <ComboboxMultiple
+          data-cartograph-field="/spec/programmes"
           options={programmes?.options ?? []}
           value={store.spec.programmes ?? []}
           onValueChange={(next) =>

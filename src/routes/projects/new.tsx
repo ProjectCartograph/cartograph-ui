@@ -89,7 +89,7 @@ function NewProjectPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6">
+    <div className="mx-auto flex max-w-xl flex-col gap-6" data-cartograph-region="new-project">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{isComponent ? nc.componentTitle : nc.title}</h1>
         <p className="text-muted-foreground">{isComponent ? nc.componentSubtitle : nc.subtitle}</p>
@@ -101,6 +101,7 @@ function NewProjectPage() {
         <div className="flex flex-col gap-2">
           <Label>{copy.projects.goals.parentLabel}</Label>
           <ReferencePicker
+            data-cartograph-field="/spec/alignment/partOf"
             refKind="Project"
             value={parent}
             onChange={setParent}
@@ -112,12 +113,13 @@ function NewProjectPage() {
 
       <div className="flex flex-col gap-2">
         <Label>{nc.nameLabel}</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={nc.namePlaceholder} autoFocus />
+        <Input data-cartograph-field="/metadata/name" value={name} onChange={(e) => setName(e.target.value)} placeholder={nc.namePlaceholder} autoFocus />
       </div>
 
       <div className="flex flex-col gap-2">
         <Label>{nc.teamLabel}</Label>
         <DirectorySelect
+          data-cartograph-field="/spec/team"
           kind="Team"
           value={team}
           onValueChange={setTeam}

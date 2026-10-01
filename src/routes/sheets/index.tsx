@@ -38,7 +38,7 @@ function SheetsIndexPage() {
 
       {isError ? <ErrorAlert message={copy.sheets.indexError} onRetry={() => refetch()} /> : null}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-cartograph-region="sheet-kinds">
         {isLoading
           ? Array.from({ length: SHEET_KINDS.length }).map((_, i) => (
               <Skeleton key={i} className="h-24 w-full rounded-xl" />

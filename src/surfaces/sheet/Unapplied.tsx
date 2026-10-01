@@ -78,7 +78,7 @@ export function UnappliedBar({ kind }: { kind: string }) {
   if (mine.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3">
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed p-3" data-cartograph-region="unapplied">
       <FileQuestion className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <p className="min-w-0 flex-1 text-sm">
         {c.count(mine.length)} <span className="text-muted-foreground">{c.hint}</span>

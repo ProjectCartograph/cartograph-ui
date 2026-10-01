@@ -24,7 +24,7 @@ export function LandingSection({ id }: { id: string }) {
   );
 
   return (
-    <div className="flex max-w-3xl flex-col gap-3">
+    <div className="flex max-w-3xl flex-col gap-3" data-cartograph-region="landing-criteria">
       <div className="flex items-center justify-between gap-2">
         <Label>{lc.title}</Label>
         <Link

@@ -177,6 +177,7 @@ function ProjectRecordPage() {
           <div className="flex items-center gap-1.5">
           <Hash className="size-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
+            data-cartograph-field="/metadata/alias"
             value={store.alias}
             onChange={(e) => store.setAlias(e.target.value.slice(0, 80))}
             placeholder={copy.alias.placeholder}
@@ -207,7 +208,7 @@ function ProjectRecordPage() {
         {/* The definition, by stage: Align, Quality, Refine, Polish. The
             marks carry the grouping so each row is one word and its own
             state, rather than a phase heading repeated down the column. */}
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1" data-cartograph-region="section-rail">
           {STAGES.map((stage) => {
             const StageIcon = STAGE_ICON[stage];
             return (
@@ -227,11 +228,11 @@ function ProjectRecordPage() {
           })}
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3" data-cartograph-region="sections">
           {ALL_SECTIONS.map((s) => {
             const Icon = stepIcon(s.section);
             return (
-              <div key={s.section} className="rounded-lg border p-3">
+              <div key={s.section} className="rounded-lg border p-3" data-cartograph-region={`section-${s.section}`}>
                 <p className="flex items-center gap-2 text-sm font-medium">
                   {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
                   {pc.sections[s.section] ?? s.section}
@@ -248,7 +249,7 @@ function ProjectRecordPage() {
       </div>
 
       <Dialog open={yamlOpen} onOpenChange={setYamlOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl" data-cartograph-region="dialog-yaml">
           <DialogHeader>
             <DialogTitle>{rc.viewYaml}</DialogTitle>
           </DialogHeader>
@@ -257,7 +258,7 @@ function ProjectRecordPage() {
       </Dialog>
 
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" data-cartograph-region="dialog-save-version">
           <DialogHeader>
             <DialogTitle>{copy.projects.saveVersionDialog.title}</DialogTitle>
           </DialogHeader>

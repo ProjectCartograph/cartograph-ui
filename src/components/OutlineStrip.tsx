@@ -49,7 +49,7 @@ export function OutlineStrip({ id, parts, loaded }: { id: string; parts: Outline
   const freshLabel = parts.find((p) => p.key === fresh)?.label;
 
   return (
-    <nav aria-label={ac.title} className="flex flex-col gap-2 rounded-xl bg-muted/30 px-3 py-2.5" data-slot="assembly">
+    <nav aria-label={ac.title} className="flex flex-col gap-2 rounded-xl bg-muted/30 px-3 py-2.5" data-slot="assembly" data-cartograph-region="outline">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <ProgressRing value={filled / parts.length} size={16} label={ac.progress(filled, parts.length)} className="text-primary" />
         <span className="font-medium">{ac.title}</span>

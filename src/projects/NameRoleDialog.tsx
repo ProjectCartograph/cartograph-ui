@@ -96,7 +96,7 @@ export function NameRoleDialog({
         onOpenChange(o);
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" data-cartograph-region="dialog-name-role">
         <DialogHeader>
           <DialogTitle>{rc.title}</DialogTitle>
         </DialogHeader>
@@ -109,6 +109,7 @@ export function NameRoleDialog({
           <div className="flex flex-col gap-2">
             <FieldHeading label={rc.resourceLabel} examples={rc.examples} />
             <ReferencePicker
+              data-cartograph-field="/spec/resources/-/resource"
               refKind="Resource"
               value={resource}
               onChange={(v) => setResource(v || undefined)}

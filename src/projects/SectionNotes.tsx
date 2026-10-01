@@ -7,6 +7,7 @@ export function ProjectSectionNotes({ section }: { section: string }) {
   const store = useProjectStore();
   return (
     <NotesField
+      data-cartograph-field={`/spec/notes/${section}`}
       value={store.spec.notes?.[section]}
       onChange={(next) => store.updateSpec((spec) => withNote(spec, section, next))}
     />

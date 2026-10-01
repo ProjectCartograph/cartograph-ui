@@ -60,7 +60,7 @@ export function ComponentsSection() {
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
-      <section className="flex flex-col gap-2" data-slot="programme-inside">
+      <section className="flex flex-col gap-2" data-slot="programme-inside" data-cartograph-region="components">
         {inside.length === 0 ? (
           <p className="text-sm text-muted-foreground">{pc.insideEmpty}</p>
         ) : (
@@ -121,7 +121,7 @@ export function ComponentsSection() {
       </section>
 
 
-      <section className="flex flex-col gap-2" data-slot="programme-candidates">
+      <section className="flex flex-col gap-2" data-slot="programme-candidates" data-cartograph-region="candidates">
         <div className="flex items-center gap-1">
           <h3 className="text-sm font-medium">{pc.adoptTitle}</h3>
           <Help label={pc.adoptTitle} hint={pc.adoptHint} />

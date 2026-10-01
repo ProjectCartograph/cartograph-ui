@@ -47,7 +47,7 @@ export function RisksSection() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col items-start gap-3">
+      <div className="flex flex-col items-start gap-3" data-cartograph-region="risk-grid">
         <RiskMatrix
           risks={risks}
           selected={gridPick}

@@ -17,10 +17,11 @@ export function TeamsSection() {
   const spec = store.spec;
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex max-w-2xl flex-col gap-6" data-cartograph-region="governance">
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.sponsorLabel} hint={pc.sponsorHint} />
         <ReferencePicker
+          data-cartograph-field="/spec/sponsor"
           refKind="Resource"
           value={spec.sponsor}
           onChange={(v) => store.updateSpec((s) => ({ ...s, sponsor: v }))}
@@ -30,6 +31,7 @@ export function TeamsSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.managerLabel} hint={pc.managerHint} />
         <ReferencePicker
+          data-cartograph-field="/spec/manager"
           refKind="Resource"
           value={spec.manager}
           onChange={(v) => store.updateSpec((s) => ({ ...s, manager: v }))}
@@ -39,6 +41,7 @@ export function TeamsSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.changeManagerLabel} hint={pc.changeManagerHint} />
         <ReferencePicker
+          data-cartograph-field="/spec/businessChangeManager"
           refKind="Resource"
           value={spec.businessChangeManager}
           onChange={(v) => store.updateSpec((s) => ({ ...s, businessChangeManager: v }))}
@@ -48,6 +51,7 @@ export function TeamsSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.leadTeamLabel} />
         <ReferencePicker
+          data-cartograph-field="/spec/leadTeam"
           refKind="Team"
           value={spec.leadTeam}
           onChange={(v) => store.updateSpec((s) => ({ ...s, leadTeam: v }))}
@@ -57,6 +61,7 @@ export function TeamsSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.supportingTeamsLabel} />
         <ComboboxMultiple
+          data-cartograph-field="/spec/supportingTeams"
           options={(teams?.options ?? []).filter((t) => t.value !== spec.leadTeam)}
           value={spec.supportingTeams ?? []}
           onValueChange={(next) =>

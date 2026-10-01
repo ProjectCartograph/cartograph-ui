@@ -93,7 +93,7 @@ export function AimSection() {
     <div className="flex flex-col gap-6">
       <ContextRecap omit={["aim", "measures", "deliverables"]} />
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3" data-cartograph-region="problems">
         <FieldHeading label={ac.problemsTitle} />
         {problems.map((line, idx) => (
           <ProblemCard
@@ -114,15 +114,15 @@ export function AimSection() {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2" data-cartograph-region="mandates">
         <FieldHeading label={ac.mandateTitle} examples={ac.mandateExamples} />
         <div className="flex flex-col gap-2">
           {mandate.length === 0 ? <p className="text-sm text-muted-foreground">{ac.mandateEmpty}</p> : null}
           {mandate.map((m, idx) => (
-            <div key={idx} className="flex flex-col gap-2 rounded-lg border p-3">
+            <div key={idx} data-cartograph-region={`mandate-${idx}`} className="flex flex-col gap-2 rounded-lg border p-3">
               <div className="flex items-center gap-2">
                 <Select value={m.kind} onValueChange={(v) => updateMandate(idx, { kind: v as Mandate["kind"] })}>
-                  <SelectTrigger className="w-36 shrink-0" aria-label={ac.mandateKindLabel}>
+                  <SelectTrigger className="w-36 shrink-0" aria-label={ac.mandateKindLabel} data-cartograph-field={`/spec/mandate/${idx}/kind`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -134,6 +134,7 @@ export function AimSection() {
                   </SelectContent>
                 </Select>
                 <Input
+                  data-cartograph-field={`/spec/mandate/${idx}/title`}
                   value={m.title}
                   onChange={(e) => updateMandate(idx, { title: e.target.value.slice(0, 120) })}
                   placeholder={ac.mandateTitlePlaceholder}
@@ -154,6 +155,7 @@ export function AimSection() {
               </div>
               <div className="grid grid-cols-2 gap-2 pr-9">
                 <Input
+                  data-cartograph-field={`/spec/mandate/${idx}/reference`}
                   value={m.reference ?? ""}
                   onChange={(e) => updateMandate(idx, { reference: e.target.value.slice(0, 80) })}
                   placeholder={ac.mandateReferencePlaceholder}
@@ -161,6 +163,7 @@ export function AimSection() {
                   maxLength={80}
                 />
                 <DatePicker
+                  data-cartograph-field={`/spec/mandate/${idx}/date`}
                   value={m.date}
                   onChange={(v) => updateMandate(idx, { date: v || undefined })}
                   placeholder={ac.mandateDateLabel}

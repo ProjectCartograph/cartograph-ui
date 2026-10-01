@@ -100,7 +100,7 @@ function Series({ kpiID, spec }: { kpiID: string; spec: KPIDefinitionSpec }) {
         <p className="text-sm text-muted-foreground">{kc.noCycle}</p>
       )}
 
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-2" data-cartograph-region="readings">
         <div className="flex items-center gap-1">
           <h2 className="text-sm font-semibold">{kc.readings.title}</h2>
           <Help label={kc.readings.title} hint={kc.readings.hint} />

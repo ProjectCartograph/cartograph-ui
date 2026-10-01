@@ -52,7 +52,7 @@ export function SaveBar() {
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-4">
+    <div className="flex flex-col gap-2 rounded-lg border p-4" data-cartograph-region="save-bar">
       <div className="flex items-center justify-between gap-2">
         <Badge variant="secondary">
           <span className="truncate">{c.staged}</span>
@@ -80,7 +80,7 @@ export function SaveBar() {
       ) : null}
 
       <Dialog open={confirming} onOpenChange={setConfirming}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm" data-cartograph-region="dialog-discard">
           <DialogHeader>
             <DialogTitle>{c.discardTitle}</DialogTitle>
           </DialogHeader>

@@ -25,9 +25,10 @@ export function ScopeSection() {
   const [adding, setAdding] = useState(false);
 
   return (
-    <div className="flex max-w-3xl flex-col gap-2">
+    <div data-cartograph-region="gap-scope" className="flex max-w-3xl flex-col gap-2">
       <FieldHeading label={gc.segmentsLabel} hint={gc.segmentsHint} />
       <ComboboxMultiple
+        data-cartograph-field="/spec/segments"
         options={data?.options ?? []}
         value={store.spec.segments ?? []}
         onValueChange={(next) =>

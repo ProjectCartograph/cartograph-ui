@@ -107,7 +107,7 @@ export function KPIAddDialog({
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" data-cartograph-region="dialog-kpi-add">
         <DialogHeader>
           <DialogTitle>{kc.addTitle}</DialogTitle>
         </DialogHeader>
@@ -117,6 +117,7 @@ export function KPIAddDialog({
             <Label htmlFor="kpi-new-name">{kc.nameLabel}</Label>
             <Input
               id="kpi-new-name"
+              data-cartograph-field="/metadata/name"
               value={name}
               onChange={(e) => setName(e.target.value.slice(0, 160))}
               placeholder={kc.namePlaceholder}
@@ -129,6 +130,7 @@ export function KPIAddDialog({
             <Label htmlFor="kpi-new-definition">{dc.definitionLabel}</Label>
             <Textarea
               id="kpi-new-definition"
+              data-cartograph-field="/spec/definition"
               rows={2}
               value={definition}
               onChange={(e) => setDefinition(e.target.value)}
@@ -142,6 +144,7 @@ export function KPIAddDialog({
               <Label>{dc.unitLabel}</Label>
               <ReferencePicker
                 refKind="Unit"
+                data-cartograph-field="/spec/unit"
                 value={unit}
                 onChange={(v) => setUnit(v || undefined)}
                 placeholder={dc.unitPlaceholder}
@@ -151,7 +154,7 @@ export function KPIAddDialog({
             <div className="flex flex-col gap-2">
               <Label>{dc.directionLabel}</Label>
               <Select value={direction ?? ""} onValueChange={setDirection}>
-                <SelectTrigger className="w-48" aria-label={dc.directionLabel}>
+                <SelectTrigger className="w-48" aria-label={dc.directionLabel} data-cartograph-field="/spec/direction">
                   <SelectValue placeholder={dc.directionPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
@@ -169,6 +172,7 @@ export function KPIAddDialog({
             <Label>{dc.sourceLabel}</Label>
             <ReferencePicker
               refKind="DataSource"
+              data-cartograph-field="/spec/source"
               value={source}
               onChange={(v) => setSource(v || undefined)}
               placeholder={dc.sourcePlaceholder}
@@ -180,6 +184,7 @@ export function KPIAddDialog({
             <Label>{dc.cycleLabel}</Label>
             <ReferencePicker
               refKind="ReportingCycle"
+              data-cartograph-field="/spec/cycle"
               value={cycle}
               onChange={(v) => setCycle(v || undefined)}
               placeholder={dc.cyclePlaceholder}

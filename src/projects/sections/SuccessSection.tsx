@@ -45,6 +45,7 @@ export function CriterionCard({
   return (
     <div
       data-slot="criterion-card"
+      data-cartograph-region={`criterion-${criterion.id}`}
       className="flex items-start gap-3 rounded-xl p-3 ring-1 ring-foreground/10"
     >
       <span className="mt-0.5 shrink-0 text-muted-foreground" title={sc.metricHint[criterion.metric]}>
@@ -145,7 +146,7 @@ export function SuccessSection() {
       {GROUPS.map((when) => {
         const inGroup = criteria.filter((k) => k.when === when);
         return (
-          <section key={when} className="flex flex-col gap-3" data-slot={`success-${when}`}>
+          <section key={when} className="flex flex-col gap-3" data-slot={`success-${when}`} data-cartograph-region={`success-${when}`}>
             <div className="flex items-center gap-1">
               <h3 className="text-sm font-medium">{sc.when[when]}</h3>
               <Help label={sc.when[when]} hint={sc.whenHint[when]} />

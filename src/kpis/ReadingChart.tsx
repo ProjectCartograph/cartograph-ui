@@ -86,7 +86,7 @@ export function ReadingChart({
   const fmt = (v: number) => `${Number(v.toFixed(2))}${unit ? ` ${unit}` : ""}`;
 
   return (
-    <figure className="flex flex-col gap-2">
+    <figure className="flex flex-col gap-2" data-cartograph-region="reading-chart">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="h-auto w-full"

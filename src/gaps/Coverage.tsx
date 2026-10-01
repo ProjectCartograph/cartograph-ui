@@ -29,7 +29,7 @@ export function GapCoveragePanel({ id }: { id: string }) {
   const unaddressed = data.segments.filter((s) => (s.addressedBy ?? []).length === 0).length;
 
   return (
-    <section className="flex flex-col gap-3 rounded-lg border p-4">
+    <section className="flex flex-col gap-3 rounded-lg border p-4" data-cartograph-region="coverage">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{c.title}</h2>
         {data.segments.length > 0 ? (

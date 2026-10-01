@@ -132,7 +132,7 @@ function HandoffPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 min-w-0 space-y-6">
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-hidden" data-cartograph-region="charter-sections">
             <div className="p-4 border-b bg-card">
               <h2 className="text-lg font-semibold">Charter sections</h2>
               <p className="text-xs text-muted-foreground mt-1">11 from data · 4 name the tool that holds them</p>
@@ -158,7 +158,7 @@ function HandoffPage() {
 
         <div className="space-y-4">
           {handoffBundle && (
-            <div className="border rounded-lg overflow-hidden bg-muted/50">
+            <div className="border rounded-lg overflow-hidden bg-muted/50" data-cartograph-region="handoff-bundle">
               <div className="p-4 border-b">
                 <h3 className="font-semibold">Bundle</h3>
               </div>
@@ -187,7 +187,7 @@ function HandoffPage() {
             </div>
           )}
 
-          <div className="border rounded-lg p-4">
+          <div className="border rounded-lg p-4" data-cartograph-region="handoff-state">
             <h3 className="font-semibold text-sm mb-3">Checks</h3>
             <div className="space-y-2 text-sm">
               {blocking > 0 && (

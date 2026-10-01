@@ -53,7 +53,7 @@ export function CharterView({
   if (isError || !data) return <p className="text-sm text-muted-foreground">{empty}</p>;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-cartograph-region="charter">
       <div className="flex justify-end gap-2">
         {pdfUrl ? (
           <Button asChild size="sm">

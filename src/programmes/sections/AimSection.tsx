@@ -14,11 +14,12 @@ export function AimSection() {
   const spec = store.spec;
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex max-w-3xl flex-col gap-6" data-cartograph-region="programme-aim">
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.nameLabel} htmlFor="programme-name" />
         <Input
           id="programme-name"
+          data-cartograph-field="/metadata/name"
           value={spec.name ?? store.name}
           onChange={(e) => {
             const v = e.target.value.slice(0, 160);
@@ -34,6 +35,7 @@ export function AimSection() {
         <FieldHeading label={copy.alias.label} hint={copy.alias.hint} htmlFor="programme-alias" />
         <Input
           id="programme-alias"
+          data-cartograph-field="/metadata/alias"
           value={store.alias}
           onChange={(e) => store.setAlias(e.target.value.slice(0, 80))}
           placeholder={copy.alias.placeholder}
@@ -45,6 +47,7 @@ export function AimSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.aimLabel} hint={pc.aimHint} />
         <AimEditor
+          data-cartograph-field="/spec/aim"
           value={spec.aim}
           onChange={(next) => store.updateSpec((s) => ({ ...s, aim: next }))}
         />
@@ -58,6 +61,7 @@ export function AimSection() {
         <FieldHeading label={pc.sourceLabel} htmlFor="programme-source" />
         <Input
           id="programme-source"
+          data-cartograph-field="/spec/source"
           value={spec.source ?? ""}
           onChange={(e) => store.updateSpec((s) => ({ ...s, source: e.target.value.slice(0, 160) || undefined }))}
           placeholder={pc.sourcePlaceholder}

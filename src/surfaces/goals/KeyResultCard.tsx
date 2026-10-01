@@ -48,7 +48,7 @@ export function KeyResultCard({
   const targetKnown = !!kr.target;
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border p-3">
+    <div className="flex flex-col gap-2 rounded-lg border p-3" data-cartograph-region={`key-result-${kr.id}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

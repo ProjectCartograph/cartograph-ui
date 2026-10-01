@@ -45,7 +45,7 @@ function Grid({ programmeID }: { programmeID: string }) {
   useSectionAutosave();
   const store = useDefinitionStore<MapSpec>();
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-cartograph-region="stakeholder-grid">
       {/* A map written straight into the vault is withheld like anything
           else, and this is the only screen that would notice. */}
       <UnappliedBar kind="StakeholderMap" />

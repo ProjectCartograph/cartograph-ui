@@ -47,7 +47,7 @@ function ManifestsPage() {
       ) : null}
 
       {data && data.length > 0 ? (
-        <Table>
+        <Table data-cartograph-region="manifest-list">
           <TableHeader>
             <TableRow>
               <TableHead>{copy.manifests.columns.id}</TableHead>

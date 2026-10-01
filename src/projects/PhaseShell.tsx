@@ -46,7 +46,7 @@ export function PhaseShell({
       </div>
       <AssemblyStrip id={id} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_18rem]">
-        <div className="min-w-0 flex flex-col gap-4">
+        <div className="min-w-0 flex flex-col gap-4" data-cartograph-region="section">
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
           ) : !store.loaded ? (

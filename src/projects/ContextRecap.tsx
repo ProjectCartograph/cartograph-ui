@@ -86,7 +86,7 @@ export function ContextRecap({ omit = [] }: { omit?: string[] }) {
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl bg-muted/40 p-4" data-slot="context-recap">
+    <section className="flex flex-col gap-3 rounded-xl bg-muted/40 p-4" data-slot="context-recap" data-cartograph-region="context-recap">
       <p className="text-sm font-medium">{cc.title}</p>
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {omit.includes("aim") ? null : (

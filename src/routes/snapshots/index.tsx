@@ -204,7 +204,7 @@ function SnapshotsPage() {
             ))}
           </div>
         ) : (unappliedQuery.data ?? []).length > 0 ? (
-          <Card>
+          <Card data-cartograph-region="unapplied">
             <CardHeader>
               <CardDescription>Files not applied</CardDescription>
             </CardHeader>
@@ -241,7 +241,7 @@ function SnapshotsPage() {
         ) : null}
       </div>
 
-      <div className="flex gap-2 flex-wrap items-center">
+      <div className="flex gap-2 flex-wrap items-center" data-cartograph-region="snapshot-filters">
         <div className="relative flex-1 min-w-60">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -277,7 +277,7 @@ function SnapshotsPage() {
       ) : snapshots.length === 0 ? (
         <p className="text-muted-foreground">No snapshots found</p>
       ) : (
-        <Card>
+        <Card data-cartograph-region="snapshot-list">
           <Table>
             <TableHeader>
               <TableRow>
