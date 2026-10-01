@@ -59,7 +59,7 @@ function Page() {
           </Link>
         </Button>
       </div>
-      <FrameworkTable rows={rows} filename={`${id}-results-framework.csv`} empty={fc.empty} />
+      <div data-cartograph-region="framework"><FrameworkTable rows={rows} filename={`${id}-results-framework.csv`} empty={fc.empty} /></div>
     </div>
   );
 }

@@ -52,6 +52,7 @@ export function ChipPicker({
   slot,
   groupIcon,
   areaIcon,
+  "data-cartograph-field": field,
 }: {
   items: ChipItem[];
   selected: string[];
@@ -67,6 +68,8 @@ export function ChipPicker({
    * as by its name. */
   groupIcon?: React.ReactNode;
   areaIcon?: React.ReactNode;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const [search, setSearch] = useState("");
   const grouped = items.some((c) => c.group);
@@ -167,7 +170,7 @@ export function ChipPicker({
   }
 
   return (
-    <div className="flex flex-col gap-5" data-slot={slot}>
+    <div className="flex flex-col gap-5" data-slot={slot} data-cartograph-field={field}>
       <div className="flex items-center gap-2">
         <InputGroup className="h-8 max-w-xs">
           <InputGroupAddon>

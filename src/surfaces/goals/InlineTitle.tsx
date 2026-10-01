@@ -13,11 +13,14 @@ export function InlineTitle({
   onSave,
   className,
   as: As = "p",
+  "data-cartograph-field": field,
 }: {
   value: string;
   onSave: (next: string) => void | Promise<void>;
   className?: string;
   as?: "p" | "h1";
+  /** The manifest field this renames, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -27,6 +30,7 @@ export function InlineTitle({
       <As
         role="button"
         tabIndex={0}
+        data-cartograph-field={field}
         title={hc.renameHint}
         className={`cursor-text truncate ${className ?? ""}`}
         onClick={(e) => {
@@ -43,6 +47,7 @@ export function InlineTitle({
   return (
     <Input
       autoFocus
+      data-cartograph-field={field}
       value={draft}
       className="h-7 px-1 py-0"
       onClick={(e) => e.stopPropagation()}

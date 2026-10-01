@@ -28,6 +28,12 @@
 // copy, no RoleBinding draft, no carried-along commit. It also removed the
 // actor concept: every write here carries the literal actor "local"
 // (lib/actor.ts), never asked of the person using the interface.
+//
+// Since 2.0 both manifests are edited on their shared drafts where they have
+// one (docs/adr/0007): an edit is a change to the fields it touched, synced
+// at once, and other people's edits arrive as they make them. A map nobody
+// has scored has no draft yet, so it keeps the working copy until its first
+// save creates one; so does any manifest the engine has no draft for.
 
 import {
   createContext,
@@ -44,7 +50,16 @@ import { stringify as stringifyYAML } from "yaml";
 
 import { aliasAfterRename } from "@/alias";
 import { useClient } from "@/client/context";
-import { ClientError, Refused, orUndefined, type Client } from "@/client/port";
+import {
+  ClientError,
+  Refused,
+  orUndefined,
+  type Client,
+  type FieldConflict,
+  type SharedDraft,
+} from "@/client/port";
+import { openDraft, partsOf, useDraftSubscription } from "@/collab/draft";
+import { settled } from "@/definition/store";
 import {
   blankProjectSpec,
   type ProjectManifest,
@@ -142,6 +157,10 @@ interface ProjectStoreApi {
   saveVersion: (reason: string) => Promise<SaveVersionResult>;
   handoff: () => Promise<HandoffResult>;
   discardDraft: () => Promise<void>;
+  /** Fields two people set at once in the project's shared draft. */
+  conflicts: FieldConflict[];
+  /** Settles a conflict on the value given. */
+  resolveConflict: (path: string, value: unknown) => void;
 }
 
 const ProjectStoreContext = createContext<ProjectStoreApi | null>(null);
@@ -215,9 +234,47 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
   // in-flight, flush.
   const flushChain = useRef<Promise<void>>(Promise.resolve());
 
+  // The shared drafts, once open: the project's and, where it has one, its
+  // map's. Read through refs by every edit, as the specs are.
+  const [draft, setDraft] = useState<SharedDraft | undefined>(undefined);
+  const draftRef = useRef<SharedDraft | undefined>(undefined);
+  const [mapDraft, setMapDraft] = useState<SharedDraft | undefined>(undefined);
+  const mapDraftRef = useRef<SharedDraft | undefined>(undefined);
+
+  const hydrate = useCallback((doc: Record<string, unknown>) => {
+    const read = partsOf<ProjectSpec>(doc, blankProjectSpec);
+    setSpec(read.spec);
+    specRef.current = read.spec;
+    setNameState(read.name);
+    nameRef.current = read.name;
+    setAliasState(read.alias);
+    aliasRef.current = read.alias;
+  }, []);
+
+  const hydrateMap = useCallback(
+    (doc: Record<string, unknown>) => {
+      const next = (doc.spec as StakeholderMapSpec | undefined) ?? blankStakeholderMap(id);
+      setMapSpec(next);
+      mapSpecRef.current = next;
+    },
+    [id],
+  );
+
+  const project = useDraftSubscription(draft, hydrate);
+  const map = useDraftSubscription(mapDraft, hydrateMap);
+  // One list of notes for the step: the map's fields (its entries) are
+  // edited on the project's own screens.
+  const conflicts = [...project.conflicts, ...map.conflicts];
+  const resolveConflict = useCallback(
+    (path: string, value: unknown) =>
+      (map.conflicts.some((c) => c.path === path) ? map.resolve : project.resolve)(path, value),
+    [map, project],
+  );
+
   // Initial hydration: load the current committed version.
   useEffect(() => {
     let cancelled = false;
+    const opened: SharedDraft[] = [];
     async function load() {
       setLoaded(false);
       setLoadError(false);
@@ -227,8 +284,25 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         let loadedAlias = "";
         let loadedVersion = 0;
 
-        const manifest = await orUndefined(client.get("Project", id));
-        if (manifest) {
+        const [manifest, shared, sharedMap] = await Promise.all([
+          orUndefined(client.get("Project", id)).catch(() => undefined),
+          openDraft(client, "Project", id),
+          openDraft(client, "StakeholderMap", stakeholderMapID(id)),
+        ]);
+        for (const d of [shared, sharedMap]) if (d) opened.push(d);
+        if (cancelled) {
+          for (const d of opened) d.release();
+          return;
+        }
+        if (shared) {
+          const read = partsOf<ProjectSpec>(shared.doc(), blankProjectSpec);
+          loadedSpec = read.spec;
+          loadedName = read.name;
+          loadedAlias = read.alias;
+          loadedVersion = (manifest as unknown as { version?: { number: number } } | undefined)?.version?.number ?? 0;
+          draftRef.current = shared;
+          setDraft(shared);
+        } else if (manifest) {
           const view = manifest as unknown as { version: { number: number }; manifest: ProjectManifest };
           loadedSpec = view.manifest.spec ?? blankProjectSpec();
           loadedName = view.manifest.metadata?.name ?? "";
@@ -254,6 +328,13 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         // The map is optional: most projects have never been scored, and a
         // 404 here is that ordinary state, not a failure to load the
         // project. Its absence leaves the blank one already in state.
+        if (sharedMap) {
+          hydrateMap(sharedMap.doc());
+          mapDraftRef.current = sharedMap;
+          setMapDraft(sharedMap);
+          if (!cancelled) setLoaded(true);
+          return;
+        }
         const map = await orUndefined(client.get("StakeholderMap", stakeholderMapID(id)));
         if (cancelled) return;
         if (map) {
@@ -278,6 +359,11 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     void load();
     return () => {
       cancelled = true;
+      for (const d of opened) d.release();
+      draftRef.current = undefined;
+      mapDraftRef.current = undefined;
+      setDraft(undefined);
+      setMapDraft(undefined);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -352,42 +438,59 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     }, DEBOUNCE_MS);
   }, [flushNow]);
 
+  /** One edit to the project's shared draft. Nothing to debounce: the
+   * change is kept on this device and synced as it is made. */
+  const share = useCallback((target: SharedDraft, edit: Parameters<SharedDraft["change"]>[0]) => {
+    target.change(edit);
+    setSaveState("saved");
+  }, []);
+
   const updateSpec = useCallback(
     (updater: (s: ProjectSpec) => ProjectSpec) => {
-      setSpec((prev) => {
-        const next = updater(prev);
-        specRef.current = next;
-        return next;
-      });
+      // From the ref: a remote edit lands there at once, and the updater
+      // must build on it.
+      const next = updater(specRef.current);
+      specRef.current = next;
+      setSpec(next);
+      if (draftRef.current) {
+        share(draftRef.current, (e) => e.set("/spec", next));
+        return;
+      }
       specDirty.current = true;
       scheduleSave();
     },
-    [scheduleSave],
+    [scheduleSave, share],
   );
 
   /** Scores a stakeholder. Rides the project's own debounce and flush
    * chain, so one edit anywhere in the step produces one "Saved". */
   const updateMap = useCallback(
     (updater: (m: StakeholderMapSpec) => StakeholderMapSpec) => {
-      setMapSpec((prev) => {
-        const next = updater(prev);
-        mapSpecRef.current = next;
-        return next;
-      });
+      const next = updater(mapSpecRef.current);
+      mapSpecRef.current = next;
+      setMapSpec(next);
+      if (mapDraftRef.current) {
+        share(mapDraftRef.current, (e) => e.set("/spec", next));
+        return;
+      }
       mapDirty.current = true;
       scheduleSave();
     },
-    [scheduleSave],
+    [scheduleSave, share],
   );
 
   const setAlias = useCallback(
     (v: string) => {
       setAliasState(v);
       aliasRef.current = v;
+      if (draftRef.current) {
+        share(draftRef.current, (e) => e.set("/metadata/alias", v));
+        return;
+      }
       specDirty.current = true;
       scheduleSave();
     },
-    [scheduleSave],
+    [scheduleSave, share],
   );
 
   const setName = useCallback(
@@ -395,16 +498,24 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
       // The alias follows the name until somebody changes it, which is
       // what makes it a default rather than a second thing to maintain.
       const nextAlias = aliasAfterRename(aliasRef.current, nameRef.current, v);
-      if (nextAlias !== aliasRef.current) {
+      const aliasMoved = nextAlias !== aliasRef.current;
+      if (aliasMoved) {
         setAliasState(nextAlias);
         aliasRef.current = nextAlias;
       }
       setNameState(v);
       nameRef.current = v;
+      if (draftRef.current) {
+        share(draftRef.current, (e) => {
+          e.set("/metadata/name", v);
+          if (aliasMoved) e.set("/metadata/alias", nextAlias);
+        });
+        return;
+      }
       specDirty.current = true;
       scheduleSave();
     },
-    [scheduleSave],
+    [scheduleSave, share],
   );
 
   const saveVersion = useCallback(
@@ -415,16 +526,26 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
       // map is not. A map nobody has scored is skipped entirely rather
       // than versioned empty.
       await flushNow();
+      // Always a snapshot: it is what starts a project's lifecycle (its
+      // first "defined" state), which a plain versioned write does not. On
+      // a shared draft the document as this screen holds it goes first as
+      // the working copy, which the engine folds into the draft as one
+      // change (nothing, when already synced), so the snapshot carries
+      // edits that have not reached the engine yet.
+      const version = async (kind: string, ref: string, shared: SharedDraft | undefined) => {
+        if (shared) await client.saveWorking(kind, ref, stringifyYAML(shared.doc()));
+        return client.snapshot(kind, ref, reason);
+      };
       if (!mapIsEmpty(mapSpecRef.current)) {
         try {
-          await client.snapshot("StakeholderMap", stakeholderMapID(id), reason);
+          await version("StakeholderMap", stakeholderMapID(id), mapDraftRef.current);
         } catch (e) {
           return { ok: false, problems: refusedProblems(e) };
         }
       }
       let data;
       try {
-        data = await client.snapshot("Project", id, reason);
+        data = await version("Project", id, draftRef.current);
       } catch (e) {
         return { ok: false, problems: refusedProblems(e) };
       }
@@ -476,6 +597,16 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
       discardWorkingCopy(client, "Project", id),
       discardWorkingCopy(client, "StakeholderMap", stakeholderMapID(id)),
     ]);
+    // The engine resets a shared draft for everyone; what it has not sent
+    // yet is brought back here, so the draft reads as the vault does.
+    for (const [shared, read] of [
+      [draftRef.current, project],
+      [mapDraftRef.current, map],
+    ] as const) {
+      if (!shared) continue;
+      await settled(shared);
+      if (read?.manifest) shared.change((e) => e.set("", read.manifest as Record<string, unknown>));
+    }
 
     const nextSpec = (project?.manifest?.spec as ProjectSpec | undefined) ?? blankProjectSpec();
     const nextName = project?.manifest?.metadata?.name ?? "";
@@ -553,6 +684,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     saveVersion,
     handoff,
     discardDraft,
+    conflicts,
+    resolveConflict,
   };
 
   return <ProjectStoreContext.Provider value={value}>{children}</ProjectStoreContext.Provider>;

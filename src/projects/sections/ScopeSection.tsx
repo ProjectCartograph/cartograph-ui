@@ -16,7 +16,10 @@ function ScopeList({
   examples,
   items,
   onChange,
+  field,
 }: {
+  /** The list's own pointer; each sentence is named by its index under it. */
+  field: string;
   title: string;
   hint: string;
   placeholder: string;
@@ -25,7 +28,7 @@ function ScopeList({
   onChange: (next: string[]) => void;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-cartograph-region={field === "/spec/summary/scopeIn" ? "scope-in" : "scope-out"}>
       <FieldHeading label={title} hint={hint} examples={examples} />
       <div className="flex flex-col gap-2">
         {items.length === 0 ? <p className="text-sm text-muted-foreground">{sc.scopeEmpty}</p> : null}
@@ -37,6 +40,7 @@ function ScopeList({
             {/* A sentence wraps rather than scrolling out of sight: sixty
                 characters do not fit on one line in a two-column layout. */}
             <Textarea
+              data-cartograph-field={`${field}/${idx}`}
               value={item}
               onChange={(e) => {
                 const next = [...items];
@@ -98,6 +102,7 @@ export function ScopeSection() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <ScopeList
+          field="/spec/summary/scopeIn"
           title={sc.inScopeTitle}
           hint={sc.inScopeHint}
           placeholder={sc.inScopePlaceholder}
@@ -106,6 +111,7 @@ export function ScopeSection() {
           onChange={(next) => updateSummary("scopeIn", next)}
         />
         <ScopeList
+          field="/spec/summary/scopeOut"
           title={sc.outScopeTitle}
           hint={sc.outScopeHint}
           placeholder={sc.outScopePlaceholder}

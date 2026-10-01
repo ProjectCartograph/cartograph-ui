@@ -162,6 +162,7 @@ function InlineAddRow({
   return (
     <Input
       autoFocus
+      data-cartograph-field="/metadata/name"
       value={name}
       placeholder={placeholder}
       onChange={(e) => setName(e.target.value)}
@@ -240,7 +241,7 @@ function GoalCardMenu({
               onMove(v);
             }}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full" data-cartograph-field="/spec/parent">
               <SelectValue placeholder={hc.menu.moveTo} />
             </SelectTrigger>
             <SelectContent>
@@ -322,6 +323,7 @@ function FunctionalGoalCard({
   return (
     <>
       <Card
+        data-cartograph-region={`goal-${node.id}`}
         draggable
         onDragStart={(e) => startGoalDrag(e, node.id, node.level as GoalLevel)}
         className={`relative gap-2 p-3 transition-colors hover:bg-accent ${levelStyle(node.level).card}`}
@@ -329,7 +331,7 @@ function FunctionalGoalCard({
         <div className="flex items-start justify-between gap-2">
           <LevelMarkTag level={node.level} />
           <Link to="/goals/$id" params={{ id: node.id }} className="min-w-0 flex-1" draggable={false}>
-            <InlineTitle value={node.name} onSave={handleRename} className="text-sm font-medium" />
+            <InlineTitle data-cartograph-field="/metadata/name" value={node.name} onSave={handleRename} className="text-sm font-medium" />
           </Link>
           <GoalCardMenu
             node={node}
@@ -345,7 +347,7 @@ function FunctionalGoalCard({
       </Card>
 
       <AlertDialog open={deleteRefusal !== null} onOpenChange={(open) => !open && setDeleteRefusal(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="delete-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>{hc.deleteBlockedTitle}</AlertDialogTitle>
             <AlertDialogDescription>
@@ -367,7 +369,7 @@ function FunctionalGoalCard({
         setConfirmOpen(open);
         if (!open) setDeleteReason("");
       }}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="delete-goal">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {node.name}?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
@@ -392,7 +394,7 @@ function FunctionalGoalCard({
       </AlertDialog>
 
       <AlertDialog open={renameError !== null} onOpenChange={(open) => !open && setRenameError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="rename-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to rename goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -415,7 +417,7 @@ function FunctionalGoalCard({
       </AlertDialog>
 
       <AlertDialog open={moveError !== null} onOpenChange={(open) => !open && setMoveError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="move-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to move goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -524,6 +526,7 @@ function StrategicGoalCard({
   return (
     <>
       <Card
+        data-cartograph-region={`goal-${node.id}`}
         draggable
         onDragStart={(e) => startGoalDrag(e, node.id, node.level as GoalLevel)}
         className={`relative gap-2 p-3 transition-colors hover:bg-accent ${levelStyle(node.level).card}`}
@@ -531,7 +534,7 @@ function StrategicGoalCard({
         <div className="flex items-start justify-between gap-2">
           <LevelMarkTag level={node.level} />
           <Link to="/goals/$id" params={{ id: node.id }} className="min-w-0 flex-1" draggable={false}>
-            <InlineTitle value={node.name} onSave={handleRename} className="text-sm font-medium" />
+            <InlineTitle data-cartograph-field="/metadata/name" value={node.name} onSave={handleRename} className="text-sm font-medium" />
           </Link>
           <GoalCardMenu
             node={node}
@@ -609,7 +612,7 @@ function StrategicGoalCard({
       </div>
 
       <AlertDialog open={deleteRefusal !== null} onOpenChange={(open) => !open && setDeleteRefusal(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="delete-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>{hc.deleteBlockedTitle}</AlertDialogTitle>
             <AlertDialogDescription>
@@ -631,7 +634,7 @@ function StrategicGoalCard({
         setConfirmOpen(open);
         if (!open) setDeleteReason("");
       }}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="delete-goal">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {node.name}?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
@@ -656,7 +659,7 @@ function StrategicGoalCard({
       </AlertDialog>
 
       <AlertDialog open={renameError !== null} onOpenChange={(open) => !open && setRenameError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="rename-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to rename goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -679,7 +682,7 @@ function StrategicGoalCard({
       </AlertDialog>
 
       <AlertDialog open={moveError !== null} onOpenChange={(open) => !open && setMoveError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="move-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to move goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -702,7 +705,7 @@ function StrategicGoalCard({
       </AlertDialog>
 
       <AlertDialog open={addError !== null} onOpenChange={(open) => !open && setAddError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="add-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to add goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -725,7 +728,7 @@ function StrategicGoalCard({
       </AlertDialog>
 
       <AlertDialog open={dropError !== null} onOpenChange={(open) => !open && setDropError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="drop-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to move goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -855,11 +858,14 @@ function PillarColumn({
         }
       }}
     >
-      <Card className={`relative gap-1 p-4 transition-colors hover:bg-accent ${levelStyle(node.level).card}`}>
+      <Card
+        data-cartograph-region={`goal-${node.id}`}
+        className={`relative gap-1 p-4 transition-colors hover:bg-accent ${levelStyle(node.level).card}`}
+      >
         <div className="flex items-start justify-between gap-2">
           <LevelMarkTag level={node.level} />
           <Link to="/goals/$id" params={{ id: node.id }} className="min-w-0 flex-1" draggable={false}>
-            <InlineTitle value={node.name} onSave={handleRename} as="h1" className="text-base font-semibold" />
+            <InlineTitle data-cartograph-field="/metadata/name" value={node.name} onSave={handleRename} as="h1" className="text-base font-semibold" />
           </Link>
           <div onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
@@ -912,7 +918,7 @@ function PillarColumn({
         setConfirmOpen(open);
         if (!open) setDeleteReason("");
       }}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="delete-goal">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {node.name}?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-3">
@@ -936,7 +942,7 @@ function PillarColumn({
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={deleteRefusal !== null} onOpenChange={(open) => !open && setDeleteRefusal(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="delete-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>{hc.deleteBlockedTitle}</AlertDialogTitle>
             <AlertDialogDescription>
@@ -955,7 +961,7 @@ function PillarColumn({
       </AlertDialog>
 
       <AlertDialog open={renameError !== null} onOpenChange={(open) => !open && setRenameError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="rename-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to rename goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -978,7 +984,7 @@ function PillarColumn({
       </AlertDialog>
 
       <AlertDialog open={moveError !== null} onOpenChange={(open) => !open && setMoveError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="move-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to move goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1001,7 +1007,7 @@ function PillarColumn({
       </AlertDialog>
 
       <AlertDialog open={addError !== null} onOpenChange={(open) => !open && setAddError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="add-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to add goal</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1044,7 +1050,7 @@ function UnalignedTray() {
   if (projectsQuery.isLoading || unaligned.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-4">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-4" data-cartograph-region="unaligned">
       <Badge variant="outline">{hc.unalignedTitle}</Badge>
       {unaligned.slice(0, 6).map((p) => (
         <Badge key={p.id} variant="secondary" className="max-w-56 min-w-0 justify-start">
@@ -1133,7 +1139,7 @@ export function GoalsHome() {
       ) : null}
 
       {nodes.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3" data-cartograph-region="goal-tree">
           {nodes.map((n) => (
             <PillarColumn key={n.id} node={n} activeFilters={activeFilters} pillars={pillars} />
           ))}
@@ -1149,7 +1155,7 @@ export function GoalsHome() {
       {nodes.length > 0 ? <UnalignedTray /> : null}
 
       <AlertDialog open={addError !== null} onOpenChange={(open) => !open && setAddError(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent data-cartograph-region="add-refused">
           <AlertDialogHeader>
             <AlertDialogTitle>Failed to add goal</AlertDialogTitle>
             <AlertDialogDescription>

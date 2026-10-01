@@ -14,6 +14,7 @@ import {
 import { copy } from "@/copy";
 import { VocabOption } from "@/components/vocab";
 import { DependencyEdgeEditor } from "./DependencyEdgeEditor";
+import { seg } from "./field";
 import type { RoleOption } from "./RoleRefPicker";
 import { retypeRisk, type Risk, type RiskType, type TimelinePhase } from "./types";
 
@@ -39,7 +40,10 @@ export function RiskList({
   phases,
   roles,
   onChange,
+  field = "/spec/risks",
 }: {
+  /** The list's own pointer; each risk is named under it. */
+  field?: string;
   risks: Risk[];
   phases: TimelinePhase[];
   /** The roles a decision can be handed up to. A programme names none, so
@@ -59,17 +63,19 @@ export function RiskList({
     onChange(risks.filter((_, i) => i !== idx));
   }
 
+  const at = (r: Risk, idx: number, rest: string) => `${field}/${seg(r, idx)}/${rest}`;
+
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-cartograph-region="risk-list">
         {risks.length === 0 ? <p className="text-sm text-muted-foreground">{rc.empty}</p> : null}
       {risks.map((r, idx) => (
-        <div key={r.id} className="flex flex-col gap-2 rounded-lg border p-3">
+        <div key={r.id} data-cartograph-region={`risk-${idx}`} className="flex flex-col gap-2 rounded-lg border p-3">
         <div className="flex items-start gap-2">
           <Select
             value={r.type}
             onValueChange={(v) => replace(idx, retypeRisk(r, v as RiskType))}
           >
-            <SelectTrigger className="w-40" aria-label={rc.typeLabel}>
+            <SelectTrigger className="w-40" aria-label={rc.typeLabel} data-cartograph-field={at(r, idx, "type")}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -81,6 +87,7 @@ export function RiskList({
             </SelectContent>
           </Select>
           <Input
+            data-cartograph-field={at(r, idx, "description")}
             value={r.description}
             onChange={(e) => update(idx, { description: e.target.value.slice(0, 160) })}
             placeholder={rc.descriptionPlaceholder}
@@ -102,12 +109,14 @@ export function RiskList({
             on any other type, and switching type away drops it. */}
         {r.type === "dependency" ? (
           <DependencyEdgeEditor
+            data-cartograph-field={at(r, idx, "depends")}
             value={r.depends}
             phases={phases}
             onChange={(depends) => update(idx, { depends })}
           />
         ) : null}
         <Input
+          data-cartograph-field={at(r, idx, "mitigation")}
           value={r.mitigation ?? ""}
           onChange={(e) => update(idx, { mitigation: e.target.value.slice(0, 160) })}
           placeholder={rc.mitigationPlaceholder}
@@ -121,6 +130,7 @@ export function RiskList({
           <div className="flex items-center gap-2">
             <Checkbox
               id={`risk-escalate-${idx}`}
+              data-cartograph-field={at(r, idx, "escalate/flag")}
               checked={!!r.escalate?.flag}
               onCheckedChange={(checked) =>
                 update(idx, { escalate: checked ? { ...r.escalate, flag: true } : { flag: false } })
@@ -137,7 +147,7 @@ export function RiskList({
                     update(idx, { escalate: { ...r.escalate!, to: { local: "resources", id } } })
                   }
                 >
-                  <SelectTrigger className="w-56" aria-label={rc.escalateToLabel}>
+                  <SelectTrigger className="w-56" aria-label={rc.escalateToLabel} data-cartograph-field={at(r, idx, "escalate/to/id")}>
                     <SelectValue placeholder={rc.escalateToLabel} />
                   </SelectTrigger>
                   <SelectContent>
@@ -150,6 +160,7 @@ export function RiskList({
                 </Select>
               ) : (
                 <Input
+                  data-cartograph-field={at(r, idx, "escalate/to/external")}
                   value={r.escalate.to?.external ?? ""}
                   onChange={(e) =>
                     update(idx, { escalate: { ...r.escalate!, to: { external: e.target.value.slice(0, 80) } } })
@@ -160,6 +171,7 @@ export function RiskList({
                 />
               )}
               <Input
+                data-cartograph-field={at(r, idx, "escalate/reason")}
                 value={r.escalate.reason ?? ""}
                 onChange={(e) => update(idx, { escalate: { ...r.escalate!, flag: true, reason: e.target.value.slice(0, 160) } })}
                 aria-label={rc.escalateReasonLabel}

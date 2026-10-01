@@ -95,7 +95,10 @@ export function RoleRefPicker({
   label,
   placeholder,
   className,
+  "data-cartograph-field": field,
 }: {
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
   value: Ref | undefined;
   options: RoleOption[];
   onChange: (ref: Ref | undefined) => void;
@@ -120,7 +123,7 @@ export function RoleRefPicker({
         onChange(option ? { local: "resources", id: option.id } : { external: v });
       }}
     >
-      <SelectTrigger className={className} aria-label={label}>
+      <SelectTrigger className={className} aria-label={label} data-cartograph-field={field}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

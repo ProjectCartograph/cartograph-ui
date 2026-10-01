@@ -159,6 +159,7 @@ export function KeyResultDialog({
   existing,
   onSave,
   allowSource = true,
+  "data-cartograph-field": field,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -168,7 +169,12 @@ export function KeyResultDialog({
    * dependency tree and never references a source or a KPI relation).
    * Project key results keep the default. */
   allowSource?: boolean;
+  /** The key result this edits, by JSON pointer (`/spec/keyResults/{id}`,
+   * or `/spec/keyResults/-` for a new one); each control names its part
+   * under it. */
+  "data-cartograph-field"?: string;
 }) {
+  const at = (part: string) => (field ? `${field}${part}` : undefined);
   const [form, setForm] = useState<FormState>(existing ? fromKeyResult(existing) : blankForm());
   // Set by a Save that could not go through. Reported by the Programme
   // Lead as "it is not possible to apply a key result": Save used to be
@@ -239,7 +245,7 @@ export function KeyResultDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-xl" data-cartograph-region="key-result-dialog">
         <DialogHeader>
           <DialogTitle>{existing ? c.editTitle : c.addTitle}</DialogTitle>
         </DialogHeader>
@@ -250,6 +256,7 @@ export function KeyResultDialog({
               type="single"
               variant="outline"
               value={form.direction}
+              data-cartograph-field={at("/direction")}
               onValueChange={(v) => v && set("direction", v as KeyResultDirection)}
             >
               {DIRECTIONS.map((d) => (
@@ -264,6 +271,7 @@ export function KeyResultDialog({
               type="single"
               variant="outline"
               value={form.kind}
+              data-cartograph-field={at("/kind")}
               onValueChange={(v) => v && set("kind", v as KeyResultKind)}
             >
               {KINDS.map((k) => (
@@ -277,6 +285,7 @@ export function KeyResultDialog({
               <InputGroup>
                 <InputGroupInput
                   type="number"
+                  data-cartograph-field={at("/target/value")}
                   value={form.targetValue}
                   onChange={(e) => set("targetValue", e.target.value)}
                   placeholder={example.target}
@@ -289,6 +298,7 @@ export function KeyResultDialog({
               </InputGroup>
               {needsUnit ? (
                 <Input
+                  data-cartograph-field={at("/unit")}
                   value={form.unit}
                   onChange={(e) => set("unit", e.target.value)}
                   placeholder={example.unit || c.unitLabel}
@@ -308,7 +318,7 @@ export function KeyResultDialog({
               happens to them: "deliveries" + "checked". Where a kind has no
               unit (a percent, a ratio), it asks for the whole phrase. */}
           <Step n={2} title={needsUnit ? c.stepMetric : c.stepMetricWhole} hint={c.stepMetricHint} examples={c.metricExamples}>
-            <InputGroup>
+            <InputGroup data-cartograph-field={at("/metric")}>
               {needsUnit && form.unit.trim() ? (
                 <InputGroupAddon>
                   <span className="text-muted-foreground">{form.unit.trim()}</span>
@@ -327,6 +337,7 @@ export function KeyResultDialog({
           <Step n={3} title={c.stepWhen} hint={c.stepWhenHint}>
             <MonthPicker
               value={form.targetDate}
+              data-cartograph-field={at("/target/date")}
               onChange={(v) => set("targetDate", v)}
               className="max-w-48"
               aria-label={c.targetDateLabel}
@@ -338,6 +349,7 @@ export function KeyResultDialog({
               type="single"
               variant="outline"
               value={form.baselineKnown ? "known" : "unknown"}
+              data-cartograph-field={at("/baseline")}
               onValueChange={(v) => v && set("baselineKnown", v === "known")}
             >
               <ToggleGroupItem value="known" className={PICKED}>
@@ -352,6 +364,7 @@ export function KeyResultDialog({
                 <InputGroup>
                   <InputGroupInput
                     type="number"
+                    data-cartograph-field={at("/baseline/value")}
                     value={form.baselineValue}
                     onChange={(e) => set("baselineValue", e.target.value)}
                     placeholder={example.baseline}
@@ -363,6 +376,7 @@ export function KeyResultDialog({
                 </InputGroup>
                 <MonthPicker
                   value={form.baselineDate}
+                  data-cartograph-field={at("/baseline/date")}
                   onChange={(v) => set("baselineDate", v)}
                   aria-label={c.baselineDateLabel}
                 />
@@ -371,6 +385,7 @@ export function KeyResultDialog({
               <div className="flex flex-col gap-2">
                 <Input
                   value={form.unknownReason}
+                  data-cartograph-field={at("/baseline/unknownReason")}
                   onChange={(e) => set("unknownReason", e.target.value)}
                   placeholder={c.unknownReasonPlaceholder}
                   aria-label={c.unknownReasonLabel}
@@ -378,6 +393,7 @@ export function KeyResultDialog({
                 />
                 <MonthPicker
                   value={form.expectedBy}
+                  data-cartograph-field={at("/baseline/expectedBy")}
                   onChange={(v) => set("expectedBy", v)}
                   placeholder={c.expectedByLabel}
                   className="max-w-48"
@@ -392,6 +408,7 @@ export function KeyResultDialog({
               <ReferencePicker
                 refKind="DataSource"
                 value={form.source || undefined}
+                data-cartograph-field={at("/source")}
                 onChange={(v) => set("source", v ?? "")}
                 placeholder={c.sourcePlaceholder}
                 addLabel={c.addSource}

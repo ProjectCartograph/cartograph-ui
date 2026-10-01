@@ -23,6 +23,7 @@ export function DirectorySelect({
   loading,
   placeholder,
   className,
+  "data-cartograph-field": field,
 }: {
   kind: string;
   value: string;
@@ -31,13 +32,15 @@ export function DirectorySelect({
   loading?: boolean;
   placeholder?: string;
   className?: string;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   if (!loading && options.length === 0) {
     return <DirectoryEmptyHint kind={kind} />;
   }
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className={className ?? "w-full"}>
+      <SelectTrigger className={className ?? "w-full"} data-cartograph-field={field}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

@@ -270,8 +270,9 @@ describe("closing refines what the deliverables already promise", () => {
     await mount(<ClosingSection id="p1" />);
     await screen.findByText(cl.deliverablesTitle);
 
-    // Only manifests are read: nothing the engine derives.
-    expect(asked.every((m) => m === "get" || m === "list")).toBe(true);
+    // Only manifests are read (as files, or as their shared drafts):
+    // nothing the engine derives.
+    expect(asked.every((m) => m === "get" || m === "list" || m === "openDraft")).toBe(true);
   });
 });
 

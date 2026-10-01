@@ -15,6 +15,7 @@ function NewProgrammePage() {
       nameLabel={c.nameLabel}
       namePlaceholder={c.namePlaceholder}
       teamLabel={c.teamLabel}
+      teamField="/spec/leadTeam"
       teamPlaceholder={c.teamPlaceholder}
       createLabel={c.create}
       errorLabel={c.generalError}

@@ -12,7 +12,15 @@ import { useBlocker } from "@tanstack/react-router";
 import { isCollection, parseDocument, parse as parseYAML, stringify as stringifyYAML } from "yaml";
 
 import { useClient } from "@/client/context";
-import { ClientError, Conflict, orUndefined } from "@/client/port";
+import {
+  ClientError,
+  Conflict,
+  orUndefined,
+  type FieldConflict,
+  type ManifestDocument,
+  type SharedDraft,
+} from "@/client/port";
+import { openDraft, partsOf, useDraftSubscription } from "@/collab/draft";
 import { aliasAfterRename } from "@/alias";
 import { copy } from "@/copy";
 
@@ -33,6 +41,12 @@ import { copy } from "@/copy";
  *     flight and a later response cannot be overtaken by an earlier one.
  *   - Autosave uses the working-copy path, never the validating PUT, so a
  *     half-finished definition is never refused mid-sentence.
+ *
+ * Where the manifest has a shared draft (docs/adr/0007) the store edits that
+ * instead: each edit is one change to the fields it touched, applied at once
+ * and synced, so there is nothing to debounce or flush, and other people's
+ * edits arrive here as they make them. A manifest with no draft to open
+ * keeps the working copy above.
  */
 
 export type SaveState = "idle" | "saving" | "saved" | "unsaved" | "error";
@@ -67,6 +81,10 @@ export interface DefinitionStoreApi<S> {
   save: () => Promise<{ ok: boolean; problems: { path?: string; message: string }[] }>;
   /** Throw the draft away and reload whatever the vault holds. */
   discardDraft: () => Promise<void>;
+  /** Fields two people set at once in the shared draft. */
+  conflicts: FieldConflict[];
+  /** Settles a conflict on the value given. */
+  resolveConflict: (path: string, value: unknown) => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -201,6 +219,22 @@ export function mergeIntoYAML(original: string | undefined, next: Record<string,
   return doc.toString({ indent: 2, lineWidth: 0, flowCollectionPadding: false });
 }
 
+/** Waits for the engine's own change to a draft after a write that makes
+ * one, or a moment, whichever comes first. */
+export function settled(draft: SharedDraft, ms = 1500): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(done, ms);
+    const stop = draft.subscribe((c) => {
+      if (!c.local) done();
+    });
+    function done() {
+      clearTimeout(timer);
+      stop();
+      resolve();
+    }
+  });
+}
+
 export function useDefinitionStore<S>(): DefinitionStoreApi<S> {
   const ctx = useContext(DefinitionStoreContext);
   if (!ctx) throw new Error("useDefinitionStore must be used inside a DefinitionStoreProvider");
@@ -260,15 +294,55 @@ export function DefinitionStoreProvider<S>({
   const originalYAML = useRef<string | undefined>(undefined);
   const blankRef = useRef(blank);
   blankRef.current = blank;
+  // The shared draft, once open. Read through the ref by every edit, for
+  // the same reason as specRef.
+  const [draft, setDraft] = useState<SharedDraft | undefined>(undefined);
+  const draftRef = useRef<SharedDraft | undefined>(undefined);
+
+  /** Takes the manifest a draft holds into state. */
+  const hydrate = useCallback((doc: ManifestDocument) => {
+    const read = partsOf<S>(doc, blankRef.current);
+    setSpec(read.spec);
+    specRef.current = read.spec;
+    setNameState(read.name);
+    nameRef.current = read.name;
+    setAliasState(read.alias);
+    aliasRef.current = read.alias;
+    setLabelsState(read.labels);
+    labelsRef.current = read.labels;
+  }, []);
+
+  const { conflicts, resolve: resolveConflict } = useDraftSubscription(draft, (doc) => {
+    hydrate(doc);
+    setStaged(true);
+  });
 
   useEffect(() => {
     let cancelled = false;
+    let opened: SharedDraft | undefined;
     async function load() {
       setLoaded(false);
       setLoadError(false);
       try {
-        const view = await orUndefined(client.get(kind, id));
-        if (cancelled) return;
+        const [view, shared] = await Promise.all([
+          orUndefined(client.get(kind, id)).catch(() => undefined),
+          openDraft(client, kind, id),
+        ]);
+        opened = shared;
+        if (cancelled) {
+          shared?.release();
+          return;
+        }
+        if (shared) {
+          // The draft is what everyone edits; the file's text is kept only
+          // so a save writes over it in the author's order.
+          originalYAML.current = readManifest<S>(view, blank).yaml;
+          hydrate(shared.doc());
+          draftRef.current = shared;
+          setDraft(shared);
+          setLoaded(true);
+          return;
+        }
         if (!view) {
           setLoadError(true);
           setLoaded(true);
@@ -297,9 +371,21 @@ export function DefinitionStoreProvider<S>({
     void load();
     return () => {
       cancelled = true;
+      if (opened) {
+        opened.release();
+        if (draftRef.current === opened) draftRef.current = undefined;
+        setDraft(undefined);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, id]);
+
+  /** One edit to the shared draft, and what it means for the save. */
+  const share = useCallback((edit: (e: Parameters<Parameters<SharedDraft["change"]>[0]>[0]) => void) => {
+    draftRef.current?.change(edit);
+    setStaged(true);
+    setSaveState("saved");
+  }, []);
 
   const flushOnce = useCallback(async (): Promise<void> => {
     if (timer.current) {
@@ -341,35 +427,49 @@ export function DefinitionStoreProvider<S>({
 
   const updateSpec = useCallback(
     (updater: (s: S) => S) => {
-      setSpec((prev) => {
-        const next = updater(prev);
-        specRef.current = next;
-        return next;
-      });
+      // From the ref, not the state's own previous value: a remote edit
+      // lands in the ref at once, and the updater must build on it.
+      const next = updater(specRef.current);
+      specRef.current = next;
+      setSpec(next);
+      if (draftRef.current) {
+        // The whole spec, written as what differs: the field typed in is
+        // the one path that changes.
+        share((e) => e.set("/spec", next));
+        return;
+      }
       dirty.current = true;
       scheduleSave();
     },
-    [scheduleSave],
+    [scheduleSave, share],
   );
 
   const setLabels = useCallback(
     (next: Record<string, string>) => {
       setLabelsState(next);
       labelsRef.current = next;
+      if (draftRef.current) {
+        share((e) => (Object.keys(next).length > 0 ? e.set("/metadata/labels", next) : e.remove("/metadata/labels")));
+        return;
+      }
       dirty.current = true;
       scheduleSave();
     },
-    [scheduleSave],
+    [scheduleSave, share],
   );
 
   const setAlias = useCallback(
     (v: string) => {
       setAliasState(v);
       aliasRef.current = v;
+      if (draftRef.current) {
+        share((e) => e.set("/metadata/alias", v));
+        return;
+      }
       dirty.current = true;
       scheduleSave();
     },
-    [scheduleSave],
+    [scheduleSave, share],
   );
 
   const setName = useCallback(
@@ -377,16 +477,24 @@ export function DefinitionStoreProvider<S>({
       // The alias follows the name until somebody changes it, which is
       // what makes it a default rather than a second thing to maintain.
       const nextAlias = aliasAfterRename(aliasRef.current, nameRef.current, v);
-      if (nextAlias !== aliasRef.current) {
+      const aliasMoved = nextAlias !== aliasRef.current;
+      if (aliasMoved) {
         setAliasState(nextAlias);
         aliasRef.current = nextAlias;
       }
       setNameState(v);
       nameRef.current = v;
+      if (draftRef.current) {
+        share((e) => {
+          e.set("/metadata/name", v);
+          if (aliasMoved) e.set("/metadata/alias", nextAlias);
+        });
+        return;
+      }
       dirty.current = true;
       scheduleSave();
     },
-    [scheduleSave],
+    [scheduleSave, share],
   );
 
   /**
@@ -401,11 +509,18 @@ export function DefinitionStoreProvider<S>({
   const save = useCallback(async () => {
     await flushNow();
     setSaveState("saving");
+    // With a shared draft the version is the draft as everyone has it now,
+    // materialised, rather than this screen's copy of it.
+    const shared = draftRef.current?.doc();
     const body = {
+      ...(shared ?? {}),
       apiVersion: "cartograph/v1",
       kind,
-      metadata: metadataBody(id, nameRef.current, aliasRef.current, labelsRef.current),
-      spec: specRef.current,
+      metadata: {
+        ...((shared?.metadata as Record<string, unknown> | undefined) ?? {}),
+        ...metadataBody(id, nameRef.current, aliasRef.current, labelsRef.current),
+      },
+      spec: shared?.spec ?? specRef.current,
     };
     let refused: ClientError | undefined;
     try {
@@ -444,7 +559,23 @@ export function DefinitionStoreProvider<S>({
     }
     dirty.current = false;
     await orUndefined(client.discardWorking(kind, id));
-    const read = readManifest<S>(await orUndefined(client.get(kind, id)), blankRef.current);
+    const view = await orUndefined(client.get(kind, id));
+    const read = readManifest<S>(view, blankRef.current);
+    const shared = draftRef.current;
+    if (shared) {
+      // The engine resets the draft for everyone; what it has not yet sent
+      // is brought back here, field by field, so the draft reads as the
+      // vault does whichever arrives first.
+      await settled(shared);
+      const manifest = (view as { manifest?: Record<string, unknown> } | undefined)?.manifest;
+      if (manifest) shared.change((e) => e.set("", { ...manifest, spec: read.spec }));
+      originalYAML.current = read.yaml;
+      hydrate(shared.doc());
+      setStaged(false);
+      setSaveState("saved");
+      queryClient.invalidateQueries({ queryKey: ["manifests", kind] });
+      return;
+    }
     const nextSpec = read.spec;
     const nextName = read.name;
     originalYAML.current = read.yaml;
@@ -459,7 +590,7 @@ export function DefinitionStoreProvider<S>({
     setStaged(false);
     setSaveState("saved");
     queryClient.invalidateQueries({ queryKey: ["manifests", kind] });
-  }, [kind, id, queryClient, client]);
+  }, [kind, id, queryClient, client, hydrate]);
 
   useEffect(() => {
     return () => {
@@ -494,6 +625,8 @@ export function DefinitionStoreProvider<S>({
     staged,
     save,
     discardDraft,
+    conflicts,
+    resolveConflict,
   };
   return <DefinitionStoreContext.Provider value={value}>{children}</DefinitionStoreContext.Provider>;
 }

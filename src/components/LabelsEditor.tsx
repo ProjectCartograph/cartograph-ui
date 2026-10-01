@@ -48,12 +48,19 @@ export function LabelsEditor({
     onChange(next);
   }
 
+  // metadata.labels, the one field this edits. The key and value boxes
+  // hold a label not added yet, so they name no field of their own.
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-cartograph-field="/metadata/labels">
       {entries.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {entries.map(([k, v]) => (
-            <Badge key={k} variant="outline" className="h-6 gap-1 pr-1">
+            <Badge
+              key={k}
+              variant="outline"
+              className="h-6 gap-1 pr-1"
+              data-cartograph-field={`/metadata/labels/${k.replace(/~/g, "~0").replace(/\//g, "~1")}`}
+            >
               <Tag aria-hidden="true" />
               <span className="truncate">{v ? `${k}: ${v}` : k}</span>
               <Button

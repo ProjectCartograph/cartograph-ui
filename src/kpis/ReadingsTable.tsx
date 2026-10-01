@@ -44,8 +44,13 @@ export function ReadingsTable({
     return <p className="text-sm text-muted-foreground">{c.noPeriods}</p>;
   }
 
+  // A reading is named by its place among the readings held; a period
+  // nobody has read yet is a new item.
+  const held = slots.flatMap((s) => (s.reading ? [s.reading] : []));
+  const pointer = (r: Reading | undefined) => `/spec/readings/${r ? held.indexOf(r) : "-"}`;
+
   return (
-    <table className="w-full max-w-2xl text-sm">
+    <table className="w-full max-w-2xl text-sm" data-cartograph-region="readings-table">
       <thead>
         <tr className="border-b text-left text-xs text-muted-foreground">
           <th className="py-2 font-medium">{c.period}</th>
@@ -69,6 +74,7 @@ export function ReadingsTable({
               <td className="py-1.5">
                 <span className="flex items-center gap-2">
                   <Input
+                    data-cartograph-field={`${pointer(r)}/value`}
                     type="number"
                     className="h-8 w-28"
                     value={r?.value ?? ""}
@@ -88,6 +94,7 @@ export function ReadingsTable({
               </td>
               <td className="py-1.5">
                 <Checkbox
+                  data-cartograph-field={`${pointer(r)}/provisional`}
                   checked={Boolean(r?.provisional)}
                   disabled={!r}
                   aria-label={`${c.provisional} ${slot.period}`}

@@ -19,6 +19,8 @@ import { useProjectChecks } from "./api";
 import { useProjectStore, type SaveState } from "./store";
 import { STAGES, stepsOfStage, type Stage } from "./types";
 import { STAGE_ICON } from "./steps";
+import { ConflictNotes } from "@/collab/ConflictNotes";
+import { OfflineNote } from "@/collab/OfflineNote";
 
 const pc = copy.projects;
 
@@ -69,7 +71,7 @@ export function SaveVersionDialog({ open, onOpenChange }: { open: boolean; onOpe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" data-cartograph-region="dialog-save-version">
         <DialogHeader>
           <DialogTitle>{pc.saveVersionDialog.title}</DialogTitle>
         </DialogHeader>
@@ -113,7 +115,7 @@ export function DiscardDraftDialog({ open, onOpenChange }: { open: boolean; onOp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm" data-cartograph-region="dialog-discard-draft">
         <DialogHeader>
           <DialogTitle>{pc.discardDialog.title}</DialogTitle>
         </DialogHeader>
@@ -148,7 +150,7 @@ export function StageStepper({ id, current }: { id: string; current: Stage }) {
   const blocked = new Set((checks.data?.items ?? []).filter((c) => c.state === "block").map((c) => c.section));
   const checked = new Set((checks.data?.items ?? []).map((c) => c.section));
   return (
-    <div className="flex shrink-0 items-center gap-1.5">
+    <div className="flex shrink-0 items-center gap-1.5" data-cartograph-region="stage-stepper">
       {STAGES.map((stage, i) => {
         const first = stepsOfStage(stage)[0];
         const Icon = STAGE_ICON[stage];
@@ -194,8 +196,11 @@ export function ProjectHeaderBar() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-        <SaveStatus state={store.saveState} />
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3" data-cartograph-region="project-header">
+        <div className="flex flex-wrap items-center gap-3">
+          <SaveStatus state={store.saveState} />
+          <OfflineNote />
+        </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" size="sm" onClick={() => setDiscardOpen(true)}>
             {pc.header.discardDraft}
@@ -212,6 +217,7 @@ export function ProjectHeaderBar() {
       {store.saveState === "error" ? (
         <ErrorAlert message={pc.header.saveFailed} onRetry={() => void store.flushNow()} />
       ) : null}
+      <ConflictNotes conflicts={store.conflicts} onResolve={store.resolveConflict} />
       <SaveVersionDialog open={saveOpen} onOpenChange={setSaveOpen} />
       <DiscardDraftDialog open={discardOpen} onOpenChange={setDiscardOpen} />
     </>

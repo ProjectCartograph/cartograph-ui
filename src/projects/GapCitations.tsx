@@ -50,9 +50,12 @@ function useGapSegments(gapIDs: string[]) {
 export function GapCitations({
   value,
   onChange,
+  "data-cartograph-field": field,
 }: {
   value: GapCitation[];
   onChange: (next: GapCitation[]) => void;
+  /** The citations' own pointer; each one's segments are named under it. */
+  "data-cartograph-field"?: string;
 }) {
   const { data: gapRefs } = useReferenceOptions("Gap");
   const { data: segmentRefs } = useReferenceOptions("Segment");
@@ -90,6 +93,7 @@ export function GapCitations({
         emptyText={ac.problemGapsNone}
         removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
         aria-label={ac.problemGapsLabel}
+        data-cartograph-field={field}
         // A gap noticed while writing the problem it explains must not cost
         // the problem. Same rule the role picker follows.
         onAdd={() => setAdding(true)}
@@ -102,7 +106,7 @@ export function GapCitations({
         onAdded={(id) => onChange([...value, { gap: id }])}
       />
 
-      {value.map((citation) => {
+      {value.map((citation, i) => {
         const scope = segmentsByGap.get(citation.gap) ?? [];
         if (scope.length === 0) return null;
         const picked = citation.segments ?? [];
@@ -110,6 +114,7 @@ export function GapCitations({
           <div
             key={citation.gap}
             data-slot="gap-citation-scope"
+            data-cartograph-region={`gap-citation-${i}`}
             className="flex flex-col gap-1.5 rounded-lg border p-3"
           >
             <div className="flex items-center justify-between gap-2">
@@ -139,6 +144,7 @@ export function GapCitations({
               emptyText={ac.gapScopeNone}
               removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
               aria-label={`${ac.gapScopeLabel} ${gapLabel(citation.gap)}`}
+              data-cartograph-field={field && `${field}/${i}/segments`}
             />
           </div>
         );

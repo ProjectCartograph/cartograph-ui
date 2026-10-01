@@ -134,7 +134,12 @@ export function ObjectiveEditor({
   objective,
   alignedGoals,
   onChange,
+  "data-cartograph-field": field,
 }: {
+  /** The manifest field this edits, by JSON pointer. The sentence is
+   * typed in two parts, so the field is named on the editor as a whole:
+   * neither box holds its text. */
+  "data-cartograph-field"?: string;
   objective: string;
   /** How many goals this project serves, for the "Aligned" mark. */
   alignedGoals: number;
@@ -189,7 +194,7 @@ export function ObjectiveEditor({
 
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-cartograph-field={field}>
       <Step
         n={1}
         title={gc.objectiveStepOutcome}

@@ -21,9 +21,12 @@ import { copy } from "@/copy";
 export function NotesField({
   value,
   onChange,
+  "data-cartograph-field": field,
 }: {
   value: string | undefined;
   onChange: (next: string | undefined) => void;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const c = copy.definition.notes;
   const [open, setOpen] = useState(Boolean(value));
@@ -66,6 +69,7 @@ export function NotesField({
       <Textarea
         id="section-note"
         ref={ref}
+        data-cartograph-field={field}
         rows={3}
         maxLength={4000}
         placeholder={c.placeholder}

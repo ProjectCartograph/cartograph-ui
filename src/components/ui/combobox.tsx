@@ -205,6 +205,7 @@ function Combobox({
   disabled,
   "aria-label": ariaLabel,
   "aria-invalid": ariaInvalid,
+  "data-cartograph-field": field,
 }: {
   options: ComboboxOption[]
   value: string | undefined
@@ -218,6 +219,8 @@ function Combobox({
   disabled?: boolean
   "aria-label"?: string
   "aria-invalid"?: boolean
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string
 }) {
   const [open, setOpen] = React.useState(false)
   // An id the register no longer holds still shows as itself, rather than
@@ -230,6 +233,7 @@ function Combobox({
         aria-expanded={open}
         aria-label={ariaLabel}
         aria-invalid={ariaInvalid}
+        data-cartograph-field={field}
         disabled={disabled}
         empty={!picked}
         className={className}
@@ -281,6 +285,7 @@ function ComboboxMultiple({
   className,
   disabled,
   "aria-label": ariaLabel,
+  "data-cartograph-field": field,
 }: {
   options: ComboboxOption[]
   value: string[]
@@ -296,6 +301,8 @@ function ComboboxMultiple({
   className?: string
   disabled?: boolean
   "aria-label"?: string
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string
 }) {
   const [open, setOpen] = React.useState(false)
   const picked = value.map((v) => options.find((o) => o.value === v) ?? { value: v, label: v })
@@ -309,6 +316,7 @@ function ComboboxMultiple({
       <Trigger
         aria-expanded={open}
         aria-label={ariaLabel}
+        data-cartograph-field={field}
         disabled={disabled}
         empty={picked.length === 0}
         className={cn("h-auto min-h-8 py-1", className)}

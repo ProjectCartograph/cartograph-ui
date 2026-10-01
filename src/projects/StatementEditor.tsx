@@ -55,13 +55,17 @@ export function PartText({
   value,
   label,
   onChange,
+  "data-cartograph-field": field,
 }: {
   value: string | undefined;
   label: string;
   onChange: (next: string) => void;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   return (
     <Textarea
+      data-cartograph-field={field}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value.slice(0, 600))}
       aria-label={label}
@@ -74,7 +78,10 @@ export function PartText({
 export function ProblemEditor({
   value,
   onChange,
+  "data-cartograph-field": field,
 }: {
+  /** The statement's own pointer; each part is named under it. */
+  "data-cartograph-field"?: string;
   value: ProblemStatement | undefined;
   /** Kept for callers; the groups are shown on the card, not here. */
   groups?: string[];
@@ -84,10 +91,10 @@ export function ProblemEditor({
   return (
     <div className="flex flex-col gap-4">
       <Part n={1} label={ac.situationLabel} hint={ac.situationHint} examples={ac.situationExamples} exampleKey="problem.situation">
-        <PartText value={value?.situation} label={ac.situationLabel} onChange={(v) => set({ situation: v })} />
+        <PartText data-cartograph-field={field && `${field}/situation`} value={value?.situation} label={ac.situationLabel} onChange={(v) => set({ situation: v })} />
       </Part>
       <Part n={2} label={ac.causeLabel} hint={ac.causeHint} examples={ac.causeExamples} exampleKey="problem.cause">
-        <PartText value={value?.cause} label={ac.causeLabel} onChange={(v) => set({ cause: v || undefined })} />
+        <PartText data-cartograph-field={field && `${field}/cause`} value={value?.cause} label={ac.causeLabel} onChange={(v) => set({ cause: v || undefined })} />
       </Part>
     </div>
   );
@@ -96,7 +103,10 @@ export function ProblemEditor({
 export function ChangeEditor({
   value,
   onChange,
+  "data-cartograph-field": field,
 }: {
+  /** The statement's own pointer; each part is named under it. */
+  "data-cartograph-field"?: string;
   value: ChangeStatement | undefined;
   groups?: string[];
   onChange: (next: ChangeStatement) => void;
@@ -105,10 +115,10 @@ export function ChangeEditor({
   return (
     <div className="flex flex-col gap-4">
       <Part n={1} label={ac.changeWhatLabel} hint={ac.changeWhatHint} examples={ac.changeWhatExamples} exampleKey="change.what">
-        <PartText value={value?.what} label={ac.changeWhatLabel} onChange={(v) => set({ what: v })} />
+        <PartText data-cartograph-field={field && `${field}/what`} value={value?.what} label={ac.changeWhatLabel} onChange={(v) => set({ what: v })} />
       </Part>
       <Part n={2} label={ac.changeGainLabel} hint={ac.changeGainHint} examples={ac.changeGainExamples} exampleKey="change.gain">
-        <PartText value={value?.gain} label={ac.changeGainLabel} onChange={(v) => set({ gain: v || undefined })} />
+        <PartText data-cartograph-field={field && `${field}/gain`} value={value?.gain} label={ac.changeGainLabel} onChange={(v) => set({ gain: v || undefined })} />
       </Part>
     </div>
   );

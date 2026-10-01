@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { copy } from "@/copy";
 import { useSectionAutosave, useProjectStore } from "../store";
 import { addTimelineMonths as addMonths, timelineMonthIndex as monthIndex, type TimelinePhase } from "../types";
+import { seg } from "../field";
 
 const tc = copy.projects.timeline;
 
@@ -93,6 +94,7 @@ export function TimelineSection() {
         <div className="flex flex-col gap-2">
           <Label>{tc.startLabel}</Label>
           <MonthPicker
+            data-cartograph-field="/spec/timeline/start"
             value={timeline.start}
             onChange={(v) => updateTimeline({ start: v })}
             className="w-36"
@@ -104,7 +106,7 @@ export function TimelineSection() {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2" data-cartograph-region="phases">
         {rows.length === 0 ? <p className="text-sm text-muted-foreground">{tc.empty}</p> : null}
         {rows.length > 0 ? (
           <div className="grid grid-cols-[1.75rem_minmax(8rem,2fr)_6.5rem_minmax(0,2fr)_9rem] items-center gap-3">
@@ -130,6 +132,7 @@ export function TimelineSection() {
             key={idx}
             data-slot="phase-row"
             data-index={idx}
+            data-cartograph-region={`phase-${idx}`}
             className={`grid grid-cols-[1.75rem_minmax(8rem,2fr)_6.5rem_minmax(0,2fr)_9rem] items-center gap-3 rounded-lg border p-3 transition-colors ${
               dragOver === idx && dragging !== null && dragging !== idx ? "border-primary bg-accent" : ""
             } ${dragging === idx ? "opacity-50" : ""}`}
@@ -183,6 +186,7 @@ export function TimelineSection() {
               <GripVertical className="size-4" />
             </button>
             <Input
+              data-cartograph-field={`/spec/timeline/phases/${seg(phases[idx], idx)}/name`}
               value={row.name}
               onChange={(e) => updatePhase(idx, { name: e.target.value.slice(0, 40) })}
               placeholder={tc.phaseNamePlaceholder}
@@ -191,6 +195,7 @@ export function TimelineSection() {
             />
             <div className="flex items-center gap-1">
               <Input
+                data-cartograph-field={`/spec/timeline/phases/${seg(phases[idx], idx)}/months`}
                 type="number"
                 min={1}
                 max={60}

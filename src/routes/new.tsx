@@ -45,7 +45,7 @@ function NewPage() {
         <p className="text-muted-foreground">{nc.subtitle}</p>
       </div>
 
-      <Question label={nc.endsQuestion}>
+      <Question label={nc.endsQuestion} region="new-ends">
         <Choice icon={Flag} title={nc.finishes} detail={nc.finishesDetail} picked={ends === "finishes"} onPick={() => setEnds("finishes")} />
         <Choice
           icon={Repeat}
@@ -61,7 +61,7 @@ function NewPage() {
 
       {ends === "finishes" ? (
         <div className="animate-in fade-in slide-in-from-top-2 duration-300 motion-reduce:animate-none">
-          <Question label={nc.sizeQuestion}>
+          <Question label={nc.sizeQuestion} region="new-size">
             <Choice icon={FolderKanban} title={nc.one} detail={nc.oneDetail} picked={size === "one"} onPick={() => setSize("one")} />
             <Choice icon={Boxes} title={nc.part} detail={nc.partDetail} picked={size === "part"} onPick={() => setSize("part")} />
             <Choice icon={Layers} title={nc.many} detail={nc.manyDetail} picked={size === "many"} onPick={() => setSize("many")} />
@@ -73,6 +73,7 @@ function NewPage() {
         <div
           className="flex flex-col gap-3 rounded-xl bg-primary/5 p-4 ring-1 ring-primary/20 animate-in fade-in zoom-in-95 duration-300 motion-reduce:animate-none"
           data-slot="new-verdict"
+          data-cartograph-region="new-verdict"
           role="status"
         >
           <p className="flex items-center gap-2 font-medium">
@@ -97,9 +98,9 @@ function KindMark({ kind }: { kind: Kind }) {
   return <Icon className="size-5 text-primary" aria-hidden="true" />;
 }
 
-function Question({ label, children }: { label: string; children: React.ReactNode }) {
+function Question({ label, region, children }: { label: string; region: string; children: React.ReactNode }) {
   return (
-    <fieldset className="flex flex-col gap-3">
+    <fieldset className="flex flex-col gap-3" data-cartograph-region={region}>
       <legend className="mb-3 text-base font-medium">{label}</legend>
       <div className="grid gap-3 sm:grid-cols-2">{children}</div>
     </fieldset>

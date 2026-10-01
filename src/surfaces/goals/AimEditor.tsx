@@ -39,11 +39,14 @@ export function AimEditor({
   value,
   onChange,
   maxLength,
+  "data-cartograph-field": field,
 }: {
   level: string;
   value: string;
   onChange: (next: string) => void;
   maxLength: number;
+  /** The manifest field the statement is, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const [parts, setParts] = useState(() => splitAim(value));
   const emitted = useRef(value);
@@ -65,6 +68,7 @@ export function AimEditor({
       <div className="flex flex-col gap-2">
         <Input
           id="goal-objective"
+          data-cartograph-field={field}
           aria-label={ac.stateLabel}
           value={value}
           maxLength={maxLength}
@@ -92,7 +96,9 @@ export function AimEditor({
   ];
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex gap-2">
+      {/* The word and the rest are one field between them, so the row is
+          what names it: neither box alone holds the field's text. */}
+      <div className="flex gap-2" data-cartograph-field={field}>
         <Select value={parts.verb} onValueChange={(v) => edit({ ...parts, verb: v })}>
           <SelectTrigger aria-label={ac.verbLabel} className="w-40 shrink-0 capitalize">
             <SelectValue placeholder={ac.verbPlaceholder} />

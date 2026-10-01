@@ -24,6 +24,7 @@ export function ReferencePicker({
   label,
   addLabel,
   className,
+  "data-cartograph-field": field,
 }: {
   refKind: string;
   value: string | undefined;
@@ -33,6 +34,8 @@ export function ReferencePicker({
   label?: string;
   addLabel?: string;
   className?: string;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const [addOpen, setAddOpen] = useState(false);
   // A measure is not a sheet kind — its baseline and target are objects
@@ -56,6 +59,7 @@ export function ReferencePicker({
           onChange={(next) => onChange(next as string | undefined)}
           placeholder={placeholder}
           label={label}
+          data-cartograph-field={field}
           onRequestAdd={canAdd ? () => setAddOpen(true) : undefined}
         />
       </div>

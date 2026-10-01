@@ -27,13 +27,13 @@ function Page() {
           </Link>
         </Button>
       </div>
-      <CharterView
+      <div data-cartograph-region="charter"><CharterView
         kind="Project"
         id={id}
         working
         fileName={id}
         empty={cc.empty}
-      />
+      /></div>
     </div>
   );
 }

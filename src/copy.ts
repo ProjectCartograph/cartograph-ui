@@ -27,6 +27,23 @@ export const copy = {
     filterAll: "All",
     untagged: "Untagged",
   },
+  // Working together on one draft: who else is here, what they are on, and
+  // what happens when two people set one field at once.
+  collab: {
+    offline: "Offline: changes are kept on this device and sync when the connection returns",
+    peopleHere: "People on this screen",
+    someone: "Someone",
+    you: "You",
+    conflictsTitle: "Set by two people at once",
+    conflict: (field: string) => `${field} was set by two people at once.`,
+    thisField: "This field",
+    conflictKept: "Showing",
+    conflictOther: "Also set",
+    conflictRestore: "Use this",
+    conflictKeep: "Keep",
+    blankValue: "Empty",
+    editing: (name: string) => `${name} is editing`,
+  },
   rail: {
     new: "New",
     define: "Define",

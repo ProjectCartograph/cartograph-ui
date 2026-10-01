@@ -40,7 +40,10 @@ export function DependencyEdgeEditor({
   value,
   phases,
   onChange,
+  "data-cartograph-field": field,
 }: {
+  /** The edge's own pointer; each part is named under it. */
+  "data-cartograph-field"?: string;
   value: DependencyEdge | undefined;
   /** The phases a dependency may land by. Empty for a kind that
    * schedules nothing, where the control is left out rather than shown
@@ -66,6 +69,7 @@ export function DependencyEdgeEditor({
           value={direction}
           onValueChange={(v) => v && set({ direction: v as DependencyDirection })}
           aria-label={rc.dependsDirectionLabel}
+          data-cartograph-field={field && `${field}/direction`}
         >
           {DIRECTIONS.map((d) => (
             <ToggleGroupItem key={d} value={d}>
@@ -80,7 +84,7 @@ export function DependencyEdgeEditor({
             set({ on: v === EXTERNAL ? { external: "" } : { kind: v as RefKind, id: "" } })
           }
         >
-          <SelectTrigger className="w-40" aria-label={rc.dependsKindLabel}>
+          <SelectTrigger className="w-40" aria-label={rc.dependsKindLabel} data-cartograph-field={field && `${field}/on/kind`}>
             <SelectValue placeholder={rc.dependsKindLabel} />
           </SelectTrigger>
           <SelectContent>
@@ -98,6 +102,7 @@ export function DependencyEdgeEditor({
             here would only make somebody invent a manifest for the board. */}
         {kind === EXTERNAL ? (
           <Input
+            data-cartograph-field={field && `${field}/on/external`}
             value={on?.external ?? ""}
             onChange={(e) => set({ on: { external: e.target.value.slice(0, 80) } })}
             placeholder={rc.dependsExternalPlaceholder}
@@ -111,6 +116,7 @@ export function DependencyEdgeEditor({
             value={on?.id || undefined}
             onChange={(id) => set({ on: { kind: kind as RefKind, id: id ?? "" } as Ref })}
             label={rc.dependsOnLabel}
+            data-cartograph-field={field && `${field}/on/id`}
             className="w-56"
           />
         ) : null}
@@ -125,7 +131,7 @@ export function DependencyEdgeEditor({
             value={value?.needBy ?? ""}
             onValueChange={(v) => set({ needBy: v || undefined })}
           >
-            <SelectTrigger className="w-56" aria-label={rc.dependsNeedByLabel}>
+            <SelectTrigger className="w-56" aria-label={rc.dependsNeedByLabel} data-cartograph-field={field && `${field}/needBy`}>
               <SelectValue placeholder={rc.dependsNeedByPlaceholder} />
             </SelectTrigger>
             <SelectContent>

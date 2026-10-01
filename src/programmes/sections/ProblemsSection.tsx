@@ -30,10 +30,11 @@ export function ProblemsSection() {
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-3">
+    <div className="flex max-w-3xl flex-col gap-3" data-cartograph-region="problems">
       {problems.length === 0 ? <p className="text-sm text-muted-foreground">{pc.problemsEmpty}</p> : null}
       {problems.map((line, idx) => (
         <ProblemCard
+          list="/spec/problems"
           key={idx}
           index={idx}
           line={line}

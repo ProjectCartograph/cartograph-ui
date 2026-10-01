@@ -8,6 +8,7 @@ import { NameRoleDialog } from "./NameRoleDialog";
 import { RoleRefPicker, roleOptions, type RoleOption, useResourceNames } from "./RoleRefPicker";
 import { useProjectStore } from "./store";
 import type { AcceptanceCriterion, Deliverable, Ref } from "./types";
+import { seg } from "./field";
 
 const dc = copy.projects.deliverables;
 
@@ -34,7 +35,10 @@ function CriterionRow({
   onUpdate,
   onRemove,
   onAddRole,
+  field,
 }: {
+  /** The criterion's own pointer. */
+  field: string;
   criterion: AcceptanceCriterion;
   index: number;
   options: RoleOption[];
@@ -48,6 +52,7 @@ function CriterionRow({
         {index + 1}
       </span>
       <RoleRefPicker
+        data-cartograph-field={`${field}/by`}
         value={criterion.by}
         options={options}
         onChange={(by) => onUpdate({ by })}
@@ -59,6 +64,7 @@ function CriterionRow({
       {/* The test wraps rather than scrolling out of sight: a hundred and
           sixty characters never fit on one line beside its verifier. */}
       <Textarea
+        data-cartograph-field={`${field}/outcome`}
         value={criterion.outcome}
         onChange={(e) => onUpdate({ outcome: e.target.value.slice(0, 160) })}
         placeholder={dc.acceptanceOutcomePlaceholder}
@@ -112,7 +118,7 @@ export function AcceptanceEditor({ index }: { index: number }) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-cartograph-region={`acceptance-${index}`}>
       {criteria.length === 0 ? (
         <p className="text-sm text-muted-foreground">{dc.acceptanceEmpty}</p>
       ) : (
@@ -121,6 +127,7 @@ export function AcceptanceEditor({ index }: { index: number }) {
             key={cIdx}
             criterion={c}
             index={cIdx}
+            field={`/spec/deliverables/${seg(deliverables[index], index)}/acceptance/${cIdx}`}
             options={options}
             onUpdate={(patch) =>
               update({ acceptance: criteria.map((x, i) => (i === cIdx ? { ...x, ...patch } : x)) })

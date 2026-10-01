@@ -31,12 +31,15 @@ function ValueAndDate({
   value,
   onChange,
   idPrefix,
+  "data-cartograph-field": field,
 }: {
   label: string;
   hint: string;
   value?: { value: number; date: string };
   onChange: (next: { value: number; date: string } | undefined) => void;
   idPrefix: string;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field": string;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -44,6 +47,7 @@ function ValueAndDate({
       <div className="flex items-center gap-2">
         <Input
           id={`${idPrefix}-value`}
+          data-cartograph-field={`${field}/value`}
           type="number"
           className="w-32"
           aria-label={`${label} ${kc.valueLabel}`}
@@ -56,6 +60,7 @@ function ValueAndDate({
         />
         <Input
           id={`${idPrefix}-date`}
+          data-cartograph-field={`${field}/date`}
           className="w-32"
           placeholder={kc.datePlaceholder}
           aria-label={`${label} ${kc.dateLabel}`}
@@ -90,11 +95,12 @@ export function DefinitionSection() {
   const [addingSegment, setAddingSegment] = useState(false);
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex max-w-3xl flex-col gap-6" data-cartograph-region="kpi-definition">
       <div className="flex flex-col gap-2">
         <FieldHeading label={kc.definitionLabel} hint={kc.definitionHint} htmlFor="kpi-definition" />
         <Textarea
           id="kpi-definition"
+          data-cartograph-field="/spec/definition"
           rows={2}
           value={spec.definition ?? ""}
           placeholder={kc.definitionPlaceholder}
@@ -110,6 +116,7 @@ export function DefinitionSection() {
               picker's own add is how an instance declares its own. */}
           <ReferencePicker
             refKind="Unit"
+            data-cartograph-field="/spec/unit"
             value={spec.unit}
             onChange={(v) => set({ unit: v || undefined })}
             placeholder={kc.unitPlaceholder}
@@ -119,7 +126,7 @@ export function DefinitionSection() {
         <div className="flex flex-col gap-2">
           <FieldHeading label={kc.directionLabel} />
           <Select value={spec.direction ?? ""} onValueChange={(v) => set({ direction: v })}>
-            <SelectTrigger className="w-48" aria-label={kc.directionLabel}>
+            <SelectTrigger className="w-48" aria-label={kc.directionLabel} data-cartograph-field="/spec/direction">
               <SelectValue placeholder={kc.directionPlaceholder} />
             </SelectTrigger>
             <SelectContent>
@@ -140,6 +147,7 @@ export function DefinitionSection() {
           value={spec.baseline}
           onChange={(v) => set({ baseline: v })}
           idPrefix="kpi-baseline"
+          data-cartograph-field="/spec/baseline"
         />
         <ValueAndDate
           label={kc.targetLabel}
@@ -147,6 +155,7 @@ export function DefinitionSection() {
           value={spec.target}
           onChange={(v) => set({ target: v })}
           idPrefix="kpi-target"
+          data-cartograph-field="/spec/target"
         />
       </div>
 
@@ -154,6 +163,7 @@ export function DefinitionSection() {
         <FieldHeading label={kc.sourceLabel} hint={kc.sourceHint} />
         <ReferencePicker
           refKind="DataSource"
+          data-cartograph-field="/spec/source"
           value={spec.source}
           onChange={(v) => set({ source: v || undefined })}
           placeholder={kc.sourcePlaceholder}
@@ -169,6 +179,7 @@ export function DefinitionSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={kc.goalsLabel} hint={kc.goalsHint} />
         <ComboboxMultiple
+          data-cartograph-field="/spec/goals"
           options={goals?.options ?? []}
           value={spec.goals ?? []}
           onValueChange={(next) => set({ goals: next.length > 0 ? next : undefined })}
@@ -182,7 +193,7 @@ export function DefinitionSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={kc.levelLabel} hint={kc.levelHint} />
         <Select value={spec.resultLevel ?? ""} onValueChange={(v) => set({ resultLevel: v })}>
-          <SelectTrigger className="w-64" aria-label={kc.levelLabel}>
+          <SelectTrigger className="w-64" aria-label={kc.levelLabel} data-cartograph-field="/spec/resultLevel">
             <SelectValue placeholder={kc.levelPlaceholder} />
           </SelectTrigger>
           <SelectContent>
@@ -199,6 +210,7 @@ export function DefinitionSection() {
         <FieldHeading label={kc.cycleLabel} hint={kc.cycleHint} />
         <ReferencePicker
           refKind="ReportingCycle"
+          data-cartograph-field="/spec/cycle"
           value={spec.cycle}
           onChange={(v) => set({ cycle: v || undefined })}
           placeholder={kc.cyclePlaceholder}
@@ -210,6 +222,7 @@ export function DefinitionSection() {
       <div className="flex flex-col gap-2">
         <FieldHeading label={kc.splitLabel} hint={kc.splitHint} />
         <ComboboxMultiple
+          data-cartograph-field="/spec/disaggregations"
           options={segments?.options ?? []}
           value={spec.disaggregations ?? []}
           onValueChange={(next) => set({ disaggregations: next.length > 0 ? next : undefined })}

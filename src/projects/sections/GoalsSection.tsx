@@ -30,6 +30,7 @@ import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { useSectionAutosave, useProjectStore } from "../store";
+import { seg } from "../field";
 
 const gc = copy.projects.goals;
 
@@ -84,15 +85,18 @@ function Block({
   title,
   hint,
   action,
+  region,
   children,
 }: {
+  /** The region's key, for a pointer over it. */
+  region: string;
   title: string;
   hint?: string;
   action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-3" data-cartograph-region={region}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex items-center gap-1">
           <h2 className="text-base font-semibold">{title}</h2>
@@ -213,7 +217,7 @@ export function AlignmentSection() {
     <div className="flex flex-col gap-8">
       {/* What this is part of comes first: a programme carries goals with
           it, so naming one turns the whole tree into a short list. */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3" data-cartograph-region="part-of">
         <FieldHeading label={gc.programmesLabel} />
         <ToggleGroup
           type="single"
@@ -238,6 +242,7 @@ export function AlignmentSection() {
         <div className="flex flex-col gap-2 sm:max-w-xl" data-slot="parent-project">
           <FieldHeading label={gc.parentLabel} hint={gc.parentHint} />
           <ReferencePicker
+            data-cartograph-field="/spec/alignment/partOf"
             refKind="Project"
             value={parent}
             onChange={chooseParent}
@@ -258,6 +263,7 @@ export function AlignmentSection() {
           emptyText={copy.sheets.dialog.noMatches}
           removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
           aria-label={gc.programmesLabel}
+          data-cartograph-field="/spec/alignment/programmes"
           className="sm:max-w-xl"
         />
         {unproven.length > 0 ? (
@@ -276,12 +282,13 @@ export function AlignmentSection() {
       {partOf === "project" && parent ? null : treeQuery.isLoading ? <p className="text-sm text-muted-foreground">{copy.goals.home.loading}</p> : null}
       {treeQuery.isError ? <p className="text-sm text-destructive">{copy.goals.home.error}</p> : null}
       {treeQuery.data && !(partOf === "project" && parent) ? (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6" data-cartograph-region="goal-picker">
           {programmes.length > 0 ? (
             <div className="flex flex-col gap-3">
               <FieldHeading label={gc.withinLabel} hint={gc.withinHint} />
               <ChipPicker
                 slot="goal-chips"
+                data-cartograph-field="/spec/alignment/goals"
                 items={within}
                 selected={goals}
                 onToggle={toggleGoal}
@@ -303,6 +310,7 @@ export function AlignmentSection() {
             <ChipPicker
               slot={programmes.length > 0 ? "goal-chips-beyond" : "goal-chips"}
               items={programmes.length > 0 ? beyond : chips}
+              data-cartograph-field={programmes.length > 0 ? undefined : "/spec/alignment/goals"}
               selected={goals}
               onToggle={toggleGoal}
               placeholder={gc.searchPlaceholder}
@@ -321,6 +329,7 @@ export function AlignmentSection() {
       <div className="flex flex-col gap-2 sm:max-w-sm">
         <Label>{gc.teamLabel}</Label>
         <DirectorySelect
+          data-cartograph-field="/spec/team"
           kind="Team"
           value={store.spec.team ?? ""}
           onValueChange={(v) => store.updateSpec((s) => ({ ...s, team: v }))}
@@ -379,8 +388,9 @@ export function MeasuresSection() {
 
     return (
     <div className="flex flex-col gap-8">
-      <Block title={gc.objectiveTitle}>
+      <Block title={gc.objectiveTitle} region="objective">
         <ObjectiveEditor
+          data-cartograph-field={`/spec/objectives/${seg(store.spec.objectives?.[0], 0)}/objective`}
           objective={objective.objective}
           alignedGoals={goals.length}
           onChange={(next) => updateObjective({ objective: next })}
@@ -388,6 +398,7 @@ export function MeasuresSection() {
       </Block>
 
       <Block
+        region="key-results"
         title={gc.keyResultsTitle}
         hint={gc.keyResultsHint}
         action={<span className="text-sm text-muted-foreground">{gc.countOfThree(keyResults.length)}</span>}
@@ -421,6 +432,7 @@ export function MeasuresSection() {
           result, which said something untrue: one KPI is moved by several
           projects, and nothing here claims a KPI can judge this project. */}
       <Block
+        region="kpis"
         title={gc.kpiTitle}
         action={
           <Button type="button" variant="outline" size="sm" onClick={() => setAddKpi(true)}>
@@ -434,7 +446,7 @@ export function MeasuresSection() {
         ) : (
           <div className="flex flex-col gap-2">
             {namedKpis.map((k, i) => (
-              <div key={`${k.kpi}-${i}`} className="flex items-start justify-between gap-3 rounded-lg border p-3">
+              <div key={`${k.kpi}-${i}`} data-cartograph-region={`kpi-${i}`} className="flex items-start justify-between gap-3 rounded-lg border p-3">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="truncate text-sm font-medium">{kpiNames.get(k.kpi) ?? k.kpi}</span>
                   <span className="text-xs text-muted-foreground text-pretty">{k.reason}</span>
@@ -456,6 +468,9 @@ export function MeasuresSection() {
       </Block>
 
       <KeyResultDialog
+        data-cartograph-field={`/spec/objectives/${seg(store.spec.objectives?.[0], 0)}/keyResults/${
+          krDialog.existing ? `{${krDialog.existing.id}}` : "-"
+        }`}
         open={krDialog.open}
         existing={krDialog.existing}
         onOpenChange={(open) => setKrDialog((prev) => ({ ...prev, open }))}
@@ -510,7 +525,7 @@ function AddKpiDialog({
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" data-cartograph-region="dialog-add-kpi">
         <DialogHeader>
           <DialogTitle>{gc.addKpi}</DialogTitle>
         </DialogHeader>
@@ -518,6 +533,7 @@ function AddKpiDialog({
           <div className="flex flex-col gap-2">
             <Label>{gc.kpiLabel}</Label>
             <ReferencePicker
+              data-cartograph-field="/spec/kpis/-/kpi"
               refKind="KPI"
               value={kpi}
               onChange={(v) => setKpi(v ?? undefined)}
@@ -528,6 +544,7 @@ function AddKpiDialog({
           <div className="flex flex-col gap-2">
             <Label>{gc.kpiReasonLabel}</Label>
             <Input
+              data-cartograph-field="/spec/kpis/-/reason"
               value={reason}
               onChange={(e) => setReason(e.target.value.slice(0, 160))}
               aria-label={gc.kpiReasonLabel}

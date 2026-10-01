@@ -41,9 +41,9 @@ function Field({
 }
 
 /** A card with its own remove, used by both halves. */
-function Row({ onRemove, children }: { onRemove: () => void; children: React.ReactNode }) {
+function Row({ onRemove, region, children }: { onRemove: () => void; region: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border p-3">
+    <div className="flex items-start gap-2 rounded-lg border p-3" data-cartograph-region={region}>
       <div className="flex min-w-0 flex-1 flex-col gap-3">{children}</div>
       <Button
         type="button"
@@ -65,7 +65,10 @@ function EnumSelect<T extends string>({
   label,
   vocab,
   words,
+  "data-cartograph-field": field,
 }: {
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
   value: string;
   onChange: (next: T) => void;
   label: string;
@@ -74,7 +77,7 @@ function EnumSelect<T extends string>({
 }) {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as T)}>
-      <SelectTrigger className="w-full" aria-label={label}>
+      <SelectTrigger className="w-full" aria-label={label} data-cartograph-field={field}>
         <SelectValue placeholder={label} />
       </SelectTrigger>
       <SelectContent>
@@ -124,7 +127,7 @@ export function DataSection() {
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3" data-cartograph-region="data-uses">
         <div className="flex items-center gap-1">
           <Label className="flex items-center gap-2">
             <ArrowDownToLine className="size-4 text-muted-foreground" aria-hidden="true" />
@@ -134,9 +137,10 @@ export function DataSection() {
         </div>
         {consumes.length === 0 ? <p className="text-sm text-muted-foreground">{dc.usesEmpty}</p> : null}
         {consumes.map((c, idx) => (
-          <Row key={idx} onRemove={() => updateConsumes(consumes.filter((_, i) => i !== idx))}>
+          <Row key={idx} region={`data-use-${idx}`} onRemove={() => updateConsumes(consumes.filter((_, i) => i !== idx))}>
             <Field label={dc.sourceLabel}>
               <ReferencePicker
+                data-cartograph-field={`/spec/data/consumes/${idx}/source`}
                 refKind="DataSource"
                 value={c.source || undefined}
                 onChange={(v) => patchConsume(idx, { source: v ?? "" })}
@@ -147,6 +151,7 @@ export function DataSection() {
             </Field>
             <Field label={dc.usePurposeLabel}>
               <Input
+                data-cartograph-field={`/spec/data/consumes/${idx}/purpose`}
                 value={c.purpose}
                 onChange={(e) => patchConsume(idx, { purpose: e.target.value })}
                 placeholder={dc.usePurposePlaceholder}
@@ -156,6 +161,7 @@ export function DataSection() {
             <div className="grid grid-cols-2 gap-2">
               <Field label={dc.handoffLabel}>
                 <EnumSelect
+                  data-cartograph-field={`/spec/data/consumes/${idx}/handoff`}
                   value={c.handoff ?? ""}
                   onChange={(v) => patchConsume(idx, { handoff: v as DataConsumeItem["handoff"] })}
                   label={dc.handoffLabel}
@@ -165,6 +171,7 @@ export function DataSection() {
               </Field>
               <Field label={dc.personalDataLabel}>
                 <EnumSelect
+                  data-cartograph-field={`/spec/data/consumes/${idx}/personalData`}
                   value={c.personalData ?? ""}
                   onChange={(v) => patchConsume(idx, { personalData: v as DataConsumeItem["personalData"] })}
                   label={dc.personalDataLabel}
@@ -186,7 +193,7 @@ export function DataSection() {
         </Button>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3" data-cartograph-region="data-outputs">
         <div className="flex items-center gap-1">
           <Label className="flex items-center gap-2">
             <ArrowUpFromLine className="size-4 text-muted-foreground" aria-hidden="true" />
@@ -196,9 +203,10 @@ export function DataSection() {
         </div>
         {produces.length === 0 ? <p className="text-sm text-muted-foreground">{dc.producesEmpty}</p> : null}
         {produces.map((p, idx) => (
-          <Row key={idx} onRemove={() => updateProduces(produces.filter((_, i) => i !== idx))}>
+          <Row key={idx} region={`data-output-${idx}`} onRemove={() => updateProduces(produces.filter((_, i) => i !== idx))}>
             <Field label={dc.outputLabel}>
               <EnumSelect
+                data-cartograph-field={`/spec/data/produces/${idx}/output`}
                 value={p.output ?? ""}
                 onChange={(v) => patchProduce(idx, { output: v as DataOutput })}
                 label={dc.outputLabel}
@@ -214,6 +222,7 @@ export function DataSection() {
               hint={p.output === "newDataSource" ? dc.sinkNewSource : undefined}
             >
               <ReferencePicker
+                data-cartograph-field={`/spec/data/produces/${idx}/sink`}
                 refKind="DataSource"
                 value={p.sink || undefined}
                 onChange={(v) => patchProduce(idx, { sink: v ?? "" })}
@@ -224,6 +233,7 @@ export function DataSection() {
             </Field>
             <Field label={dc.producePurposeLabel}>
               <Input
+                data-cartograph-field={`/spec/data/produces/${idx}/purpose`}
                 value={p.purpose}
                 onChange={(e) => patchProduce(idx, { purpose: e.target.value })}
                 placeholder={dc.producePurposePlaceholder}
@@ -233,6 +243,7 @@ export function DataSection() {
             <div className="grid grid-cols-2 gap-2">
               <Field label={dc.refreshLabel}>
                 <EnumSelect
+                  data-cartograph-field={`/spec/data/produces/${idx}/refresh`}
                   value={p.refresh ?? ""}
                   onChange={(v) => patchProduce(idx, { refresh: v as DataProduceItem["refresh"] })}
                   label={dc.refreshLabel}
@@ -242,6 +253,7 @@ export function DataSection() {
               </Field>
               <Field label={dc.personalDataLabel}>
                 <EnumSelect
+                  data-cartograph-field={`/spec/data/produces/${idx}/personalData`}
                   value={p.personalData ?? ""}
                   onChange={(v) => patchProduce(idx, { personalData: v as DataProduceItem["personalData"] })}
                   label={dc.personalDataLabel}

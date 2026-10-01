@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { copy } from "@/copy";
 import { SaveStatus } from "@/projects/Chrome";
+import { ConflictNotes } from "@/collab/ConflictNotes";
+import { OfflineNote } from "@/collab/OfflineNote";
 import { SaveBar } from "./SaveBar";
 import { useDefinitionStore } from "./store";
 
@@ -116,15 +118,16 @@ export function DefinitionShell({
           <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
           <p className="text-muted-foreground">{subtitle}</p>
         </div>
-        <span className="shrink-0 pt-2">
+        <span className="flex shrink-0 flex-col items-end gap-1 pt-2">
           <SaveStatus state={store.saveState} />
+          <OfflineNote />
         </span>
       </div>
 
       {outline ? <OutlineStrip id={store.id} parts={outline} loaded={store.loaded} /> : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr]">
-        <div className="flex w-full shrink-0 flex-col gap-1 rounded-lg border p-2 xl:w-56">
+        <div className="flex w-full shrink-0 flex-col gap-1 rounded-lg border p-2 xl:w-56" data-cartograph-region="step-rail">
           {steps.map((step) => {
             const Icon = step.icon;
             const isCurrent = step.section === current;
@@ -180,7 +183,7 @@ export function DefinitionShell({
           ) : null}
         </div>
 
-        <div className="flex min-w-0 flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4" data-cartograph-region="step">
           {store.loadError ? (
             <p className="text-sm text-destructive">{copy.projects.record.error}</p>
           ) : !store.loaded ? (
@@ -188,6 +191,7 @@ export function DefinitionShell({
           ) : (
             <>
               {children}
+              <ConflictNotes conflicts={store.conflicts} onResolve={store.resolveConflict} />
               {aside}
               {/* The save sits under the step, once, so every kind this
                   shell drives gets the same moment of deciding without

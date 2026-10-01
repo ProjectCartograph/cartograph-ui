@@ -16,6 +16,7 @@ export function ReferenceField({
   placeholder,
   label,
   onRequestAdd,
+  "data-cartograph-field": field,
 }: {
   refKind: string;
   multiple?: boolean;
@@ -29,6 +30,8 @@ export function ReferenceField({
   /** When the directory is empty, offer this instead of a link away from
    * the current screen (the project flow adds the missing entry inline). */
   onRequestAdd?: () => void;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const { data, isLoading } = useReferenceOptions(refKind);
   const options = data?.options ?? [];
@@ -56,6 +59,7 @@ export function ReferenceField({
         emptyText={copy.sheets.dialog.noMatches}
         removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
         aria-label={label ?? placeholder}
+        data-cartograph-field={field}
       />
     );
   }
@@ -74,6 +78,7 @@ export function ReferenceField({
       emptyText={copy.sheets.dialog.noMatches}
       clearLabel={copy.common.clear}
       aria-label={label ?? placeholder}
+      data-cartograph-field={field}
     />
   );
 }

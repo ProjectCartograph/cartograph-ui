@@ -103,12 +103,15 @@ export function MonthPicker({
   placeholder = "yyyy-mm",
   className,
   "aria-label": ariaLabel,
+  "data-cartograph-field": field,
 }: {
   value: string | undefined;
   onChange: (next: string) => void;
   placeholder?: string;
   className?: string;
   "aria-label"?: string;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const parsed = parseMonth(value);
   const [open, setOpen] = React.useState(false);
@@ -121,7 +124,7 @@ export function MonthPicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className={cn("min-w-0", className)}>
+        <div className={cn("min-w-0", className)} data-cartograph-field={field}>
           <PickerTrigger value={value ?? ""} placeholder={placeholder} aria-label={ariaLabel} />
         </div>
       </PopoverTrigger>
@@ -180,12 +183,15 @@ export function DatePicker({
   placeholder = "yyyy-mm-dd",
   className,
   "aria-label": ariaLabel,
+  "data-cartograph-field": field,
 }: {
   value: string | undefined;
   onChange: (next: string) => void;
   placeholder?: string;
   className?: string;
   "aria-label"?: string;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const parsed = parseDate(value);
   const [open, setOpen] = React.useState(false);
@@ -214,7 +220,7 @@ export function DatePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <div className={cn("min-w-0", className)}>
+        <div className={cn("min-w-0", className)} data-cartograph-field={field}>
           <PickerTrigger value={value ?? ""} placeholder={placeholder} aria-label={ariaLabel} />
         </div>
       </PopoverTrigger>

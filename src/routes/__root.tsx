@@ -46,6 +46,11 @@ import {
 import { copy, manifestKindLabels } from "@/copy";
 import { useProjectManifest } from "@/projects/api";
 import { useGoalManifest } from "@/surfaces/goals/api";
+import { PeopleHere } from "@/collab/PeopleHere";
+import { PresenceOverlay } from "@/collab/PresenceOverlay";
+import { PresenceProvider } from "@/collab/presence";
+import { PresenceTracker } from "@/collab/PresenceTracker";
+import { screenFor } from "@/collab/screen";
 import { useManifestName } from "@/api/names";
 
 const defineItems = [
@@ -290,15 +295,28 @@ function readSidebarOpenCookie(): boolean {
   return match ? match[1] === "true" : true;
 }
 
+/** The screen presence travels on: the manifest the route is about, or
+ * none. */
+function usePresenceScreen() {
+  const matches = useMatches();
+  const last = matches[matches.length - 1];
+  const params = (last?.params ?? {}) as Record<string, string>;
+  return { screen: screenFor(last?.routeId, params), route: last?.pathname ?? "" };
+}
+
 function RootLayout() {
   const crumbs = useBreadcrumbCrumbs();
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarOpenCookie);
+  const { screen, route } = usePresenceScreen();
 
   return (
     <VaultExamplesProvider>
     <TooltipProvider>
+    <PresenceProvider screen={screen} route={route}>
+      <PresenceTracker />
+      <PresenceOverlay />
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <Sidebar variant="inset" collapsible="icon">
+        <Sidebar variant="inset" collapsible="icon" data-cartograph-region="rail">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
@@ -360,7 +378,7 @@ function RootLayout() {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4" data-cartograph-region="header">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb className="min-w-0 flex-1">
@@ -384,12 +402,14 @@ function RootLayout() {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
+            <PeopleHere />
           </header>
-          <main className="min-w-0 flex-1 p-6">
+          <main className="min-w-0 flex-1 p-6" data-cartograph-region="main">
             <Outlet />
           </main>
         </SidebarInset>
       </SidebarProvider>
+    </PresenceProvider>
     </TooltipProvider>
     </VaultExamplesProvider>
   );

@@ -55,7 +55,11 @@ export function composeStandard(s: Standard): string {
 export function StandardPicker({
   value,
   onChange,
+  "data-cartograph-field": field,
 }: {
+  /** The manifest field this edits, by JSON pointer. The standard is put
+   * together from parts, so it is named on the picker as a whole. */
+  "data-cartograph-field"?: string;
   value: string;
   onChange: (next: string) => void;
 }) {
@@ -63,7 +67,7 @@ export function StandardPicker({
   const set = (patch: Partial<Standard>) => onChange(composeStandard({ ...parts, ...patch }));
 
   return (
-    <div className="flex flex-wrap items-center gap-2" data-slot="standard-picker">
+    <div className="flex flex-wrap items-center gap-2" data-slot="standard-picker" data-cartograph-field={field}>
       <Select
         value={parts.comparison}
         onValueChange={(v) => {

@@ -46,6 +46,7 @@ export function NewDefinition({
   errorLabel,
   specFrom,
   firstStep,
+  teamField,
 }: {
   kind: string;
   /** Left out for a kind that belongs to nobody. A Gap is a finding about
@@ -63,6 +64,8 @@ export function NewDefinition({
   specFrom: (name: string, team: string) => Record<string, unknown>;
   /** The step the walk opens on. */
   firstStep: LinkProps["to"];
+  /** Where the team picked here is written in the new spec, by JSON pointer. */
+  teamField?: string;
 }) {
   const navigate = useNavigate();
   const client = useClient();
@@ -100,7 +103,7 @@ export function NewDefinition({
   }
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6">
+    <div className="mx-auto flex max-w-xl flex-col gap-6" data-cartograph-region="new-definition">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         <p className="text-muted-foreground">{subtitle}</p>
@@ -112,6 +115,7 @@ export function NewDefinition({
         <Label htmlFor="new-definition-name">{nameLabel}</Label>
         <Input
           id="new-definition-name"
+          data-cartograph-field="/metadata/name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={namePlaceholder}
@@ -124,6 +128,7 @@ export function NewDefinition({
           <Label>{teamLabel}</Label>
           <DirectorySelect
             kind="Team"
+            data-cartograph-field={teamField}
             value={team}
             onValueChange={setTeam}
             options={teams?.options ?? []}

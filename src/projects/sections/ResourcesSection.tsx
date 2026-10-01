@@ -19,6 +19,7 @@ import { CURRENCIES } from "../currencies";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { FundingLine, ProjectRole, ProjectRoleKind } from "../types";
+import { seg } from "../field";
 
 const pc = copy.projects.resources;
 
@@ -65,11 +66,12 @@ function RoleRow({
   onUpdate: (patch: Partial<ProjectRole>) => void;
   onRemove: () => void;
 }) {
+  const field = `/spec/resources/${seg(entry, index)}`;
   return (
-    <div className="flex items-start gap-3 rounded-xl p-3 ring-1 ring-foreground/10">
+    <div className="flex items-start gap-3 rounded-xl p-3 ring-1 ring-foreground/10" data-cartograph-region={`role-${index}`}>
       <div className="w-48 shrink-0">
         <Select value={entry.role} onValueChange={(v) => onUpdate({ role: v as ProjectRoleKind })}>
-          <SelectTrigger className="w-full" aria-label={pc.roleLabel}>
+          <SelectTrigger className="w-full" aria-label={pc.roleLabel} data-cartograph-field={`${field}/role`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -88,6 +90,7 @@ function RoleRow({
             the vaults had it holding "Sponsor" on a row already typed
             sponsor as often as a name. */}
         <ReferencePicker
+          data-cartograph-field={`${field}/resource`}
           refKind="Resource"
           value={entry.resource}
           onChange={(v) => onUpdate({ resource: v || undefined })}
@@ -166,7 +169,7 @@ export function ResourcesSection() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2 rounded-lg bg-muted/40 p-3">
+      <div className="flex flex-col gap-2 rounded-lg bg-muted/40 p-3" data-cartograph-region="required-roles">
         <div className="flex items-center gap-1">
           <p className="text-sm font-medium">{pc.requiredTitle}</p>
           <Help label={pc.requiredTitle} hint={pc.requiredHint} />
@@ -184,7 +187,7 @@ export function ResourcesSection() {
         </div>
       </div>
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3" data-cartograph-region="roles">
         <div className="flex items-center gap-1">
           <h2 className="text-base font-semibold">{pc.listTitle}</h2>
           <Help label={pc.listTitle} hint={pc.listHint} />
@@ -225,14 +228,15 @@ export function ResourcesSection() {
 
       <Separator />
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-3" data-cartograph-region="funding">
         <FieldHeading label={pc.fundingTitle} hint={pc.fundingHint} />
         <div className="flex flex-col gap-2">
           {funding.length === 0 ? <p className="text-sm text-muted-foreground">{pc.fundingEmpty}</p> : null}
           {funding.map((f, idx) => (
-            <div key={idx} className="flex flex-col gap-2 rounded-lg border p-3">
+            <div key={idx} className="flex flex-col gap-2 rounded-lg border p-3" data-cartograph-region={`funding-${idx}`}>
               <div className="flex items-center gap-2">
                 <Input
+                  data-cartograph-field={`/spec/funding/${idx}/amount`}
                   type="number"
                   value={f.amount}
                   onChange={(e) => updateFunding(idx, { amount: Number(e.target.value) })}
@@ -254,13 +258,14 @@ export function ResourcesSection() {
                     searchPlaceholder={pc.currencySearchPlaceholder}
                     emptyText={pc.currencyEmpty}
                     aria-label={pc.currencyLabel}
+                    data-cartograph-field={`/spec/funding/${idx}/currency`}
                   />
                 </div>
                 <Select
                   value={f.status}
                   onValueChange={(v) => updateFunding(idx, { status: v as FundingLine["status"] })}
                 >
-                  <SelectTrigger className="min-w-0 flex-1" aria-label={pc.fundingStatusLabel}>
+                  <SelectTrigger className="min-w-0 flex-1" aria-label={pc.fundingStatusLabel} data-cartograph-field={`/spec/funding/${idx}/status`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -289,6 +294,7 @@ export function ResourcesSection() {
                   carries its own code. */}
               <div className="pr-9">
                 <ReferencePicker
+                  data-cartograph-field={`/spec/funding/${idx}/source`}
                   refKind="FundingSource"
                   value={f.source}
                   onChange={(v) => updateFunding(idx, { source: v || undefined })}

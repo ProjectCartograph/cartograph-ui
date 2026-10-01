@@ -20,10 +20,20 @@ export function joinEnd(year: string, month: string): string {
 }
 
 /** One end of a horizon: a year, and a month when it matters. */
-function End({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function End({
+  label,
+  value,
+  onChange,
+  field,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  field?: string;
+}) {
   const { year, month } = splitEnd(value);
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" data-cartograph-field={field}>
       <Select value={year} onValueChange={(y) => onChange(joinEnd(y, month))}>
         <SelectTrigger aria-label={`${label}: ${hc.year}`} className="w-24">
           <SelectValue placeholder={hc.year} />
@@ -60,23 +70,26 @@ export function HorizonPicker({
   onChange,
   canInherit,
   inheritedSpan,
+  "data-cartograph-field": field,
 }: {
   start: string;
   end: string;
   onChange: (start: string, end: string) => void;
   canInherit: boolean;
   inheritedSpan?: string;
+  /** The horizon object, by JSON pointer; its ends are /start and /end under it. */
+  "data-cartograph-field"?: string;
 }) {
   const own = start !== "" || end !== "";
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <span className="w-10 text-sm text-muted-foreground">{hc.fromWord}</span>
-        <End label={hc.from} value={start} onChange={(v) => onChange(v, end)} />
+        <End label={hc.from} value={start} onChange={(v) => onChange(v, end)} field={field ? `${field}/start` : undefined} />
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <span className="w-10 text-sm text-muted-foreground">{hc.toWord}</span>
-        <End label={hc.until} value={end} onChange={(v) => onChange(start, v)} />
+        <End label={hc.until} value={end} onChange={(v) => onChange(start, v)} field={field ? `${field}/end` : undefined} />
       </div>
       {canInherit ? (
         own ? (

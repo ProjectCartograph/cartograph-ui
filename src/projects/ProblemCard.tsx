@@ -7,6 +7,7 @@ import { copy } from "@/copy";
 import type { RefOption } from "@/surfaces/sheet/useReferenceOptions";
 import { GapCitations } from "./GapCitations";
 import { ChangeEditor, ProblemEditor } from "./StatementEditor";
+import { seg } from "./field";
 import type { ProblemLine } from "./types";
 
 const ac = copy.projects.aim;
@@ -30,6 +31,7 @@ export function ProblemCard({
   onChange,
   onRemove,
   canRemove,
+  list = "/spec/summary/problems",
 }: {
   line: ProblemLine;
   index: number;
@@ -42,6 +44,9 @@ export function ProblemCard({
   onChange: (patch: Partial<ProblemLine>) => void;
   onRemove: () => void;
   canRemove: boolean;
+  /** Where the list of problems sits in the manifest, by JSON pointer: a
+   * project keeps it under its summary, a programme in its spec. */
+  list?: string;
 }) {
   const groups = line.groups ?? [];
   const groupNames = groups.map((g) => groupOptions.find((o) => o.value === g)?.label ?? g);
@@ -51,9 +56,10 @@ export function ProblemCard({
   const problem = (line.problem?.situation ?? "").trim();
   const change = (line.change?.what ?? "").trim();
   const Chevron = open ? ChevronDown : ChevronRight;
+  const field = `${list}/${seg(line, index)}`;
 
   return (
-    <div data-slot="problem-card" className="flex flex-col rounded-xl ring-1 ring-foreground/10">
+    <div data-slot="problem-card" data-cartograph-region={`problem-${index}`} className="flex flex-col rounded-xl ring-1 ring-foreground/10">
       <div className="flex items-start gap-2 p-3">
         <button
           type="button"
@@ -109,6 +115,7 @@ export function ProblemCard({
                 emptyText={copy.sheets.dialog.noMatches}
                 removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
                 aria-label={ac.problemGroupsLabel}
+                data-cartograph-field={`${field}/groups`}
               />
             )}
           </div>
@@ -121,6 +128,7 @@ export function ProblemCard({
           <div className="flex flex-col gap-2">
             <FieldHeading label={ac.problemGapsLabel} hint={ac.problemGapsHint} />
             <GapCitations
+              data-cartograph-field={`${field}/gaps`}
               value={line.gaps ?? []}
               onChange={(next) => onChange({ gaps: next.length > 0 ? next : undefined })}
             />
@@ -129,6 +137,7 @@ export function ProblemCard({
           <div className="flex flex-col gap-2">
             <FieldHeading label={ac.problemLabel} />
             <ProblemEditor
+              data-cartograph-field={`${field}/problem`}
               value={line.problem}
               groups={groupNames}
               onChange={(v) => onChange({ problem: v })}
@@ -138,6 +147,7 @@ export function ProblemCard({
           <div className="flex flex-col gap-2">
             <FieldHeading label={ac.changeLabel} />
             <ChangeEditor
+              data-cartograph-field={`${field}/change`}
               value={line.change}
               groups={groupNames}
               onChange={(v) => onChange({ change: v })}

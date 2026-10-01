@@ -21,19 +21,22 @@ const pc = copy.programmes;
 export function AimEditor({
   value,
   onChange,
+  "data-cartograph-field": field = "/spec/aim",
 }: {
   value: AimStatement | undefined;
   onChange: (next: AimStatement) => void;
+  /** The manifest field this edits, by JSON pointer. */
+  "data-cartograph-field"?: string;
 }) {
   const set = (patch: Partial<AimStatement>) => onChange({ ...value, ...patch });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-cartograph-region={`${field}-parts`}>
       <Part n={1} label={pc.aimChangeLabel} hint={pc.aimChangeHint} examples={pc.aimChangeExamples} exampleKey="aim.change">
-        <PartText value={value?.change} label={pc.aimChangeLabel} onChange={(v) => set({ change: v })} />
+        <PartText data-cartograph-field={`${field}/change`} value={value?.change} label={pc.aimChangeLabel} onChange={(v) => set({ change: v })} />
       </Part>
       <Part n={2} label={pc.aimGainLabel} hint={pc.aimGainHint} examples={pc.aimGainExamples} exampleKey="aim.gain">
-        <PartText value={value?.gain} label={pc.aimGainLabel} onChange={(v) => set({ gain: v || undefined })} />
+        <PartText data-cartograph-field={`${field}/gain`} value={value?.gain} label={pc.aimGainLabel} onChange={(v) => set({ gain: v || undefined })} />
       </Part>
     </div>
   );

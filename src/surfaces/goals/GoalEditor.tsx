@@ -18,6 +18,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { useClient } from "@/client/context";
+import { ConflictNotes } from "@/collab/ConflictNotes";
+import { OfflineNote } from "@/collab/OfflineNote";
+import { useDraftState, useSharedManifest } from "@/collab/draft";
 import { copy } from "@/copy";
 import { ErrorAlert } from "@/components/error-alert";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
@@ -83,18 +86,26 @@ export function GoalEditor({ id }: { id: string }) {
   const manifest = manifestQuery.data?.manifest as GoalManifest | undefined;
   const version = manifestQuery.data?.version.number;
 
-  const [objective, setObjective] = useState("");
-  const [whyItMatters, setWhyItMatters] = useState("");
-  const [parent, setParent] = useState<string>("");
-  const [evidence, setEvidence] = useState("");
-  const [keyResults, setKeyResults] = useState<KeyResult[]>([]);
-  const [links, setLinks] = useState<GoalLink[]>([]);
-  const [owner, setOwner] = useState<string | undefined>(undefined);
-  const [horizonStart, setHorizonStart] = useState("");
-  const [horizonEnd, setHorizonEnd] = useState("");
+  // The fields live in the goal's shared draft while it is open, so the
+  // people on this goal see each other's edits as they make them; with no
+  // draft they are this screen's own, loaded from the version as before.
+  const shared = useSharedManifest(client, "Goal", id);
+  const [objective, setObjective] = useDraftState(shared, "/spec/objective", "");
+  const [whyItMatters, setWhyItMatters] = useDraftState(shared, "/spec/whyItMatters", "");
+  const [parent, setParent] = useDraftState<string>(shared, "/spec/parent", "");
+  const [evidence, setEvidence] = useDraftState(shared, "/spec/evidence", "");
+  const [keyResults, setKeyResults] = useDraftState<KeyResult[]>(shared, "/spec/keyResults", []);
+  const [links, setLinks] = useDraftState<GoalLink[]>(shared, "/spec/contributesTo", []);
+  const [owner, setOwner] = useDraftState<string | undefined>(shared, "/spec/owner", undefined);
+  const [horizonStart, setHorizonStart] = useDraftState(shared, "/spec/horizon/start", "");
+  const [horizonEnd, setHorizonEnd] = useDraftState(shared, "/spec/horizon/end", "");
   const [loadedVersion, setLoadedVersion] = useState<number | undefined>(undefined);
+  const sharing = shared.draft !== undefined;
 
   useEffect(() => {
+    // The draft already holds every field; seeding it from the version
+    // would write over what the others are typing.
+    if (sharing) return;
     if (manifest && version !== loadedVersion) {
       setObjective(manifest.spec.objective ?? "");
       setWhyItMatters(manifest.spec.whyItMatters ?? "");
@@ -107,7 +118,9 @@ export function GoalEditor({ id }: { id: string }) {
       setHorizonEnd(manifest.spec.horizon?.end ?? "");
       setLoadedVersion(version);
     }
-  }, [manifest, version, loadedVersion]);
+    // The setters are stable for a given draft, and there is none here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manifest, version, loadedVersion, sharing]);
 
   const [krDialog, setKrDialog] = useState<{ open: boolean; existing?: KeyResult }>({ open: false });
   const [saveOpen, setSaveOpen] = useState(false);
@@ -282,11 +295,12 @@ export function GoalEditor({ id }: { id: string }) {
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" data-cartograph-region="goal-editor">
       <div className="flex items-start justify-between gap-4">
         <div id="goal-section-title" className="flex min-w-0 flex-col gap-2">
           <div className="flex min-w-0 items-center gap-3">
             <InlineTitle
+              data-cartograph-field="/metadata/name"
               value={manifest.metadata.name}
               onSave={handleRename}
               as="h1"
@@ -303,7 +317,8 @@ export function GoalEditor({ id }: { id: string }) {
             <p className="text-xs text-muted-foreground">{ec.levelKept}</p>
           ) : null}
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          <OfflineNote />
           <Button type="button" variant="outline" onClick={() => setYamlOpen(true)}>
             {ec.viewAsYaml}
           </Button>
@@ -316,6 +331,7 @@ export function GoalEditor({ id }: { id: string }) {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="flex flex-col gap-6 xl:col-span-2">
           <GoalSteps steps={steps} current={step} onPick={setStep} />
+          <ConflictNotes conflicts={shared.conflicts} onResolve={shared.resolve} />
 
           {step === "aim" ? (
             <>
@@ -324,6 +340,7 @@ export function GoalEditor({ id }: { id: string }) {
                   <Label>{ec.moveTo.label}</Label>
                   <div className="rounded-lg border border-dashed p-3">
                     <DirectorySelect
+                      data-cartograph-field="/spec/parent"
                       kind="Goal"
                       value={parent}
                       onValueChange={handleMoveTo}
@@ -343,14 +360,14 @@ export function GoalEditor({ id }: { id: string }) {
 
               <div id="goal-section-objective" className="flex flex-col gap-2">
                 <FieldHeading label={ec.statementLabel[level] ?? ec.objective.label} hint={ec.objectiveHint[level] ?? ec.objective.hint} htmlFor="goal-objective" />
-                <AimEditor level={level} value={objective} onChange={(v) => setObjective(v.slice(0, ec.objective.maxLength))} maxLength={ec.objective.maxLength} />
+                <AimEditor data-cartograph-field="/spec/objective" level={level} value={objective} onChange={(v) => setObjective(v.slice(0, ec.objective.maxLength))} maxLength={ec.objective.maxLength} />
                 <FieldError message={fieldErrors.objective} />
               </div>
             </>
           ) : null}
 
           {step === "measures" ? (
-          <section id="goal-section-measures" aria-label={ec.measures.label} className="flex flex-col gap-4 rounded-lg border p-4">
+          <section id="goal-section-measures" data-cartograph-region="measures" aria-label={ec.measures.label} className="flex flex-col gap-4 rounded-lg border p-4">
             <div className="flex items-center gap-1">
               <h2 className="text-sm font-semibold">{ec.measures.label}</h2>
               <Help label={ec.measures.label} hint={ec.measures.hint} />
@@ -366,7 +383,7 @@ export function GoalEditor({ id }: { id: string }) {
                 </span>
               </div>
               <FieldError message={fieldErrors.keyResults} />
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2" data-cartograph-region="key-results">
                 {keyResults.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{ec.keyResults.empty}</p>
                 ) : null}
@@ -409,6 +426,7 @@ export function GoalEditor({ id }: { id: string }) {
                 <FieldHeading label={ec.scoredOn.label} htmlFor="goal-scored-on" />
                 <Input
                   id="goal-scored-on"
+                  data-cartograph-field="/spec/evidence"
                   value={evidence}
                   onChange={(e) => setEvidence(e.target.value.slice(0, ec.scoredOn.maxLength))}
                   placeholder={ec.scoredOn.placeholder}
@@ -425,11 +443,12 @@ export function GoalEditor({ id }: { id: string }) {
             <div className="flex flex-col gap-6">
               <div id="goal-section-owner" className="flex flex-col gap-2">
                 <FieldHeading label={ec.owner.label} hint={ec.owner.hint} />
-                <ReferencePicker refKind="Resource" value={owner} onChange={setOwner} label={ec.owner.label} />
+                <ReferencePicker data-cartograph-field="/spec/owner" refKind="Resource" value={owner} onChange={setOwner} label={ec.owner.label} />
               </div>
               <div id="goal-section-horizon" className="flex flex-col gap-2">
                 <FieldHeading label={ec.horizon.label} hint={ec.horizon.hint[level] ?? ""} />
                 <HorizonPicker
+                  data-cartograph-field="/spec/horizon"
                   start={horizonStart}
                   end={horizonEnd}
                   onChange={(s, e) => { setHorizonStart(s); setHorizonEnd(e); }}
@@ -445,6 +464,7 @@ export function GoalEditor({ id }: { id: string }) {
               <FieldHeading label={ec.whyItMatters.label} hint={ec.whyItMatters.hint} htmlFor="goal-why" />
               <Input
                 id="goal-why"
+                data-cartograph-field="/spec/whyItMatters"
                 value={whyItMatters}
                 onChange={(e) => setWhyItMatters(e.target.value.slice(0, ec.whyItMatters.maxLength))}
                 maxLength={ec.whyItMatters.maxLength}
@@ -463,6 +483,7 @@ export function GoalEditor({ id }: { id: string }) {
               {links.map((link, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <DirectorySelect
+                    data-cartograph-field={`/spec/contributesTo/${i}/goal`}
                     kind="Goal"
                     value={link.goal}
                     onValueChange={(v) => setLinks((ls) => ls.map((l, j) => (j === i ? { ...l, goal: v } : l)))}
@@ -472,6 +493,7 @@ export function GoalEditor({ id }: { id: string }) {
                     className="w-64 shrink-0"
                   />
                   <Input
+                    data-cartograph-field={`/spec/contributesTo/${i}/because`}
                     aria-label={ec.contributesTo.because}
                     placeholder={ec.contributesTo.because}
                     value={link.because ?? ""}
@@ -521,7 +543,7 @@ export function GoalEditor({ id }: { id: string }) {
         </div>
 
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-3 rounded-lg border p-4">
+          <div className="flex flex-col gap-3 rounded-lg border p-4" data-cartograph-region="checks">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">{ec.checks.title}</h2>
               {toFixCount > 0 ? <Badge variant="secondary">{ec.checks.toFix(toFixCount)}</Badge> : null}
@@ -565,7 +587,7 @@ export function GoalEditor({ id }: { id: string }) {
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-3 rounded-lg border p-4">
+          <div className="flex flex-col gap-3 rounded-lg border p-4" data-cartograph-region="aligned">
             <h2 className="text-sm font-semibold">{ec.aligned.title}</h2>
             {referencesQuery.isLoading ? (
               <div className="flex flex-col gap-2">
@@ -599,6 +621,7 @@ export function GoalEditor({ id }: { id: string }) {
       </div>
 
       <KeyResultDialog
+        data-cartograph-field={krDialog.existing ? `/spec/keyResults/{${krDialog.existing.id}}` : "/spec/keyResults/-"}
         open={krDialog.open}
         existing={krDialog.existing}
         allowSource={false}
@@ -617,7 +640,7 @@ export function GoalEditor({ id }: { id: string }) {
       />
 
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" data-cartograph-region="dialog-save">
           <DialogHeader>
             <DialogTitle>{ec.save.dialogTitle}</DialogTitle>
           </DialogHeader>
@@ -647,7 +670,7 @@ export function GoalEditor({ id }: { id: string }) {
       </Dialog>
 
       <Dialog open={yamlOpen} onOpenChange={setYamlOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl" data-cartograph-region="dialog-yaml">
           <DialogHeader>
             <DialogTitle>{ec.viewAsYaml}</DialogTitle>
           </DialogHeader>

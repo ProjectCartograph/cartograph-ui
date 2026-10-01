@@ -9,6 +9,7 @@ import { copy } from "@/copy";
 import { AcceptanceEditor } from "../AcceptanceEditor";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { Deliverable } from "../types";
+import { seg } from "../field";
 
 const dc = copy.projects.deliverables;
 
@@ -57,11 +58,11 @@ export function DeliverablesSection() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-cartograph-region="deliverables">
       {deliverables.length === 0 ? <p className="text-sm text-muted-foreground">{dc.empty}</p> : null}
 
       {deliverables.map((d, idx) => (
-        <div key={d.id} className="flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/10">
+        <div key={d.id} data-cartograph-region={`deliverable-${idx}`} className="flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/10">
           <div className="flex items-start gap-3">
             <span className="mt-7 flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-xs font-medium text-muted-foreground">
               D{idx + 1}
@@ -69,6 +70,7 @@ export function DeliverablesSection() {
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <FieldHeading label={dc.nameLabel} examples={dc.nameExamples} />
               <Input
+                data-cartograph-field={`/spec/deliverables/${seg(d, idx)}/name`}
                 value={d.name}
                 onChange={(e) => {
                   const name = e.target.value.slice(0, 60);
@@ -102,6 +104,7 @@ export function DeliverablesSection() {
           <div className="flex flex-col gap-2 pl-9">
             <FieldHeading label={dc.descriptionLabel} hint={dc.descriptionHint} examples={dc.descriptionExamples} />
             <Textarea
+              data-cartograph-field={`/spec/deliverables/${seg(d, idx)}/description`}
               value={d.description ?? ""}
               onChange={(e) => update(idx, { description: e.target.value.slice(0, 240) })}
               placeholder={dc.descriptionPlaceholder}

@@ -115,7 +115,7 @@ export function PathwaySection() {
   }
 
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex max-w-3xl flex-col gap-4" data-cartograph-region="pathway">
       <FieldHeading label={pc.label} hint={pc.hint} />
 
       {cards.length === 0 ? <p className="text-sm text-muted-foreground">{pc.empty}</p> : null}
@@ -124,10 +124,12 @@ export function PathwaySection() {
         const offered = canRestOn(steps, at).filter((id) => !(step.from ?? []).includes(id));
         const shareable = offered.length > 0 || sharedFrom.length > 0;
         const Mark = role === "outcome" ? Flag : Waypoints;
+        const item = `/spec/pathway/${step.id ? `{${step.id}}` : at}`;
         return (
           <div
             key={step.id ?? at}
             data-slot="pathway-step"
+            data-cartograph-region={`pathway-step-${step.id ?? at}`}
             // The indent is the depth: what a step rests on is drawn
             // under it, so the tree is read rather than reconstructed.
             style={{ marginLeft: `${Math.min(depth, 6) * 1.5}rem` }}
@@ -156,6 +158,7 @@ export function PathwaySection() {
               />
               <ReferencePicker
                 refKind="Goal"
+                data-cartograph-field={`${item}/outcome`}
                 value={step.outcome}
                 onChange={(v) => setOutcome(at, v || undefined)}
                 placeholder={pc.outcomePlaceholder}
@@ -171,6 +174,7 @@ export function PathwaySection() {
               />
               <Textarea
                 id={`pathway-because-${at}`}
+                data-cartograph-field={`${item}/because`}
                 rows={2}
                 maxLength={400}
                 value={step.because ?? ""}
@@ -182,6 +186,7 @@ export function PathwaySection() {
             <div className="flex flex-col gap-2">
               <FieldHeading label={pc.assumesLabel} hint={pc.assumesHint} />
               <ComboboxMultiple
+                data-cartograph-field={`${item}/assumes`}
                 options={assumptions?.options ?? []}
                 value={step.assumes ?? []}
                 onValueChange={(next) => update(at, { assumes: next.length > 0 ? next : undefined })}
@@ -211,6 +216,7 @@ export function PathwaySection() {
               <div className="flex flex-col gap-2">
                 <FieldHeading label={pc.alsoRestsOnLabel} hint={pc.alsoRestsOnHint} />
                 <ComboboxMultiple
+                  data-cartograph-field={`${item}/from`}
                   options={goalOptions.filter(
                     (o) => offered.includes(o.value) || sharedFrom.includes(o.value),
                   )}

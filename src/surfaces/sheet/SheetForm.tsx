@@ -213,7 +213,7 @@ export function SheetForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg" data-cartograph-region="sheet-form">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? `${copy.sheets.edit}: ${existing?.name}` : `${copy.sheets.add} ${kindLabel}`}
@@ -240,6 +240,7 @@ export function SheetForm({
                   <FormControl>
                     <Input
                       {...field}
+                      data-cartograph-field="/metadata/name"
                       value={field.value as string}
                       placeholder={copy.sheets.fieldPlaceholders[kind]?.name}
                       autoFocus
@@ -263,6 +264,7 @@ export function SheetForm({
                   <FormControl>
                     <Input
                       {...field}
+                      data-cartograph-field="/metadata/id"
                       value={field.value as string}
                       disabled={isEdit}
                       onChange={(e) => {
@@ -326,6 +328,8 @@ function SheetFormField({
   control: Control<FormValues>;
 }) {
   const label = copy.sheets.fields[kind]?.[field.name] ?? field.name;
+  // The field's place in the manifest: every sheet field sits on the spec.
+  const pointer = `/spec/${field.name}`;
   // unitHint is the numeric unit ("months", "days"); fieldHints is the
   // line saying what belongs in the field at all. A numeric field can
   // carry both.
@@ -367,6 +371,7 @@ function SheetFormField({
               // what already exists and typing a new name does nothing.
               <ReferencePicker
                 refKind={field.refKind as string}
+                data-cartograph-field={pointer}
                 value={rhf.value as string | undefined}
                 onChange={rhf.onChange}
               />
@@ -374,6 +379,7 @@ function SheetFormField({
               <ReferenceField
                 refKind={field.refKind as string}
                 multiple
+                data-cartograph-field={pointer}
                 value={rhf.value as string | string[] | undefined}
                 onChange={rhf.onChange}
               />
@@ -396,7 +402,7 @@ function SheetFormField({
             {heading}
             <Select value={(rhf.value as string) ?? ""} onValueChange={rhf.onChange}>
               <FormControl>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" data-cartograph-field={pointer}>
                   <SelectValue placeholder={label} />
                 </SelectTrigger>
               </FormControl>
@@ -423,7 +429,7 @@ function SheetFormField({
         render={({ field: rhf }) => (
           <FormItem className="flex flex-row items-center gap-2">
             <FormControl>
-              <Checkbox checked={!!rhf.value} onCheckedChange={rhf.onChange} />
+              <Checkbox data-cartograph-field={pointer} checked={!!rhf.value} onCheckedChange={rhf.onChange} />
             </FormControl>
             <FormLabel className="font-normal">{label}</FormLabel>
           </FormItem>
@@ -444,6 +450,7 @@ function SheetFormField({
             <FormControl>
               <Input
                 type="number"
+                data-cartograph-field={pointer}
                 min={field.minimum}
                 max={field.maximum}
                 placeholder={placeholder}
@@ -469,6 +476,7 @@ function SheetFormField({
           <FormControl>
             <Input
               {...rhf}
+              data-cartograph-field={pointer}
               value={(rhf.value as string) ?? ""}
               placeholder={placeholder}
               maxLength={field.maxLength}

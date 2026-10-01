@@ -244,9 +244,11 @@ export function SuccessCriterionDialog({
     onOpenChange(false);
   }
 
+  const field = `/spec/successCriteria/${existing ? `{${existing.id}}` : "-"}`;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-xl" data-cartograph-region="dialog-success-criterion">
         <DialogHeader>
           <DialogTitle>{existing ? c.editTitle : c.addTitle}</DialogTitle>
         </DialogHeader>
@@ -254,6 +256,7 @@ export function SuccessCriterionDialog({
         <div className="flex flex-col gap-5">
           <Step n={1} title={c.step1} hint={c.step1Hint} examples={statementExamples}>
             <Textarea
+              data-cartograph-field={`${field}/statement`}
               value={form.statement}
               onChange={(e) => set("statement", e.target.value.slice(0, 160))}
               aria-label={c.step1}
@@ -271,6 +274,7 @@ export function SuccessCriterionDialog({
               variant="outline"
               value={form.metric}
               onValueChange={(v) => v && set("metric", v as SuccessMetric)}
+              data-cartograph-field={`${field}/metric`}
               className="flex-wrap"
               aria-invalid={refused && metricMissing}
             >
@@ -281,7 +285,7 @@ export function SuccessCriterionDialog({
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>
-            {measured ? <StandardPicker value={form.standard} onChange={(v) => set("standard", v)} /> : null}
+            {measured ? <StandardPicker data-cartograph-field={`${field}/standard`} value={form.standard} onChange={(v) => set("standard", v)} /> : null}
           </Step>
 
           {/* Compliance skips the measurement steps entirely rather than
@@ -291,6 +295,7 @@ export function SuccessCriterionDialog({
             <Step n={3} title={c.step3} hint={c.step3Hint}>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <ReferencePicker
+                  data-cartograph-field={`${field}/source`}
                   refKind="DataSource"
                   value={form.source || undefined}
                   onChange={(v) => set("source", v ?? "")}
@@ -299,6 +304,7 @@ export function SuccessCriterionDialog({
                   addLabel={c.addSource}
                 />
                 <ReferencePicker
+                  data-cartograph-field={`${field}/cycle`}
                   refKind="ReportingCycle"
                   value={form.cycle || undefined}
                   onChange={(v) => set("cycle", v ?? "")}
@@ -312,6 +318,7 @@ export function SuccessCriterionDialog({
 
           <Step n={measured ? 4 : 3} title={c.step4} hint={c.step4Hint}>
             <RoleRefPicker
+              data-cartograph-field={`${field}/owner`}
               value={form.owner}
               options={roles}
               onChange={(v) => set("owner", v)}
@@ -324,6 +331,7 @@ export function SuccessCriterionDialog({
 
           <Step n={measured ? 5 : 4} title={c.step5} hint={c.step5Hint}>
             <RoleRefPicker
+              data-cartograph-field={`${field}/confirmedBy`}
               value={form.confirmedBy}
               options={roles}
               onChange={(v) => set("confirmedBy", v)}
@@ -338,6 +346,7 @@ export function SuccessCriterionDialog({
               variant="outline"
               value={form.when}
               onValueChange={(v) => v && set("when", v as SuccessCriterionWhen)}
+              data-cartograph-field={`${field}/when`}
               className="flex-wrap"
             >
               {WHENS.map((w) => (
@@ -364,6 +373,7 @@ export function SuccessCriterionDialog({
               emptyText={c.fromNone}
               removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
               aria-label={c.step6}
+              data-cartograph-field={`${field}/from`}
             />
             <p className="pt-1 text-xs font-medium text-muted-foreground">{c.assumesLabel}</p>
             <ComboboxMultiple
@@ -374,6 +384,7 @@ export function SuccessCriterionDialog({
               emptyText={c.assumesNone}
               removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
               aria-label={c.assumesLabel}
+              data-cartograph-field={`${field}/assumes`}
               onAdd={() => setAddingAssumption(true)}
               addLabel={c.assumesAdd}
             />
