@@ -79,7 +79,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Which part of a gap each piece of work addresses, and which parts nobody does. Derived from the citations, never stored: work declares what it reaches and this reads it back, the same way a programme's members are derived. Addressed, not closed — whether the shortfall narrowed is what the gap's measure reads. */
+        /** Which part of a gap each piece of work addresses, and which parts nobody does. Derived from the citations, never stored: work declares what it reaches and this reads it back, the same way a programme's members are derived. Addressed, not closed: whether the shortfall narrowed is what the gap's measure reads. */
         get: operations["getGapCoverage"];
         put?: never;
         post?: never;
@@ -133,7 +133,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a goal (I3.2: goals are easily mutable). Allowed only when nothing currently references it; every committed version of every manifest remains in the immutable manifest store regardless (a tombstone, not a destructive delete), so this never disturbs history or audit -- it only stops the goal from being listed, picked or resolved as a reference going forward. */
+        /** Delete a goal (goals are easily mutable). Allowed only when nothing currently references it; every committed version of every manifest remains in the immutable manifest store regardless (a tombstone, not a destructive delete), so this never disturbs history or audit -- it only stops the goal from being listed, picked or resolved as a reference going forward. */
         delete: operations["deleteGoal"];
         options?: never;
         head?: never;
@@ -381,6 +381,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/{kind}/{id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The shared draft of a manifest, as an Automerge document id
+         * @description Every manifest's draft between versions is one Automerge document (docs/adr/0007). This names it, creating it from the working copy or the current version on first use, so an interface can open it over the sync socket. The id is the engine's to assign; an interface never derives one.
+         */
+        get: operations["getSharedDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/presence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The document that carries presence for screens not about one manifest
+         * @description Presence travels as ephemeral messages on a document (contract/schemas/presence.schema.json). On a manifest's screen that is the manifest's own document; everywhere else (lists, the goal tree, the snapshots page) it is this one, which holds no content and exists only to route presence. Nothing about presence is stored.
+         */
+        get: operations["getPresenceDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who this request acts as, as the engine records it
+         * @description The principal the authenticator resolved for this request, and whether the authorizer lets it write. An interface shows it in presence and uses it to decide whether to offer editing; the engine decides again on every write.
+         */
+        get: operations["getSession"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The sync socket (automerge-repo network protocol, version 1)
+         * @description A WebSocket. After the upgrade the client sends `join` and the engine answers `peer`; from then on either side sends `request`, `sync`, `doc-unavailable` and `ephemeral` messages, CBOR-encoded, exactly as the automerge-repo WebSocket protocol defines them, so the stock `@automerge/automerge-repo` WebSocket adapter connects unchanged. A sync message carrying changes is a write and needs write permission on the document's manifest; one that carries none is a read. Ephemeral messages are relayed to every peer of the same document on every replica and never stored.
+         */
+        get: operations["sync"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/{kind}/{id}": {
         parameters: {
             query?: never;
@@ -390,7 +470,7 @@ export interface paths {
         };
         /** The current version of one manifest */
         get: operations["getManifest"];
-        /** Validate and commit a new version of a manifest: the save that promotes a staged draft into the vault's own tree and its include list, in one atomic journalled write, then clears the draft. Only this ref's draft — other drafts are left alone, because there may be many and saving one is not a decision about the rest. */
+        /** Validate and commit a new version of a manifest: the save that promotes a staged draft into the vault's own tree and its include list, in one atomic journalled write, then clears the draft. Only this ref's draft; other drafts are left alone, because there may be many and saving one is not a decision about the rest. */
         put: operations["putManifest"];
         post?: never;
         /** Exclude a manifest from the live state (a tombstone operation). Allowed only when nothing currently references it; the file remains on disk, and the exclusion can be recovered. Applies the leaf rule: a manifest is a leaf if no live manifest references it. */
@@ -736,6 +816,20 @@ export interface components {
             outgoing: components["schemas"]["Ref"][];
             incoming: components["schemas"]["Summary"][];
         };
+        SharedDocument: {
+            /** @description The automerge-repo document id (base58check). */
+            documentId: string;
+            /** @description The same id as an automerge URL, `automerge:<documentId>`. */
+            url: string;
+        };
+        Session: {
+            /** @description The principal as the engine records it on versions and state. */
+            actor: string;
+            /** @description A display name, where the authenticator has one; otherwise absent. */
+            name?: string;
+            /** @description Whether the authorizer allows this principal to write. */
+            canWrite: boolean;
+        };
         Problem: {
             /** @description A JSON pointer into the manifest. */
             path: string;
@@ -864,7 +958,7 @@ export interface components {
             /** @description The step of the programme walk this is about, so the panel can send the reader there. */
             section: string;
             /**
-             * @description No block state. A programme's checks read other manifests — the work that names it, the graph it sits in — so one could otherwise refuse a definition because a different file changed.
+             * @description No block state. A programme's checks read other manifests (the work that names it, the graph it sits in), so one could otherwise refuse a definition because a different file changed.
              * @enum {string}
              */
             state: "ok" | "warn";
@@ -1668,6 +1762,103 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getSharedDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedDocument"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPresenceDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedDocument"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Session"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    sync: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Switching Protocols to a WebSocket. */
+            101: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            /** @description Upgrade Required. The request was not a WebSocket upgrade. */
+            426: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     getManifest: {
