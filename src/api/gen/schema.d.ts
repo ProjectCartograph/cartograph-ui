@@ -441,6 +441,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/access/people": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The access list
+         * @description Everyone who may sign in, with the roles and teams an administrator granted them and the ones their directory groups gave at their last sign-in (docs/adr/0011). Only an administrator may read it; it is absent (404) when the deployment keeps no access list.
+         */
+        get: operations["listPeople"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/access/people/{email}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's organisation address, compared lower-case. */
+                email: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * List a person, or change what an administrator grants them
+         * @description Lists the person by their address if they are not listed, so they may sign in, and sets the roles and teams an administrator grants them. What their directory groups give is kept apart and is not changed here. An administrator may not drop their own administrator role (409).
+         */
+        put: operations["grantPerson"];
+        post?: never;
+        /**
+         * Take a person off the access list
+         * @description They may no longer sign in, unless their directory groups enrol them again at their next sign-in. An administrator may not remove themselves (409).
+         */
+        delete: operations["removePerson"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sync": {
         parameters: {
             query?: never;
@@ -829,6 +876,56 @@ export interface components {
             name?: string;
             /** @description Whether the authorizer allows this principal to write. */
             canWrite: boolean;
+            /** @description The organisation address, where the authenticator has one. */
+            email?: string;
+            access?: components["schemas"]["SessionAccess"];
+        };
+        /** @description What the access list gives the principal (docs/adr/0011), present when the deployment keeps one. An interface offers editing from it; the engine decides again on every write. */
+        SessionAccess: {
+            /** @description Whether the principal is on the access list. Someone who is not may sign in to the proxy but sees nothing. */
+            listed: boolean;
+            roles: components["schemas"]["Role"][];
+            /** @description The teams the principal acts for, by id. */
+            teams: string[];
+            /** @description The principal's teams and every team beneath them, by id: whose projects, programmes, operations and data sources they may change where their scope for the kind is teams. */
+            reach: string[];
+            /** @description For each kind, how much of it the principal may write. */
+            scopes: {
+                [key: string]: "none" | "teams" | "all";
+            };
+        };
+        /**
+         * @description A role on the access list (TAXONOMY.md D27). A reader sees everything and changes nothing; a contributor changes the work of their teams and the teams beneath them and keeps the shared registers; a strategy editor shapes the goals and the vision and mission; an administrator does everything, for every team, and manages access.
+         * @enum {string}
+         */
+        Role: "reader" | "contributor" | "strategyEditor" | "administrator";
+        PersonGrant: {
+            roles: components["schemas"]["Role"][];
+            /** @description Team ids. */
+            teams: string[];
+        };
+        /** @description One entry on the access list: someone who may sign in, never a manifest (TAXONOMY.md D27). */
+        Person: {
+            email: string;
+            /** @description The display name from the directory; empty until the first sign-in. */
+            name: string;
+            /** @description The roles an administrator granted. */
+            roles: components["schemas"]["Role"][];
+            /** @description The teams an administrator granted, by id. */
+            teams: string[];
+            /** @description The roles the person's directory groups gave at their last sign-in. */
+            directoryRoles: components["schemas"]["Role"][];
+            /** @description The teams the person's directory groups gave at their last sign-in, by id. */
+            directoryTeams: string[];
+            /** @description Who listed them, or "directory" when a sign-in enrolled them. */
+            addedBy: string;
+            /** Format: date-time */
+            addedOn: string;
+            /**
+             * Format: date-time
+             * @description Absent until the first sign-in.
+             */
+            lastSignedIn?: string;
         };
         Problem: {
             /** @description A JSON pointer into the manifest. */
@@ -1036,7 +1133,7 @@ export interface components {
                 "application/json": components["schemas"]["ProblemList"];
             };
         };
-        /** @description The principal may not perform this action under the deployment's authorizer (CARTOGRAPH_AUTHZ=roles). The message names the actor and the verb. */
+        /** @description The principal may not perform this action under the deployment's authorizer (CARTOGRAPH_AUTHZ=roles or access). The message says why. */
         Forbidden: {
             headers: {
                 [name: string]: unknown;
@@ -1832,6 +1929,104 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthenticated"];
+        };
+    };
+    listPeople: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        people: components["schemas"]["Person"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    grantPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's organisation address, compared lower-case. */
+                email: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonGrant"];
+            };
+        };
+        responses: {
+            /** @description The person as listed now */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Person"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change would remove the caller's own access */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    removePerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The person's organisation address, compared lower-case. */
+                email: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The caller may not remove themselves */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
         };
     };
     sync: {
