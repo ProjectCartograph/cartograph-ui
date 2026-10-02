@@ -13,6 +13,14 @@ import { PresenceContext, type PresenceApi } from "./presenceContext";
 
 export type { PresenceApi };
 
+/** Whether two sessions look at the same view: the same path, a trailing
+ * slash aside. A session that has not said where it is is nowhere. */
+export function sameView(a: string | undefined, b: string): boolean {
+  if (!a) return false;
+  const trim = (s: string) => (s.length > 1 && s.endsWith("/") ? s.slice(0, -1) : s);
+  return trim(a) === trim(b);
+}
+
 /** Hands a fixed presence to everything below it: for tests, and for any
  * screen that draws presence from somewhere other than the client. */
 export function PresenceFeed({ value, children }: { value: PresenceApi; children?: ReactNode }) {
@@ -77,10 +85,32 @@ export function PresenceProvider({ screen, route, children }: { screen: Presence
   // them; their own always show.
   const { othersOnDrafts, me } = useFollow();
   const shown = othersOnDrafts ? peers : peers.filter((p) => !p.agent || p.agent.for === me);
+  // Only those on this very view are drawn over it. A manifest's other
+  // sections show who is on them in its step list; the list screens share
+  // one document, so someone on another list is not here at all. An agent
+  // has no view, only the field it works on, which is drawn wherever that
+  // field is in front of someone.
+  const here = shown.filter((p) => p.agent || sameView(p.route, route));
+  const hereRef = useRef(here);
+  hereRef.current = here;
+  const pointerSent = useRef(false);
   const value: PresenceApi = {
-    peers: shown,
+    peers: screen ? shown : here,
+    here,
     draft,
-    publish: (state) => channel.current?.publish(state),
+    publish: (state) => {
+      // A pointer streams many times a second; nobody on this view, nobody
+      // to stream it to. One clearing message, then nothing until someone
+      // arrives (engine docs/MULTIPLAYER.md).
+      if (state.pointer !== undefined && Object.keys(state).length === 1 && hereRef.current.length === 0) {
+        if (!pointerSent.current) return;
+        pointerSent.current = false;
+        channel.current?.publish({ pointer: null });
+        return;
+      }
+      if (state.pointer !== undefined) pointerSent.current = state.pointer !== null;
+      channel.current?.publish(state);
+    },
   };
   return createElement(PresenceContext.Provider, { value }, children);
 }

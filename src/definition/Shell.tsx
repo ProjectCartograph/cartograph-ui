@@ -17,8 +17,36 @@ import { copy } from "@/copy";
 import { SaveStatus } from "@/projects/Chrome";
 import { ConflictNotes } from "@/collab/ConflictNotes";
 import { OfflineNote } from "@/collab/OfflineNote";
+import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
 import { SaveBar } from "./SaveBar";
 import { useDefinitionStore } from "./store";
+
+/** One step on the rail: its state, and who else is on it. */
+function StepLink({ step, id, isCurrent, state }: { step: DefinitionStep; id: string; isCurrent: boolean; state?: string }) {
+  const Icon = step.icon;
+  const others = usePeersOn(String(step.to).replace("$id", id));
+  const shown = isCurrent ? [] : others;
+  const at = shown.length ? "" : "ml-auto ";
+  return (
+    <Link
+      to={step.to}
+      params={ID_PARAM(id)}
+      style={sectionRing(shown)}
+      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+        isCurrent ? "bg-accent font-medium text-accent-foreground" : "text-foreground hover:bg-accent/50"
+      }`}
+    >
+      {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" /> : null}
+      <span className="truncate">{step.label}</span>
+      <SectionPeers peers={shown} />
+      {state === "ok" ? (
+        <CheckCircle2 className={`${at}size-3.5 shrink-0 text-muted-foreground`} aria-label={copy.projects.checks.railDone} />
+      ) : state === "warn" ? (
+        <AlertTriangle className={`${at}size-3.5 shrink-0 text-muted-foreground`} aria-label={copy.projects.checks.railWarn} />
+      ) : null}
+    </Link>
+  );
+}
 
 export interface DefinitionStep {
   /** The section's own id, matched against the route's `current`. */
@@ -130,30 +158,9 @@ export function DefinitionShell({
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr]">
         <div className="flex w-full shrink-0 flex-col gap-1 rounded-lg border p-2 xl:w-56" data-cartograph-region="step-rail">
-          {steps.map((step) => {
-            const Icon = step.icon;
-            const isCurrent = step.section === current;
-            return (
-              <Link
-                key={step.section}
-                to={step.to}
-                params={ID_PARAM(store.id)}
-                className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
-                  isCurrent
-                    ? "bg-accent font-medium text-accent-foreground"
-                    : "text-foreground hover:bg-accent/50"
-                }`}
-              >
-                {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" /> : null}
-                <span className="truncate">{step.label}</span>
-                {bySection.get(step.section) === "ok" ? (
-                  <CheckCircle2 className="ml-auto size-3.5 shrink-0 text-muted-foreground" aria-label={copy.projects.checks.railDone} />
-                ) : bySection.get(step.section) === "warn" ? (
-                  <AlertTriangle className="ml-auto size-3.5 shrink-0 text-muted-foreground" aria-label={copy.projects.checks.railWarn} />
-                ) : null}
-              </Link>
-            );
-          })}
+          {steps.map((step) => (
+            <StepLink key={step.section} step={step} id={store.id} isCurrent={step.section === current} state={bySection.get(step.section)} />
+          ))}
 
           {/* Not a step: what the steps above add up to. It sat on one
               step's aside until 2026-09-29, where nobody found it

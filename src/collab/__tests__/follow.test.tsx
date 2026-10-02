@@ -37,8 +37,11 @@ describe("lanes", () => {
     mergeLanes(lanes, [draft, sub], 2000);
     expect(lanes.get("agent-1")?.steps.map((s) => s.step)).toEqual(["guide", "draft"]);
     expect(lanes.get("agent-2")?.label).toBe("Ada's agent (Claude › researcher)");
+    // Repeated by the engine but with no new step, it is waiting, not working.
+    mergeLanes(lanes, [draft], 40_000);
+    expect(lanes.get("agent-1")).toMatchObject({ active: true, working: false });
     // Silent past the time presence lasts, a lane goes idle and keeps its steps.
-    mergeLanes(lanes, [], 20_000);
+    mergeLanes(lanes, [], 60_000);
     expect(lanes.get("agent-1")?.active).toBe(false);
     expect(lanes.get("agent-1")?.steps).toHaveLength(2);
   });
@@ -80,7 +83,8 @@ function mount(ui: ReactNode, client = fakeClient()) {
   const home = createRoute({ getParentRoute: () => root, path: "/", component: () => null });
   const goal = createRoute({ getParentRoute: () => root, path: "/goals/$id", component: () => <p data-cartograph-field="/spec/objective">objective</p> });
   const review = createRoute({ getParentRoute: () => root, path: "/proposals/$id", component: () => null });
-  const router = createRouter({ routeTree: root.addChildren([home, goal, review]), history: createMemoryHistory({ initialEntries: ["/"] }) });
+  const goals = createRoute({ getParentRoute: () => root, path: "/goals", component: () => null });
+  const router = createRouter({ routeTree: root.addChildren([home, goal, review, goals]), history: createMemoryHistory({ initialEntries: ["/"] }) });
   render(
     <ClientProvider client={client}>
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -127,6 +131,27 @@ describe("following", () => {
     expect(document.querySelector('[data-cartograph-step="propose"] .cartograph-burst')).not.toBeNull();
   });
 
+  it("goes to where the agent is at once, even when it has only read a guide", async () => {
+    const { channel, say } = feed();
+    const router = mount(
+      <FollowProvider>
+        <Opener />
+        <FollowPanel />
+      </FollowProvider>,
+      fakeClient({ followAgents: async () => channel }),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "open" }));
+    // It read a goal, then the guide, and is now asking its person.
+    say([agentPeer("agent-1", { for: "", seq: 1, step: "read", kind: "Goal", id: "g1", name: "Cut loss after picking" })]);
+    say([agentPeer("agent-1", { for: "", seq: 2, step: "guide", kind: "Goal" })]);
+    await userEvent.click(await screen.findByRole("button", { name: fc.follow }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/goals"));
+
+    // Any step it took is a place to go.
+    await userEvent.click(screen.getByRole("button", { name: fc.steps.read("Cut loss after picking") }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/goals/g1"));
+  });
+
   it("hands the view back on the viewer's own input", async () => {
     const { channel, say } = feed();
     const router = mount(
@@ -140,17 +165,18 @@ describe("following", () => {
     await userEvent.click(await screen.findByRole("button", { name: "open" }));
     say([agentPeer("agent-1", { for: "", seq: 1, step: "guide", kind: "Goal" })]);
     await userEvent.click(await screen.findByRole("button", { name: fc.follow }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/goals"));
     await userEvent.click(screen.getByText("page"));
     say([agentPeer("agent-1", { for: "", seq: 2, step: "draft", kind: "Goal", id: "g1" })]);
     await new Promise((r) => setTimeout(r, 50));
-    expect(router.state.location.pathname).toBe("/");
+    expect(router.state.location.pathname).toBe("/goals");
   });
 });
 
 describe("what the viewer sees", () => {
   it("hides a lane, and other people's agents on drafts when asked", async () => {
     const toggleLane = vi.fn();
-    const lane: AgentLane = { session: "agent-2", label: "Sam's agent (Claude)", color: "#7c3aed", actor: "sam via Claude", steps: [], active: true };
+    const lane: AgentLane = { session: "agent-2", label: "Sam's agent (Claude)", color: "#7c3aed", actor: "sam via Claude", steps: [], active: true, working: true };
     mount(
       <FollowFeed value={{ panelOpen: true, lanes: [lane], toggleLane }}>
         <FollowPanel />
@@ -167,7 +193,7 @@ describe("what the viewer sees", () => {
     }
     const mine = agentPeer("agent-1", { for: "ada@example.org", seq: 1, step: "draft" });
     const theirs = agentPeer("agent-2", { for: "sam@example.org", seq: 1, step: "draft" });
-    const person: Peer = { session: "s-sam", actor: "sam", color: "#2563eb", focus: null, caret: null, pointer: null, heard: 0 };
+    const person: Peer = { session: "s-sam", actor: "sam", color: "#2563eb", route: "/", focus: null, caret: null, pointer: null, heard: 0 };
     const channel: PresenceChannel = {
       publish: () => {},
       subscribe: (l) => {

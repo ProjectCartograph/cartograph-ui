@@ -9,6 +9,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 
 import { ClientProvider } from "@/client/context";
 import type { Peer, PresenceState, SharedDraft } from "@/client/port";
+import { fakeClient } from "@/client/fake";
 import { sessions } from "@/client/testing";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { copy } from "@/copy";
@@ -36,12 +37,17 @@ const ada = peer({
   pointer: { target: "/spec/aim", x: 0.5, y: 0.25 },
 });
 
+/** A page as the app lays it out: what is shared sits in main, beside
+ * the rail, which is each person's own. */
 function Page() {
   return (
     <>
-      <textarea aria-label="Aim" data-cartograph-field="/spec/aim" defaultValue="Reports arrive on time" />
-      <div data-cartograph-region="goal-tree" />
-      <div data-cartograph-region="far-away" />
+      <nav data-cartograph-region="rail" />
+      <main data-cartograph-region="main">
+        <textarea aria-label="Aim" data-cartograph-field="/spec/aim" defaultValue="Reports arrive on time" />
+        <div data-cartograph-region="goal-tree" />
+        <div data-cartograph-region="far-away" />
+      </main>
     </>
   );
 }
@@ -189,6 +195,55 @@ describe("what this session publishes", () => {
     placeAt(tree, { left: 0, top: 300, width: 200, height: 100 });
     fireEvent.pointerMove(tree, { clientX: 50, clientY: 375 });
     expect(published.at(-1)).toEqual({ pointer: { target: "goal-tree", x: 0.25, y: 0.75 } });
+  });
+
+  it("never shares a pointer on the rail, which is each person's own", () => {
+    const published: PresenceState[] = [];
+    render(
+      <PresenceFeed value={{ peers: [], publish: (s) => published.push(s) }}>
+        <PresenceTracker />
+        <Page />
+      </PresenceFeed>,
+    );
+    fireEvent.pointerMove(document.querySelector('[data-cartograph-region="rail"]')!, { clientX: 5, clientY: 5 });
+    expect(published.at(-1)).toEqual({ pointer: null });
+  });
+});
+
+describe("only what is in front of this person", () => {
+  it("draws a pointer from the same view, and none from another section or the rail", () => {
+    const sameSection = { ...ada, route: "/goals/g1" };
+    const otherSection = peer({ session: "s-bo-00001", actor: "bo", route: "/goals/g1/measures", pointer: { target: "/spec/aim", x: 0, y: 0 } });
+    const onRail = peer({ session: "s-cy-00001", actor: "cy", route: "/goals/g1", pointer: { target: "rail", x: 0, y: 0 } });
+    drawn({ peers: [sameSection, otherSection, onRail], here: [sameSection, onRail] });
+    const pointers = [...document.querySelectorAll('[data-slot="presence-pointer"]')].map((p) => p.getAttribute("data-session"));
+    expect(pointers).toEqual([ada.session]);
+  });
+
+  it("streams no pointer when nobody else is on this view", async () => {
+    const sent: PresenceState[] = [];
+    const channel = {
+      publish: (s: PresenceState) => sent.push(s),
+      subscribe: (l: (peers: Peer[]) => void) => {
+        l([peer({ session: "s-bo-00001", actor: "bo", route: "/goals/g1/measures" })]);
+        return () => {};
+      },
+      close: () => {},
+    };
+    const client = fakeClient({ joinPresence: async () => channel, getWorking: async () => undefined } as never);
+    render(
+      <ClientProvider client={client}>
+        <PresenceProvider screen={null} route="/goals">
+          <PresenceTracker />
+          <Page />
+        </PresenceProvider>
+      </ClientProvider>,
+    );
+    await waitFor(() => expect(sent).toContainEqual({ route: "/goals" }));
+    const tree = document.querySelector('[data-cartograph-region="goal-tree"]')!;
+    placeAt(tree, { left: 0, top: 300, width: 200, height: 100 });
+    fireEvent.pointerMove(tree, { clientX: 50, clientY: 375 });
+    expect(sent.some((s) => s.pointer)).toBe(false);
   });
 });
 

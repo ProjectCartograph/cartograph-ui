@@ -32,6 +32,7 @@ export const copy = {
   // what happens when two people set one field at once.
   collab: {
     offline: "Offline: changes are kept on this device and sync when the connection returns",
+    onSection: (names: string[]) => `${names.join(", ")} ${names.length === 1 ? "is" : "are"} here`,
     peopleHere: "People on this screen",
     someone: "Someone",
     you: "You",
@@ -145,6 +146,7 @@ export const copy = {
     none: "No agent is working for you now. When one starts, its steps show here.",
     idle: "Idle",
     working: "Working",
+    waiting: "Waiting",
     hide: (label: string) => `Hide ${label}`,
     show: (label: string) => `Show ${label}`,
     hidden: (n: number) => `${n} hidden`,
@@ -162,6 +164,8 @@ export const copy = {
     checksMet: (met: number, total: number) => `${met} of ${total} checks met`,
     allMet: "Every check met",
     review: "Review",
+    goThere: (label: string) => `Go to where ${label} is`,
+    goToStep: "Go there",
   },
   agents: {
     title: "Agents",

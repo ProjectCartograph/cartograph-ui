@@ -4,12 +4,15 @@ import { createPortal } from "react-dom";
 import type { Peer, SharedDraft } from "@/client/port";
 import { caretPoint } from "./mirror";
 import { displayName } from "./names";
-import { usePresence } from "./presenceContext";
+import { peersHere, usePresence } from "./presenceContext";
 import { byAttr, onScreen, useRelayout } from "./relayout";
 
 /** What a pointer target names: a field first, then a region. */
 function targetOf(key: string): Element | null {
-  return byAttr("data-cartograph-field", key) ?? byAttr("data-cartograph-region", key);
+  const el = byAttr("data-cartograph-field", key) ?? byAttr("data-cartograph-region", key);
+  // Only the page is shared; a pointer said to be on the rail, from a
+  // client before 2.5.1, stays there.
+  return el?.closest('[data-cartograph-region="main"]') ? el : null;
 }
 
 /** The text control a field is; a wrapper around one is not its text. */
@@ -138,7 +141,9 @@ function RemotePointer({ peer }: { peer: Peer }) {
  * takes no pointer events, so nothing here ever stands in the way of input.
  */
 export function PresenceOverlay() {
-  const { peers, draft } = usePresence();
+  const presence = usePresence();
+  const { draft } = presence;
+  const peers = peersHere(presence);
   useRelayout(peers.length > 0);
   if (peers.length === 0 || typeof document === "undefined") return null;
   const ringsOn = new Map<string, number>();

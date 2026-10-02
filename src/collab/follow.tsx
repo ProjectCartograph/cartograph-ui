@@ -32,7 +32,14 @@ export interface AgentLane {
   steps: AgentStep[];
   /** Heard from within the time presence lasts. */
   active: boolean;
+  /** Took a new step within the last half minute. While the engine
+   * keeps an agent's last step on the feed (engine docs/adr/0018), an
+   * active lane that is not working is waiting, usually on its person. */
+  working: boolean;
 }
+
+/** How long after its last new step an agent still counts as working. */
+export const WORKING_MS = 30_000;
 
 export interface FollowApi {
   /** Every lane heard on the feed, the hidden ones included. */
@@ -52,6 +59,8 @@ export interface FollowApi {
   setOthersOnDrafts: (on: boolean) => void;
   panelOpen: boolean;
   setPanelOpen: (open: boolean) => void;
+  /** Takes the viewer to where a step happened, without following. */
+  go: (step: AgentStep) => void;
   /** The last proposal a followed lane made, for the moment it lands. */
   landed?: AgentStep;
   /** The viewer, as an agent's for names them. */
@@ -64,6 +73,7 @@ const quiet: FollowApi = {
   toggleLane: () => {},
   follow: () => {},
   unfollow: () => {},
+  go: () => {},
   followPerson: () => {},
   othersOnDrafts: true,
   setOthersOnDrafts: () => {},
@@ -119,7 +129,7 @@ export function mergeLanes(lanes: Map<string, AgentLane>, peers: Peer[], now: nu
     heard.add(peer.session);
     let lane = lanes.get(peer.session);
     if (!lane) {
-      lane = { session: peer.session, label: peer.name ?? peer.actor, color: peer.color, actor: peer.actor, steps: [], active: true };
+      lane = { session: peer.session, label: peer.name ?? peer.actor, color: peer.color, actor: peer.actor, steps: [], active: true, working: true };
       lanes.set(peer.session, lane);
       changed = true;
     }
@@ -139,8 +149,40 @@ export function mergeLanes(lanes: Map<string, AgentLane>, peers: Peer[], now: nu
       lane.active = false;
       changed = true;
     }
+    const working = lane.active && quietFor < WORKING_MS;
+    if (lane.working !== working) {
+      lane.working = working;
+      changed = true;
+    }
   }
   return changed;
+}
+
+// Where each kind's records are listed: where an agent is while it reads
+// how to define one, before it has a record to open.
+const homes: Record<string, string> = {
+  Goal: "/goals",
+  Project: "/projects",
+  Programme: "/programmes",
+  Operation: "/operations",
+  Gap: "/gaps",
+  KPI: "/kpis",
+  KPIReadings: "/kpis",
+};
+
+/** Where a step happened, if it happened anywhere a person can open. */
+export function placeOf(step: Pick<AgentStep, "step" | "kind" | "id" | "proposal">): { to: string; params?: Record<string, string> } | undefined {
+  if (step.step === "propose" && step.proposal) return { to: "/proposals/$id", params: { id: step.proposal } };
+  if (!step.kind) return undefined;
+  if (step.id && step.step !== "guide") return manifestLink({ kind: step.kind, manifestId: step.id });
+  return homes[step.kind] ? { to: homes[step.kind] } : { to: "/sheets/$kind", params: { kind: step.kind } };
+}
+
+/** The latest step of a lane that happened somewhere, the place it is now. */
+export function whereNow(lane: AgentLane | undefined): AgentStep | undefined {
+  const steps = lane?.steps ?? [];
+  for (let i = steps.length - 1; i >= 0; i--) if (placeOf(steps[i])) return steps[i];
+  return undefined;
 }
 
 /** Makes the fields an agent changed glow, and brings the first into view. */
@@ -183,18 +225,15 @@ export function FollowProvider({ children }: { children?: ReactNode }) {
   followingRef.current = following;
 
   // A step of the followed lane moves the view: to the review of what it
-  // proposed, or to the manifest it worked on and the fields it changed.
+  // proposed, to the manifest it worked on and the fields it changed, or,
+  // while it reads how to define a kind, to where that kind is listed.
   const lead = useCallback(
     (step: AgentStep) => {
-      if (step.step === "propose" && step.proposal) {
-        setLanded(step);
-        void navigate({ to: "/proposals/$id", params: { id: step.proposal } });
-        return;
-      }
-      if (!step.kind || !step.id || step.step === "guide") return;
-      const link = manifestLink({ kind: step.kind, manifestId: step.id });
-      void navigate({ to: link.to as never, params: link.params as never }).then(() => {
-        if (step.fields?.length) window.setTimeout(() => glow(step.fields!), 350);
+      const place = placeOf(step);
+      if (!place) return;
+      if (step.step === "propose") setLanded(step);
+      void navigate({ to: place.to as never, params: place.params as never }).then(() => {
+        if (step.step === "draft" && step.fields?.length) window.setTimeout(() => glow(step.fields!), 350);
       });
     },
     [navigate],
@@ -271,9 +310,11 @@ export function FollowProvider({ children }: { children?: ReactNode }) {
     follow: (session) => {
       setFollowing(session);
       setPanelOpen(true);
-      const latest = lanesRef.current.get(session)?.steps.at(-1);
-      if (latest) lead(latest);
+      // Straight to where it is now, not only when it next moves.
+      const now = whereNow(lanesRef.current.get(session));
+      if (now) lead(now);
     },
+    go: lead,
     unfollow: () => setFollowing(undefined),
     person,
     followPerson: (p) => {

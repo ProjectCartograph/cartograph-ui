@@ -216,8 +216,8 @@ export function AlignmentSection() {
   // Split, not filtered: a project may serve a goal none of its
   // programmes serve, so the rest stay pickable under their own heading
   // rather than disappearing.
-  const within = useMemo(() => chips.filter((c) => withinProgrammes.has(c.id)), [chips, withinProgrammes]);
-  const beyond = useMemo(() => chips.filter((c) => !withinProgrammes.has(c.id)), [chips, withinProgrammes]);
+  const within = chips.filter((c) => withinProgrammes.has(c.id));
+  const beyond = chips.filter((c) => !withinProgrammes.has(c.id));
 
   function toggleGoal(goalId: string) {
     store.updateSpec((s) => {

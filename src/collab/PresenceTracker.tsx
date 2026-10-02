@@ -5,6 +5,10 @@ import { usePresence } from "./presenceContext";
 
 const FIELD = "[data-cartograph-field]";
 const TARGET = "[data-cartograph-field], [data-cartograph-region]";
+// Only the page itself is shared. The rail, the follow panel and anything
+// else around it are each person's own, so a pointer there is nobody's
+// business and is never drawn on anyone else's.
+const PAGE = '[data-cartograph-region="main"]';
 
 function fieldPath(el: EventTarget | Element | null): string | undefined {
   return el instanceof Element ? (el.closest(FIELD)?.getAttribute("data-cartograph-field") ?? undefined) : undefined;
@@ -67,7 +71,7 @@ export function PresenceTracker() {
     };
     const onPointer = (e: PointerEvent) => {
       const target = e.target instanceof Element ? e.target.closest(TARGET) : null;
-      if (!target) {
+      if (!target || !target.closest(PAGE)) {
         api.current.publish({ pointer: null });
         return;
       }

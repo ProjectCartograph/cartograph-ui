@@ -1,5 +1,6 @@
 import { AssemblyStrip } from "./Assembly";
 import type { ReactNode } from "react";
+import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
 import { Link } from "@tanstack/react-router";
 
 import { Separator } from "@/components/ui/separator";
@@ -55,31 +56,9 @@ function SectionRail({ id, current }: { id: string; current: InitiationSection }
             })()}
             {pc.stages[stage]}
           </p>
-          {stepsOfStage(stage).map((step) => {
-        const state = bySection.get(step.section);
-        const isCurrent = step.section === current;
-        const Icon = stepIcon(step.section);
-        return (
-          <Link
-            key={step.section}
-            to={`/projects/$id${step.path}`}
-            params={{ id }}
-            className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
-              isCurrent ? "bg-accent font-medium text-accent-foreground" : "text-foreground hover:bg-accent/50"
-            }`}
-          >
-            {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
-            <span className="truncate">{pc.sections[step.section]}</span>
-            {state === "ok" ? (
-              <CheckCircle2 className="ml-auto size-3.5 shrink-0 text-muted-foreground" aria-label={pc.checks.railDone} />
-            ) : state === "block" ? (
-              <OctagonAlert className="ml-auto size-3.5 shrink-0 text-destructive" aria-label={pc.checks.railBlocked} />
-            ) : state === "warn" ? (
-              <AlertTriangle className="ml-auto size-3.5 shrink-0 text-muted-foreground" aria-label={pc.checks.railWarn} />
-            ) : null}
-          </Link>
-        );
-          })}
+          {stepsOfStage(stage).map((step) => (
+            <ProjectStep key={step.section} id={id} path={step.path} section={step.section} isCurrent={step.section === current} state={bySection.get(step.section)} />
+          ))}
         </div>
       ))}
 
@@ -193,5 +172,34 @@ export function InitiationShell({
         </div>
       </div>
     </div>
+  );
+}
+
+/** One step of the project's walk: its state, and who else is on it. */
+function ProjectStep({ id, path, section, isCurrent, state }: { id: string; path: string; section: string; isCurrent: boolean; state?: string }) {
+  const Icon = stepIcon(section);
+  const others = usePeersOn(`/projects/${id}${path}`);
+  const shown = isCurrent ? [] : others;
+  const at = shown.length ? "" : "ml-auto ";
+  return (
+    <Link
+      to={`/projects/$id${path}` as never}
+      params={{ id } as never}
+      style={sectionRing(shown)}
+      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+        isCurrent ? "bg-accent font-medium text-accent-foreground" : "text-foreground hover:bg-accent/50"
+      }`}
+    >
+      {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
+      <span className="truncate">{pc.sections[section]}</span>
+      <SectionPeers peers={shown} />
+      {state === "ok" ? (
+        <CheckCircle2 className={`${at}size-3.5 shrink-0 text-muted-foreground`} aria-label={pc.checks.railDone} />
+      ) : state === "block" ? (
+        <OctagonAlert className={`${at}size-3.5 shrink-0 text-destructive`} aria-label={pc.checks.railBlocked} />
+      ) : state === "warn" ? (
+        <AlertTriangle className={`${at}size-3.5 shrink-0 text-muted-foreground`} aria-label={pc.checks.railWarn} />
+      ) : null}
+    </Link>
   );
 }

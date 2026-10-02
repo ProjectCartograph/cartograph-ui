@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Bot, Eye, EyeOff, ListChecks, PenLine, Send, X } from "lucide-react";
+import { BookOpen, Bot, Eye, EyeOff, ListChecks, MapPin, PenLine, Send, X } from "lucide-react";
 
 import { holds, useSession } from "@/access/access";
 import { useClient } from "@/client/context";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { copy } from "@/copy";
 
-import { useFollow, type AgentLane, type AgentStep } from "./follow";
+import { placeOf, useFollow, whereNow, type AgentLane, type AgentStep } from "./follow";
 
 const fc = copy.follow;
 const MINE = "__mine__";
@@ -61,8 +61,10 @@ function CheckProgress({ met, open }: { met: number; open: number }) {
 }
 
 function Step({ step, color }: { step: AgentStep; color: string }) {
+  const f = useFollow();
   const Icon = icons[step.step];
   const proposed = step.step === "propose";
+  const there = placeOf(step) !== undefined;
   return (
     <li className="relative flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300" data-cartograph-step={step.step}>
       <span className="relative mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: color }}>
@@ -70,7 +72,19 @@ function Step({ step, color }: { step: AgentStep; color: string }) {
         <Icon className="relative size-3.5" />
       </span>
       <div className="min-w-0 flex-1 text-sm">
-        <p className="truncate">{stepText(step)}</p>
+        {there ? (
+          <button
+            type="button"
+            className="block max-w-full truncate text-left underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+            title={fc.goToStep}
+            data-cartograph-follow
+            onClick={() => f.go(step)}
+          >
+            {stepText(step)}
+          </button>
+        ) : (
+          <p className="truncate">{stepText(step)}</p>
+        )}
         {step.step === "draft" && step.fields?.length ? <p className="text-xs text-muted-foreground">{fc.changed(step.fields.length)}</p> : null}
         {step.step === "draft" || step.step === "checks" ? <CheckProgress met={step.met ?? 0} open={step.open ?? 0} /> : null}
         {proposed && step.proposal ? (
@@ -89,16 +103,17 @@ function Lane({ lane }: { lane: AgentLane }) {
   const f = useFollow();
   const followed = f.following === lane.session;
   const hidden = f.hidden.has(lane.session);
+  const now = whereNow(lane);
   return (
     <div className="flex items-center gap-2 py-1" data-cartograph-lane={lane.session}>
       <span className="relative flex size-2.5 shrink-0">
-        {lane.active ? <span className="absolute inline-flex size-full animate-ping rounded-full opacity-60" style={{ backgroundColor: lane.color }} /> : null}
+        {lane.working ? <span className="absolute inline-flex size-full animate-ping rounded-full opacity-60" style={{ backgroundColor: lane.color }} /> : null}
         <span className="relative inline-flex size-2.5 rounded-full" style={{ backgroundColor: lane.color }} />
       </span>
       <span className={`min-w-0 flex-1 truncate text-sm ${hidden ? "text-muted-foreground line-through" : ""}`} title={lane.actor}>
         {lane.label}
       </span>
-      <span className="text-xs text-muted-foreground">{lane.active ? fc.working : fc.idle}</span>
+      <span className="text-xs text-muted-foreground">{lane.working ? fc.working : lane.active ? fc.waiting : fc.idle}</span>
       <Button
         variant="ghost"
         size="icon-xs"
@@ -107,6 +122,11 @@ function Lane({ lane }: { lane: AgentLane }) {
       >
         {hidden ? <EyeOff /> : <Eye />}
       </Button>
+      {hidden || !now ? null : (
+        <Button variant="ghost" size="icon-xs" aria-label={fc.goThere(lane.label)} title={fc.goThere(lane.label)} data-cartograph-follow onClick={() => f.go(now)}>
+          <MapPin />
+        </Button>
+      )}
       {hidden ? null : (
         <Button size="xs" variant={followed ? "secondary" : "default"} onClick={() => (followed ? f.unfollow() : f.follow(lane.session))}>
           {followed ? fc.stop : fc.follow}
