@@ -37,6 +37,12 @@ const every: Record<keyof Client, true> = {
   people: true,
   grantPerson: true,
   removePerson: true,
+  proposals: true,
+  acceptProposal: true,
+  declineProposal: true,
+  agentGrants: true,
+  createAgentToken: true,
+  revokeAgentGrant: true,
 };
 
 /**

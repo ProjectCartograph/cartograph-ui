@@ -39,6 +39,11 @@ export type SessionAccess = Schemas["SessionAccess"];
 export type Person = Schemas["Person"];
 /** A role on the access list. */
 export type Role = Schemas["Role"];
+/** Something an agent proposed for its person to accept or decline
+ * (engine docs/adr/0016). */
+export type Proposal = Schemas["Proposal"];
+export type AgentGrant = Schemas["AgentGrant"];
+export type AgentToken = Schemas["AgentToken"];
 /** A kind's JSON Schema, as the contract types it. */
 export type KindSchema = Record<string, never>;
 
@@ -344,7 +349,29 @@ export interface Client {
   people(): Promise<Person[]>;
   /** Lists a person by their address, if they are not listed, and sets the
    * roles and teams an administrator grants them. */
-  grantPerson(email: string, grant: { roles: Role[]; teams: string[] }): Promise<Person>;
+  grantPerson(email: string, grant: { roles: Role[]; teams: string[]; agentsOff?: boolean }): Promise<Person>;
   /** Takes a person off the access list. */
   removePerson(email: string): Promise<void>;
+
+  // What agents proposed (engine docs/adr/0016). An agent reads and
+  // drafts; what would make the record waits for its person.
+  /** The caller's open proposals, or, with a manifest, every open
+   * proposal on it. */
+  proposals(on?: { kind: string; id: string }): Promise<Proposal[]>;
+  /** Makes the record a proposal proposed, as the caller. Conflict when
+   * it was decided already or its manifest changed since. */
+  acceptProposal(id: string, reason?: string): Promise<Proposal>;
+  /** Declines a proposal. */
+  declineProposal(id: string, reason?: string): Promise<Proposal>;
+
+  // The agents people let act for them (engine docs/adr/0016).
+  /** The caller's own, or, for an administrator, one person's or
+   * everyone's ("*"). Empty where the deployment's own stack authorizes
+   * agents. */
+  agentGrants(person?: string): Promise<AgentGrant[]>;
+  /** Lets an agent act for the caller by a token to paste into it, shown
+   * once. NotFound where Cartograph does not authorize agents. */
+  createAgentToken(label: string, days?: number): Promise<AgentToken>;
+  /** Disconnects an agent at once. */
+  revokeAgentGrant(id: string): Promise<void>;
 }

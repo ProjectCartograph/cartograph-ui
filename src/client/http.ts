@@ -228,6 +228,20 @@ export function httpClient(
     grantPerson: (email, grant) =>
       answer(wire.PUT("/access/people/{email}", { params: { path: { email } }, body: grant })),
     removePerson: (email) => done(wire.DELETE("/access/people/{email}", { params: { path: { email } } })),
+    proposals: async (on) => {
+      const data = await answer(wire.GET("/proposals", { params: { query: on ? { kind: on.kind, id: on.id } : {} } }));
+      return Array.isArray(data) ? data : [];
+    },
+    acceptProposal: (id, reason) =>
+      answer(wire.POST("/proposals/{proposal}/accept", { params: { path: { proposal: id } }, body: reason ? { reason } : {} })),
+    declineProposal: (id, reason) =>
+      answer(wire.POST("/proposals/{proposal}/decline", { params: { path: { proposal: id } }, body: reason ? { reason } : {} })),
+    agentGrants: async (person) => {
+      const data = await answer(wire.GET("/agents", { params: { query: person ? { person } : {} } }));
+      return Array.isArray(data) ? data : [];
+    },
+    createAgentToken: (label, days) => answer(wire.POST("/agents", { body: days ? { label, days } : { label } })),
+    revokeAgentGrant: (id) => done(wire.DELETE("/agents/{grant}", { params: { path: { grant: id } } })),
     snapshots: (page) =>
       answer(
         wire.GET("/snapshots", {
