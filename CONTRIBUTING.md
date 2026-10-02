@@ -60,6 +60,7 @@ The type is one of Angular's:
 The scope names the area the change is in; a change across several
 has none. In this repository:
 
+- `access`: src/access, the access list and what a person may change
 - `charter`: src/charter
 - `client`: src/client, the Client port
 - `collab`: src/collab, shared editing and presence
