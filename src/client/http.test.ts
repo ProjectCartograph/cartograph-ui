@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { httpClient } from "./http";
-import { ClientError, Conflict, NotFound, Refused } from "./port";
+import { ClientError, Conflict, Forbidden, NotFound, Refused } from "./port";
 
 /** A fetch that records what it was asked and answers with one status and
  * one body, the way the engine would. */
@@ -49,6 +49,33 @@ describe("the HTTP adapter", () => {
     const object = wire(200, version);
     await object.client.saveVersion("Goal", "g1", { kind: "Goal" }, "r");
     expect(object.asked[0].body).toEqual({ manifest: { kind: "Goal" }, reason: "r" });
+  });
+
+  it("reads and changes the access list at its paths", async () => {
+    const person = {
+      email: "sam@example.org", name: "", roles: ["reader"], teams: ["assessment"],
+      directoryRoles: [], directoryTeams: [], addedBy: "admin@example.org", addedOn: "2026-10-01T00:00:00Z",
+    };
+    const list = wire(200, { people: [person] });
+    expect(await list.client.people()).toEqual([person]);
+    expect(new URL(list.asked[0].url).pathname).toBe("/api/v1/access/people");
+
+    const grant = wire(200, person);
+    await grant.client.grantPerson("sam@example.org", { roles: ["reader"], teams: ["assessment"] });
+    expect(grant.asked).toEqual([
+      { method: "PUT", url: "http://engine/api/v1/access/people/sam%40example.org", body: { roles: ["reader"], teams: ["assessment"] } },
+    ]);
+
+    const remove = wire(204);
+    await remove.client.removePerson("sam@example.org");
+    expect(remove.asked[0].method).toBe("DELETE");
+  });
+
+  it("throws Forbidden with the reason when the policy refuses", async () => {
+    const problems = [{ path: "", message: "forbidden: this Project belongs to a team you do not act for" }];
+    const err = await wire(403, { problems }).client.saveWorking("Project", "p1", "kind: Project\n").catch((e) => e);
+    expect(err).toBeInstanceOf(Forbidden);
+    expect(err.problems).toEqual(problems);
   });
 
   it("throws Refused with the server's problems when a write is refused", async () => {

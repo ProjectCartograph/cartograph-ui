@@ -32,6 +32,13 @@ export type Exclusion = Schemas["Exclusion"];
 export type SnapshotList = Schemas["SnapshotList"];
 export type SharedDocument = Schemas["SharedDocument"];
 export type Session = Schemas["Session"];
+/** What the access list gives the session's principal (docs/adr/0011 in
+ * cartograph-engine), when the deployment keeps one. */
+export type SessionAccess = Schemas["SessionAccess"];
+/** One entry on the access list: someone who may sign in, never a manifest. */
+export type Person = Schemas["Person"];
+/** A role on the access list. */
+export type Role = Schemas["Role"];
 /** A kind's JSON Schema, as the contract types it. */
 export type KindSchema = Record<string, never>;
 
@@ -216,6 +223,14 @@ export class Conflict extends ClientError {
 }
 
 /** Nothing there (404). pkg/client.ErrNotFound. */
+/** The engine's policy refused the action (403); the problem says why. */
+export class Forbidden extends ClientError {
+  constructor(problems: Problem[] = []) {
+    super(403, problems, "forbidden");
+    this.name = "Forbidden";
+  }
+}
+
 export class NotFound extends ClientError {
   constructor(problems: Problem[] = []) {
     super(404, problems, "not found");
@@ -322,4 +337,14 @@ export interface Client {
   /** How the sync connection stands, now and on every change. Returns the
    * unsubscribe. */
   watchConnection(listener: (status: ConnectionStatus) => void): () => void;
+
+  // The access list (docs/adr/0011). Only an administrator reads or
+  // changes it; NotFound where the deployment keeps none.
+  /** Everyone who may sign in. */
+  people(): Promise<Person[]>;
+  /** Lists a person by their address, if they are not listed, and sets the
+   * roles and teams an administrator grants them. */
+  grantPerson(email: string, grant: { roles: Role[]; teams: string[] }): Promise<Person>;
+  /** Takes a person off the access list. */
+  removePerson(email: string): Promise<void>;
 }

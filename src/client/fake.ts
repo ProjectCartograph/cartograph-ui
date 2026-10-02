@@ -34,6 +34,9 @@ const every: Record<keyof Client, true> = {
   openDraft: true,
   joinPresence: true,
   watchConnection: true,
+  people: true,
+  grantPerson: true,
+  removePerson: true,
 };
 
 /**

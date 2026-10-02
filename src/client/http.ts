@@ -9,6 +9,7 @@ import type { paths } from "@/api/gen/schema";
 import {
   ClientError,
   Conflict,
+  Forbidden,
   NotFound,
   Refused,
   type CharterKind,
@@ -28,6 +29,8 @@ function errorFor(status: number, body: unknown): ClientError {
   const listed = (body as { problems?: unknown } | null | undefined)?.problems;
   const problems = Array.isArray(listed) ? (listed as Problem[]) : [];
   switch (status) {
+    case 403:
+      return new Forbidden(problems);
     case 404:
       return new NotFound(problems);
     case 409:
@@ -221,6 +224,10 @@ export function httpClient(
     excluded: () => answer(wire.GET("/vault/excluded")),
     apply: (refs) => answer(wire.POST("/vault/apply", { body: { refs } })),
     recover: (ref) => answer(wire.POST("/vault/recover", { body: { ref } })),
+    people: async () => (await answer(wire.GET("/access/people"))).people,
+    grantPerson: (email, grant) =>
+      answer(wire.PUT("/access/people/{email}", { params: { path: { email } }, body: grant })),
+    removePerson: (email) => done(wire.DELETE("/access/people/{email}", { params: { path: { email } } })),
     snapshots: (page) =>
       answer(
         wire.GET("/snapshots", {
