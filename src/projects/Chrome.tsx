@@ -21,6 +21,7 @@ import { STAGES, stepsOfStage, type Stage } from "./types";
 import { STAGE_ICON } from "./steps";
 import { ConflictNotes } from "@/collab/ConflictNotes";
 import { OfflineNote } from "@/collab/OfflineNote";
+import { ProposalNotice } from "@/proposals/ProposalNotice";
 
 const pc = copy.projects;
 
@@ -218,6 +219,7 @@ export function ProjectHeaderBar() {
         <ErrorAlert message={pc.header.saveFailed} onRetry={() => void store.flushNow()} />
       ) : null}
       <ConflictNotes conflicts={store.conflicts} onResolve={store.resolveConflict} />
+      <ProposalNotice kind="Project" id={store.id} />
       <SaveVersionDialog open={saveOpen} onOpenChange={setSaveOpen} />
       <DiscardDraftDialog open={discardOpen} onOpenChange={setDiscardOpen} />
     </>

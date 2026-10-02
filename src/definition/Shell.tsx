@@ -1,3 +1,4 @@
+import { ProposalNotice } from "@/proposals/ProposalNotice";
 import type { ComponentType, ReactNode } from "react";
 import { Link, type LinkProps } from "@tanstack/react-router";
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, FileText, Table2 } from "lucide-react";
@@ -123,6 +124,7 @@ export function DefinitionShell({
           <OfflineNote />
         </span>
       </div>
+      <ProposalNotice kind={store.kind} id={store.id} />
 
       {outline ? <OutlineStrip id={store.id} parts={outline} loaded={store.loaded} /> : null}
 

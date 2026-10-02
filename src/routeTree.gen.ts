@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccessRouteImport } from './routes/access'
+import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as ProposalsRouteImport } from './routes/proposals'
 import { Route as GapsIndexRouteImport } from './routes/gaps/index'
 import { Route as GapsIdRouteImport } from './routes/gaps/$id'
 import { Route as GapsNewRouteImport } from './routes/gaps/new'
@@ -84,9 +86,19 @@ const AccessRoute = AccessRouteImport.update({
   path: '/access',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProposalsRoute = ProposalsRouteImport.update({
+  id: '/proposals',
+  path: '/proposals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GapsIndexRoute = GapsIndexRouteImport.update({
@@ -410,7 +422,9 @@ const ProjectsIdInitiationTimelineRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
+  '/agents': typeof AgentsRoute
   '/new': typeof NewRoute
+  '/proposals': typeof ProposalsRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
@@ -476,7 +490,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
+  '/agents': typeof AgentsRoute
   '/new': typeof NewRoute
+  '/proposals': typeof ProposalsRoute
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
   '/manifests/$kind': typeof ManifestsKindRoute
@@ -538,7 +554,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
+  '/agents': typeof AgentsRoute
   '/new': typeof NewRoute
+  '/proposals': typeof ProposalsRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
@@ -606,7 +624,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/access'
+    | '/agents'
     | '/new'
+    | '/proposals'
     | '/gaps/$id'
     | '/gaps/new'
     | '/goals/$id'
@@ -672,7 +692,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/access'
+    | '/agents'
     | '/new'
+    | '/proposals'
     | '/gaps/new'
     | '/goals/$id'
     | '/manifests/$kind'
@@ -733,7 +755,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/access'
+    | '/agents'
     | '/new'
+    | '/proposals'
     | '/gaps/$id'
     | '/gaps/new'
     | '/goals/$id'
@@ -800,7 +824,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccessRoute: typeof AccessRoute
+  AgentsRoute: typeof AgentsRoute
   NewRoute: typeof NewRoute
+  ProposalsRoute: typeof ProposalsRoute
   GapsIdRoute: typeof GapsIdRouteWithChildren
   GapsNewRoute: typeof GapsNewRoute
   GoalsIdRoute: typeof GoalsIdRoute
@@ -839,11 +865,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/new': {
       id: '/new'
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proposals': {
+      id: '/proposals'
+      path: '/proposals'
+      fullPath: '/proposals'
+      preLoaderRoute: typeof ProposalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gaps/': {
@@ -1410,7 +1450,9 @@ const ProjectsIdRouteWithChildren = ProjectsIdRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccessRoute: AccessRoute,
+  AgentsRoute: AgentsRoute,
   NewRoute: NewRoute,
+  ProposalsRoute: ProposalsRoute,
   GapsIdRoute: GapsIdRouteWithChildren,
   GapsNewRoute: GapsNewRoute,
   GoalsIdRoute: GoalsIdRoute,

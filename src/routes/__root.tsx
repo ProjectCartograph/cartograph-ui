@@ -6,18 +6,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import {
-  FolderKanban,
-  Gauge,
-  Layers,
-  Plus,
-  Settings2,
-  Table2,
-  Map as MapIcon,
-  TriangleAlert,
-  Archive,
-  KeyRound,
-} from "lucide-react";
+import { Archive, Bot, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Settings2, Table2, TriangleAlert } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -43,6 +32,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  SidebarMenuBadge,
 } from "@/components/ui/sidebar";
 import { copy, manifestKindLabels } from "@/copy";
 import { useProjectManifest } from "@/projects/api";
@@ -54,6 +44,8 @@ import { PresenceTracker } from "@/collab/PresenceTracker";
 import { screenFor } from "@/collab/screen";
 import { useManifestName } from "@/api/names";
 import { holds, useSession } from "@/access/access";
+import { useClient } from "@/client/context";
+import { useQuery } from "@tanstack/react-query";
 import { NotListed } from "@/access/NotListed";
 
 const defineItems = [
@@ -312,6 +304,11 @@ function usePresenceScreen() {
 function RootLayout() {
   const crumbs = useBreadcrumbCrumbs();
   const { data: session } = useSession();
+  // What agents proposed for this person: the rail shows the count, and
+  // the entry wherever agents are allowed or something waits.
+  const client = useClient();
+  const proposals = useQuery({ queryKey: ["proposals"], queryFn: () => client.proposals(), retry: false });
+  const agentsHere = session?.access?.agents === true;
   // Signed in through the proxy, but not on the access list: nothing here
   // is theirs to see, and the engine would refuse every request.
   const unlisted = session?.access && !session.access.listed;
@@ -380,6 +377,33 @@ function RootLayout() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            {agentsHere || (proposals.data?.length ?? 0) > 0 ? (
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip={copy.rail.proposals}>
+                        <Link to="/proposals">
+                          <Bot />
+                          <span>{copy.rail.proposals}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      {(proposals.data?.length ?? 0) > 0 ? <SidebarMenuBadge>{proposals.data?.length}</SidebarMenuBadge> : null}
+                    </SidebarMenuItem>
+                    {agentsHere ? (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip={copy.rail.agents}>
+                          <Link to="/agents">
+                            <PlugZap />
+                            <span>{copy.rail.agents}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ) : null}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : null}
             {holds(session, "administrator") ? (
               <SidebarGroup>
                 <SidebarGroupLabel>{copy.rail.administration}</SidebarGroupLabel>
