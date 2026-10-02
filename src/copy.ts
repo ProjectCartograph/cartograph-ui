@@ -44,6 +44,16 @@ export const copy = {
     blankValue: "Empty",
     editing: (name: string) => `${name} is editing`,
   },
+  // What a person may change (docs/adr/0011 in cartograph-engine).
+  access: {
+    readOnly: "You can read this. Your access does not let you change it.",
+    notYourTeam: "You can read this. It belongs to a team you do not act for.",
+    notListedTitle: "You are not on the access list",
+    notListed: (email?: string) =>
+      email
+        ? `You signed in as ${email}, but only the people an administrator lists can see this. Ask one to add you.`
+        : "Only the people an administrator lists can see this. Ask one to add you.",
+  },
   rail: {
     new: "New",
     define: "Define",

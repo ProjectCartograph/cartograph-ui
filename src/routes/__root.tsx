@@ -52,6 +52,8 @@ import { PresenceProvider } from "@/collab/presence";
 import { PresenceTracker } from "@/collab/PresenceTracker";
 import { screenFor } from "@/collab/screen";
 import { useManifestName } from "@/api/names";
+import { useSession } from "@/access/access";
+import { NotListed } from "@/access/NotListed";
 
 const defineItems = [
   {
@@ -306,6 +308,10 @@ function usePresenceScreen() {
 
 function RootLayout() {
   const crumbs = useBreadcrumbCrumbs();
+  const { data: session } = useSession();
+  // Signed in through the proxy, but not on the access list: nothing here
+  // is theirs to see, and the engine would refuse every request.
+  const unlisted = session?.access && !session.access.listed;
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarOpenCookie);
   const { screen, route } = usePresenceScreen();
 
@@ -405,7 +411,7 @@ function RootLayout() {
             <PeopleHere />
           </header>
           <main className="min-w-0 flex-1 p-6" data-cartograph-region="main">
-            <Outlet />
+            {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
           </main>
         </SidebarInset>
       </SidebarProvider>

@@ -1,3 +1,4 @@
+import { WriteGate } from "@/access/WriteGate";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { ProjectStoreProvider } from "@/projects/store";
@@ -8,7 +9,9 @@ function ProjectLayout() {
   const { id } = Route.useParams();
   return (
     <ProjectStoreProvider id={id}>
-      <Outlet />
+      <WriteGate kind="Project" id={id}>
+        <Outlet />
+      </WriteGate>
     </ProjectStoreProvider>
   );
 }

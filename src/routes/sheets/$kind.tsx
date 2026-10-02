@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { WriteGate } from "@/access/WriteGate";
 import { copy } from "@/copy";
 import { Sheet } from "@/surfaces/sheet/Sheet";
 import { isSheetKind } from "@/surfaces/sheet/schema";
@@ -19,7 +20,9 @@ function SheetPage() {
       {/* Before the table, because a table that is missing rows is worse
           than a table that says so. */}
       <UnappliedBar kind={kind} />
-      <Sheet key={kind} kind={kind} />
+      <WriteGate kind={kind}>
+        <Sheet key={kind} kind={kind} />
+      </WriteGate>
     </div>
   );
 }

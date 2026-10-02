@@ -1,3 +1,4 @@
+import { WriteGate } from "@/access/WriteGate";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { DefinitionStoreProvider } from "@/definition/store";
@@ -11,7 +12,9 @@ function KPILayout() {
   const { id } = Route.useParams();
   return (
     <DefinitionStoreProvider kind="KPI" id={id} blank={blankKPISpec}>
-      <Outlet />
+      <WriteGate kind="KPI" id={id}>
+        <Outlet />
+      </WriteGate>
     </DefinitionStoreProvider>
   );
 }

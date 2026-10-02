@@ -1,3 +1,4 @@
+import { WriteGate } from "@/access/WriteGate";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { DefinitionStoreProvider } from "@/definition/store";
@@ -9,7 +10,9 @@ function GapLayout() {
   const { id } = Route.useParams();
   return (
     <DefinitionStoreProvider kind="Gap" id={id} blank={blankGapSpec}>
-      <Outlet />
+      <WriteGate kind="Gap" id={id}>
+        <Outlet />
+      </WriteGate>
     </DefinitionStoreProvider>
   );
 }

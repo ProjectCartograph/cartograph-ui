@@ -1,3 +1,4 @@
+import { WriteGate } from "@/access/WriteGate";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { DefinitionStoreProvider } from "@/definition/store";
@@ -9,7 +10,9 @@ function ProgrammeLayout() {
   const { id } = Route.useParams();
   return (
     <DefinitionStoreProvider kind="Programme" id={id} blank={blankProgrammeSpec}>
-      <Outlet />
+      <WriteGate kind="Programme" id={id}>
+        <Outlet />
+      </WriteGate>
     </DefinitionStoreProvider>
   );
 }
