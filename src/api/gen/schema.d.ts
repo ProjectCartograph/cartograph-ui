@@ -475,6 +475,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The agents people let act for them (docs/adr/0016): the caller's own, or, for an administrator, one person's (person) or everyone's (person=*). Empty where no grants are kept, as when the deployment's own stack authorizes agents. */
+        get: operations["listAgentGrants"];
+        put?: never;
+        /** Lets an agent act for the caller by a token to paste into its client, for a client that cannot sign in through the browser. The token is shown once. Only where Cartograph is the authorization server for agents (CARTOGRAPH_MCP_AUTH=cartograph). */
+        post: operations["createAgentToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agents/{grant}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnects an agent at once: the caller's own, or anyone's for an administrator. */
+        delete: operations["revokeAgentGrant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What agents have proposed (docs/adr/0016). An agent reads and edits drafts, and proposes what makes the record (a version, a reading, a state change); the person it acts for accepts or declines. By default, the open proposals made for the caller; with kind and id, every proposal on that manifest, for everyone who may read it. */
+        get: operations["listProposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/proposals/{proposal}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a proposal and make the record as the caller: commit its manifest, record its reading, or move its project. Only the person the proposal was made for may accept it, never an agent. Refused with 409 when the manifest has changed since the agent proposed, so the person reviews it again. */
+        post: operations["acceptProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/proposals/{proposal}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline a proposal. Only the person it was made for may. */
+        post: operations["declineProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/access/people": {
         parameters: {
             query?: never;
@@ -927,6 +1013,8 @@ export interface components {
             scopes: {
                 [key: string]: "none" | "teams" | "all";
             };
+            /** @description Whether the principal may act through an agent over MCP (docs/adr/0016): their roles allow it and an administrator has not turned theirs off. */
+            agents?: boolean;
         };
         /**
          * @description A role on the access list (TAXONOMY.md D27). A reader sees everything and changes nothing; a contributor changes the work of their teams and the teams beneath them and keeps the shared registers; a strategy editor shapes the goals and the vision and mission; an administrator does everything, for every team, and manages access.
@@ -937,9 +1025,13 @@ export interface components {
             roles: components["schemas"]["Role"][];
             /** @description Team ids. */
             teams: string[];
+            /** @description Turn this person's agents off whatever their roles allow (docs/adr/0016). False when left out. */
+            agentsOff?: boolean;
         };
         /** @description One entry on the access list: someone who may sign in, never a manifest (TAXONOMY.md D27). */
         Person: {
+            /** @description An administrator turned this person's agents off. */
+            agentsOff?: boolean;
             email: string;
             /** @description The display name from the directory; empty until the first sign-in. */
             name: string;
@@ -998,6 +1090,67 @@ export interface components {
             columns: string[];
             /** @description One array per row, its values in the order of columns. */
             rows: unknown[][];
+        };
+        /** @description One agent a person let act for them (docs/adr/0016). Its token is never kept. */
+        AgentGrant: {
+            id: string;
+            person: string;
+            /** @description The agent's name, as it was shown when its person consented. */
+            label: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            lastUsed?: string;
+            /** Format: date-time */
+            revokedAt?: string;
+        };
+        AgentTokenRequest: {
+            label: string;
+            /** @description How long the token lasts; 90 days when omitted. */
+            days?: number;
+        };
+        AgentToken: {
+            grant: components["schemas"]["AgentGrant"];
+            /** @description The bearer token, shown once. */
+            token: string;
+        };
+        /** @description Something an agent proposed for its person to confirm (docs/adr/0016). */
+        Proposal: {
+            id: string;
+            kind: string;
+            manifestId: string;
+            /**
+             * @description save commits the proposed manifest; append records one item of a series (series, item); state moves a project (state).
+             * @enum {string}
+             */
+            op: "save" | "append" | "state";
+            /** @description The proposed manifest, for save. */
+            manifest?: Record<string, never>;
+            series?: string;
+            item?: Record<string, never>;
+            state?: string;
+            reason: string;
+            /** @description The agent that proposed it, as it names itself. */
+            agent: string;
+            /** @description The person it acts for, who alone may accept it. */
+            for: string;
+            /** @description The manifest's latest version when it was proposed. */
+            base: number;
+            /** Format: date-time */
+            at: string;
+            /** @enum {string} */
+            status: "open" | "accepted" | "declined";
+            decidedBy?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            /** @description The version accepting it made, when it made one. */
+            version?: number;
+        };
+        ProposalDecision: {
+            /** @description Why, recorded with the decision. */
+            reason?: string;
         };
         /** @description Exactly one of yaml or manifest must be supplied. */
         WriteRequest: {
@@ -1228,6 +1381,8 @@ export interface components {
         /** @description A registered kind name, for example Project or Goal. */
         KindParam: string;
         IdParam: string;
+        GrantParam: string;
+        ProposalParam: string;
     };
     requestBodies: never;
     headers: never;
@@ -2039,6 +2194,185 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthenticated"];
+        };
+    };
+    listAgentGrants: {
+        parameters: {
+            query?: {
+                person?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The grants, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentGrant"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    createAgentToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description The grant, and its token */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentToken"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    revokeAgentGrant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grant: components["parameters"]["GrantParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listProposals: {
+        parameters: {
+            query?: {
+                kind?: string;
+                id?: string;
+                /** @description open (the default), accepted, declined, or all. */
+                status?: "open" | "accepted" | "declined" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The proposals, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Proposal"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    acceptProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal: components["parameters"]["ProposalParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProposalDecision"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Proposal"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Already decided, or the manifest changed since it was proposed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    declineProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal: components["parameters"]["ProposalParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProposalDecision"];
+            };
+        };
+        responses: {
+            /** @description Declined */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Proposal"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Already decided */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
         };
     };
     listPeople: {
