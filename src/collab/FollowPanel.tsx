@@ -107,13 +107,13 @@ function Lane({ lane }: { lane: AgentLane }) {
   return (
     <div className="flex items-center gap-2 py-1" data-cartograph-lane={lane.session}>
       <span className="relative flex size-2.5 shrink-0">
-        {lane.working ? <span className="absolute inline-flex size-full animate-ping rounded-full opacity-60" style={{ backgroundColor: lane.color }} /> : null}
+        {lane.active ? <span className="absolute inline-flex size-full animate-ping rounded-full opacity-60" style={{ backgroundColor: lane.color }} /> : null}
         <span className="relative inline-flex size-2.5 rounded-full" style={{ backgroundColor: lane.color }} />
       </span>
       <span className={`min-w-0 flex-1 truncate text-sm ${hidden ? "text-muted-foreground line-through" : ""}`} title={lane.actor}>
         {lane.label}
       </span>
-      <span className="text-xs text-muted-foreground">{lane.working ? fc.working : lane.active ? fc.waiting : fc.idle}</span>
+      <span className="text-xs text-muted-foreground">{lane.active ? fc.working : fc.idle}</span>
       <Button
         variant="ghost"
         size="icon-xs"

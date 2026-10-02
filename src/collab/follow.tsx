@@ -30,16 +30,10 @@ export interface AgentLane {
   /** The principal it acts as ("ada@example.org via Claude"). */
   actor: string;
   steps: AgentStep[];
-  /** Heard from within the time presence lasts. */
+  /** Heard from within the time presence lasts: working. Otherwise idle,
+   * which costs nothing and changes nothing on screen until it moves. */
   active: boolean;
-  /** Took a new step within the last half minute. While the engine
-   * keeps an agent's last step on the feed (engine docs/adr/0018), an
-   * active lane that is not working is waiting, usually on its person. */
-  working: boolean;
 }
-
-/** How long after its last new step an agent still counts as working. */
-export const WORKING_MS = 30_000;
 
 export interface FollowApi {
   /** Every lane heard on the feed, the hidden ones included. */
@@ -129,7 +123,7 @@ export function mergeLanes(lanes: Map<string, AgentLane>, peers: Peer[], now: nu
     heard.add(peer.session);
     let lane = lanes.get(peer.session);
     if (!lane) {
-      lane = { session: peer.session, label: peer.name ?? peer.actor, color: peer.color, actor: peer.actor, steps: [], active: true, working: true };
+      lane = { session: peer.session, label: peer.name ?? peer.actor, color: peer.color, actor: peer.actor, steps: [], active: true };
       lanes.set(peer.session, lane);
       changed = true;
     }
@@ -147,11 +141,6 @@ export function mergeLanes(lanes: Map<string, AgentLane>, peers: Peer[], now: nu
     const quietFor = now - (lane.steps[lane.steps.length - 1]?.heard ?? 0);
     if (lane.active && !heard.has(lane.session) && quietFor >= EXPIRY_MS) {
       lane.active = false;
-      changed = true;
-    }
-    const working = lane.active && quietFor < WORKING_MS;
-    if (lane.working !== working) {
-      lane.working = working;
       changed = true;
     }
   }

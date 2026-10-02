@@ -146,7 +146,6 @@ export const copy = {
     none: "No agent is working for you now. When one starts, its steps show here.",
     idle: "Idle",
     working: "Working",
-    waiting: "Waiting",
     hide: (label: string) => `Hide ${label}`,
     show: (label: string) => `Show ${label}`,
     hidden: (n: number) => `${n} hidden`,

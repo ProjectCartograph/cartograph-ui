@@ -37,11 +37,8 @@ describe("lanes", () => {
     mergeLanes(lanes, [draft, sub], 2000);
     expect(lanes.get("agent-1")?.steps.map((s) => s.step)).toEqual(["guide", "draft"]);
     expect(lanes.get("agent-2")?.label).toBe("Ada's agent (Claude › researcher)");
-    // Repeated by the engine but with no new step, it is waiting, not working.
-    mergeLanes(lanes, [draft], 40_000);
-    expect(lanes.get("agent-1")).toMatchObject({ active: true, working: false });
     // Silent past the time presence lasts, a lane goes idle and keeps its steps.
-    mergeLanes(lanes, [], 60_000);
+    mergeLanes(lanes, [], 20_000);
     expect(lanes.get("agent-1")?.active).toBe(false);
     expect(lanes.get("agent-1")?.steps).toHaveLength(2);
   });
@@ -176,7 +173,7 @@ describe("following", () => {
 describe("what the viewer sees", () => {
   it("hides a lane, and other people's agents on drafts when asked", async () => {
     const toggleLane = vi.fn();
-    const lane: AgentLane = { session: "agent-2", label: "Sam's agent (Claude)", color: "#7c3aed", actor: "sam via Claude", steps: [], active: true, working: true };
+    const lane: AgentLane = { session: "agent-2", label: "Sam's agent (Claude)", color: "#7c3aed", actor: "sam via Claude", steps: [], active: true };
     mount(
       <FollowFeed value={{ panelOpen: true, lanes: [lane], toggleLane }}>
         <FollowPanel />
