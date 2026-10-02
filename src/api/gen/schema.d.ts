@@ -364,6 +364,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/{kind}/{id}/series/{series}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record one item of a series (an array the kind's schema marks x-cartograph-series, such as a KPI's readings) and commit the manifest with it: a new key is added in key order, an existing key's item is replaced, which is how a provisional reading is restated. The item is the only thing sent, so recording costs the same however long the series is. Builds on the latest committed version, never on a working copy, and validates the whole manifest as a save does. */
+        post: operations["appendSeriesItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A report over the current record, answered by the deployment's reporter (docs/adr/0014): projects (with team, state and the goals they serve), kpi-readings (every reading in force, with who recorded it and when), alignment (what serves each goal) and teams (each team with every team above it). Every reporter gives the same columns and rows. 404 when the deployment turned reporting off. Every listed person reads every report. */
+        get: operations["getReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/{kind}/{id}/references": {
         parameters: {
             query?: never;
@@ -953,6 +987,17 @@ export interface components {
             op: "add" | "remove" | "replace";
             from?: unknown;
             to?: unknown;
+        };
+        SeriesAppend: {
+            /** @description The item, as the series' schema has it: for a reading, period and value, and provisional and note when they apply. */
+            item: Record<string, never>;
+            reason: string;
+        };
+        Report: {
+            name: string;
+            columns: string[];
+            /** @description One array per row, its values in the order of columns. */
+            rows: unknown[][];
         };
         /** @description Exactly one of yaml or manifest must be supplied. */
         WriteRequest: {
@@ -1827,6 +1872,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Summary"][] | components["schemas"]["ManifestList"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    appendSeriesItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+                /** @description The series' property under spec, such as readings. */
+                series: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SeriesAppend"];
+            };
+        };
+        responses: {
+            /** @description Committed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Version"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getReport: {
+        parameters: {
+            query?: {
+                /** @description json (the default) or csv, for a spreadsheet. */
+                format?: "json" | "csv";
+            };
+            header?: never;
+            path: {
+                name: "projects" | "kpi-readings" | "alignment" | "teams";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The report */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Report"];
+                    "text/csv": string;
                 };
             };
             401: components["responses"]["Unauthenticated"];
