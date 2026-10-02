@@ -155,3 +155,43 @@ describe("the motion", () => {
     expect(Math.hypot(bodies[0].x, bodies[0].y)).toBeLessThan(1);
   });
 });
+
+// The engine stacks the graph in bands, top-down in the order of work
+// (TAXONOMY.md D28); the view names each band and points every edge at
+// what it names.
+describe("the graph as a directed acyclic graph", () => {
+  const layered: Graph = {
+    nodes: [
+      { kind: "Team", id: "t1", name: "Depot network", layer: 0, x: 0, y: 0 },
+      { kind: "Goal", id: "g1", name: "Members are paid fairly", level: "goal", stage: "goal", layer: 2, x: 0, y: 180 },
+      { kind: "Goal", id: "o1", name: "Fruit arrives sound", level: "outcome", stage: "outcome", layer: 4, x: 0, y: 360 },
+    ],
+    edges: [
+      { from: { kind: "Goal", id: "o1" }, to: { kind: "Goal", id: "g1" } },
+      { from: { kind: "Goal", id: "g1" }, to: { kind: "Team", id: "t1" } },
+    ],
+  };
+  function draw(g: Graph) {
+    const { container } = render(
+      <ClientProvider client={fakeClient({ graph: async () => g })}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <GraphView graph={g} />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    return container;
+  }
+
+  it("names each band, top-down, and arrows every edge", () => {
+    const container = draw(layered);
+    const bands = [...container.querySelectorAll("[data-band]")].map((b) => b.textContent);
+    expect(bands).toEqual([gc.registers, copy.newWork.stage.goal, copy.newWork.stage.outcome]);
+    const edges = container.querySelectorAll('[data-slot="graph-edges"] line');
+    expect(edges).toHaveLength(2);
+    for (const e of edges) expect(e.getAttribute("marker-end")).toBe("url(#cartograph-graph-arrow)");
+  });
+
+  it("names no band where the layout does not stack them", () => {
+    expect(draw(graph).querySelectorAll("[data-band]")).toHaveLength(0);
+  });
+});

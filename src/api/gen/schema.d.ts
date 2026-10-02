@@ -47,7 +47,7 @@ export interface paths {
         };
         /**
          * Every manifest and every reference between them, for the workspace graph
-         * @description Read from the reference index: a node per manifest of every kind but Settings and KPIReadings, and an edge wherever one names another in its spec. An edge points from the manifest that holds the reference to the one it names. The engine places every node (x, y), the same way for the same workspace, so every interface draws the graph alike; with focus, each node also says how many edges it is from that one.
+         * @description Read from the reference index: a node per manifest of every kind but Settings and KPIReadings, and an edge wherever one names another in its spec. An edge points from the manifest that holds the reference to the one it names, which comes before it in the order of work, so the graph is directed and acyclic (TAXONOMY.md D28). Each node carries its layer: the registers first, then one per stage of the order. The engine places every node (x, y), the same way for the same workspace, so every interface draws the graph alike; with focus, each node also says how many edges it is from that one.
          */
         get: operations["getGraph"];
         put?: never;
@@ -291,6 +291,26 @@ export interface paths {
         };
         /** Liveness check */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The order of work, and how far the workspace has got along it
+         * @description The record is a directed acyclic graph, written from the top down (TAXONOMY.md D28): purpose, goals, objectives, outcomes, the KPIs that measure them, the gaps they close, then programmes, operations and projects. Each stage names only stages before it. Every stage says how many records it has and whether it is done, the one to write next, ready, or waiting on a stage before it; next is the first stage a plan needs that has no record. An empty workspace starts at its purpose. The registers are the roots any stage may name, added when a field asks for one.
+         */
+        get: operations["getOrder"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1036,6 +1056,31 @@ export interface components {
         Health: {
             status: string;
         };
+        Order: {
+            stages: components["schemas"]["OrderStage"][];
+            /** @description The key of the stage to write now; absent once every stage a plan needs has a record. */
+            next?: string;
+            /** @description The root kinds, each with how many records it has. */
+            registers: components["schemas"]["KindCount"][];
+        };
+        OrderStage: {
+            key: string;
+            kind: string;
+            /** @description For a Goal, the level the stage writes. */
+            level?: string;
+            /** @description The stages that need a record before this one can be written well. */
+            after?: string[];
+            /** @description A stage a workspace may leave empty. */
+            optional?: boolean;
+            count: number;
+            /**
+             * @description done when it has a record; next for the stage to write now; ready when what it names is there; waiting while a stage before it has no record.
+             * @enum {string}
+             */
+            state: "done" | "next" | "ready" | "waiting";
+            /** @description The stages it waits on, while it waits. */
+            waiting?: string[];
+        };
         KindCount: {
             kind: string;
             count: number;
@@ -1388,7 +1433,7 @@ export interface components {
             level?: string;
             /** @description What the asked level is. */
             levelIs?: string;
-            /** @description The work around this kind, in order, from the flows' links: what it answers to, settled before it, deepest first (for an objective, the gaps its outcomes close, each measured by a KPI and observed in segments, then the outcomes). */
+            /** @description The work around this kind, in the order of work, from the flows' links: what it names, which must exist before it (when before), then what will name it, each after what it names in turn (when after; for an objective, its outcomes, the KPI measuring each, then the gaps they close). */
             plan?: components["schemas"]["GuidePlanItem"][];
             /** @description What each level is, when no level was asked for. */
             levels?: {
@@ -1448,6 +1493,11 @@ export interface components {
             candidates?: components["schemas"]["GuideCandidate"][];
         };
         GuidePlanItem: {
+            /**
+             * @description before for what the new thing names, which must exist first; after for what will name it, written once it exists.
+             * @enum {string}
+             */
+            when: "before" | "after";
             kind: string;
             level?: string;
             /** @description What it is needed for, as Kind or Kind (level). */
@@ -1631,6 +1681,10 @@ export interface components {
             name: string;
             /** @description A goal's level (goal, objective, outcome); absent for every other kind. */
             level?: string;
+            /** @description The key of the stage of the order of work it is written in; absent for a register. */
+            stage?: string;
+            /** @description Its band in the graph: 0 for the registers, then one per stage, in the order of work. Every edge runs to a lower layer or along its own. */
+            layer?: number;
         };
         GraphEdge: {
             from: components["schemas"]["Ref"];
@@ -2336,6 +2390,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

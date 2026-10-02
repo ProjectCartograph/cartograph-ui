@@ -1,6 +1,18 @@
 {
   "locale": "en",
   "kind": "Goal",
+  "summary": "An aim of the strategy: a goal, an objective under it, or an outcome that says what will be true.",
+  "knownAs": [
+    "priority",
+    "pillar",
+    "strategic goal",
+    "strategic objective",
+    "aim",
+    "outcome area",
+    "result",
+    "intended outcome",
+    "impact"
+  ],
   "definition": "An aim in the organisation's strategy, at one of three levels: a goal (the long-term aim), an objective (a specific aim under a goal), or an outcome (a changed state that will be true once an objective is met). The strategy reads top-down from the purpose (the vision and mission in Settings): goals under the purpose, objectives under goals, outcomes under objectives. A gap is measured against the purpose and closes into an outcome. Numbers belong to the measures (key results and aligned KPIs), never to the statement. A goal is not a project (work that ends), not an operation (work that continues), and not a KPI (a measure).",
   "levels": {
     "goal": "The long-term aim under the purpose, usually spanning the plan (three to five years). Written as an aim: an action and the result it is for.",
@@ -156,7 +168,7 @@
     },
     "Gap:/spec/outcomes": {
       "ask": "Which gap does this outcome close? A gap is a shortfall measured against the purpose: where things are now, where they should be, and on what measure.",
-      "ifNone": "Define the gap first: its current state, its desired state, the KPI that measures it (with a dated baseline and target), the segments it was observed in, and the source of the evidence. Then the gap names this outcome."
+      "ifNone": "Define the gap next, once this outcome is written: its current state, its desired state, the KPI that measures it (with a dated baseline and target), the segments it was observed in, and the source of the evidence. The gap names this outcome as it is written; the outcome is not opened again."
     }
   },
   "checks": {
@@ -167,7 +179,7 @@
     "smart-time-bound": "Date every target, inside the horizon.",
     "owner": "Name the accountable role.",
     "horizon": "Give the period, inside the one above it.",
-    "closes-gap": "Name this outcome on the gap it closes, or define the gap first.",
+    "closes-gap": "Write the gap this outcome closes next, naming this outcome, or name it on an existing gap.",
     "key-results-count": "Keep one to three key results; more blur the focus.",
     "contributes-to": "Point each link at a higher objective other than the parent, with a reason.",
     "has-objectives": "Define the objectives under this goal, or place existing ones under it.",

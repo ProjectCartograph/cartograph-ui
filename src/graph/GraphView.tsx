@@ -44,6 +44,29 @@ function drawn(g: Graph): Drawn {
   return { nodes: g.nodes, index, edges, near };
 }
 
+/** The graph's bands, top-down, where the engine's layout stacks them
+ * (TAXONOMY.md D28): one per layer, with where it starts and its name. A
+ * layout that does not stack them gets none, so no band is mislabelled. */
+function bands(nodes: GraphNode[], left: number): { layer: number; y: number; x: number; label: string }[] {
+  const by = new Map<number, { min: number; max: number; stage?: string }>();
+  for (const n of nodes) {
+    if (n.layer === undefined) return [];
+    const b = by.get(n.layer) ?? { min: n.y, max: n.y, stage: n.stage };
+    b.min = Math.min(b.min, n.y);
+    b.max = Math.max(b.max, n.y);
+    by.set(n.layer, b);
+  }
+  const layers = [...by.keys()].sort((a, b) => a - b);
+  for (let i = 1; i < layers.length; i++) {
+    if (by.get(layers[i - 1])!.max >= by.get(layers[i])!.min) return [];
+  }
+  return layers.map((layer) => {
+    const b = by.get(layer)!;
+    const label = layer === 0 ? gc.registers : (copy.newWork.stage[b.stage ?? ""] ?? b.stage ?? "");
+    return { layer, y: b.min, x: left - 48, label };
+  });
+}
+
 function radius(n: GraphNode, degree: number) {
   const base = n.kind === "Goal" && n.level === "goal" ? 11 : 6;
   return base + Math.min(9, Math.sqrt(degree) * 2);
@@ -71,7 +94,10 @@ interface View {
 /**
  * Everything in the workspace as a graph: a node per element, an edge
  * wherever one names another, each placed by the engine, so every
- * interface draws the same graph. Pointing at a node lights what it
+ * interface draws the same graph. The graph is directed and acyclic
+ * (TAXONOMY.md D28): the engine stacks it in bands from the top down, the
+ * registers first and a band per stage of the order of work, and every
+ * arrow points at what a thing names, upwards. Pointing at a node lights what it
  * touches and dims the rest, its edges flowing from what holds a
  * reference to what it names; choosing one keeps lit what the engine
  * says is within the depth asked for, with a card to open it or walk on.
@@ -287,6 +313,7 @@ export function GraphView({ graph, focus }: { graph: Graph; focus?: string }) {
   };
 
   const labelAll = v.k >= 0.9;
+  const banded = useMemo(() => bands(d.nodes, Math.min(...d.nodes.map((n) => n.x))), [d]);
   return (
     <div className="relative h-full min-h-[480px] overflow-hidden rounded-lg border bg-background" data-cartograph-region="graph">
       <svg
@@ -299,20 +326,46 @@ export function GraphView({ graph, focus }: { graph: Graph; focus?: string }) {
         onPointerUp={onUp}
         onPointerCancel={onUp}
       >
+        <defs>
+          {/* An edge ends in an arrow at what it names, which comes before
+              it in the order of work: the graph is directed and acyclic. */}
+          <marker id="cartograph-graph-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+            <path d="M0,0 L10,5 L0,10 z" fill="context-stroke" />
+          </marker>
+        </defs>
         <g transform={`translate(${v.x},${v.y}) scale(${v.k})`}>
+          <g data-slot="graph-bands" aria-hidden>
+            {banded.map((b) => (
+              <text
+                key={b.layer}
+                x={b.x}
+                y={b.y + 4}
+                textAnchor="end"
+                className="fill-muted-foreground"
+                fontSize={11 / Math.max(v.k, 0.6)}
+                data-band={b.layer}
+              >
+                {b.label}
+              </text>
+            ))}
+          </g>
           <g data-slot="graph-edges">
             {d.edges.map((e, i) => {
               if (!shown(e.s) || !shown(e.t)) return null;
               const a = at(e.s);
               const b = at(e.t);
               const on = lit ? lit.has(e.s) && lit.has(e.t) && (hover === undefined || e.s === hover || e.t === hover) : false;
+              // Stop at the named node's rim, so the arrow shows.
+              const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+              const rim = radius(d.nodes[e.t], d.near[e.t].length) + 2;
               return (
                 <line
                   key={i}
                   x1={a.x}
                   y1={a.y}
-                  x2={b.x}
-                  y2={b.y}
+                  x2={b.x - ((b.x - a.x) / len) * rim}
+                  y2={b.y - ((b.y - a.y) / len) * rim}
+                  markerEnd="url(#cartograph-graph-arrow)"
                   data-lit={on || undefined}
                   className={on ? "cartograph-graph-flow" : undefined}
                   stroke={on ? colorOf(d.nodes[centre === e.t ? e.s : e.t].kind) : "currentColor"}

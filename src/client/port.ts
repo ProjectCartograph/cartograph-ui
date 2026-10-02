@@ -23,6 +23,8 @@ export type GoalTree = Schemas["GoalTree"];
 export type Graph = Schemas["Graph"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
+export type Order = Schemas["Order"];
+export type OrderStage = Schemas["OrderStage"];
 export type GoalCheck = Schemas["GoalCheck"];
 export type ProgrammeCheck = Schemas["ProgrammeCheck"];
 export type ProjectChecks = Schemas["ProjectChecks"];
@@ -337,6 +339,9 @@ export interface Client {
    * placed by the engine; with focus (Kind/id), each node's distance from
    * that one. */
   graph(focus?: string): Promise<Graph>;
+  /** The order of work (TAXONOMY.md D28): each stage of the strategy, how
+   * far the workspace has got, and which to write now. */
+  order(): Promise<Order>;
   /** Which part of a gap each piece of work addresses. */
   gapCoverage(id: string): Promise<GapCoverage>;
   /** Deletes a goal nothing references. Throws Refused naming what does. */

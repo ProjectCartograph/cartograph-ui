@@ -196,7 +196,7 @@ export const copy = {
   },
   graph: {
     title: "Graph",
-    subtitle: "Everything in the workspace and how it connects. Point at anything to see what it touches; choose it to follow its connections.",
+    subtitle: "Everything in the workspace, top-down in the order of work. Each arrow points at what a thing names. Point at anything to see what it touches; choose it to follow its connections.",
     loading: "Drawing the graph",
     empty: "Nothing defined yet.",
     search: "Find in the graph",
@@ -217,6 +217,8 @@ export const copy = {
     zoomOut: "Zoom out",
     node: (kind: string, name: string) => `${kind}: ${name}`,
     showInGraph: "Show in graph",
+    // The first band of the graph: the kinds everything may name.
+    registers: "Registers",
     kind: {
       Goal: "Goal",
       Project: "Project",
@@ -1317,11 +1319,43 @@ export const copy = {
     kpisLabel: "Indicators",
     kpisEmpty: "No indicators yet.",
   },
-  // What are you describing? The two questions every standard asks first
-  // (TAXONOMY.md D14).
+  // What are you describing? The order of work first (TAXONOMY.md D28):
+  // the strategy from the purpose down, then the work, which asks the two
+  // questions every standard asks first (D14).
   newWork: {
     title: "New",
     subtitle: "",
+    strategy: "Strategy",
+    work: "Work",
+    stage: {
+      purpose: "Purpose",
+      goal: "Goals",
+      objective: "Objectives",
+      outcome: "Outcomes",
+      kpi: "Indicators",
+      gap: "Gaps",
+      assumption: "Assumptions",
+      programme: "Programmes",
+      operation: "Operations",
+      project: "Projects",
+      stakeholders: "Stakeholder maps",
+    } as Record<string, string>,
+    stageDetail: {
+      purpose: "The vision and mission every goal serves.",
+      goal: "The long-term aims.",
+      objective: "The specific aims under each goal.",
+      outcome: "The states that will be true once an objective is met.",
+      kpi: "How each aim is measured.",
+      gap: "How far things are from an outcome, on its indicator.",
+      assumption: "What has to hold for the work to lead where it should.",
+    } as Record<string, string>,
+    count: (n: number) => `${n} written`,
+    startHere: "Start here",
+    optional: "Optional",
+    after: (stages: string) => `After ${stages}`,
+    add: "Add",
+    workWaits: (stage: string) => `Work serves the strategy. Start with ${stage}.`,
+    goTo: (stage: string) => `Go to ${stage}`,
     endsQuestion: "Does this work finish?",
     finishes: "Yes, it finishes",
     finishesDetail: "It builds or changes something, then hands it over.",
