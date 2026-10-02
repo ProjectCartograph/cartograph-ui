@@ -152,7 +152,17 @@ describe("the Access page", () => {
     await userEvent.click(field(dialog, "/roles/reader"));
     await userEvent.click(await waitFor(() => field(dialog, "/teams/assessment")));
     await userEvent.click(within(dialog).getByRole("button", { name: copy.access.save }));
-    await waitFor(() => expect(grantPerson).toHaveBeenCalledWith("sam@example.org", { roles: ["reader"], teams: ["assessment"] }));
+    await waitFor(() => expect(grantPerson).toHaveBeenCalledWith("sam@example.org", { roles: ["reader"], teams: ["assessment"], agentsOff: false }));
+  });
+
+  it("turns one person's agents off", async () => {
+    const grantPerson = vi.fn(async () => people[1]);
+    mount(fakeClient({ session: async () => admin, people: async () => people, list: async () => teams as never, grantPerson }), <AccessPage />);
+    await userEvent.click(await screen.findByRole("button", { name: copy.access.edit("Lee Okafor") }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.click(within(field(dialog, "/agentsOff")).getByRole("checkbox"));
+    await userEvent.click(within(dialog).getByRole("button", { name: copy.access.save }));
+    await waitFor(() => expect(grantPerson).toHaveBeenCalledWith("lee@example.org", { roles: [], teams: [], agentsOff: true }));
   });
 
   it("shows what the directory gives as given, and changes only the rest", async () => {
@@ -165,6 +175,6 @@ describe("the Access page", () => {
     expect(within(await waitFor(() => field(dialog, "/teams/curriculum"))).getByRole("checkbox")).toBeDisabled();
     await userEvent.click(field(dialog, "/roles/strategyEditor"));
     await userEvent.click(within(dialog).getByRole("button", { name: copy.access.save }));
-    await waitFor(() => expect(grantPerson).toHaveBeenCalledWith("lee@example.org", { roles: ["strategyEditor"], teams: [] }));
+    await waitFor(() => expect(grantPerson).toHaveBeenCalledWith("lee@example.org", { roles: ["strategyEditor"], teams: [], agentsOff: false }));
   });
 });

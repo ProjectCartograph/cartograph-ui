@@ -184,9 +184,10 @@ function PersonDialog({
   const [email, setEmail] = useState(person?.email ?? "");
   const [chosenRoles, setChosenRoles] = useState<Role[]>(person?.roles ?? []);
   const [chosenTeams, setChosenTeams] = useState<string[]>(person?.teams ?? []);
+  const [agentsOff, setAgentsOff] = useState<boolean>(person?.agentsOff ?? false);
   const [problem, setProblem] = useState<string | undefined>(undefined);
   const save = useMutation({
-    mutationFn: () => client.grantPerson(email.trim(), { roles: chosenRoles, teams: chosenTeams }),
+    mutationFn: () => client.grantPerson(email.trim(), { roles: chosenRoles, teams: chosenTeams, agentsOff }),
     onSuccess: () => {
       void queries.invalidateQueries({ queryKey: ["people"] });
       void queries.invalidateQueries({ queryKey: ["session"] });
@@ -252,6 +253,13 @@ function PersonDialog({
             })}
           </div>
         </div>
+        <label className="flex cursor-pointer items-start gap-2 text-sm" data-cartograph-field="/agentsOff">
+          <Checkbox className="mt-0.5" checked={!agentsOff} onCheckedChange={(on) => setAgentsOff(on !== true)} />
+          <span>
+            {copy.access.agents}
+            <span className="block text-xs text-muted-foreground">{copy.access.agentsHint}</span>
+          </span>
+        </label>
         {problem ? <p className="text-sm text-destructive">{problem}</p> : null}
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
