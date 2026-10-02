@@ -16,6 +16,7 @@ import {
   Map as MapIcon,
   TriangleAlert,
   Archive,
+  KeyRound,
 } from "lucide-react";
 
 import {
@@ -52,7 +53,7 @@ import { PresenceProvider } from "@/collab/presence";
 import { PresenceTracker } from "@/collab/PresenceTracker";
 import { screenFor } from "@/collab/screen";
 import { useManifestName } from "@/api/names";
-import { useSession } from "@/access/access";
+import { holds, useSession } from "@/access/access";
 import { NotListed } from "@/access/NotListed";
 
 const defineItems = [
@@ -153,6 +154,8 @@ function useBreadcrumbCrumbs(): Crumb[] {
   const projectId = routeId?.startsWith("/projects/$id") ? params.id : undefined;
   const projectQuery = useProjectManifest(projectId);
   const projectName = projectQuery.data?.manifest.metadata.name;
+
+  if (routeId === "/access") return [{ label: copy.rail.access }];
 
   if (routeId?.startsWith("/projects/$id")) {
     const crumbs: Crumb[] = [
@@ -377,6 +380,23 @@ function RootLayout() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            {holds(session, "administrator") ? (
+              <SidebarGroup>
+                <SidebarGroupLabel>{copy.rail.administration}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip={copy.rail.access}>
+                        <Link to="/access">
+                          <KeyRound />
+                          <span>{copy.rail.access}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ) : null}
           </SidebarContent>
           <SidebarFooter>
             <SidebarMenu>

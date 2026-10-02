@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccessRouteImport } from './routes/access'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as GapsIndexRouteImport } from './routes/gaps/index'
 import { Route as GapsIdRouteImport } from './routes/gaps/$id'
@@ -76,6 +77,11 @@ import { Route as ProjectsIdInitiationTimelineRouteImport } from './routes/proje
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccessRoute = AccessRouteImport.update({
+  id: '/access',
+  path: '/access',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewRoute = NewRouteImport.update({
@@ -403,6 +409,7 @@ const ProjectsIdInitiationTimelineRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/access': typeof AccessRoute
   '/new': typeof NewRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
@@ -468,6 +475,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/access': typeof AccessRoute
   '/new': typeof NewRoute
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
@@ -529,6 +537,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/access': typeof AccessRoute
   '/new': typeof NewRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
@@ -596,6 +605,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/access'
     | '/new'
     | '/gaps/$id'
     | '/gaps/new'
@@ -661,6 +671,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/access'
     | '/new'
     | '/gaps/new'
     | '/goals/$id'
@@ -721,6 +732,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/access'
     | '/new'
     | '/gaps/$id'
     | '/gaps/new'
@@ -787,6 +799,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccessRoute: typeof AccessRoute
   NewRoute: typeof NewRoute
   GapsIdRoute: typeof GapsIdRouteWithChildren
   GapsNewRoute: typeof GapsNewRoute
@@ -817,6 +830,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/access': {
+      id: '/access'
+      path: '/access'
+      fullPath: '/access'
+      preLoaderRoute: typeof AccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new': {
@@ -1389,6 +1409,7 @@ const ProjectsIdRouteWithChildren = ProjectsIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccessRoute: AccessRoute,
   NewRoute: NewRoute,
   GapsIdRoute: GapsIdRouteWithChildren,
   GapsNewRoute: GapsNewRoute,

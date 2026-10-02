@@ -1,15 +1,17 @@
 /// <reference types="@testing-library/jest-dom" />
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
 import { ClientProvider } from "@/client/context";
 import { fakeClient } from "@/client/fake";
-import type { Client, Session } from "@/client/port";
+import type { Client, Person, Session } from "@/client/port";
 import { copy } from "@/copy";
 
 import { mayWrite } from "../access";
+import { AccessPage } from "../AccessPage";
 import { WriteGate } from "../WriteGate";
 
 // The running example's teams: early grades sits under the curriculum
@@ -34,6 +36,13 @@ function mount(client: Client, ui: ReactNode) {
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>
     </ClientProvider>,
   );
+}
+
+/** The control at a field path, inside root. */
+function field(root: HTMLElement, path: string): HTMLElement {
+  const el = root.querySelector<HTMLElement>(`[data-cartograph-field="${path}"]`);
+  if (!el) throw new Error(`no field ${path}`);
+  return el;
 }
 
 function project(team: string) {
@@ -96,5 +105,66 @@ describe("WriteGate", () => {
     );
     await waitFor(() => expect(document.querySelector('[data-cartograph-region="read-only"]')).toHaveTextContent(copy.access.readOnly));
     expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+  });
+});
+
+describe("the Access page", () => {
+  const admin: Session = { ...contributor, email: "admin@example.org", access: { ...contributor.access!, roles: ["administrator"] } };
+  const people: Person[] = [
+    {
+      email: "admin@example.org", name: "Ada Admin", roles: ["administrator"], teams: [],
+      directoryRoles: [], directoryTeams: [], addedBy: "command line", addedOn: "2026-10-01T00:00:00Z", lastSignedIn: "2026-10-01T09:00:00Z",
+    },
+    {
+      email: "lee@example.org", name: "Lee Okafor", roles: [], teams: [],
+      directoryRoles: ["contributor"], directoryTeams: ["curriculum"], addedBy: "directory", addedOn: "2026-10-01T00:00:00Z",
+    },
+  ];
+  const teams = [
+    { kind: "Team", id: "curriculum", name: "Curriculum division", version: 1, updatedOn: "2026-10-01T00:00:00Z" },
+    { kind: "Team", id: "assessment", name: "Assessment", version: 1, updatedOn: "2026-10-01T00:00:00Z" },
+  ];
+
+  it("lists people with their roles, teams and last sign-in, and marks you", async () => {
+    mount(fakeClient({ session: async () => admin, people: async () => people, list: async () => teams as never }), <AccessPage />);
+    const row = (await waitFor(() => {
+      const r = document.querySelector<HTMLElement>('[data-cartograph-region="person:lee@example.org"]');
+      expect(r).not.toBeNull();
+      return r;
+    }))!;
+    expect(row).toHaveTextContent(copy.access.role.contributor.name);
+    expect(row).toHaveTextContent("Curriculum division"); // the team's name, not its id
+    expect(row).toHaveTextContent(copy.access.never);
+    const adminRow = document.querySelector<HTMLElement>('[data-cartograph-region="person:admin@example.org"]')!;
+    expect(adminRow).toHaveTextContent(copy.access.you);
+    expect(adminRow).toHaveTextContent("1 Oct 2026");
+    // Nobody removes themselves.
+    expect(within(adminRow).queryByRole("button", { name: copy.access.remove("Ada Admin") })).not.toBeInTheDocument();
+    expect(within(row).getByRole("button", { name: copy.access.remove("Lee Okafor") })).toBeInTheDocument();
+  });
+
+  it("adds a person by address with roles and teams", async () => {
+    const grantPerson = vi.fn(async (email: string) => ({ ...people[1], email }));
+    mount(fakeClient({ session: async () => admin, people: async () => people, list: async () => teams as never, grantPerson }), <AccessPage />);
+    await userEvent.click(await screen.findByRole("button", { name: copy.access.add }));
+    const dialog = screen.getByRole("dialog");
+    await userEvent.type(field(dialog, "/email"), "sam@example.org");
+    await userEvent.click(field(dialog, "/roles/reader"));
+    await userEvent.click(await waitFor(() => field(dialog, "/teams/assessment")));
+    await userEvent.click(within(dialog).getByRole("button", { name: copy.access.save }));
+    await waitFor(() => expect(grantPerson).toHaveBeenCalledWith("sam@example.org", { roles: ["reader"], teams: ["assessment"] }));
+  });
+
+  it("shows what the directory gives as given, and changes only the rest", async () => {
+    const grantPerson = vi.fn(async () => people[1]);
+    mount(fakeClient({ session: async () => admin, people: async () => people, list: async () => teams as never, grantPerson }), <AccessPage />);
+    await userEvent.click(await screen.findByRole("button", { name: copy.access.edit("Lee Okafor") }));
+    const dialog = screen.getByRole("dialog");
+    // What the directory gives is shown as given and cannot be unticked.
+    expect(within(field(dialog, "/roles/contributor")).getByRole("checkbox")).toBeDisabled();
+    expect(within(await waitFor(() => field(dialog, "/teams/curriculum"))).getByRole("checkbox")).toBeDisabled();
+    await userEvent.click(field(dialog, "/roles/strategyEditor"));
+    await userEvent.click(within(dialog).getByRole("button", { name: copy.access.save }));
+    await waitFor(() => expect(grantPerson).toHaveBeenCalledWith("lee@example.org", { roles: ["strategyEditor"], teams: [] }));
   });
 });

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useClient } from "@/client/context";
-import type { Session } from "@/client/port";
+import type { Role, Session } from "@/client/port";
 
 /** The spec field naming the team that owns a manifest of each kind, as
  * the engine reads it (docs/adr/0011 in cartograph-engine). */
@@ -11,6 +11,9 @@ export const teamField: Record<string, string> = {
   Operation: "team",
   DataSource: "team",
 };
+
+/** Every role, from the least to the most a role may do. */
+export const roles: Role[] = ["reader", "contributor", "strategyEditor", "administrator"];
 
 /** Who this interface acts as and what they may do. Asked once a minute;
  * the engine decides again on every write. */
@@ -34,6 +37,11 @@ export function mayWrite(session: Session | undefined, kind: string, team?: stri
     default:
       return false;
   }
+}
+
+/** Whether the session holds role. */
+export function holds(session: Session | undefined, role: Role): boolean {
+  return !!session?.access?.roles.includes(role);
 }
 
 /** The team that owns a manifest, read from its spec. */
