@@ -369,6 +369,8 @@ export interface Client {
    * everyone's ("*"). Empty where the deployment's own stack authorizes
    * agents. */
   agentGrants(person?: string): Promise<AgentGrant[]>;
+  /** The address an agent's MCP client connects to, absolute. */
+  mcpAddress(): string;
   /** Lets an agent act for the caller by a token to paste into it, shown
    * once. NotFound where Cartograph does not authorize agents. */
   createAgentToken(label: string, days?: number): Promise<AgentToken>;

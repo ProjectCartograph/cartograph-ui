@@ -29,7 +29,8 @@ const claude: AgentGrant = {
   lastUsed: "2026-10-02T09:00:00Z",
 };
 
-function mount(client: Client) {
+function mount(given: Client) {
+  const client: Client = { ...given, mcpAddress: () => "https://cartograph.example.org/mcp-address" };
   render(
     <ClientProvider client={client}>
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>

@@ -41,6 +41,7 @@ const every: Record<keyof Client, true> = {
   acceptProposal: true,
   declineProposal: true,
   agentGrants: true,
+  mcpAddress: true,
   createAgentToken: true,
   revokeAgentGrant: true,
 };

@@ -240,6 +240,7 @@ export function httpClient(
       const data = await answer(wire.GET("/agents", { params: { query: person ? { person } : {} } }));
       return Array.isArray(data) ? data : [];
     },
+    mcpAddress: () => new URL(`${baseUrl}/mcp`, window.location.origin).toString(),
     createAgentToken: (label, days) => answer(wire.POST("/agents", { body: days ? { label, days } : { label } })),
     revokeAgentGrant: (id) => done(wire.DELETE("/agents/{grant}", { params: { path: { grant: id } } })),
     snapshots: (page) =>

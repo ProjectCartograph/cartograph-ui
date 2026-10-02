@@ -125,6 +125,7 @@ describe("the HTTP adapter", () => {
     expect(await client.charter("Project", "p1", { working: true })).toBe("<h1>Charter</h1>");
     expect(asked[0].url).toBe("http://engine/api/v1/manifests/Project/p1/charter.html?working=true");
     expect(client.charterLink("Programme", "pr1", "pdf")).toBe("http://engine/api/v1/manifests/Programme/pr1/charter.pdf");
+    expect(client.mcpAddress()).toBe("http://engine/api/v1/mcp");
     expect(httpClient().charterLink("Project", "p1", "html", { working: true })).toBe(
       "/api/v1/manifests/Project/p1/charter.html?working=true",
     );

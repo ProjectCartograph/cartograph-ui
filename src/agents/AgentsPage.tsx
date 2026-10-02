@@ -20,8 +20,9 @@ const ac = copy.agents;
 export function AgentsPage() {
   const { data: session } = useSession();
   const admin = holds(session, "administrator");
+  const client = useClient();
   const [everyone, setEveryone] = useState(false);
-  const address = `${window.location.origin}/api/v1/mcp`;
+  const address = client.mcpAddress();
   return (
     <div className="mx-auto max-w-3xl space-y-6" data-cartograph-region="agents">
       <p className="text-sm text-muted-foreground">{ac.intro}</p>
