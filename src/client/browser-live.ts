@@ -14,6 +14,7 @@ import wasmUrl from "@automerge/automerge/automerge.wasm?url";
 import { WebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 
+import { followAttention, pageAttention, type Pausable } from "./attention";
 import { createLive, type Live, type LiveOptions } from "./live";
 
 /** The sync socket for an API base: ws or wss, as the page was served. */
@@ -48,9 +49,13 @@ export async function browserLive(
   port: Pick<LiveOptions, "locate" | "presenceDocument" | "session">,
 ): Promise<Live> {
   if (!isWasmInitialized()) await initializeWasm(wasmUrl);
+  const socket = new WebSocketClientAdapter(syncURL(apiBase));
+  // Open only while someone is at the window, so an unattended one holds
+  // no server up (attention.ts).
+  followAttention(socket as unknown as Pausable, pageAttention());
   return createLive({
     ...port,
-    network: [new WebSocketClientAdapter(syncURL(apiBase))],
+    network: [socket],
     storage: typeof indexedDB === "undefined" ? undefined : new IndexedDBStorageAdapter("cartograph"),
     remember: remembered(),
     route: () => window.location.pathname,
