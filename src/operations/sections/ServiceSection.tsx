@@ -21,12 +21,8 @@ export function ServiceSection() {
         <Input
           data-cartograph-field="/metadata/name"
           id="operation-name"
-          value={spec.name ?? store.name}
-          onChange={(e) => {
-            const v = e.target.value.slice(0, 160);
-            store.setName(v);
-            store.updateSpec((s) => ({ ...s, name: v }));
-          }}
+          value={store.name}
+          onChange={(e) => store.setName(e.target.value.slice(0, 160))}
           placeholder={oc.namePlaceholder}
           maxLength={160}
         />

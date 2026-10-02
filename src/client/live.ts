@@ -53,6 +53,8 @@ export interface LiveOptions {
   locate: (kind: string, id: string) => Promise<SharedDocument>;
   /** The presence document (GET /presence). */
   presenceDocument: () => Promise<SharedDocument>;
+  /** The document a person's agents announce their steps on. */
+  agentFeed?: (person?: string) => Promise<SharedDocument>;
   /** Who this session is (GET /session). */
   session: () => Promise<Session>;
   /** Remembers where a manifest's draft is, so a reload with no connection
@@ -70,6 +72,7 @@ export interface LiveOptions {
 export interface Live {
   openDraft(kind: string, id: string): Promise<SharedDraft>;
   joinPresence(screen: PresenceScreen): Promise<PresenceChannel>;
+  followAgents(person?: string): Promise<PresenceChannel>;
   watchConnection(listener: (status: ConnectionStatus) => void): () => void;
   /** Stops syncing; for tests and for a page being torn down. */
   shutdown(): Promise<void>;
@@ -492,7 +495,12 @@ class Channel implements PresenceChannel {
   private readonly onMessage: (p: { message: unknown }) => void;
   private readonly onUnload: () => void;
 
-  constructor(handle: DocHandle<unknown> | undefined, me: Sender, route: string | undefined) {
+  /** A listener only hears: it sends no presence of its own, so following
+   * agents adds nothing to anyone's screen or to the wire. */
+  private readonly listener: boolean;
+
+  constructor(handle: DocHandle<unknown> | undefined, me: Sender, route: string | undefined, listener = false) {
+    this.listener = listener;
     this.handle = handle;
     this.me = me;
     this.peers = new PeerSet(me.session);
@@ -503,7 +511,7 @@ class Channel implements PresenceChannel {
     this.onUnload = () => this.close();
     if (!handle) return;
     handle.on("ephemeral-message", this.onMessage);
-    this.heartbeat = setInterval(() => this.send(), HEARTBEAT_MS);
+    if (!listener) this.heartbeat = setInterval(() => this.send(), HEARTBEAT_MS);
     this.sweep = setInterval(() => {
       if (this.peers.expire(Date.now())) this.emit();
     }, SWEEP_MS);
@@ -553,7 +561,7 @@ class Channel implements PresenceChannel {
   }
 
   private send(leaving = false): void {
-    if (this.closed || !this.handle) return;
+    if (this.closed || !this.handle || this.listener) return;
     const now = Date.now();
     this.lastPointerSent = now;
     // A send carries everything, so it is a heartbeat too.
@@ -667,6 +675,18 @@ export function createLive(opts: LiveOptions): Live {
         handle = undefined;
       }
       return new Channel(handle, who, opts.route?.());
+    },
+
+    async followAgents(person) {
+      const who = await sender();
+      let handle: DocHandle<unknown> | undefined;
+      try {
+        if (!opts.agentFeed) throw new Error("no agent feed");
+        handle = await find<unknown>((await opts.agentFeed(person)).url);
+      } catch {
+        handle = undefined;
+      }
+      return new Channel(handle, who, undefined, true);
     },
 
     watchConnection(listener) {

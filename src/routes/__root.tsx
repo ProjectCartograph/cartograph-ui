@@ -6,7 +6,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { Archive, Bot, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Settings2, Table2, TriangleAlert } from "lucide-react";
+import { Archive, Bot, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -40,6 +40,8 @@ import { useGoalManifest } from "@/surfaces/goals/api";
 import { PeopleHere } from "@/collab/PeopleHere";
 import { PresenceOverlay } from "@/collab/PresenceOverlay";
 import { PresenceProvider } from "@/collab/presence";
+import { FollowProvider, useFollow } from "@/collab/follow";
+import { FollowPanel } from "@/collab/FollowPanel";
 import { PresenceTracker } from "@/collab/PresenceTracker";
 import { screenFor } from "@/collab/screen";
 import { useManifestName } from "@/api/names";
@@ -301,6 +303,25 @@ function usePresenceScreen() {
   return { screen: screenFor(last?.routeId, params), route: last?.pathname ?? "" };
 }
 
+/** The rail's way into following: the agents working now, with a live
+ * dot, opening the panel (engine docs/adr/0018). */
+function AgentsAtWork() {
+  const f = useFollow();
+  const working = f.lanes.filter((l) => l.active && !f.hidden.has(l.session)).length;
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton tooltip={copy.follow.rail} onClick={() => f.setPanelOpen(!f.panelOpen)} isActive={f.panelOpen} data-cartograph-follow>
+        <span className="relative flex">
+          <Radio />
+          {working > 0 ? <span className="absolute -right-0.5 -top-0.5 size-2 animate-pulse rounded-full bg-violet-500" /> : null}
+        </span>
+        <span>{copy.follow.rail}</span>
+      </SidebarMenuButton>
+      {working > 0 ? <SidebarMenuBadge>{working}</SidebarMenuBadge> : null}
+    </SidebarMenuItem>
+  );
+}
+
 function RootLayout() {
   const crumbs = useBreadcrumbCrumbs();
   const { data: session } = useSession();
@@ -318,9 +339,11 @@ function RootLayout() {
   return (
     <VaultExamplesProvider>
     <TooltipProvider>
+    <FollowProvider>
     <PresenceProvider screen={screen} route={route}>
       <PresenceTracker />
       <PresenceOverlay />
+      <FollowPanel />
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <Sidebar variant="inset" collapsible="icon" data-cartograph-region="rail">
           <SidebarHeader>
@@ -377,7 +400,7 @@ function RootLayout() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-            {agentsHere || (proposals.data?.length ?? 0) > 0 ? (
+            {session?.agents === true || agentsHere || (proposals.data?.length ?? 0) > 0 ? (
               <SidebarGroup>
                 <SidebarGroupContent>
                   <SidebarMenu>
@@ -390,6 +413,7 @@ function RootLayout() {
                       </SidebarMenuButton>
                       {(proposals.data?.length ?? 0) > 0 ? <SidebarMenuBadge>{proposals.data?.length}</SidebarMenuBadge> : null}
                     </SidebarMenuItem>
+                    <AgentsAtWork />
                     {agentsHere ? (
                       <SidebarMenuItem>
                         <SidebarMenuButton asChild tooltip={copy.rail.agents}>
@@ -460,6 +484,7 @@ function RootLayout() {
         </SidebarInset>
       </SidebarProvider>
     </PresenceProvider>
+    </FollowProvider>
     </TooltipProvider>
     </VaultExamplesProvider>
   );

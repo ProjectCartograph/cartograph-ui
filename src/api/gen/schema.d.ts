@@ -330,6 +330,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/guides/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How to define a kind well, for one level, in one language: what it is, every step and field in order with right and wrong examples, the checks each answers and how to meet them, the links to make on other kinds, and the organisation's records to reuse for each reference and link. Agents read the same guide over MCP. */
+        get: operations["getGuide"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/schemas/{kind}": {
         parameters: {
             query?: never;
@@ -493,6 +510,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/agents/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The document a person's agents announce their steps on, to follow them (docs/adr/0018): what each read, drafted, checked and proposed, as presence (contract/schemas/presence.schema.json, agent). The caller's own, or, for an administrator, one person's. Only they may open it on the sync socket; nothing is stored. */
+        get: operations["getAgentFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/agents/{grant}": {
         parameters: {
             query?: never;
@@ -519,6 +553,23 @@ export interface paths {
         };
         /** What agents have proposed (docs/adr/0016). An agent reads and edits drafts, and proposes what makes the record (a version, a reading, a state change); the person it acts for accepts or declines. By default, the open proposals made for the caller; with kind and id, every proposal on that manifest, for everyone who may read it. */
         get: operations["listProposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/proposals/{proposal}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One proposal as its person reviews it: what it would change against the manifest's latest version, field by field, and the checks on what it proposes. Read by whoever may read its manifest. */
+        get: operations["getProposal"];
         put?: never;
         post?: never;
         delete?: never;
@@ -999,6 +1050,8 @@ export interface components {
             /** @description The organisation address, where the authenticator has one. */
             email?: string;
             access?: components["schemas"]["SessionAccess"];
+            /** @description Whether agents may act for this principal here: the deployment serves MCP and, with an access list, the principal's roles allow one. An interface shows Proposals when it is true. */
+            agents?: boolean;
         };
         /** @description What the access list gives the principal (docs/adr/0011), present when the deployment keeps one. An interface offers editing from it; the engine decides again on every write. */
         SessionAccess: {
@@ -1147,6 +1200,109 @@ export interface components {
             decidedAt?: string;
             /** @description The version accepting it made, when it made one. */
             version?: number;
+            /** @description The set this proposal belongs to, whose proposals are accepted or declined together; absent for one on its own. */
+            set?: string;
+            /** @description The checks the agent left open, each with why. An agent may propose only what meets every check, or what names each check it leaves open. */
+            waivers?: components["schemas"]["Waiver"][];
+        };
+        Waiver: {
+            check: string;
+            /** @description What the check said. */
+            message: string;
+            /** @description Why the agent left it open. */
+            reason: string;
+        };
+        /** @description One thing a manifest still needs, as every kind reports it: met (ok), advice (warn), or a block on a handoff (block). */
+        ManifestCheck: {
+            id: string;
+            /** @enum {string} */
+            state: "ok" | "warn" | "block";
+            message: string;
+            /** @description The editor's section where it is fixed. */
+            section?: string;
+        };
+        /** @description A proposal as its person reviews it: every part, in the order they would be saved. A proposal on its own has one part; a set (a KPI, the gap it measures and the outcome that closes it) has one per manifest, accepted or declined together. */
+        ProposalReview: {
+            proposal: components["schemas"]["Proposal"];
+            parts: components["schemas"]["ProposalPart"][];
+        };
+        ProposalPart: {
+            proposal: components["schemas"]["Proposal"];
+            /** @description What saving it would change, against the base version (everything, for a new manifest). */
+            changes: components["schemas"]["Change"][];
+            checks: components["schemas"]["ManifestCheck"][];
+        };
+        Guide: {
+            kind: string;
+            locale: string;
+            /** @description What the kind is, in the discipline's words, and what it is not. */
+            definition: string;
+            level?: string;
+            /** @description What the asked level is. */
+            levelIs?: string;
+            /** @description What each level is, when no level was asked for. */
+            levels?: {
+                [key: string]: string;
+            };
+            /** @description The organisation's vision and mission, for a Goal. */
+            purpose?: {
+                vision?: string;
+                mission?: string;
+                source?: string;
+            };
+            /** @description The records of this kind (at this level) already defined: reuse or improve one before defining another. */
+            existing: components["schemas"]["GuideCandidate"][];
+            /** @description A manifest of this kind with its envelope and required fields, to fill in. */
+            template: Record<string, never>;
+            steps: components["schemas"]["GuideStep"][];
+            /** @description By check id, how to meet it. */
+            checks?: {
+                [key: string]: string;
+            };
+            /** @description Words an interface offers for writing a field in this language, such as the verbs an aim opens with; never used to judge one. */
+            vocabulary?: {
+                [key: string]: string[];
+            };
+        };
+        GuideStep: {
+            key: string;
+            title: string;
+            guide?: string;
+            fields: components["schemas"]["GuideField"][];
+            links?: components["schemas"]["GuideLink"][];
+        };
+        GuideField: {
+            /** @description The field's JSON pointer; list items as /spec/keyResults/-/metric. */
+            path: string;
+            control: string;
+            guide?: string;
+            good?: string[];
+            poor?: components["schemas"]["GuidePoor"][];
+            checks?: string[];
+            /** @description The kind the field references. */
+            references?: string;
+            candidates?: components["schemas"]["GuideCandidate"][];
+        };
+        GuidePoor: {
+            text: string;
+            why: string;
+        };
+        GuideLink: {
+            /** @description The kind that holds the link. */
+            kind: string;
+            /** @description Where on that kind the link is held. */
+            path: string;
+            check?: string;
+            ask?: string;
+            ifNone?: string;
+            candidates?: components["schemas"]["GuideCandidate"][];
+        };
+        GuideCandidate: {
+            id: string;
+            name: string;
+            detail?: string;
+            /** @description A goal's parent. */
+            under?: string;
         };
         ProposalDecision: {
             /** @description Why, recorded with the decision. */
@@ -1971,6 +2127,37 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    getGuide: {
+        parameters: {
+            query?: {
+                /** @description For a Goal, goal, objective or outcome. */
+                level?: string;
+                /** @description The language of the words; English when there are none in it. */
+                locale?: string;
+            };
+            header?: never;
+            path: {
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The guide */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Guide"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     getSchema: {
         parameters: {
             query?: never;
@@ -2248,6 +2435,31 @@ export interface operations {
             422: components["responses"]["Unprocessable"];
         };
     };
+    getAgentFeed: {
+        parameters: {
+            query?: {
+                person?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedDocument"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
     revokeAgentGrant: {
         parameters: {
             query?: never;
@@ -2296,6 +2508,31 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    getProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposal: components["parameters"]["ProposalParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The proposal under review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalReview"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     acceptProposal: {

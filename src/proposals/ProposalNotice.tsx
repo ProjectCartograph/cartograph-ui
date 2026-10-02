@@ -24,7 +24,7 @@ export function ProposalNotice({ kind, id }: { kind: string; id: string }) {
         <Bot className="size-4 text-violet-600" />
         {copy.proposals.notice(first.agent)}
       </span>
-      <Link to="/proposals" className="font-medium underline-offset-2 hover:underline">
+      <Link to="/proposals/$id" params={{ id: first.id }} className="font-medium underline-offset-2 hover:underline">
         {copy.proposals.review}
       </Link>
     </div>

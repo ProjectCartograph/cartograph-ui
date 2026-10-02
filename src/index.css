@@ -157,3 +157,38 @@
     @apply font-sans;
     }
 }
+/* Following an agent (engine docs/adr/0018): a field it changed glows in
+   the agent colour, a check met draws itself in, a proposal lands with a
+   burst. Nothing moves for someone who asked for less motion. */
+@keyframes cartograph-agent-glow {
+  0% { box-shadow: 0 0 0 0 rgb(124 58 237 / 0.55); background-color: rgb(124 58 237 / 0.1); }
+  100% { box-shadow: 0 0 0 12px rgb(124 58 237 / 0); background-color: transparent; }
+}
+.cartograph-agent-glow {
+  animation: cartograph-agent-glow 1.2s ease-out 2;
+  border-radius: 0.5rem;
+}
+@keyframes cartograph-draw {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+.cartograph-draw path,
+.cartograph-draw polyline {
+  stroke-dasharray: 24;
+  animation: cartograph-draw 0.5s ease-out both;
+}
+@keyframes cartograph-burst {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.cartograph-burst {
+  animation: cartograph-burst 0.9s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cartograph-agent-glow,
+  .cartograph-burst,
+  .cartograph-draw path,
+  .cartograph-draw polyline {
+    animation: none !important;
+  }
+}

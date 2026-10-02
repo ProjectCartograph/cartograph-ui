@@ -19,7 +19,7 @@ function NewOperationPage() {
       teamPlaceholder={c.teamPlaceholder}
       createLabel={c.create}
       errorLabel={c.generalError}
-      specFrom={(name, team) => ({ name, purpose: "", team })}
+      specFrom={(_name, team) => ({ purpose: "", team })}
       firstStep="/operations/$id/service"
     />
   );

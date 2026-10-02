@@ -47,6 +47,8 @@ export function gapOutline(spec: GapSpec, name: string): OutlinePart[] {
     { key: "kpi", label: copy.gaps.measureLabel, icon: Gauge, count: has(spec.measure), to: "/gaps/$id/shortfall" },
     { key: "outcomes", label: oc.outcomes, icon: Flag, count: (spec.outcomes ?? []).length, to: "/gaps/$id/shortfall" },
     { key: "scope", label: oc.scope, icon: Map, count: (spec.segments ?? []).length, to: "/gaps/$id/scope" },
-    { key: "evidence", label: oc.evidence, icon: ScrollText, count: has(spec.source) || has(spec.statement), to: "/gaps/$id/evidence" },
+    // The evidence is its source; the statement is what that source says
+    // (TAXONOMY.md D9), as the engine's gap-source check reads it.
+    { key: "evidence", label: oc.evidence, icon: ScrollText, count: has(spec.source), to: "/gaps/$id/evidence" },
   ].map((p) => ({ ...p, filled: p.count > 0 }) as OutlinePart);
 }

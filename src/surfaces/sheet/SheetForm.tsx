@@ -151,10 +151,8 @@ export function SheetForm({
     setGeneralError(null);
     setConflict(false);
 
-    // Every sheet kind's spec also requires its own "name", mirroring
-    // metadata.name (see the parseSpecFields doc comment); it is not shown
-    // as a separate field, so it is set here instead of collected below.
-    const spec: Record<string, unknown> = { name: values._name };
+    // The name is metadata.name alone (engine 2.6.0); spec carries none.
+    const spec: Record<string, unknown> = {};
     for (const f of fields) {
       const raw = values[f.name];
       const empty = raw === undefined || raw === "" || (Array.isArray(raw) && raw.length === 0);

@@ -22,7 +22,7 @@ function NewProgrammePage() {
       // The aim is left empty rather than guessed at: the first step asks
       // for it, and a placeholder written here would be an answer nobody
       // gave.
-      specFrom={(name, team) => ({ name, aim: "", leadTeam: team })}
+      specFrom={(_name, team) => ({ aim: { change: "" }, leadTeam: team })}
       firstStep="/programmes/$id/aim"
     />
   );

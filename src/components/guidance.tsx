@@ -70,14 +70,18 @@ export function Help({
   label,
   hint,
   examples,
+  poor,
 }: {
   /** The field the help is for, read out as the button's name. */
   label: string;
   hint?: string;
   examples?: string[];
+  /** Answers that read plausibly and are wrong, each with why. */
+  poor?: { text: string; why: string }[];
 }) {
   const hasExamples = !!examples && examples.length > 0;
-  if (!hint && !hasExamples) return null;
+  const hasPoor = !!poor && poor.length > 0;
+  if (!hint && !hasExamples && !hasPoor) return null;
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -107,6 +111,19 @@ export function Help({
             </ul>
           </div>
         ) : null}
+        {hasPoor ? (
+          <div className="flex flex-col gap-1.5" data-slot="poor-examples">
+            <p className="text-xs font-medium text-muted-foreground">{gc.poorTitle}</p>
+            <ul className="flex flex-col gap-1.5">
+              {poor!.map((item, i) => (
+                <li key={i} className="rounded-md border border-dashed p-2 text-pretty">
+                  <span className="line-through decoration-muted-foreground/60">{item.text}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{item.why}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </PopoverContent>
     </Popover>
   );
@@ -122,10 +139,12 @@ export function FieldHeading({
   examples: productExamples,
   exampleKey,
   htmlFor,
+  poor,
 }: {
   label: string;
   hint?: string;
   examples?: string[];
+  poor?: { text: string; why: string }[];
   /** Which field this is, so a vault can supply its own examples for it
    * (TAXONOMY.md D20). */
   exampleKey?: string;
@@ -135,7 +154,7 @@ export function FieldHeading({
   return (
     <div className="flex items-center gap-1">
       <Label htmlFor={htmlFor}>{label}</Label>
-      <Help label={label} hint={hint} examples={examples} />
+      <Help label={label} hint={hint} examples={examples} poor={poor} />
     </div>
   );
 }

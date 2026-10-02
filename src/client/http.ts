@@ -107,6 +107,7 @@ export function httpClient(
   const sharedDocument = (kind: string, id: string) =>
     answer(wire.GET("/manifests/{kind}/{id}/document", { params: { path: { kind, id } } }));
   const presenceDocument = () => answer(wire.GET("/presence"));
+  const agentFeed = (person?: string) => answer(wire.GET("/agents/feed", { params: { query: person ? { person } : {} } }));
 
   // The collaboration side, made once and on first use: Automerge and its
   // WebAssembly load when a screen first asks for a draft or presence, not
@@ -114,7 +115,7 @@ export function httpClient(
   let live: Promise<Live> | undefined;
   function collaboration(): Promise<Live> {
     live ??= import("./browser-live").then((m) =>
-      m.browserLive(baseUrl, { locate: sharedDocument, presenceDocument, session }),
+      m.browserLive(baseUrl, { locate: sharedDocument, presenceDocument, agentFeed, session }),
     );
     return live;
   }
@@ -138,6 +139,7 @@ export function httpClient(
     presenceDocument,
     openDraft: async (kind, id) => (await collaboration()).openDraft(kind, id),
     joinPresence: async (screen) => (await collaboration()).joinPresence(screen),
+    followAgents: async (person) => (await collaboration()).followAgents(person),
     watchConnection,
 
     kinds: () => answer(wire.GET("/kinds")),
@@ -232,6 +234,9 @@ export function httpClient(
       const data = await answer(wire.GET("/proposals", { params: { query: on ? { kind: on.kind, id: on.id } : {} } }));
       return Array.isArray(data) ? data : [];
     },
+    getGuide: (kind, opts) =>
+      answer(wire.GET("/guides/{kind}", { params: { path: { kind }, query: { level: opts?.level || undefined, locale: opts?.locale || undefined } } })),
+    getProposal: (id) => answer(wire.GET("/proposals/{proposal}", { params: { path: { proposal: id } } })),
     acceptProposal: (id, reason) =>
       answer(wire.POST("/proposals/{proposal}/accept", { params: { path: { proposal: id } }, body: reason ? { reason } : {} })),
     declineProposal: (id, reason) =>

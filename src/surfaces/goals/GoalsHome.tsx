@@ -1041,10 +1041,13 @@ function UnalignedTray() {
   const projects = projectsQuery.data ?? [];
   const refQueries = useQueries({ queries: projects.map((p) => projectReferencesQueryOptions(client, p.id)) });
 
+  // A component serves the goals of the project it is part of (TAXONOMY.md
+  // D15), so it is never unaligned for naming none of its own.
   const unaligned = projects.filter((_, i) => {
     const refs = refQueries[i]?.data;
     if (!refs) return false;
-    return !refs.outgoing.some((r) => r.kind === "Goal");
+    const component = refs.outgoing.some((r) => r.kind === "Project" && r.path?.startsWith("/spec/alignment/partOf"));
+    return !component && !refs.outgoing.some((r) => r.kind === "Goal");
   });
 
   if (projectsQuery.isLoading || unaligned.length === 0) return null;

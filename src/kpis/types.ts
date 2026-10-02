@@ -18,12 +18,20 @@ export function blankReadings(kpi: string): () => KPIReadingsSpec {
 /** What a KPI says about itself. Its baseline and target are also what a
  * Gap's two states are, which is why a measured gap references a KPI
  * rather than restating a pair of numbers (TAXONOMY.md D9). */
+/** A KPI's baseline: today's figure as of a month, or an admitted unknown
+ * with the reason (TAXONOMY.md D25: every measure has one or the other). */
+export type KPIBaseline = { value: number; date: string } | { unknownReason: string; expectedBy?: string };
+
+/** The baseline's figure, when it is known. */
+export function knownBaseline(b: KPIBaseline | undefined): { value: number; date: string } | undefined {
+  return b && "value" in b ? b : undefined;
+}
+
 export interface KPIDefinitionSpec {
-  name?: string;
   definition?: string;
   unit?: string;
   direction?: string;
-  baseline?: { value: number; date: string };
+  baseline?: KPIBaseline;
   target?: { value: number; date: string };
   source?: string;
   cycle?: string;

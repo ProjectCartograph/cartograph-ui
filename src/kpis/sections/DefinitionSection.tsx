@@ -4,6 +4,7 @@ import { ComboboxMultiple } from "@/components/ui/combobox";
 import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { Input } from "@/components/ui/input";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -18,7 +19,7 @@ import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useState } from "react";
 
 import { CycleSignature } from "../CycleSignature";
-import type { KPIDefinitionSpec } from "../types";
+import { knownBaseline, type KPIBaseline, type KPIDefinitionSpec } from "../types";
 
 const kc = copy.kpis.definition;
 
@@ -72,6 +73,59 @@ function ValueAndDate({
           }
         />
       </div>
+    </div>
+  );
+}
+
+/** The baseline: today's figure, or an admitted unknown with why and when
+ * it will be known, as a key result's is (TAXONOMY.md D25). */
+function Baseline({ value, onChange }: { value?: KPIBaseline; onChange: (next: KPIBaseline | undefined) => void }) {
+  const unknown = !!value && "unknownReason" in value;
+  return (
+    <div className="flex flex-col gap-2" data-cartograph-field="/spec/baseline">
+      <ToggleGroup
+        type="single"
+        size="sm"
+        variant="outline"
+        value={unknown ? "unknown" : "known"}
+        onValueChange={(v) => {
+          if (v === "unknown") onChange({ unknownReason: "" });
+          else if (v === "known") onChange(undefined);
+        }}
+        className="self-start"
+      >
+        <ToggleGroupItem value="known">{kc.baselineKnown}</ToggleGroupItem>
+        <ToggleGroupItem value="unknown">{kc.baselineUnknown}</ToggleGroupItem>
+      </ToggleGroup>
+      {unknown ? (
+        <div className="flex flex-col gap-2">
+          <FieldHeading label={kc.baselineLabel} hint={kc.baselineHint} />
+          <Input
+            data-cartograph-field="/spec/baseline/unknownReason"
+            aria-label={kc.unknownReasonLabel}
+            placeholder={kc.unknownReasonLabel}
+            value={value.unknownReason}
+            onChange={(e) => onChange({ ...value, unknownReason: e.target.value })}
+          />
+          <Input
+            data-cartograph-field="/spec/baseline/expectedBy"
+            className="w-32"
+            aria-label={kc.expectedByLabel}
+            placeholder={kc.datePlaceholder}
+            value={value.expectedBy ?? ""}
+            onChange={(e) => onChange({ unknownReason: value.unknownReason, ...(e.target.value ? { expectedBy: e.target.value } : {}) })}
+          />
+        </div>
+      ) : (
+        <ValueAndDate
+          label={kc.baselineLabel}
+          hint={kc.baselineHint}
+          value={knownBaseline(value)}
+          onChange={onChange}
+          idPrefix="kpi-baseline"
+          data-cartograph-field="/spec/baseline"
+        />
+      )}
     </div>
   );
 }
@@ -141,14 +195,7 @@ export function DefinitionSection() {
       </div>
 
       <div className="flex flex-wrap gap-8">
-        <ValueAndDate
-          label={kc.baselineLabel}
-          hint={kc.baselineHint}
-          value={spec.baseline}
-          onChange={(v) => set({ baseline: v })}
-          idPrefix="kpi-baseline"
-          data-cartograph-field="/spec/baseline"
-        />
+        <Baseline value={spec.baseline} onChange={(v) => set({ baseline: v })} />
         <ValueAndDate
           label={kc.targetLabel}
           hint={kc.targetHint}

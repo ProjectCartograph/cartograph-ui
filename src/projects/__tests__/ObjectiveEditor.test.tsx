@@ -7,10 +7,13 @@ import userEvent from "@testing-library/user-event";
 import { copy } from "@/copy";
 import { ObjectiveEditor, joinObjective, joinVerb, splitObjective, splitVerb } from "../ObjectiveEditor";
 
+// What the engine's English guide offers for a project objective.
+const verbs = ["improve", "close", "standardise"];
+
 function renderEditor(objective = "", alignedGoals = 0) {
   const onChange = vi.fn();
   const view = render(
-    <ObjectiveEditor objective={objective} alignedGoals={alignedGoals} onChange={onChange} />,
+    <ObjectiveEditor objective={objective} alignedGoals={alignedGoals} onChange={onChange} verbs={verbs} meansWord="by" />,
   );
   return { onChange, view };
 }
@@ -38,14 +41,21 @@ describe("splitObjective", () => {
 });
 
 describe("splitVerb", () => {
-  it("finds a listed verb and keeps the rest as typed, trailing space and all", () => {
-    expect(splitVerb("Improve retention ")).toEqual({ verb: "improve", rest: "retention " });
+  it("finds an offered verb and keeps the rest as typed, trailing space and all", () => {
+    expect(splitVerb("Improve retention ", verbs)).toEqual({ verb: "improve", rest: "retention " });
     expect(joinVerb("improve", "retention ")).toBe("Improve retention ");
   });
 
   it("keeps an objective that opens with another word whole, with no verb picked", () => {
-    expect(splitVerb("Close the gap")).toEqual({ verb: "close", rest: "the gap" });
-    expect(splitVerb("Deliver the pack")).toEqual({ verb: "", rest: "Deliver the pack" });
+    expect(splitVerb("Close the gap", verbs)).toEqual({ verb: "close", rest: "the gap" });
+    expect(splitVerb("Deliver the pack", verbs)).toEqual({ verb: "", rest: "Deliver the pack" });
+    // A language whose guide offers no verbs.
+    expect(splitVerb("Close the gap", [])).toEqual({ verb: "", rest: "Close the gap" });
+  });
+
+  it("splits the means on the guide's word, or not at all without one", () => {
+    expect(splitObjective("Close the gap by checking at intake", "by")).toEqual({ outcome: "Close the gap", means: "by checking at intake" });
+    expect(splitObjective("Close the gap by checking at intake", "")).toEqual({ outcome: "Close the gap by checking at intake", means: "" });
   });
 });
 
@@ -64,7 +74,7 @@ describe("ObjectiveEditor", () => {
       const [value, setValue] = useState("");
       return (
         <>
-          <ObjectiveEditor objective={value} alignedGoals={0} onChange={setValue} />
+          <ObjectiveEditor objective={value} alignedGoals={0} onChange={setValue} verbs={verbs} meansWord="by" />
           <output data-testid="stored">{value}</output>
         </>
       );
@@ -81,10 +91,17 @@ describe("ObjectiveEditor", () => {
     expect(screen.getByTestId("stored")).toHaveTextContent("Improve customer retention by fixing the intake");
   });
 
-  it("lights every mark it can judge when all four hold", () => {
-    // Aligned to a goal, starts with a verb, says how, no numbers.
+  it("marks only what the engine decides: aligned, and no numbers", () => {
+    // Whether it names a change, and how, is for the guidance to say.
     const { view } = renderEditor("Improve customer retention by adapting services", 1);
-    expect(view.container.querySelectorAll('[data-slot="quality-marks"] [data-met="true"]')).toHaveLength(4);
+    expect(view.container.querySelectorAll('[data-slot="quality-marks"] [data-met]')).toHaveLength(2);
+    expect(view.container.querySelectorAll('[data-slot="quality-marks"] [data-met="true"]')).toHaveLength(2);
+  });
+
+  it("is one line with no means part when the guide offers no words", () => {
+    render(<ObjectiveEditor objective="Close the gap" alignedGoals={0} onChange={() => {}} />);
+    expect(screen.queryByLabelText(copy.projects.goals.objectiveVerbLabel)).toBeNull();
+    expect(screen.queryByLabelText(copy.projects.goals.objectiveStepMeans)).toBeNull();
   });
 
   it("refuses to light the marks a weak objective fails", () => {

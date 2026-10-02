@@ -139,7 +139,6 @@ function QualityStrip({ form, allowSource }: { form: FormState; allowSource: boo
   const marks: QualityMark[] = [
     { key: "measurable", label: c.quality.measurable, met: form.targetValue.trim() !== "" },
     { key: "timeBound", label: c.quality.timeBound, met: /^\d{4}-\d{2}$/.test(form.targetDate) },
-    { key: "specific", label: c.quality.specific, met: form.outcome.trim().length >= 4 },
   ];
   if (allowSource) {
     marks.push({ key: "verifiable", label: c.quality.verifiable, met: form.source.trim() !== "" });
@@ -205,7 +204,11 @@ export function KeyResultDialog({
   const unitMissing = needsUnit && form.unit.trim() === "";
   const outcomeMissing = form.outcome.trim() === "";
   const reasonMissing = !form.baselineKnown && form.unknownReason.trim() === "";
-  const canSave = !outcomeMissing && !unitMissing && !reasonMissing;
+  // A figure without its month, or a month without its figure, is half a
+  // baseline or target: it used to be dropped without a word on save.
+  const halfTarget = (form.targetValue !== "") !== (form.targetDate !== "");
+  const halfBaseline = form.baselineKnown && (form.baselineValue !== "") !== (form.baselineDate !== "");
+  const canSave = !outcomeMissing && !unitMissing && !reasonMissing && !halfTarget && !halfBaseline;
 
   // The metric as it will be stored: the unit chosen above, then the
   // outcome word. Nothing types the unit twice.
@@ -342,6 +345,7 @@ export function KeyResultDialog({
               className="max-w-48"
               aria-label={c.targetDateLabel}
             />
+            {refused && halfTarget ? <p className="text-xs text-destructive">{c.halfFilled}</p> : null}
           </Step>
 
           <Step n={4} title={c.stepBaseline} hint={c.stepBaselineHint}>
@@ -380,6 +384,7 @@ export function KeyResultDialog({
                   onChange={(v) => set("baselineDate", v)}
                   aria-label={c.baselineDateLabel}
                 />
+                {refused && halfBaseline ? <p className="col-span-2 text-xs text-destructive">{c.halfFilled}</p> : null}
               </div>
             ) : (
               <div className="flex flex-col gap-2">

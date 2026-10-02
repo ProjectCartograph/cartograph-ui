@@ -4,7 +4,7 @@
 // seconds of silence, and leaving=true when a screen closes. Pure, so the
 // rules are tested without a network.
 
-import type { Peer, PresenceCaret, PresenceFocus, PresencePointer, PresenceState } from "./port";
+import type { Peer, PresenceAgent, PresenceCaret, PresenceFocus, PresencePointer, PresenceState } from "./port";
 
 /** The repeat while a screen is open. */
 export const HEARTBEAT_MS = 3000;
@@ -26,9 +26,12 @@ export interface PresenceMessage {
   pointer?: PresencePointer | null;
   at: number;
   leaving?: boolean;
+  agent?: PresenceAgent;
 }
 
-const TOP = new Set(["v", "session", "actor", "name", "color", "route", "focus", "caret", "pointer", "at", "leaving"]);
+const TOP = new Set(["v", "session", "actor", "name", "color", "route", "focus", "caret", "pointer", "at", "leaving", "agent"]);
+const STEPS = ["guide", "read", "draft", "checks", "propose"];
+const AGENT = ["for", "seq", "step", "kind", "id", "name", "fields", "met", "open", "proposal", "parts"];
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -61,6 +64,22 @@ function validPointer(v: unknown): boolean {
   return v === null || (isRecord(v) && only(v, ["target", "x", "y"]) && str(v.target, 512) && unit(v.x) && unit(v.y));
 }
 
+function count(v: unknown): boolean {
+  return typeof v === "number" && Number.isInteger(v) && v >= 0;
+}
+
+function validAgent(v: unknown): boolean {
+  if (!isRecord(v) || !only(v, AGENT)) return false;
+  if (!str(v.for, 256) || !count(v.seq) || !STEPS.includes(v.step as string)) return false;
+  if (v.kind !== undefined && !str(v.kind, 64)) return false;
+  if (v.id !== undefined && !str(v.id, 128)) return false;
+  if (v.name !== undefined && !str(v.name, 256)) return false;
+  if (v.fields !== undefined && !(Array.isArray(v.fields) && v.fields.length <= 32 && v.fields.every((f) => str(f, 512)))) return false;
+  for (const k of ["met", "open", "parts"] as const) if (v[k] !== undefined && !count(v[k])) return false;
+  if (v.proposal !== undefined && !str(v.proposal, 64)) return false;
+  return true;
+}
+
 /** Whether a received message is one the schema allows. Anything else is
  * dropped: presence is lossy by design, and the next message replaces it. */
 export function isPresenceMessage(m: unknown): m is PresenceMessage {
@@ -75,6 +94,7 @@ export function isPresenceMessage(m: unknown): m is PresenceMessage {
   if (m.pointer !== undefined && !validPointer(m.pointer)) return false;
   if (typeof m.at !== "number" || !Number.isInteger(m.at) || m.at < 0) return false;
   if (m.leaving !== undefined && typeof m.leaving !== "boolean") return false;
+  if (m.agent !== undefined && !validAgent(m.agent)) return false;
   return true;
 }
 
@@ -164,6 +184,7 @@ export class PeerSet {
       focus: m.focus ?? null,
       caret: m.caret ?? null,
       pointer: m.pointer ?? null,
+      ...(m.agent ? { agent: m.agent } : {}),
       heard: now,
       at: m.at,
     });

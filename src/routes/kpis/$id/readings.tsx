@@ -9,7 +9,7 @@ import { readingsID, useCycle } from "@/kpis/api";
 import { readingSlots } from "@/kpis/periods";
 import { ReadingChart } from "@/kpis/ReadingChart";
 import { ReadingsTable } from "@/kpis/ReadingsTable";
-import { blankReadings, type KPIReadingsSpec } from "@/kpis/types";
+import { type KPIReadingsSpec, blankReadings, knownBaseline } from "@/kpis/types";
 import type { KPIDefinitionSpec } from "@/kpis/types";
 
 export const Route = createFileRoute("/kpis/$id/readings")({ component: Page });
@@ -63,7 +63,7 @@ function Series({ kpiID, spec }: { kpiID: string; spec: KPIDefinitionSpec }) {
 
   const readings = store.spec.readings ?? [];
   const slots = cycle.data
-    ? readingSlots(cycle.data, readings, spec.baseline?.date, spec.target?.date)
+    ? readingSlots(cycle.data, readings, knownBaseline(spec.baseline)?.date, spec.target?.date)
     : [];
 
   return (
@@ -93,7 +93,7 @@ function Series({ kpiID, spec }: { kpiID: string; spec: KPIDefinitionSpec }) {
           slots={slots}
           unit={spec.unit ?? ""}
           target={spec.target}
-          baseline={spec.baseline}
+          baseline={knownBaseline(spec.baseline)}
           direction={spec.direction}
         />
       ) : (

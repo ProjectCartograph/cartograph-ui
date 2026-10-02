@@ -131,17 +131,25 @@ describe("KeyResultDialog", () => {
 
     await user.type(screen.getByLabelText(c.unitLabel), "deliveries");
     await user.type(screen.getByLabelText(c.stepMetric), "checked");
-    await user.type(screen.getByLabelText(c.targetValueLabel), "1200");
     await user.click(screen.getByRole("button", { name: "Save key result" }));
 
-    // A target is stored only once it has a month as well as a number, so
-    // this one is the metric, the unit and the kind.
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave.mock.calls[0][0]).toMatchObject({
       metric: "deliveries checked",
       unit: "deliveries",
       kind: "count",
     });
+  });
+
+  it("refuses a target figure with no month, rather than dropping it", async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderDialog({ allowSource: true });
+    await user.type(screen.getByLabelText(c.unitLabel), "deliveries");
+    await user.type(screen.getByLabelText(c.stepMetric), "checked");
+    await user.type(screen.getByLabelText(c.targetValueLabel), "1200");
+    await user.click(screen.getByRole("button", { name: "Save key result" }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText(c.halfFilled)).toBeInTheDocument();
   });
 
   it("hides the data source step for a goal's own key result", () => {

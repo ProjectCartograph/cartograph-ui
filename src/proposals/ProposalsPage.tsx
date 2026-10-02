@@ -1,14 +1,11 @@
-import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, Bot } from "lucide-react";
 
 import { useClient } from "@/client/context";
-import { ClientError, type Proposal } from "@/client/port";
+import type { Proposal } from "@/client/port";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/copy";
-
-import { manifestLink } from "./links";
 
 const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const pc = copy.proposals;
@@ -34,7 +31,7 @@ export function ProposalsPage() {
   const list = useQuery({ queryKey: ["proposals"], queryFn: () => client.proposals() });
   return (
     <div className="mx-auto max-w-3xl space-y-5" data-cartograph-region="proposals">
-      <p className="text-sm text-muted-foreground">{pc.intro}</p>
+      <p className="text-sm text-muted-foreground">{pc.intro} {pc.reviewFirst}</p>
       {list.isError ? <p className="text-sm text-destructive">{pc.loadFailed}</p> : null}
       {list.data && list.data.length === 0 ? <p className="text-sm text-muted-foreground">{pc.none}</p> : null}
       <ul className="space-y-3">
@@ -47,19 +44,9 @@ export function ProposalsPage() {
 }
 
 function ProposalCard({ proposal: p }: { proposal: Proposal }) {
-  const client = useClient();
-  const queries = useQueryClient();
-  const [problem, setProblem] = useState<string | undefined>(undefined);
-  const settle = () => {
-    void queries.invalidateQueries({ queryKey: ["proposals"] });
-  };
-  const fail = (e: unknown) => setProblem(e instanceof ClientError && e.status === 409 ? pc.stale : pc.failed);
-  const accept = useMutation({ mutationFn: () => client.acceptProposal(p.id), onSuccess: settle, onError: fail });
-  const decline = useMutation({ mutationFn: () => client.declineProposal(p.id), onSuccess: settle, onError: fail });
-  const link = manifestLink(p);
-  const proposed = p.manifest ?? p.item;
+  const waived = p.waivers?.length ?? 0;
   return (
-    <li className="space-y-2 rounded-lg border p-4" data-cartograph-proposal={p.id}>
+    <li className="rounded-lg border p-4" data-cartograph-proposal={p.id}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <p className="font-medium">{proposalTitle(p)}</p>
@@ -68,28 +55,19 @@ function ProposalCard({ proposal: p }: { proposal: Proposal }) {
             {pc.by(p.agent, when.format(new Date(p.at)))}
           </p>
           {p.reason ? <p className="text-sm">{p.reason}</p> : null}
+          {waived > 0 ? (
+            <p className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="size-3.5" />
+              {pc.waivers(waived)}
+            </p>
+          ) : null}
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={link.to as never} params={link.params as never}>
-              {pc.open}
-            </Link>
-          </Button>
-          <Button variant="outline" size="sm" disabled={decline.isPending || accept.isPending} onClick={() => decline.mutate()}>
-            {pc.decline}
-          </Button>
-          <Button size="sm" disabled={accept.isPending || decline.isPending} onClick={() => accept.mutate()}>
-            {pc.accept}
-          </Button>
-        </div>
+        <Button size="sm" asChild>
+          <Link to="/proposals/$id" params={{ id: p.id }}>
+            {pc.review}
+          </Link>
+        </Button>
       </div>
-      {proposed ? (
-        <details className="text-sm">
-          <summary className="cursor-pointer text-muted-foreground">{pc.show}</summary>
-          <pre className="mt-2 max-h-80 overflow-auto rounded bg-muted p-2 text-xs">{JSON.stringify(proposed, null, 2)}</pre>
-        </details>
-      ) : null}
-      {problem ? <p className="text-sm text-destructive">{problem}</p> : null}
     </li>
   );
 }

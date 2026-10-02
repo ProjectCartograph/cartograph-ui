@@ -8,6 +8,7 @@ import { createElement, useEffect, useRef, useState, type ReactNode } from "reac
 import { useClient } from "@/client/context";
 import type { Peer, PresenceChannel, PresenceScreen, SharedDraft } from "@/client/port";
 import { openDraft } from "./draft";
+import { useFollow } from "./follow";
 import { PresenceContext, type PresenceApi } from "./presenceContext";
 
 export type { PresenceApi };
@@ -72,8 +73,12 @@ export function PresenceProvider({ screen, route, children }: { screen: Presence
     channel.current?.publish({ route });
   }, [route]);
 
+  // Other people's agents on this draft, unless the viewer chose to see
+  // them; their own always show.
+  const { othersOnDrafts, me } = useFollow();
+  const shown = othersOnDrafts ? peers : peers.filter((p) => !p.agent || p.agent.for === me);
   const value: PresenceApi = {
-    peers,
+    peers: shown,
     draft,
     publish: (state) => channel.current?.publish(state),
   };

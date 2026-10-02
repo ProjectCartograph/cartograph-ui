@@ -24,7 +24,7 @@ function useMeasures(ids: string[]): MeasureFacts[] {
         if (!view) return null;
         const spec = view.manifest?.spec;
         if (!spec) return null;
-        return { ...spec, id, name: spec.name ?? view.manifest?.metadata?.name ?? id };
+        return { ...spec, id, name: view.manifest?.metadata?.name ?? spec.name ?? id };
       },
     })),
   });

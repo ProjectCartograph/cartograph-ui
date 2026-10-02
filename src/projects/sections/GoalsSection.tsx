@@ -22,6 +22,8 @@ import { useClient } from "@/client/context";
 import { orUndefined } from "@/client/port";
 import { copy } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
+import { useGuide, vocabulary } from "@/components/guide";
+
 import { ObjectiveEditor } from "../ObjectiveEditor";
 import { KeyResultCard } from "@/surfaces/goals/KeyResultCard";
 import { KeyResultDialog } from "@/surfaces/goals/KeyResultDialog";
@@ -159,45 +161,57 @@ export function AlignmentSection() {
     }));
   }
 
-  // Which goals the chosen programmes already serve. A project proves it
-  // belongs to a programme by sharing a goal with it, so those goals are
-  // offered first and the rest are marked as reaching outside them
+  // Each goal's parent, from the tree: a programme may be judged on an aim
+  // at any level, and an outcome beneath it serves it (TAXONOMY.md D24,
+  // D25), as the engine's goals-programme-membership check reads it.
+  const parentOf = useMemo(() => {
+    const m = new Map<string, string>();
+    const walk = (nodes: { id: string; children?: unknown[] }[], parent?: string) => {
+      for (const n of nodes) {
+        if (parent) m.set(n.id, parent);
+        walk((n.children ?? []) as { id: string; children?: unknown[] }[], n.id);
+      }
+    };
+    walk(treeQuery.data?.nodes ?? []);
+    return m;
+  }, [treeQuery.data]);
+  const serves = (goal: string, aim: string) => {
+    for (let at: string | undefined = goal, i = 0; at && i < 64; at = parentOf.get(at), i++) if (at === aim) return true;
+    return false;
+  };
+
+  // Which outcomes the chosen programmes already serve. A project proves it
+  // belongs to a programme by serving one of its aims, so those outcomes
+  // are offered first and the rest are marked as reaching outside them
   // (Programme Lead, 2026-09-27).
-  const withinProgrammes = useMemo(() => {
-    const out = new Set<string>();
-    for (const id of programmes) for (const g of programmeGoals?.get(id) ?? []) out.add(g);
-    return out;
-  }, [programmes, programmeGoals]);
+  const programmeAims = programmes.flatMap((id) => programmeGoals?.get(id) ?? []);
 
-  // Each programme this project names must have one of its own goals
-  // picked; until it does, the claim is unproven.
-  const unproven = useMemo(
-    () =>
-      programmes.filter((id) => !(programmeGoals?.get(id) ?? []).some((g) => goals.includes(g))),
-    [programmes, programmeGoals, goals],
-  );
+  // Each programme this project names must have one of its aims served by
+  // an outcome picked; until it does, the claim is unproven.
+  const unproven = programmes.filter((id) => !(programmeGoals?.get(id) ?? []).some((aim) => goals.some((g) => serves(g, aim))));
 
 
-  // Every functional goal in the tree, in tree order, each carrying the
-  // branch it sits on: the pillar groups, the strategic area subgroups.
+  // Every outcome in the tree, in tree order, each carrying the branch it
+  // sits on: the goals group them, the objectives subgroup them.
   const chips = useMemo<ChipItem[]>(() => {
     const out: ChipItem[] = [];
-    for (const pillar of treeQuery.data?.nodes ?? []) {
-      for (const strategic of pillar.children ?? []) {
-        for (const functional of strategic.children ?? []) {
-          if (functional.level !== "outcome") continue;
+    for (const goal of treeQuery.data?.nodes ?? []) {
+      for (const objective of goal.children ?? []) {
+        for (const outcome of objective.children ?? []) {
+          if (outcome.level !== "outcome") continue;
           out.push({
-            id: functional.id,
-            label: functional.name,
-            group: pillar.name,
-            tag: strategic.name,
-            title: `${pillar.name} / ${strategic.name}`,
+            id: outcome.id,
+            label: outcome.name,
+            group: goal.name,
+            tag: objective.name,
+            title: `${goal.name} / ${objective.name}`,
           });
         }
       }
     }
     return out;
   }, [treeQuery.data]);
+  const withinProgrammes = new Set(chips.filter((c) => programmeAims.some((aim) => serves(c.id, aim))).map((c) => c.id));
 
   // Split, not filtered: a project may serve a goal none of its
   // programmes serve, so the rest stay pickable under their own heading
@@ -379,6 +393,8 @@ export function MeasuresSection() {
     updateObjective({ keyResults: keyResults.filter((x) => x.id !== krId) });
   }
 
+  // The words the engine's guide offers for writing the objective.
+  const guide = useGuide("Project");
   const kpiNames = new Map((kpis ?? []).map((k) => [k.id, k.name]));
   const namedKpis = store.spec.kpis ?? [];
 
@@ -392,7 +408,9 @@ export function MeasuresSection() {
         <ObjectiveEditor
           data-cartograph-field={`/spec/objectives/${seg(store.spec.objectives?.[0], 0)}/objective`}
           objective={objective.objective}
-          alignedGoals={goals.length}
+          verbs={vocabulary(guide.data, "objectiveVerbs")}
+          meansWord={vocabulary(guide.data, "meansWord")[0] ?? ""}
+          alignedGoals={parent ? 1 : goals.length}
           onChange={(next) => updateObjective({ objective: next })}
         />
       </Block>

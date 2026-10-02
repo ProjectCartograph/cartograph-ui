@@ -46,7 +46,7 @@ function remembered(): LiveOptions["remember"] {
 /** The app's one Repo, made on first use. */
 export async function browserLive(
   apiBase: string,
-  port: Pick<LiveOptions, "locate" | "presenceDocument" | "session">,
+  port: Pick<LiveOptions, "locate" | "presenceDocument" | "agentFeed" | "session">,
 ): Promise<Live> {
   if (!isWasmInitialized()) await initializeWasm(wasmUrl);
   const socket = new WebSocketClientAdapter(syncURL(apiBase));

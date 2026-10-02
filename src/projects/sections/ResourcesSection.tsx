@@ -134,6 +134,10 @@ export function ResourcesSection() {
   const funding = store.spec.funding ?? [];
 
   const roleRows = resources.map((r, idx) => ({ r, idx }));
+  // A component answers to its parent's sponsor, so it needs only its own
+  // manager (TAXONOMY.md D15), as the engine's resources-sponsor-lead check reads it.
+  const component = !!store.spec.alignment?.partOf;
+  const required = component ? REQUIRED_ROLES.filter(({ role }) => role !== "sponsor") : REQUIRED_ROLES;
 
   function setResources(next: ProjectRole[]) {
     store.updateSpec((spec) => ({ ...spec, resources: next }));
@@ -172,10 +176,10 @@ export function ResourcesSection() {
       <div className="flex flex-col gap-2 rounded-lg bg-muted/40 p-3" data-cartograph-region="required-roles">
         <div className="flex items-center gap-1">
           <p className="text-sm font-medium">{pc.requiredTitle}</p>
-          <Help label={pc.requiredTitle} hint={pc.requiredHint} />
+          <Help label={pc.requiredTitle} hint={component ? pc.requiredHintComponent : pc.requiredHint} />
         </div>
         <div className="flex flex-wrap gap-2">
-          {REQUIRED_ROLES.map(({ role, label }) => {
+          {required.map(({ role, label }) => {
             const present = roleRows.some(({ r }) => r.role === role);
             return (
               <Badge key={role} variant={present ? "secondary" : "outline"} className="gap-1 font-normal">

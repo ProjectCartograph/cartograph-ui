@@ -122,7 +122,6 @@ const ICONS = {
     risk: TriangleAlert,
     issue: OctagonAlert,
     dependency: Link2,
-    assumption: CircleHelp,
     constraint: Lock,
   },
   direction: { increase: TrendingUp, decrease: TrendingDown, reach: Target, maintain: Minus },

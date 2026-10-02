@@ -5,6 +5,7 @@ export const copy = {
   guidance: {
     examples: "Examples",
     examplesTitle: "Examples",
+    poorTitle: "Not like this",
     help: "Help",
     helpFor: (label: string) => `Help: ${label}`,
   },
@@ -112,6 +113,54 @@ export const copy = {
     stale: "This changed since the agent proposed it. Open it, review, and save it yourself if it is still right.",
     failed: "The decision was not recorded.",
     notice: (agent: string) => `${agent} proposed a change here, waiting for its person.`,
+    review: "Review",
+    back: "All proposals",
+    setTitle: (n: number) => `${n} manifests proposed together`,
+    together: "They reference each other, so they are accepted or declined together.",
+    openDraft: "Open in the editor",
+    openDraftHint: "The proposal is this manifest's draft: open it to read it in full, and work on it with the agent before you decide.",
+    changes: "What it changes",
+    changesNew: "A new manifest, as proposed",
+    noChanges: "Nothing differs from the saved version.",
+    added: "added",
+    removed: "removed",
+    checks: "Checks",
+    checksMet: (n: number) => `${n} met`,
+    waived: "Left open by the agent",
+    waivedWhy: (reason: string) => `Why: ${reason}`,
+    item: "What it records",
+    moves: (to: string) => `Moves the project to ${to}.`,
+    decided: (status: string, by: string) => `${status === "accepted" ? "Accepted" : "Declined"} by ${by}.`,
+    reviewFirst: "Open a proposal to read it before you decide.",
+    waivers: (n: number) => `${n} check${n === 1 ? "" : "s"} left open`,
+  },
+  follow: {
+    title: "Agents at work",
+    rail: "Agents at work",
+    following: (label: string) => `Following ${label}`,
+    follow: "Follow",
+    stop: "Stop following",
+    takeBack: "Click anywhere to take the view back.",
+    close: "Close",
+    none: "No agent is working for you now. When one starts, its steps show here.",
+    idle: "Idle",
+    working: "Working",
+    hide: (label: string) => `Hide ${label}`,
+    show: (label: string) => `Show ${label}`,
+    hidden: (n: number) => `${n} hidden`,
+    whose: "Whose agents",
+    mine: "Mine",
+    othersOnDrafts: "Show other people's agents on drafts",
+    steps: {
+      guide: (kind: string) => `Read how to define a ${kind}`,
+      read: (name: string) => `Read ${name}`,
+      draft: (name: string) => `Drafted ${name}`,
+      checks: (name: string) => `Checked ${name}`,
+      propose: (name: string, parts: number) => (parts > 1 ? `Proposed ${parts} manifests, with ${name}` : `Proposed ${name}`),
+    },
+    changed: (n: number) => `${n} field${n === 1 ? "" : "s"} changed`,
+    checksMet: (met: number, total: number) => `${met} of ${total} checks met`,
+    allMet: "Every check met",
     review: "Review",
   },
   agents: {
@@ -317,7 +366,6 @@ export const copy = {
       BeneficiaryGroup: {
         name: "Name",
         description: "Description",
-        typicalSize: "Typical size",
         source: "Source",
       },
       Resource: {
@@ -385,7 +433,7 @@ export const copy = {
     kindPurpose: {
       Team: "A team that carries work. Projects name one; data sources name the team that keeps them.",
       BeneficiaryGroup:
-        "A group of people a project reaches. Defined once here, with where its size comes from, so every project counts them the same way.",
+        "A group of people work is for, named once here so every project means the same people by it. Described, never counted.",
       Resource:
         "A kind of resource a project can need: a role somebody fills, a unit, an external party, a system, a facility. Never a named person.",
       DataSource:
@@ -401,8 +449,7 @@ export const copy = {
       },
       BeneficiaryGroup: {
         description: "Who is in this group, clearly enough that someone else would agree.",
-        typicalSize: "Roughly how many in a normal year. A project can still record its own figure.",
-        source: "Where that figure comes from, so anyone can go and check it.",
+        source: "The data source that says who is in it, if there is one.",
       },
       Resource: {
         category: "What kind of resource this is.",
@@ -428,7 +475,7 @@ export const copy = {
         desired: "Where things should be, in one sentence.",
         statement: "The finding in the source's own words.",
         measure: "If an indicator tracks this, its baseline and target are the current and desired states.",
-        segments: "The groups, places or areas where this was found.",
+        segments: "The slices of what the organisation serves where this was found: a region, a product line, a service tier. Not who the work is for; that is a beneficiary group.",
       },
       FundingSource: {
         code: "The code finance uses for this budget.",
@@ -528,8 +575,8 @@ export const copy = {
       DataSource: {
         name: [
           "Delivery check records",
-          "Support ticket system, first-contact resolution export",
-          "Annual staff survey responses",
+          "Depot intake log",
+          "Season loss survey",
         ],
         access: [
           "Read access on request from the quality team; needs a network account.",
@@ -539,17 +586,13 @@ export const copy = {
         qualityIssues: [
           "Depot codes are entered by hand and are inconsistent before 2024.",
           "Roughly one in twenty records has no closing timestamp, so durations are understated.",
-          "The export drops any ticket reopened after it was closed, so the rate reads high.",
+          "The log drops a delivery re-weighed after intake, so totals read low.",
         ],
       },
       BeneficiaryGroup: {
         description: [
-          "Households receiving a weekly delivery on the main route.",
-          "Vendors and concessionaires operating on site under a current agreement.",
-        ],
-        source: [
-          "Delivery register, counted at the end of each season.",
-          "Licence register, refreshed each year by the permits team.",
+          "Members who deliver soft fruit through the northern depots.",
+          "Smallholders farming under two hectares who sell through the cooperative.",
         ],
       },
     } as Record<string, Record<string, string[]>>,
@@ -642,6 +685,7 @@ export const copy = {
       },
       horizon: {
         label: "Horizon",
+        incomplete: "Give both a start and an end, each a year or a year and month, or leave both empty.",
         hint: {
           goal: "The period this goal covers, usually the whole plan: three to five years. Pick a year, and a month only if it matters.",
           objective: "Usually one to three years, inside its goal's horizon. Leave it empty to use the goal's.",
@@ -683,10 +727,7 @@ export const copy = {
         stateLabel: "What will be true",
         marksTitle: "Shape",
         marks: {
-          action: "Starts with an action",
-          state: "Describes a state",
           noNumbers: "No numbers",
-          short: "Short",
         },
       },
       measures: {
@@ -759,6 +800,7 @@ export const copy = {
     // parts, in the order a strong key result is spoken: direction and
     // count, of what, by when, from what baseline, measured from where.
     keyResultDialog: {
+      halfFilled: "Give both the figure and its month, or neither.",
       addTitle: "Add a key result",
       editTitle: "Edit key result",
       sentenceBadge: "The sentence builds as you fill the parts",
@@ -848,7 +890,6 @@ export const copy = {
         title: "A strong key result",
         measurable: "Measurable",
         timeBound: "Time-bound",
-        specific: "Specific",
         verifiable: "Verifiable",
       } as Record<string, string>,
       cancel: "Discard",
@@ -1073,7 +1114,11 @@ export const copy = {
       dateLabel: "month",
       datePlaceholder: "2026-03",
       baselineLabel: "Baseline",
-      baselineHint: "Where it stands today, and the month that reading is from.",
+      baselineHint: "Where it stands today, and the month that reading is from. If nobody knows yet, say why rather than guess.",
+      baselineKnown: "Known",
+      baselineUnknown: "Not known yet",
+      unknownReasonLabel: "Why it is not known yet",
+      expectedByLabel: "Known by",
       targetLabel: "Target",
       targetHint: "Where it needs to get to, and the month it is due by.",
       sourceLabel: "Read from",
@@ -1649,8 +1694,6 @@ export const copy = {
       objectiveQualityTitle: "A strong objective",
       objectiveQuality: {
         aligned: "Aligned",
-        actionOriented: "Starts with a verb",
-        concrete: "Says how",
         qualitative: "No numbers",
       } as Record<string, string>,
       keyResultsTitle: "Key results",
@@ -1689,7 +1732,7 @@ export const copy = {
       inScopeHint: "Write one sentence each.",
       inScopePlaceholder: "",
       inScopeExamples: [
-        "Cafeterias and vendors operating on site",
+        "Intake checks at the four northern depots",
       ],
       outScopeTitle: "Out of scope",
       outScopeHint: "What people might expect that this won't do.",
@@ -1773,6 +1816,7 @@ export const copy = {
       empty: "No role named yet.",
       requiredTitle: "Required roles",
       requiredHint: "Name a sponsor and a project manager.",
+      requiredHintComponent: "Name a project manager; the sponsor is the parent project's.",
       fundingTitle: "Approved funding",
       fundingHint: "Add one line per currency.",
       fundingEmpty: "No funding line yet.",
@@ -1824,7 +1868,6 @@ export const copy = {
       } as Record<string, string>,
       sponsorLabel: "Sponsor",
       leadLabel: "Project manager",
-      operationalOwnerLabel: "Service owner",
       mappedHint: (n: number) => `${n} role${n === 1 ? "" : "s"} named.`,
       saveProblemsTitle: "Not saved",
       // Positions only. A RACI letter says how somebody relates to a
@@ -1926,7 +1969,7 @@ export const copy = {
       subtitle: "",
       gridImpact: "Impact",
       gridLikelihood: "Likelihood",
-      add: "Add a risk, issue, dependency, assumption or constraint",
+      add: "Add a risk, issue, dependency or constraint",
       // The button shows the mark and the short word; the long form above
       // stays as its title and its accessible name.
       addShort: "Add",
@@ -1960,7 +2003,6 @@ export const copy = {
         risk: "Risk",
         issue: "Issue",
         dependency: "Dependency",
-        assumption: "Assumption",
         constraint: "Constraint",
       } as Record<string, string>,
       levels: {
@@ -2147,8 +2189,8 @@ export const copy = {
       operationLabel: "Operation",
       operationPlaceholder: "Choose an operation, or start a new one",
       defineNewOperation: "Define a new operation alongside",
-      confirmedByTitle: "Sign-off role",
-      confirmedByEmpty: "Name a sponsor in Resources.",
+      confirmedByTitle: "Accepted by",
+      confirmedByEmpty: "Name a service owner in Resources: the role that accepts the handover.",
     },
     record: {
       loading: "Loading this project.",

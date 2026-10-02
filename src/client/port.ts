@@ -42,6 +42,11 @@ export type Role = Schemas["Role"];
 /** Something an agent proposed for its person to accept or decline
  * (engine docs/adr/0016). */
 export type Proposal = Schemas["Proposal"];
+export type ProposalReview = Schemas["ProposalReview"];
+export type ProposalPart = Schemas["ProposalPart"];
+export type Guide = Schemas["Guide"];
+export type GuideField = Schemas["GuideField"];
+export type ManifestCheck = Schemas["ManifestCheck"];
 export type AgentGrant = Schemas["AgentGrant"];
 export type AgentToken = Schemas["AgentToken"];
 /** A kind's JSON Schema, as the contract types it. */
@@ -154,12 +159,32 @@ export interface PresenceState {
 }
 
 /** Another session on the same screen, as its last message said. */
+/** What an agent did last, as the engine announces it for the agent
+ * (presence schema, agent; engine docs/adr/0018). */
+export interface PresenceAgent {
+  /** The person it acts for, as proposals name them. */
+  for: string;
+  /** Counts its steps, so each is shown once. */
+  seq: number;
+  step: "guide" | "read" | "draft" | "checks" | "propose";
+  kind?: string;
+  id?: string;
+  name?: string;
+  fields?: string[];
+  met?: number;
+  open?: number;
+  proposal?: string;
+  parts?: number;
+}
+
 export interface Peer {
   session: string;
   actor: string;
   name?: string;
   color: string;
   route?: string;
+  /** Present when the session is an agent. */
+  agent?: PresenceAgent;
   focus: PresenceFocus | null;
   caret: PresenceCaret | null;
   pointer: PresencePointer | null;
@@ -339,6 +364,10 @@ export interface Client {
   openDraft(kind: string, id: string): Promise<SharedDraft>;
   /** Joins presence on a screen's document. */
   joinPresence(screen: PresenceScreen): Promise<PresenceChannel>;
+  /** Listens, without being seen, to the feed a person's agents announce
+   * their steps on: the caller's own, or, for an administrator, one
+   * person's (engine docs/adr/0018). */
+  followAgents(person?: string): Promise<PresenceChannel>;
   /** How the sync connection stands, now and on every change. Returns the
    * unsubscribe. */
   watchConnection(listener: (status: ConnectionStatus) => void): () => void;
@@ -358,6 +387,9 @@ export interface Client {
   /** The caller's open proposals, or, with a manifest, every open
    * proposal on it. */
   proposals(on?: { kind: string; id: string }): Promise<Proposal[]>;
+  /** One proposal as its person reviews it: what it would change, field
+   * by field, and the checks on what it proposes. */
+  getProposal(id: string): Promise<ProposalReview>;
   /** Makes the record a proposal proposed, as the caller. Conflict when
    * it was decided already or its manifest changed since. */
   acceptProposal(id: string, reason?: string): Promise<Proposal>;
@@ -369,6 +401,10 @@ export interface Client {
    * everyone's ("*"). Empty where the deployment's own stack authorizes
    * agents. */
   agentGrants(person?: string): Promise<AgentGrant[]>;
+  /** How to define a kind well, for one level, in one language: what
+   * each field asks for with right and wrong examples, and the words an
+   * editor may offer. The same guide agents read. */
+  getGuide(kind: string, opts?: { level?: string; locale?: string }): Promise<Guide>;
   /** The address an agent's MCP client connects to, absolute. */
   mcpAddress(): string;
   /** Lets an agent act for the caller by a token to paste into it, shown

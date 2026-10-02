@@ -49,7 +49,9 @@ function LandingExtras() {
   // The sponsor role's own title (I3.2: People and resources names roles,
   // never persons; mapping a role to an actual person happens later,
   // outside the definition).
-  const sponsor = store.spec.resources?.find((r) => r.role === "sponsor");
+  // The service owner accepts the handover (TAXONOMY.md D23), as the
+  // engine's landing-owner check asks.
+  const owner = store.spec.resources?.find((r) => r.role === "serviceOwner");
   const resourceName = useResourceNames();
 
   return (
@@ -63,10 +65,9 @@ function LandingExtras() {
       </div>
       <div className="flex flex-col gap-2">
         <Label>{lc.confirmedByTitle}</Label>
-        {sponsor ? (
+        {owner ? (
           <p className="text-sm font-medium">
-            {(sponsor.resource ? resourceName(sponsor.resource) : undefined) ||
-              copy.projects.resources.sponsorLabel}
+            {(owner.resource ? resourceName(owner.resource) : undefined) || copy.projects.resources.roleKind.serviceOwner}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">{lc.confirmedByEmpty}</p>

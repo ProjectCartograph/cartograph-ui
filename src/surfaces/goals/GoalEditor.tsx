@@ -29,6 +29,8 @@ import { InlineTitle } from "./InlineTitle";
 import { KeyResultCard } from "./KeyResultCard";
 import { KeyResultDialog } from "./KeyResultDialog";
 import { SmartMarks } from "./SmartMarks";
+import { fieldGuide, useGuide, vocabulary } from "@/components/guide";
+
 import { AimEditor } from "./AimEditor";
 import { HorizonPicker } from "./HorizonPicker";
 import { GoalReview, GoalSteps, StepNav, type GoalStep } from "./GoalSteps";
@@ -134,6 +136,11 @@ export function GoalEditor({ id }: { id: string }) {
   const [step, setStep] = useState("aim");
 
   const level = manifest?.spec.level ?? "goal";
+  // The engine's guide for this level: what the statement must say, with
+  // right and wrong examples, and the opening words offered for an aim.
+  const guide = useGuide("Goal", level);
+  const statementGuide = fieldGuide(guide.data, "/spec/objective");
+  const aimVerbs = vocabulary(guide.data, "aimVerbs");
 
   const pillarOptions = useMemo(
     () => flattenPillars(treeQuery.data?.nodes ?? []).filter((n) => n.id !== id),
@@ -217,6 +224,13 @@ export function GoalEditor({ id }: { id: string }) {
 
   async function handleSave() {
     if (!manifest) return;
+    // A horizon is both ends, each a year or a year and month, or none at
+    // all. Half of one used to be dropped without a word on save.
+    if ((horizonStart || horizonEnd) && !(PERIOD.test(horizonStart) && PERIOD.test(horizonEnd))) {
+      setFieldErrors({ horizon: ec.horizon.incomplete });
+      setSaveOpen(false);
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     setFieldErrors({});
@@ -229,7 +243,7 @@ export function GoalEditor({ id }: { id: string }) {
       source: manifest.spec.source,
       contributesTo: links,
       owner,
-      ...(PERIOD.test(horizonStart) && PERIOD.test(horizonEnd) ? { horizon: { start: horizonStart, end: horizonEnd } } : {}),
+      ...(horizonStart && horizonEnd ? { horizon: { start: horizonStart, end: horizonEnd } } : {}),
     }, reason);
     setSaving(false);
     if (result.ok) {
@@ -284,7 +298,9 @@ export function GoalEditor({ id }: { id: string }) {
   const stc = ec.steps;
   const steps: GoalStep[] = [
     { key: "aim", label: stc.aim, icon: Target, done: objective.trim() !== "" },
-    { key: "measures", label: stc.measures, icon: Gauge, done: keyResults.length + alignedKPIs.length > 0 },
+    // Done as the engine says Measurable is met: a measure with a target,
+    // not only a measure (TAXONOMY.md D25).
+    { key: "measures", label: stc.measures, icon: Gauge, done: smart?.measurable === true },
     { key: "timing", label: stc.timing, icon: CalendarRange, done: !!owner && (!!(horizonStart && horizonEnd) || !!node?.horizon) },
     { key: "why", label: stc.why, icon: MessageSquare, done: whyItMatters.trim() !== "" },
     ...(level === "outcome" ? [{ key: "links", label: stc.links, icon: CornerDownRight, done: links.length > 0, optional: true }] : []),
@@ -359,8 +375,21 @@ export function GoalEditor({ id }: { id: string }) {
 
 
               <div id="goal-section-objective" className="flex flex-col gap-2">
-                <FieldHeading label={ec.statementLabel[level] ?? ec.objective.label} hint={ec.objectiveHint[level] ?? ec.objective.hint} htmlFor="goal-objective" />
-                <AimEditor data-cartograph-field="/spec/objective" level={level} value={objective} onChange={(v) => setObjective(v.slice(0, ec.objective.maxLength))} maxLength={ec.objective.maxLength} />
+                <FieldHeading
+                  label={ec.statementLabel[level] ?? ec.objective.label}
+                  hint={statementGuide?.guide ?? ec.objectiveHint[level] ?? ec.objective.hint}
+                  examples={statementGuide?.good}
+                  poor={statementGuide?.poor}
+                  htmlFor="goal-objective"
+                />
+                <AimEditor
+                  data-cartograph-field="/spec/objective"
+                  level={level}
+                  verbs={aimVerbs}
+                  value={objective}
+                  onChange={(v) => setObjective(v.slice(0, ec.objective.maxLength))}
+                  maxLength={ec.objective.maxLength}
+                />
                 <FieldError message={fieldErrors.objective} />
               </div>
             </>
@@ -455,6 +484,7 @@ export function GoalEditor({ id }: { id: string }) {
                   canInherit={level !== "goal"}
                   inheritedSpan={node?.horizon?.inherited ? span(node.horizon) : undefined}
                 />
+                <FieldError message={fieldErrors.horizon} />
               </div>
             </div>
           ) : null}

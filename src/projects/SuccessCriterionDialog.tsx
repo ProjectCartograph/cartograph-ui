@@ -209,7 +209,7 @@ export function SuccessCriterionDialog({
   // Compliance is satisfied, not measured, so it is never asked for a
   // standard, a source or a cycle.
   const measured = form.metric !== "" && form.metric !== "compliance";
-  const statementMissing = form.statement.trim().length < 8;
+  const statementMissing = form.statement.trim() === "";
   const metricMissing = form.metric === "";
   const confirmerMissing = !refIsSet(form.confirmedBy);
   const canSave = !statementMissing && !metricMissing && !confirmerMissing;

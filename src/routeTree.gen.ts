@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccessRouteImport } from './routes/access'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as NewRouteImport } from './routes/new'
-import { Route as ProposalsRouteImport } from './routes/proposals'
 import { Route as GapsIndexRouteImport } from './routes/gaps/index'
 import { Route as GapsIdRouteImport } from './routes/gaps/$id'
 import { Route as GapsNewRouteImport } from './routes/gaps/new'
@@ -31,6 +30,8 @@ import { Route as ProgrammesNewRouteImport } from './routes/programmes/new'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as ProjectsIdRouteImport } from './routes/projects/$id'
 import { Route as ProjectsNewRouteImport } from './routes/projects/new'
+import { Route as ProposalsIndexRouteImport } from './routes/proposals/index'
+import { Route as ProposalsIdRouteImport } from './routes/proposals/$id'
 import { Route as SheetsIndexRouteImport } from './routes/sheets/index'
 import { Route as SheetsKindRouteImport } from './routes/sheets/$kind'
 import { Route as SnapshotsIndexRouteImport } from './routes/snapshots/index'
@@ -94,11 +95,6 @@ const AgentsRoute = AgentsRouteImport.update({
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProposalsRoute = ProposalsRouteImport.update({
-  id: '/proposals',
-  path: '/proposals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GapsIndexRoute = GapsIndexRouteImport.update({
@@ -184,6 +180,16 @@ const ProjectsIdRoute = ProjectsIdRouteImport.update({
 const ProjectsNewRoute = ProjectsNewRouteImport.update({
   id: '/projects/new',
   path: '/projects/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProposalsIndexRoute = ProposalsIndexRouteImport.update({
+  id: '/proposals/',
+  path: '/proposals/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProposalsIdRoute = ProposalsIdRouteImport.update({
+  id: '/proposals/$id',
+  path: '/proposals/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SheetsIndexRoute = SheetsIndexRouteImport.update({
@@ -424,7 +430,6 @@ export interface FileRoutesByFullPath {
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
   '/new': typeof NewRoute
-  '/proposals': typeof ProposalsRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
@@ -436,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
+  '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
   '/gaps/': typeof GapsIndexRoute
   '/goals/': typeof GoalsIndexRoute
@@ -443,6 +449,7 @@ export interface FileRoutesByFullPath {
   '/operations/': typeof OperationsIndexRoute
   '/programmes/': typeof ProgrammesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/proposals/': typeof ProposalsIndexRoute
   '/sheets/': typeof SheetsIndexRoute
   '/snapshots/': typeof SnapshotsIndexRoute
   '/gaps/$id/evidence': typeof GapsIdEvidenceRoute
@@ -492,13 +499,13 @@ export interface FileRoutesByTo {
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
   '/new': typeof NewRoute
-  '/proposals': typeof ProposalsRoute
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
   '/manifests/$kind': typeof ManifestsKindRoute
   '/operations/new': typeof OperationsNewRoute
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
   '/gaps': typeof GapsIndexRoute
   '/goals': typeof GoalsIndexRoute
@@ -506,6 +513,7 @@ export interface FileRoutesByTo {
   '/operations': typeof OperationsIndexRoute
   '/programmes': typeof ProgrammesIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/proposals': typeof ProposalsIndexRoute
   '/sheets': typeof SheetsIndexRoute
   '/snapshots': typeof SnapshotsIndexRoute
   '/gaps/$id/evidence': typeof GapsIdEvidenceRoute
@@ -556,7 +564,6 @@ export interface FileRoutesById {
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
   '/new': typeof NewRoute
-  '/proposals': typeof ProposalsRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
@@ -568,6 +575,7 @@ export interface FileRoutesById {
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
+  '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
   '/gaps/': typeof GapsIndexRoute
   '/goals/': typeof GoalsIndexRoute
@@ -575,6 +583,7 @@ export interface FileRoutesById {
   '/operations/': typeof OperationsIndexRoute
   '/programmes/': typeof ProgrammesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/proposals/': typeof ProposalsIndexRoute
   '/sheets/': typeof SheetsIndexRoute
   '/snapshots/': typeof SnapshotsIndexRoute
   '/gaps/$id/evidence': typeof GapsIdEvidenceRoute
@@ -626,7 +635,6 @@ export interface FileRouteTypes {
     | '/access'
     | '/agents'
     | '/new'
-    | '/proposals'
     | '/gaps/$id'
     | '/gaps/new'
     | '/goals/$id'
@@ -638,6 +646,7 @@ export interface FileRouteTypes {
     | '/programmes/new'
     | '/projects/$id'
     | '/projects/new'
+    | '/proposals/$id'
     | '/sheets/$kind'
     | '/gaps/'
     | '/goals/'
@@ -645,6 +654,7 @@ export interface FileRouteTypes {
     | '/operations/'
     | '/programmes/'
     | '/projects/'
+    | '/proposals/'
     | '/sheets/'
     | '/snapshots/'
     | '/gaps/$id/evidence'
@@ -694,13 +704,13 @@ export interface FileRouteTypes {
     | '/access'
     | '/agents'
     | '/new'
-    | '/proposals'
     | '/gaps/new'
     | '/goals/$id'
     | '/manifests/$kind'
     | '/operations/new'
     | '/programmes/new'
     | '/projects/new'
+    | '/proposals/$id'
     | '/sheets/$kind'
     | '/gaps'
     | '/goals'
@@ -708,6 +718,7 @@ export interface FileRouteTypes {
     | '/operations'
     | '/programmes'
     | '/projects'
+    | '/proposals'
     | '/sheets'
     | '/snapshots'
     | '/gaps/$id/evidence'
@@ -757,7 +768,6 @@ export interface FileRouteTypes {
     | '/access'
     | '/agents'
     | '/new'
-    | '/proposals'
     | '/gaps/$id'
     | '/gaps/new'
     | '/goals/$id'
@@ -769,6 +779,7 @@ export interface FileRouteTypes {
     | '/programmes/new'
     | '/projects/$id'
     | '/projects/new'
+    | '/proposals/$id'
     | '/sheets/$kind'
     | '/gaps/'
     | '/goals/'
@@ -776,6 +787,7 @@ export interface FileRouteTypes {
     | '/operations/'
     | '/programmes/'
     | '/projects/'
+    | '/proposals/'
     | '/sheets/'
     | '/snapshots/'
     | '/gaps/$id/evidence'
@@ -826,7 +838,6 @@ export interface RootRouteChildren {
   AccessRoute: typeof AccessRoute
   AgentsRoute: typeof AgentsRoute
   NewRoute: typeof NewRoute
-  ProposalsRoute: typeof ProposalsRoute
   GapsIdRoute: typeof GapsIdRouteWithChildren
   GapsNewRoute: typeof GapsNewRoute
   GoalsIdRoute: typeof GoalsIdRoute
@@ -838,6 +849,7 @@ export interface RootRouteChildren {
   ProgrammesNewRoute: typeof ProgrammesNewRoute
   ProjectsIdRoute: typeof ProjectsIdRouteWithChildren
   ProjectsNewRoute: typeof ProjectsNewRoute
+  ProposalsIdRoute: typeof ProposalsIdRoute
   SheetsKindRoute: typeof SheetsKindRoute
   GapsIndexRoute: typeof GapsIndexRoute
   GoalsIndexRoute: typeof GoalsIndexRoute
@@ -845,6 +857,7 @@ export interface RootRouteChildren {
   OperationsIndexRoute: typeof OperationsIndexRoute
   ProgrammesIndexRoute: typeof ProgrammesIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
+  ProposalsIndexRoute: typeof ProposalsIndexRoute
   SheetsIndexRoute: typeof SheetsIndexRoute
   SnapshotsIndexRoute: typeof SnapshotsIndexRoute
 }
@@ -877,13 +890,6 @@ declare module '@tanstack/react-router' {
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/proposals': {
-      id: '/proposals'
-      path: '/proposals'
-      fullPath: '/proposals'
-      preLoaderRoute: typeof ProposalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gaps/': {
@@ -1003,6 +1009,20 @@ declare module '@tanstack/react-router' {
       path: '/projects/new'
       fullPath: '/projects/new'
       preLoaderRoute: typeof ProjectsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proposals/': {
+      id: '/proposals/'
+      path: '/proposals'
+      fullPath: '/proposals/'
+      preLoaderRoute: typeof ProposalsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/proposals/$id': {
+      id: '/proposals/$id'
+      path: '/proposals/$id'
+      fullPath: '/proposals/$id'
+      preLoaderRoute: typeof ProposalsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sheets/': {
@@ -1452,7 +1472,6 @@ const rootRouteChildren: RootRouteChildren = {
   AccessRoute: AccessRoute,
   AgentsRoute: AgentsRoute,
   NewRoute: NewRoute,
-  ProposalsRoute: ProposalsRoute,
   GapsIdRoute: GapsIdRouteWithChildren,
   GapsNewRoute: GapsNewRoute,
   GoalsIdRoute: GoalsIdRoute,
@@ -1464,6 +1483,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProgrammesNewRoute: ProgrammesNewRoute,
   ProjectsIdRoute: ProjectsIdRouteWithChildren,
   ProjectsNewRoute: ProjectsNewRoute,
+  ProposalsIdRoute: ProposalsIdRoute,
   SheetsKindRoute: SheetsKindRoute,
   GapsIndexRoute: GapsIndexRoute,
   GoalsIndexRoute: GoalsIndexRoute,
@@ -1471,6 +1491,7 @@ const rootRouteChildren: RootRouteChildren = {
   OperationsIndexRoute: OperationsIndexRoute,
   ProgrammesIndexRoute: ProgrammesIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
+  ProposalsIndexRoute: ProposalsIndexRoute,
   SheetsIndexRoute: SheetsIndexRoute,
   SnapshotsIndexRoute: SnapshotsIndexRoute,
 }

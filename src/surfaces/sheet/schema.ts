@@ -57,13 +57,9 @@ export function isSheetKind(kind: string): kind is SheetKind {
 /**
  * Parses spec.properties, in schema order, into FieldDef entries.
  *
- * Every one of the seven sheet kinds' spec objects also requires its own
- * "name" property, mirroring metadata.name (spec is meant to stand alone
- * as a complete description of the entity, independent of the generic
- * envelope). Since metadata.name is already the Sheet's mandatory first
- * column and the Add/edit dialog's first field, spec.name is left out of
- * this list rather than shown a second time; the form mirrors _name into
- * spec.name on submit instead (see SheetForm.tsx).
+ * The name is metadata.name, the Sheet's first column and the dialog's
+ * first field. spec.name, which once held it a second time, is deprecated
+ * (engine 2.6.0): read from an old manifest, never shown or written.
  */
 export function parseSpecFields(schemaDoc: JSONSchemaDoc | undefined): FieldDef[] {
   const specSchema = schemaDoc?.properties?.spec;
