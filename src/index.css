@@ -194,106 +194,107 @@
 }
 
 /*
- * Icons answer the hand that reaches for them: hovering an icon, or the
- * button, link or tab it sits in (or reaching it by keyboard), plays one
- * short motion that says what the icon does: a plus turns, a bin tips,
+ * The sidebar's icons answer the hand that reaches for them: hovering an
+ * entry, or reaching it by keyboard, plays one short motion that says
+ * what the icon does: a plus turns, a bin tips,
  * an arrow leans the way it goes, a check is ticked again. Transforms
  * only, once per hover, and none at all for someone who asked for less
- * motion. Another person's pointer never moves anything here: what they
+ * motion. Only the sidebar: on the page, where the work is, icons keep
+ * still. Another person's pointer never moves anything here: what they
  * do is drawn as their presence, and the page in front of each person
  * moves for that person alone.
  */
 @media (prefers-reduced-motion: no-preference) {
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide,
-  svg.lucide:hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide,
+  [data-cartograph-region="rail"] svg.lucide:hover {
     transform-box: fill-box;
     transform-origin: center;
     animation: cartograph-icon-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   /* Add, and close: a quarter turn. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-plus, .lucide-circle-plus, .lucide-x, .lucide-circle-x),
-  svg:is(.lucide-plus, .lucide-circle-plus, .lucide-x, .lucide-circle-x):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-plus, .lucide-circle-plus, .lucide-x, .lucide-circle-x),
+  [data-cartograph-region="rail"] svg:is(.lucide-plus, .lucide-circle-plus, .lucide-x, .lucide-circle-x):hover {
     animation: cartograph-icon-turn 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   /* Delete: the bin tips side to side. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-trash, .lucide-trash-2),
-  svg:is(.lucide-trash, .lucide-trash-2):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-trash, .lucide-trash-2),
+  [data-cartograph-region="rail"] svg:is(.lucide-trash, .lucide-trash-2):hover {
     transform-origin: bottom center;
     animation: cartograph-icon-tip 420ms ease-in-out;
   }
   /* Directions: lean the way they go. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-arrow-right, .lucide-chevron-right, .lucide-external-link),
-  svg:is(.lucide-arrow-right, .lucide-chevron-right, .lucide-external-link):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-arrow-right, .lucide-chevron-right, .lucide-external-link),
+  [data-cartograph-region="rail"] svg:is(.lucide-arrow-right, .lucide-chevron-right, .lucide-external-link):hover {
     animation: cartograph-icon-right 420ms ease-in-out;
   }
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-arrow-left, .lucide-chevron-left, .lucide-undo-2),
-  svg:is(.lucide-arrow-left, .lucide-chevron-left, .lucide-undo-2):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-arrow-left, .lucide-chevron-left, .lucide-undo-2),
+  [data-cartograph-region="rail"] svg:is(.lucide-arrow-left, .lucide-chevron-left, .lucide-undo-2):hover {
     animation: cartograph-icon-left 420ms ease-in-out;
   }
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-chevron-down, .lucide-download, .lucide-save),
-  svg:is(.lucide-chevron-down, .lucide-download, .lucide-save):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-chevron-down, .lucide-download, .lucide-save),
+  [data-cartograph-region="rail"] svg:is(.lucide-chevron-down, .lucide-download, .lucide-save):hover {
     animation: cartograph-icon-down 420ms ease-in-out;
   }
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-upload, .lucide-chevron-up),
-  svg:is(.lucide-upload, .lucide-chevron-up):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-upload, .lucide-chevron-up),
+  [data-cartograph-region="rail"] svg:is(.lucide-upload, .lucide-chevron-up):hover {
     animation: cartograph-icon-up 420ms ease-in-out;
   }
   /* Sending: off up and to the right, and back. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide-send,
-  svg.lucide-send:hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide-send,
+  [data-cartograph-region="rail"] svg.lucide-send:hover {
     animation: cartograph-icon-send 520ms ease-in-out;
   }
   /* Done: ticked again. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-check, .lucide-circle-check, .lucide-circle-check-big, .lucide-check-check),
-  svg:is(.lucide-check, .lucide-circle-check, .lucide-circle-check-big, .lucide-check-check):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-check, .lucide-circle-check, .lucide-circle-check-big, .lucide-check-check),
+  [data-cartograph-region="rail"] svg:is(.lucide-check, .lucide-circle-check, .lucide-circle-check-big, .lucide-check-check):hover {
     stroke-dasharray: 100;
     animation: cartograph-icon-tick 480ms ease-out;
   }
   /* Warnings and attention: a small shake. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-triangle-alert, .lucide-octagon-alert, .lucide-bell, .lucide-circle-alert),
-  svg:is(.lucide-triangle-alert, .lucide-octagon-alert, .lucide-bell, .lucide-circle-alert):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-triangle-alert, .lucide-octagon-alert, .lucide-bell, .lucide-circle-alert),
+  [data-cartograph-region="rail"] svg:is(.lucide-triangle-alert, .lucide-octagon-alert, .lucide-bell, .lucide-circle-alert):hover {
     animation: cartograph-icon-shake 420ms ease-in-out;
   }
   /* Turning things: a full turn. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-refresh-cw, .lucide-rotate-ccw, .lucide-settings, .lucide-history),
-  svg:is(.lucide-refresh-cw, .lucide-rotate-ccw, .lucide-settings, .lucide-history):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-refresh-cw, .lucide-rotate-ccw, .lucide-settings, .lucide-history),
+  [data-cartograph-region="rail"] svg:is(.lucide-refresh-cw, .lucide-rotate-ccw, .lucide-settings, .lucide-history):hover {
     animation: cartograph-icon-spin 600ms cubic-bezier(0.65, 0, 0.35, 1);
   }
   /* Seeing: a blink. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-eye, .lucide-eye-off),
-  svg:is(.lucide-eye, .lucide-eye-off):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-eye, .lucide-eye-off),
+  [data-cartograph-region="rail"] svg:is(.lucide-eye, .lucide-eye-off):hover {
     animation: cartograph-icon-blink 360ms ease-in-out;
   }
   /* Writing: a scribble. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-pencil, .lucide-pen-line, .lucide-square-pen, .lucide-pen),
-  svg:is(.lucide-pencil, .lucide-pen-line, .lucide-square-pen, .lucide-pen):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-pencil, .lucide-pen-line, .lucide-square-pen, .lucide-pen),
+  [data-cartograph-region="rail"] svg:is(.lucide-pencil, .lucide-pen-line, .lucide-square-pen, .lucide-pen):hover {
     transform-origin: bottom left;
     animation: cartograph-icon-scribble 480ms ease-in-out;
   }
   /* Finding: a look around. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide-search,
-  svg.lucide-search:hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide-search,
+  [data-cartograph-region="rail"] svg.lucide-search:hover {
     animation: cartograph-icon-look 520ms ease-in-out;
   }
   /* Measures and places: a gauge sweeps, a target and a pin drop in. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-gauge, .lucide-flag),
-  svg:is(.lucide-gauge, .lucide-flag):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-gauge, .lucide-flag),
+  [data-cartograph-region="rail"] svg:is(.lucide-gauge, .lucide-flag):hover {
     transform-origin: bottom center;
     animation: cartograph-icon-sweep 480ms ease-in-out;
   }
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-map-pin, .lucide-target),
-  svg:is(.lucide-map-pin, .lucide-target):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-map-pin, .lucide-target),
+  [data-cartograph-region="rail"] svg:is(.lucide-map-pin, .lucide-target):hover {
     animation: cartograph-icon-drop 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   /* Agents: alive. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-bot, .lucide-radio, .lucide-sparkles),
-  svg:is(.lucide-bot, .lucide-radio, .lucide-sparkles):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-bot, .lucide-radio, .lucide-sparkles),
+  [data-cartograph-region="rail"] svg:is(.lucide-bot, .lucide-radio, .lucide-sparkles):hover {
     animation: cartograph-icon-alive 520ms ease-in-out;
   }
   /* Copying and linking: a nudge apart and back. */
-  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-copy, .lucide-link, .lucide-link-2, .lucide-lock, .lucide-lock-open),
-  svg:is(.lucide-copy, .lucide-link, .lucide-link-2, .lucide-lock, .lucide-lock-open):hover {
+  [data-cartograph-region="rail"] :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-copy, .lucide-link, .lucide-link-2, .lucide-lock, .lucide-lock-open),
+  [data-cartograph-region="rail"] svg:is(.lucide-copy, .lucide-link, .lucide-link-2, .lucide-lock, .lucide-lock-open):hover {
     animation: cartograph-icon-nudge 400ms ease-in-out;
   }
 }
