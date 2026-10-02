@@ -5,12 +5,14 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 
 import { ClientProvider } from "./client/context";
 import { httpClient } from "./client/http";
+import { celebrating } from "./components/celebrate";
 import { routeTree } from "./routeTree.gen";
 import "./index.css";
 
 const queryClient = new QueryClient();
 // The one Client the whole interface works through.
-const client = httpClient();
+// What commits something, pressed for, ends in confetti from its button.
+const client = celebrating(httpClient());
 const router = createRouter({ routeTree });
 
 declare module "@tanstack/react-router" {

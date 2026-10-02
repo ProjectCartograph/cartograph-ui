@@ -192,3 +192,132 @@
     animation: none !important;
   }
 }
+
+/*
+ * Icons answer the hand that reaches for them: hovering an icon, or the
+ * button, link or tab it sits in (or reaching it by keyboard), plays one
+ * short motion that says what the icon does: a plus turns, a bin tips,
+ * an arrow leans the way it goes, a check is ticked again. Transforms
+ * only, once per hover, and none at all for someone who asked for less
+ * motion. Another person's pointer never moves anything here: what they
+ * do is drawn as their presence, and the page in front of each person
+ * moves for that person alone.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide,
+  svg.lucide:hover {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: cartograph-icon-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Add, and close: a quarter turn. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-plus, .lucide-circle-plus, .lucide-x, .lucide-circle-x),
+  svg:is(.lucide-plus, .lucide-circle-plus, .lucide-x, .lucide-circle-x):hover {
+    animation: cartograph-icon-turn 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  /* Delete: the bin tips side to side. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-trash, .lucide-trash-2),
+  svg:is(.lucide-trash, .lucide-trash-2):hover {
+    transform-origin: bottom center;
+    animation: cartograph-icon-tip 420ms ease-in-out;
+  }
+  /* Directions: lean the way they go. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-arrow-right, .lucide-chevron-right, .lucide-external-link),
+  svg:is(.lucide-arrow-right, .lucide-chevron-right, .lucide-external-link):hover {
+    animation: cartograph-icon-right 420ms ease-in-out;
+  }
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-arrow-left, .lucide-chevron-left, .lucide-undo-2),
+  svg:is(.lucide-arrow-left, .lucide-chevron-left, .lucide-undo-2):hover {
+    animation: cartograph-icon-left 420ms ease-in-out;
+  }
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-chevron-down, .lucide-download, .lucide-save),
+  svg:is(.lucide-chevron-down, .lucide-download, .lucide-save):hover {
+    animation: cartograph-icon-down 420ms ease-in-out;
+  }
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-upload, .lucide-chevron-up),
+  svg:is(.lucide-upload, .lucide-chevron-up):hover {
+    animation: cartograph-icon-up 420ms ease-in-out;
+  }
+  /* Sending: off up and to the right, and back. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide-send,
+  svg.lucide-send:hover {
+    animation: cartograph-icon-send 520ms ease-in-out;
+  }
+  /* Done: ticked again. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-check, .lucide-circle-check, .lucide-circle-check-big, .lucide-check-check),
+  svg:is(.lucide-check, .lucide-circle-check, .lucide-circle-check-big, .lucide-check-check):hover {
+    stroke-dasharray: 100;
+    animation: cartograph-icon-tick 480ms ease-out;
+  }
+  /* Warnings and attention: a small shake. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-triangle-alert, .lucide-octagon-alert, .lucide-bell, .lucide-circle-alert),
+  svg:is(.lucide-triangle-alert, .lucide-octagon-alert, .lucide-bell, .lucide-circle-alert):hover {
+    animation: cartograph-icon-shake 420ms ease-in-out;
+  }
+  /* Turning things: a full turn. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-refresh-cw, .lucide-rotate-ccw, .lucide-settings, .lucide-history),
+  svg:is(.lucide-refresh-cw, .lucide-rotate-ccw, .lucide-settings, .lucide-history):hover {
+    animation: cartograph-icon-spin 600ms cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  /* Seeing: a blink. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-eye, .lucide-eye-off),
+  svg:is(.lucide-eye, .lucide-eye-off):hover {
+    animation: cartograph-icon-blink 360ms ease-in-out;
+  }
+  /* Writing: a scribble. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-pencil, .lucide-pen-line, .lucide-square-pen, .lucide-pen),
+  svg:is(.lucide-pencil, .lucide-pen-line, .lucide-square-pen, .lucide-pen):hover {
+    transform-origin: bottom left;
+    animation: cartograph-icon-scribble 480ms ease-in-out;
+  }
+  /* Finding: a look around. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg.lucide-search,
+  svg.lucide-search:hover {
+    animation: cartograph-icon-look 520ms ease-in-out;
+  }
+  /* Measures and places: a gauge sweeps, a target and a pin drop in. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-gauge, .lucide-flag),
+  svg:is(.lucide-gauge, .lucide-flag):hover {
+    transform-origin: bottom center;
+    animation: cartograph-icon-sweep 480ms ease-in-out;
+  }
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-map-pin, .lucide-target),
+  svg:is(.lucide-map-pin, .lucide-target):hover {
+    animation: cartograph-icon-drop 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  /* Agents: alive. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-bot, .lucide-radio, .lucide-sparkles),
+  svg:is(.lucide-bot, .lucide-radio, .lucide-sparkles):hover {
+    animation: cartograph-icon-alive 520ms ease-in-out;
+  }
+  /* Copying and linking: a nudge apart and back. */
+  :where(button, a[href], [role="button"], [role="menuitem"], [role="tab"], [role="option"], summary, label):is(:hover, :focus-visible) svg:is(.lucide-copy, .lucide-link, .lucide-link-2, .lucide-lock, .lucide-lock-open),
+  svg:is(.lucide-copy, .lucide-link, .lucide-link-2, .lucide-lock, .lucide-lock-open):hover {
+    animation: cartograph-icon-nudge 400ms ease-in-out;
+  }
+}
+
+@keyframes cartograph-icon-pop { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1); } }
+@keyframes cartograph-icon-turn { from { transform: rotate(0); } to { transform: rotate(90deg); } }
+@keyframes cartograph-icon-tip { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-12deg); } 65% { transform: rotate(8deg); } }
+@keyframes cartograph-icon-right { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(3px); } }
+@keyframes cartograph-icon-left { 0%, 100% { transform: translateX(0); } 45% { transform: translateX(-3px); } }
+@keyframes cartograph-icon-down { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(2.5px); } }
+@keyframes cartograph-icon-up { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-2.5px); } }
+@keyframes cartograph-icon-send {
+  0% { transform: translate(0, 0); opacity: 1; }
+  45% { transform: translate(6px, -6px); opacity: 0; }
+  46% { transform: translate(-6px, 6px); opacity: 0; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+@keyframes cartograph-icon-tick { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes cartograph-icon-shake { 0%, 100% { transform: rotate(0); } 20% { transform: rotate(-9deg); } 40% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } 80% { transform: rotate(3deg); } }
+@keyframes cartograph-icon-spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes cartograph-icon-blink { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.12); } }
+@keyframes cartograph-icon-scribble { 0%, 100% { transform: rotate(0) translate(0, 0); } 25% { transform: rotate(-8deg) translate(-1px, 0); } 50% { transform: rotate(6deg) translate(1px, -1px); } 75% { transform: rotate(-4deg) translate(0, 0); } }
+@keyframes cartograph-icon-look { 0%, 100% { transform: translate(0, 0) rotate(0); } 30% { transform: translate(-2px, -1px) rotate(-8deg); } 65% { transform: translate(2px, 1px) rotate(6deg); } }
+@keyframes cartograph-icon-sweep { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-10deg); } 75% { transform: rotate(6deg); } }
+@keyframes cartograph-icon-drop { 0% { transform: translateY(-4px) scale(0.9); } 60% { transform: translateY(1px) scale(1.06); } 100% { transform: translateY(0) scale(1); } }
+@keyframes cartograph-icon-alive { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-2px) rotate(-6deg); } 65% { transform: translateY(0) rotate(5deg); } }
+@keyframes cartograph-icon-nudge { 0%, 100% { transform: translate(0, 0); } 45% { transform: translate(1.5px, -1.5px); } }

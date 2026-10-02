@@ -1,0 +1,66 @@
+// Celebrates what changes the record of truth: a version saved, a
+// snapshot taken, a project moved on, files applied from the vault, a
+// proposal accepted. Drafts save themselves all the time and are never
+// celebrated; neither is anything a person did not press for (a goal
+// dragged in the tree saves a version too). So a burst needs a button
+// pressed in the moments before the call that succeeded, and it comes
+// out of that button, or out of where it was if the dialog it sat in has
+// closed since.
+
+import type { Client } from "@/client/port";
+import { confetti, type Origin } from "./confetti";
+
+/** How long after a press a success still counts as its result. */
+const RECENT_MS = 20_000;
+
+/** The client calls that commit something. */
+const COMMITS = ["saveVersion", "snapshot", "transition", "apply", "acceptProposal"] as const;
+
+let pressed: { el: Element; box: Origin; at: number } | undefined;
+
+function onPress(e: Event) {
+  if (e instanceof KeyboardEvent && e.key !== "Enter" && e.key !== " ") return;
+  const el = e.target instanceof Element ? e.target.closest("button, [role=button], a[href]") : null;
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  pressed = { el, box: { left: r.left, top: r.top, width: r.width, height: r.height }, at: Date.now() };
+}
+
+let listening = false;
+function listen() {
+  if (listening || typeof document === "undefined") return;
+  listening = true;
+  document.addEventListener("pointerdown", onPress, true);
+  document.addEventListener("keydown", onPress, true);
+}
+
+/** A burst from the button just pressed, if one was. */
+export function celebrate(now = Date.now()) {
+  const p = pressed;
+  pressed = undefined;
+  if (!p || now - p.at > RECENT_MS) return;
+  if (p.el.isConnected) {
+    const r = p.el.getBoundingClientRect();
+    if (r.width > 0 && r.height > 0) {
+      confetti({ left: r.left, top: r.top, width: r.width, height: r.height });
+      return;
+    }
+  }
+  confetti(p.box);
+}
+
+/** The client, with every commit that succeeds after a press celebrated. */
+export function celebrating(client: Client): Client {
+  listen();
+  const out = { ...client } as Record<string, unknown>;
+  for (const name of COMMITS) {
+    const fn = (client as unknown as Record<string, (...a: unknown[]) => Promise<unknown>>)[name];
+    if (typeof fn !== "function") continue;
+    out[name] = async (...args: unknown[]) => {
+      const result = await fn.apply(client, args);
+      celebrate();
+      return result;
+    };
+  }
+  return out as unknown as Client;
+}
