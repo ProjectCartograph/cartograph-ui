@@ -87,6 +87,10 @@ export const copy = {
     cancel: "Cancel",
     // The steps of a walk on a narrow screen, behind one small button.
     allSteps: "All steps",
+    // What the workspace holds that is relevant to the work (engine
+    // docs/adr/0023): put first, never chosen for the person.
+    suggested: "Suggested from what you wrote",
+    suggestedByWords: "Shares words with what you wrote",
   },
   labels: {
     label: "Tags",
@@ -1866,6 +1870,8 @@ export const copy = {
     align: {
       heading: "Alignment",
       subtitle: "",
+      aboutLabel: "What is this project about?",
+      aboutHint: "One sentence, as you would tell a colleague. Cartograph suggests what in the workspace is relevant to it, in every step.",
     },
     measures: {
       heading: "Objectives",

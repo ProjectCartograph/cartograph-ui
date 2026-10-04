@@ -31,6 +31,8 @@ import type { KeyResult } from "@/surfaces/goals/types";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
+import { Suggested } from "@/components/relevance";
+import { Textarea } from "@/components/ui/textarea";
 import { useSectionAutosave, useProjectStore } from "../store";
 import { seg } from "../field";
 
@@ -230,6 +232,19 @@ export function AlignmentSection() {
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Asked first: everything suggested from here on is ranked against
+          it (engine docs/adr/0023). */}
+      <div className="flex flex-col gap-2" data-cartograph-region="about">
+        <FieldHeading label={copy.projects.align.aboutLabel} hint={copy.projects.align.aboutHint} htmlFor="project-about" />
+        <Textarea
+          id="project-about"
+          data-cartograph-field="/spec/summary/about"
+          value={store.spec.summary.about ?? ""}
+          onChange={(e) => store.updateSpec((s) => ({ ...s, summary: { ...s.summary, about: e.target.value.slice(0, 300) || undefined } }))}
+          rows={2}
+          className="sm:max-w-xl"
+        />
+      </div>
       {/* What this is part of comes first: a programme carries goals with
           it, so naming one turns the whole tree into a short list. */}
       <div className="flex flex-col gap-3" data-cartograph-region="part-of">
@@ -268,6 +283,16 @@ export function AlignmentSection() {
         </div>
       ) : (
       <div className="flex flex-col gap-2">
+        <Suggested
+          kind="Programme"
+          selected={programmes}
+          onPick={(id) =>
+            store.updateSpec((s) => {
+              const cur = s.alignment?.programmes ?? [];
+              return { ...s, alignment: { ...s.alignment, programmes: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] } };
+            })
+          }
+        />
         <ComboboxMultiple
           options={programmeOptions?.options ?? []}
           value={programmes}
@@ -291,6 +316,17 @@ export function AlignmentSection() {
         ) : null}
         <div className="mt-2 flex flex-col gap-2" data-slot="portfolios">
           <FieldHeading label={gc.portfoliosLabel} hint={gc.portfoliosHint} />
+          <Suggested
+            kind="Portfolio"
+            selected={store.spec.alignment?.portfolios ?? []}
+            onPick={(id) =>
+              store.updateSpec((s) => {
+                const cur = s.alignment?.portfolios ?? [];
+                const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+                return { ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } };
+              })
+            }
+          />
           <ComboboxMultiple
             options={portfolioOptions?.options ?? []}
             value={store.spec.alignment?.portfolios ?? []}
@@ -313,6 +349,7 @@ export function AlignmentSection() {
       {treeQuery.isError ? <p className="text-sm text-destructive">{copy.goals.home.error}</p> : null}
       {treeQuery.data && !(partOf === "project" && parent) ? (
         <div className="flex flex-col gap-6" data-cartograph-region="goal-picker">
+          <Suggested kind="Goal" level="outcome" selected={goals} onPick={toggleGoal} />
           {programmes.length > 0 ? (
             <div className="flex flex-col gap-3">
               <FieldHeading label={gc.withinLabel} hint={gc.withinHint} />
@@ -384,6 +421,7 @@ export function MeasuresSection() {
 
   const [krDialog, setKrDialog] = useState<{ open: boolean; existing?: KeyResult }>({ open: false });
   const [addKpi, setAddKpi] = useState(false);
+  const [suggestedKpi, setSuggestedKpi] = useState<string | undefined>(undefined);
 
   // How many goals this project aligned to, from the step before: the
   // objective editor marks an objective that names none of them.
@@ -475,6 +513,15 @@ export function MeasuresSection() {
           </Button>
         }
       >
+        <Suggested
+          kind="KPI"
+          selected={namedKpis.map((k) => k.kpi)}
+          onPick={(id) => {
+            if (namedKpis.some((k) => k.kpi === id)) return;
+            setSuggestedKpi(id);
+            setAddKpi(true);
+          }}
+        />
         {namedKpis.length === 0 ? (
           <p className="text-sm text-muted-foreground">{gc.kpiNoneYet}</p>
         ) : (
@@ -512,9 +559,14 @@ export function MeasuresSection() {
       />
 
       <AddKpiDialog
+        key={suggestedKpi ?? "-"}
+        initialKpi={suggestedKpi}
         open={addKpi}
         taken={namedKpis.map((k) => k.kpi)}
-        onOpenChange={setAddKpi}
+        onOpenChange={(open) => {
+          setAddKpi(open);
+          if (!open) setSuggestedKpi(undefined);
+        }}
         onSave={(kpi, reason) =>
           store.updateSpec((sp) => ({ ...sp, kpis: [...(sp.kpis ?? []), { kpi, reason }] }))
         }
@@ -530,17 +582,20 @@ export function MeasuresSection() {
  */
 function AddKpiDialog({
   open,
+  initialKpi,
   taken,
   onOpenChange,
   onSave,
 }: {
   open: boolean;
+  /** A suggested KPI to start from; the reason is still asked. */
+  initialKpi?: string;
   /** Already named by this project, so it is not offered twice. */
   taken: string[];
   onOpenChange: (open: boolean) => void;
   onSave: (kpi: string, reason: string) => void;
 }) {
-  const [kpi, setKpi] = useState<string | undefined>(undefined);
+  const [kpi, setKpi] = useState<string | undefined>(initialKpi);
   const [reason, setReason] = useState("");
   // As everywhere else: Add stays live and a refused one marks the field
   // it is waiting on, rather than going dead and silent.

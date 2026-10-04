@@ -13,6 +13,7 @@ import { gapOutline, operationOutline, programmeOutline } from "./outline";
 
 import { Button } from "@/components/ui/button";
 import { RailSheet } from "@/components/RailSheet";
+import { WorkTextProvider } from "@/components/relevance";
 import { Separator } from "@/components/ui/separator";
 import { copy } from "@/copy";
 import { SaveStatus } from "@/projects/Chrome";
@@ -185,7 +186,14 @@ export function DefinitionShell({
     </>
   );
 
+  // The definition's own words so far (its name, and what it is for), for
+  // every picker inside to rank the workspace against (engine
+  // docs/adr/0023).
+  const spec = store.spec as Record<string, unknown>;
+  const workText = [store.name, ...wordsOf(spec.aim), ...wordsOf(spec.statement), ...wordsOf(spec.purpose)].filter(Boolean).join(". ");
+
   return (
+    <WorkTextProvider text={workText}>
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
@@ -264,5 +272,13 @@ export function DefinitionShell({
         </div>
       </div>
     </div>
+    </WorkTextProvider>
   );
+}
+
+/** The text held in a field, whether a sentence or the parts of one. */
+function wordsOf(v: unknown): string[] {
+  if (typeof v === "string") return v.trim() ? [v] : [];
+  if (v && typeof v === "object") return Object.values(v).flatMap((x) => (typeof x === "string" && x.trim() ? [x] : []));
+  return [];
 }

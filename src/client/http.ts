@@ -211,6 +211,8 @@ export function httpClient(
     order: () => answer(wire.GET("/order")),
     glossary: () => answer(wire.GET("/glossary", { params: { query: {} } })),
     understand: (text) => answer(wire.POST("/understand", { body: { text } })),
+    relevant: (text, kinds, level) => answer(wire.POST("/relevant", { body: { text, ...(kinds ? { kinds } : {}), ...(level ? { level } : {}) } })),
+    decisionModel: () => answer(wire.GET("/decision-model")),
     match: (kind, text, level) => answer(wire.POST("/match", { body: { kind, text, ...(level ? { level } : {}) } })),
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
     deleteGoal: (id, reason) =>

@@ -20,6 +20,8 @@ const every: Record<keyof Client, true> = {
   order: true,
   glossary: true,
   understand: true,
+  relevant: true,
+  decisionModel: true,
   match: true,
   gapCoverage: true,
   deleteGoal: true,

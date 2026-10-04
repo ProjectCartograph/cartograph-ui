@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { FieldHeading } from "@/components/guidance";
+import { Suggested } from "@/components/relevance";
 import { copy } from "@/copy";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { useGoalTree } from "@/surfaces/goals/api";
@@ -29,6 +30,19 @@ export function StrategySection() {
   return (
     <div className="flex max-w-3xl flex-col gap-2" data-cartograph-region="portfolio-strategy">
       <FieldHeading label={fc.objectivesLabel} />
+      {/* Goals and objectives only: a portfolio serves what the
+          organisation sets out to do. */}
+      <Suggested
+        kind="Goal"
+        selected={selected}
+        exclude={(m) => m.level === "outcome"}
+        onPick={(id) =>
+          store.updateSpec((s) => {
+            const next = selected.includes(id) ? selected.filter((g) => g !== id) : [...selected, id];
+            return { ...s, objectives: next.length > 0 ? next : undefined };
+          })
+        }
+      />
       <ChipPicker
         items={chips}
         selected={selected}

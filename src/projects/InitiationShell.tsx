@@ -9,6 +9,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, FileText, OctagonAl
 
 import { Button } from "@/components/ui/button";
 import { RailSheet } from "@/components/RailSheet";
+import { WorkTextProvider } from "@/components/relevance";
 import { copy } from "@/copy";
 import { useProjectChecks } from "./api";
 import { CheckPanel } from "./CheckPanel";
@@ -140,12 +141,24 @@ export function InitiationBackNext({ id, stage }: { id: string; stage: Stage }) 
 export function InitiationShell({ id, section }: { id: string; section: InitiationSection }) {
   const store = useProjectStore();
   const stage = stageOfSection(section);
+  // The project's own words so far, for every picker to rank the
+  // workspace against (engine docs/adr/0023).
+  const spec = store.spec;
+  const workText = [
+    store.name,
+    spec.summary.about,
+    ...(spec.summary.problems ?? []).flatMap((p) => [p.problem?.situation, p.change?.what]),
+    ...(spec.objectives ?? []).map((o) => o.objective),
+  ]
+    .filter((x): x is string => typeof x === "string" && x.trim() !== "")
+    .join(". ");
   const steps = stepsOfStage(stage);
   useEffect(() => {
     if (!store.loaded || steps[0]?.section === section) return;
     document.getElementById(`step-${section}`)?.scrollIntoView({ block: "start" });
   }, [section, store.loaded, steps]);
   return (
+    <WorkTextProvider text={workText}>
     <div className="flex flex-col gap-4">
       <ProjectHeaderBar />
       <div className="flex items-start justify-between gap-4">
@@ -211,6 +224,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
         </div>
       </div>
     </div>
+    </WorkTextProvider>
   );
 }
 

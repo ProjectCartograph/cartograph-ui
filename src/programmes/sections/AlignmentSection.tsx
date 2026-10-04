@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { ComboboxMultiple } from "@/components/ui/combobox";
+import { Suggested } from "@/components/relevance";
 import { FieldHeading } from "@/components/guidance";
 import { copy } from "@/copy";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
@@ -95,6 +96,7 @@ export function AlignmentSection() {
     <div className="flex max-w-3xl flex-col gap-8" data-cartograph-region="programme-alignment">
       <div className="flex flex-col gap-2">
         <FieldHeading label={pc.goalsLabel} />
+        <Suggested kind="Goal" level="outcome" selected={goals} onPick={toggleGoal} />
         <ChipPicker
           items={chips}
           selected={goals}
@@ -127,6 +129,16 @@ export function AlignmentSection() {
             </Select>
           ) : null}
         </div>
+        <Suggested
+          kind="KPI"
+          selected={store.spec.kpis ?? []}
+          onPick={(id) =>
+            store.updateSpec((s) => {
+              const next = (s.kpis ?? []).includes(id) ? (s.kpis ?? []).filter((k) => k !== id) : [...(s.kpis ?? []), id];
+              return { ...s, kpis: next.length > 0 ? next : undefined };
+            })
+          }
+        />
         <ChipPicker
           items={kpiChips}
           addLabel={copy.kpis.addTitle}

@@ -28,6 +28,8 @@ export type OrderStage = Schemas["OrderStage"];
 export type GlossaryEntry = Schemas["GlossaryEntry"];
 export type Understanding = Schemas["Understanding"];
 export type Match = Schemas["Match"];
+export type Relevance = Schemas["Relevance"];
+export type DecisionModel = Schemas["DecisionModel"];
 export type GoalCheck = Schemas["GoalCheck"];
 export type ProgrammeCheck = Schemas["ProgrammeCheck"];
 export type ProjectChecks = Schemas["ProjectChecks"];
@@ -352,6 +354,11 @@ export interface Client {
    * records say the same; without a decision model, matches by words
    * only (engine docs/adr/0023). */
   understand(text: string): Promise<Understanding>;
+  /** What in the workspace is relevant to a piece of work: the likeliest
+   * few records of each kind (engine docs/adr/0023). */
+  relevant(text: string, kinds?: string[], level?: string): Promise<Relevance>;
+  /** Whether a decision model is configured and answering now. */
+  decisionModel(): Promise<DecisionModel>;
   /** The existing records of a kind that say what a text says. */
   match(kind: string, text: string, level?: string): Promise<Match[]>;
   /** Which part of a gap each piece of work addresses. */

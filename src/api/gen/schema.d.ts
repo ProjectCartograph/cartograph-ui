@@ -356,6 +356,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/relevant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What in the workspace is relevant to a piece of work
+         * @description Ranks the records of the kinds asked for (every kind a piece of work names, when none are) by how relevant they are to the text, and returns the likeliest few of each, likeliest first. Where a decision model is configured (docs/adr/0023) it is asked of each record on its own whether the work is about the same thing; without one, available is false and the ranking is by shared words. A shortlist to put first, never a filter or a choice: everything else stays searchable. Nothing is stored.
+         */
+        post: operations["relevant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/decision-model": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether a decision model is configured, and answering now
+         * @description Whatever is behind the decision port (docs/adr/0023). An agent asks this first, to know whether relevant, match and understand rank by meaning or only by shared words.
+         */
+        get: operations["getDecisionModel"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/match": {
         parameters: {
             query?: never;
@@ -1164,6 +1204,15 @@ export interface components {
             matches: components["schemas"]["Match"][];
             /** @description The flows likeliest to define the text, likeliest first, one per kind: offered to the person, who chooses. Measured, the first was right half the time and the right one was among the three nine times in ten (docs/adr/0023). */
             routes: components["schemas"]["Route"][];
+        };
+        Relevance: {
+            /** @description False when no decision model answered; the ranking is then by shared words. */
+            available: boolean;
+            matches: components["schemas"]["Match"][];
+        };
+        DecisionModel: {
+            configured: boolean;
+            ready: boolean;
         };
         Route: {
             /** @description The stage of the order of work (GET /order). */
@@ -2596,6 +2645,61 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    relevant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description What the work is about, and as much of what has been written of it as helps. */
+                    text: string;
+                    kinds?: string[];
+                    /** @description For Goal, the level to rank among. */
+                    level?: string;
+                    /** @description How many of each kind, 3 when left out. */
+                    limit?: number;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Relevance"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getDecisionModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionModel"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
         };
     };
     matchExisting: {

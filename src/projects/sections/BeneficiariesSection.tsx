@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { copy } from "@/copy";
 import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
+import { Suggested } from "@/components/relevance";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { useSectionAutosave, useProjectStore } from "../store";
 
@@ -46,6 +47,7 @@ export function BeneficiariesSection() {
 
   return (
     <>
+      <Suggested kind="BeneficiaryGroup" selected={picked} onPick={toggle} />
       <ChipPicker
         slot="beneficiary-chips"
         data-cartograph-field="/spec/summary/beneficiaries"
