@@ -1,5 +1,5 @@
 import { AssemblyStrip } from "./Assembly";
-import type { ReactNode } from "react";
+import { createElement, useEffect } from "react";
 import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
 import { ShowInGraph } from "@/graph/ShowInGraph";
 import { Link } from "@tanstack/react-router";
@@ -14,17 +14,18 @@ import { CheckPanel } from "./CheckPanel";
 import { ProjectSectionNotes } from "./SectionNotes";
 import { StageStepper, ProjectHeaderBar } from "./Chrome";
 import { useProjectStore } from "./store";
-import { STAGES, STEPS, stageOfSection, stepsOfStage, type InitiationSection } from "./types";
+import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
+import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type Stage } from "./types";
 import { STAGE_ICON, stepIcon } from "./steps";
 
 const pc = copy.projects;
 
 /**
- * The left section rail for the Initiation phase: every section, its own
- * state dot (worst check state among that section's items, or a neutral
- * dot when nothing has been checked yet), the current section highlighted.
- * One section on screen at a time (rule 4); Back and Next below the main
- * pane walk the same fixed order.
+ * The left rail for the Initiation phase: every stage and the steps in it,
+ * each step with its own state dot (worst check state among that step's
+ * items, or none when nothing has been checked yet), the stage on screen
+ * highlighted. One stage on screen at a time (TAXONOMY.md D33); a step
+ * opens its stage at that step, and Back and Next walk the stages.
  */
 function SectionRail({ id, current }: { id: string; current: InitiationSection }) {
   const checksQuery = useProjectChecks(id, true);
@@ -58,7 +59,7 @@ function SectionRail({ id, current }: { id: string; current: InitiationSection }
             {pc.stages[stage]}
           </p>
           {stepsOfStage(stage).map((step) => (
-            <ProjectStep key={step.section} id={id} path={step.path} section={step.section} isCurrent={step.section === current} state={bySection.get(step.section)} />
+            <ProjectStep key={step.section} id={id} path={step.path} section={step.section} isCurrent={stage === here} state={bySection.get(step.section)} />
           ))}
         </div>
       ))}
@@ -87,13 +88,14 @@ function SectionRail({ id, current }: { id: string; current: InitiationSection }
 }
 
 /** Back and Next, as real buttons: Back a quiet outline, Next the primary
- * action naming where it goes, so the step a person is on always has one
- * obvious way forward. */
-export function InitiationBackNext({ id, section }: { id: string; section: InitiationSection }) {
-  const idx = STEPS.findIndex((s) => s.section === section);
-  const prev = idx > 0 ? STEPS[idx - 1] : undefined;
-  const next = idx >= 0 && idx < STEPS.length - 1 ? STEPS[idx + 1] : undefined;
-  const NextIcon = next ? stepIcon(next.section) : undefined;
+ * action naming the stage it goes to, so a stage always has one obvious
+ * way forward. After the last stage, the closing page. */
+export function InitiationBackNext({ id, stage }: { id: string; stage: Stage }) {
+  const idx = STAGES.indexOf(stage);
+  const prev = idx > 0 ? stepsOfStage(STAGES[idx - 1])[0] : undefined;
+  const nextStage = idx < STAGES.length - 1 ? STAGES[idx + 1] : undefined;
+  const next = nextStage ? stepsOfStage(nextStage)[0] : undefined;
+  const NextIcon = nextStage ? STAGE_ICON[nextStage] : undefined;
 
   return (
     <div className="flex items-center justify-between gap-2 pt-6">
@@ -111,10 +113,10 @@ export function InitiationBackNext({ id, section }: { id: string; section: Initi
         )}
       </Button>
       <Button asChild size="lg">
-        {next ? (
+        {next && nextStage ? (
           <Link to={`/projects/$id${next.path}`} params={{ id }}>
             {NextIcon ? <NextIcon /> : null}
-            {pc.nextTo(pc.sections[next.section] ?? next.section)}
+            {pc.nextTo(pc.stages[nextStage])}
             <ArrowRight />
           </Link>
         ) : (
@@ -128,31 +130,31 @@ export function InitiationBackNext({ id, section }: { id: string; section: Initi
   );
 }
 
-export function InitiationShell({
-  id,
-  section,
-  heading,
-  subtitle,
-  children,
-}: {
-  id: string;
-  section: InitiationSection;
-  heading: string;
-  subtitle: string;
-  children: ReactNode;
-}) {
+/**
+ * One stage of the walk on one screen: its steps one after another, each
+ * under its own heading, with the checks of all of them beside (TAXONOMY.md
+ * D33). Opened at a step, the screen scrolls to it, so a link to any step
+ * (a check's fix, a rail entry) lands where it points.
+ */
+export function InitiationShell({ id, section }: { id: string; section: InitiationSection }) {
   const store = useProjectStore();
+  const stage = stageOfSection(section);
+  const steps = stepsOfStage(stage);
+  useEffect(() => {
+    if (!store.loaded || steps[0]?.section === section) return;
+    document.getElementById(`step-${section}`)?.scrollIntoView({ block: "start" });
+  }, [section, store.loaded, steps]);
   return (
     <div className="flex flex-col gap-4">
       <ProjectHeaderBar />
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
-          <p className="text-muted-foreground">{subtitle}</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{pc.stages[stage]}</h1>
+          <p className="text-muted-foreground">{pc.stageQuestion[stage]}</p>
         </div>
         <div className="flex shrink-0 items-start gap-2">
           <ShowInGraph kind="Project" id={id} />
-          <StageStepper id={id} current={stageOfSection(section)} />
+          <StageStepper id={id} current={stage} />
         </div>
       </div>
       <AssemblyStrip id={id} />
@@ -164,19 +166,36 @@ export function InitiationShell({
           ) : !store.loaded ? (
             <p className="text-sm text-muted-foreground">{pc.record.loading}</p>
           ) : (
-            <>
-              {/* The step arrives from the side the walk is heading (engine
-                  DESIGN_RULES "The interface answers"). */}
-              <div key={section} className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-3 duration-250 ease-enter">
-                {children}
-              </div>
-              <ProjectSectionNotes section={section} />
-            </>
+            // The stage arrives from the side the walk is heading (engine
+            // DESIGN_RULES "The interface answers").
+            <div key={stage} className="flex flex-col gap-10 animate-in fade-in slide-in-from-right-3 duration-250 ease-enter">
+              {steps.map((step) => {
+                const { heading, subtitle, View } = SECTION_VIEW[step.section];
+                return (
+                  <section key={step.section} id={`step-${step.section}`} data-cartograph-step={step.section} className="flex scroll-mt-4 flex-col gap-4" aria-labelledby={`step-${step.section}-heading`}>
+                    {steps.length > 1 ? (
+                      <div>
+                        <h2 id={`step-${step.section}-heading`} className="text-lg font-semibold tracking-tight">
+                          {heading}
+                        </h2>
+                        {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+                      </div>
+                    ) : (
+                      <h2 id={`step-${step.section}-heading`} className="sr-only">
+                        {heading}
+                      </h2>
+                    )}
+                    {createElement(View)}
+                    <ProjectSectionNotes section={step.section} />
+                  </section>
+                );
+              })}
+            </div>
           )}
-          <InitiationBackNext id={id} section={section} />
+          <InitiationBackNext id={id} stage={stage} />
         </div>
         <div className="flex flex-col gap-4">
-          <CheckPanel id={id} draft scopeSection={section} scopePhase="initiation" />
+          <CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(STAGE_ALSO_CHECKS[stage] ?? [])]} />
         </div>
       </div>
     </div>

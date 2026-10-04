@@ -27,11 +27,15 @@ export function CheckPanel({
   id,
   draft,
   scopeSection,
+  scopeSections,
   scopePhase,
 }: {
   id: string;
   draft: boolean;
   scopeSection?: string;
+  /** Several sections at once: a stage of the walk shows the checks of
+   * every step on it, whatever phase they gate. */
+  scopeSections?: string[];
   scopePhase?: string;
 }) {
   const checksQuery = useProjectChecks(id, draft);
@@ -39,6 +43,7 @@ export function CheckPanel({
 
   const items = (checksQuery.data?.items ?? []).filter((item) => {
     if (scopeSection && item.section !== scopeSection) return false;
+    if (scopeSections && !scopeSections.includes(item.section)) return false;
     if (scopePhase && item.phase !== scopePhase) return false;
     return true;
   });

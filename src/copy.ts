@@ -1819,9 +1819,6 @@ export const copy = {
       closing: "Closure",
       landing: "Handover",
     } as Record<string, string>,
-    // The four stages a definition is built in. One word each: the step
-    // names below say what the step is, the stage says which part of the
-    // thinking it belongs to.
     // What you are building, always in view (LSS_REVIEW.md, D22).
     assembly: {
       title: "Outline",
@@ -1842,17 +1839,25 @@ export const copy = {
     },
     // Named for what each stage holds (LSS_REVIEW.md, D20). The ids stay
     // as they were; only the words people read changed.
+    // The seven stages of the walk (engine TAXONOMY.md D33), each named
+    // for what it settles, with the sentence that says so.
     stages: {
-      align: "Alignment",
-      target: "Problem",
-      refine: "Plan",
-      polish: "Delivery",
+      context: "Context",
+      problem: "Problem",
+      objectives: "Objectives",
+      governance: "Governance",
+      scope: "Scope",
+      plan: "Plan",
+      handover: "Success and handover",
     } as Record<string, string>,
     stageQuestion: {
-      align: "Alignment and team",
-      target: "Beneficiaries, problem and scope",
-      refine: "Measures, resources, deliverables and success criteria",
-      polish: "Schedule, data, risks and handover",
+      context: "Where the project sits: what it is part of, the outcomes it serves and the team that owns it.",
+      problem: "Who it is for, and what is wrong for them today.",
+      objectives: "The change it makes, and the measures that show it happened.",
+      governance: "Who decides, who pays, on whose authority, and who holds power over it.",
+      scope: "What it produces, what it leaves out, and what each output is accepted against.",
+      plan: "When it runs, the data it reads and makes, and what could go wrong.",
+      handover: "What has to be true for it to have succeeded, and the service that runs the result.",
     } as Record<string, string>,
     // Align and Refine were one screen ("Goals and measures") and are two
     // steps now: what this project belongs to, then what it will move.

@@ -10,9 +10,8 @@ import {
   Gauge,
   Medal,
   Package,
+  Landmark,
   PlaneLanding,
-  SlidersHorizontal,
-  Sparkles,
   SquareDashed,
   TriangleAlert,
   Users,
@@ -27,10 +26,13 @@ import type { Stage } from "./types";
  * pane they sit beside, and does not need saying twice.
  */
 export const STAGE_ICON: Record<Stage, LucideIcon> = {
-  align: Compass,
-  target: Crosshair,
-  refine: SlidersHorizontal,
-  polish: Sparkles,
+  context: Compass,
+  problem: Crosshair,
+  objectives: Gauge,
+  governance: Landmark,
+  scope: SquareDashed,
+  plan: CalendarRange,
+  handover: PlaneLanding,
 };
 
 export const STEP_ICON: Record<string, LucideIcon> = {

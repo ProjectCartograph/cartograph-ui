@@ -38,7 +38,7 @@ export function assembly(spec: ProjectSpec): AssemblyState[] {
     produces: [produces, "/initiation/deliverables"],
     success: [success, "/initiation/success"],
     measures: [measures, "/initiation/measures"],
-    handover: [handover, "/landing"],
+    handover: [handover, "/initiation/landing"],
   };
   // A component moves its parent's measures; the checks say the same.
   const isComponent = (spec.alignment?.partOf ?? "") !== "";

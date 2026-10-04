@@ -460,34 +460,38 @@ export function blankProjectSpec(): ProjectSpec {
 // Resources", and it follows Scope directly.
 export const INITIATION_SECTIONS = [
   "goals",
-  "aim",
   "beneficiaries",
-  "scope",
+  "aim",
   "measures",
   "resources",
   "stakeholders",
+  "scope",
   "deliverables",
-  "success",
   "timeline",
   "data",
   "risks",
+  "success",
+  "landing",
 ] as const;
 export type InitiationSection = (typeof INITIATION_SECTIONS)[number];
 
 /**
- * The four stages a definition is built in, in the order it is built.
- * They group the steps; they are not the lifecycle. The three phases
- * (Initiation, Closing, Landing) are what the charter and the gates run
- * on and are untouched by this: a stage is how a person is walked through
- * the questions, a phase is where the answer belongs.
+ * The seven stages a definition is walked in, each settling one thing, in
+ * the order of the contract's own stages (engine TAXONOMY.md D33; a test
+ * holds the two together). A stage is one screen with its steps as
+ * sections. They are not the lifecycle: the three phases (Initiation,
+ * Closing, Landing) are what the charter and the gates run on, and the
+ * closing and landing pages stay for them.
  *
- *   Align   what larger goals is this project part of
- *   Quality what problem inside that, for whom, and where it stops
- *   Refine  what it will move, who does it, what it hands over, and the
- *           standard it has to clear to have succeeded
- *   Polish  when, on what data, what could go wrong, and how it lands
+ *   Context     where it sits, the outcomes it serves, who owns it
+ *   Problem     who it is for, and what is wrong for them
+ *   Objectives  the change it makes, and how that is measured
+ *   Governance  who decides, who pays, on whose authority, who holds power
+ *   Scope       what it produces, and where it stops
+ *   Plan        when, on what data, and what could go wrong
+ *   Handover    what success is, and the service that runs the result
  */
-export const STAGES = ["align", "target", "refine", "polish"] as const;
+export const STAGES = ["context", "problem", "objectives", "governance", "scope", "plan", "handover"] as const;
 export type Stage = (typeof STAGES)[number];
 
 /** The route each step lives at, as literals: the router types its links
@@ -503,51 +507,39 @@ export type StepPath =
   | "/initiation/stakeholders"
   | "/initiation/deliverables"
   | "/initiation/success"
-  | "/closing"
   | "/initiation/timeline"
   | "/initiation/data"
   | "/initiation/risks"
-  | "/landing";
+  | "/initiation/landing";
 
 export interface Step {
   stage: Stage;
   phase: Phase;
-  section: string;
+  section: InitiationSection;
   path: StepPath;
 }
 
-/** Every step, in the one order Back and Next walk. */
+const step = (stage: Stage, section: InitiationSection): Step => ({ stage, phase: "initiation", section, path: `/initiation/${section}` });
+
+/** Every step, in the one order the stages walk. Roles come before the
+ * steps that name them (acceptance, success criteria, escalation), and the
+ * success criteria after the plan, so one can read from data the project
+ * produces. */
 export const STEPS: Step[] = [
-  { stage: "align", phase: "initiation", section: "goals", path: "/initiation/goals" },
-
-  // Beneficiaries first: the problem is stated about somebody, so who
-  // that is gets picked before the sentence that names them is written.
-  { stage: "target", phase: "initiation", section: "beneficiaries", path: "/initiation/beneficiaries" },
-  { stage: "target", phase: "initiation", section: "aim", path: "/initiation/aim" },
-  { stage: "target", phase: "initiation", section: "scope", path: "/initiation/scope" },
-
-  { stage: "refine", phase: "initiation", section: "measures", path: "/initiation/measures" },
-  // Roles come before the two steps that need them. Deliverables asks
-  // who verifies each acceptance criterion and Success asks who tracks
-  // and who confirms each line, so a flow that named roles last left
-  // both of them with an empty picker (Programme Lead, 2026-09-27).
-  { stage: "refine", phase: "initiation", section: "resources", path: "/initiation/resources" },
-  // Stakeholders sit beside roles rather than inside them: what a project
-  // draws on to do the work and who holds power over it are different
-  // relations, and one is not a kind of the other.
-  { stage: "refine", phase: "initiation", section: "stakeholders", path: "/initiation/stakeholders" },
-  { stage: "refine", phase: "initiation", section: "deliverables", path: "/initiation/deliverables" },
-  // The whole standard is written here, in one place, and the closing
-  // and landing screens read their own slice of it (Programme Lead,
-  // 2026-09-27): that closes the gap between the two phases and lets
-  // success be thought about over the longer term.
-  { stage: "refine", phase: "initiation", section: "success", path: "/initiation/success" },
-  { stage: "refine", phase: "closing", section: "closing", path: "/closing" },
-
-  { stage: "polish", phase: "initiation", section: "timeline", path: "/initiation/timeline" },
-  { stage: "polish", phase: "initiation", section: "data", path: "/initiation/data" },
-  { stage: "polish", phase: "initiation", section: "risks", path: "/initiation/risks" },
-  { stage: "polish", phase: "landing", section: "landing", path: "/landing" },
+  step("context", "goals"),
+  // Beneficiaries first: the problem is stated about somebody.
+  step("problem", "beneficiaries"),
+  step("problem", "aim"),
+  step("objectives", "measures"),
+  step("governance", "resources"),
+  step("governance", "stakeholders"),
+  step("scope", "scope"),
+  step("scope", "deliverables"),
+  step("plan", "timeline"),
+  step("plan", "data"),
+  step("plan", "risks"),
+  step("handover", "success"),
+  step("handover", "landing"),
 ];
 
 export function stepsOfStage(stage: Stage): Step[] {
@@ -555,7 +547,7 @@ export function stepsOfStage(stage: Stage): Step[] {
 }
 
 export function stageOfSection(section: string): Stage {
-  return STEPS.find((s) => s.section === section)?.stage ?? "align";
+  return STEPS.find((s) => s.section === section)?.stage ?? "context";
 }
 
 /** The first step of the whole definition: where a new project opens. */

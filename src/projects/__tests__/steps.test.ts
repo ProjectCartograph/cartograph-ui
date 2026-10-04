@@ -9,9 +9,9 @@ import { STAGE_ICON, stepIcon } from "@/projects/steps";
 
 const routesDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../routes/projects/$id");
 
-describe("the four stages of a definition", () => {
-  it("opens on Align, so a project starts from what it is part of", () => {
-    expect(FIRST_STEP.stage).toBe("align");
+describe("the seven stages of a definition", () => {
+  it("opens on its context, so a project starts from what it is part of", () => {
+    expect(FIRST_STEP.stage).toBe("context");
     expect(FIRST_STEP.path).toBe("/initiation/goals");
   });
 
