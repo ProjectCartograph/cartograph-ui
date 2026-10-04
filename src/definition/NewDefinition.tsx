@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AlreadyThere } from "@/components/AlreadyThere";
 import { useNavigate, type LinkProps } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { stringify as stringifyYAML } from "yaml";
@@ -48,6 +49,8 @@ export function NewDefinition({
   firstStep,
   teamField,
   children,
+  initialName,
+  onCreated,
 }: {
   kind: string;
   /** Left out for a kind that belongs to nobody. A Gap is a finding about
@@ -69,12 +72,16 @@ export function NewDefinition({
   teamField?: string;
   /** Any other question the kind asks before it exists, below the team. */
   children?: React.ReactNode;
+  /** A name to start from: the one a placeholder held (TAXONOMY.md D31). */
+  initialName?: string;
+  /** Told the new id once it exists, before the walk opens. */
+  onCreated?: (id: string) => void;
 }) {
   const navigate = useNavigate();
   const client = useClient();
   const { data: teams, isLoading: teamsLoading } = useReferenceOptions("Team");
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName ?? "");
   const [team, setTeam] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -101,6 +108,7 @@ export function NewDefinition({
       return;
     }
     setCreating(false);
+    onCreated?.(id);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     void navigate({ to: firstStep, params: { id } } as any);
   }
@@ -124,6 +132,7 @@ export function NewDefinition({
           placeholder={namePlaceholder}
           autoFocus
         />
+        <AlreadyThere kind={kind} text={name} />
       </div>
 
       {needsTeam ? (

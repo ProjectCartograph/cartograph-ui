@@ -6,7 +6,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { Archive, BookOpen, Bot, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest } from "lucide-react";
+import { Archive, BookOpen, Bot, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -54,7 +54,7 @@ const defineItems = [
   {
     title: copy.rail.strategy,
     icon: MapIcon,
-    to: "/",
+    to: "/strategy",
     params: undefined,
   },
   {
@@ -267,7 +267,7 @@ function useBreadcrumbCrumbs(): Crumb[] {
   }
   if (routeId === "/goals/$id") {
     return [
-      { label: copy.rail.strategy, to: "/" },
+      { label: copy.rail.strategy, to: "/strategy" },
       { label: goalName ?? goalId ?? "" },
     ];
   }
@@ -289,10 +289,13 @@ function useBreadcrumbCrumbs(): Crumb[] {
     return [{ label: manifestKindLabels[kind] ?? kind }];
   }
   if (routeId === "/goals/") {
-    return [{ label: copy.rail.strategy, to: "/" }, { label: copy.strategy.edit }];
+    return [{ label: copy.rail.strategy, to: "/strategy" }, { label: copy.strategy.edit }];
   }
-  // "/" (Strategy) and anything unmatched.
-  return [{ label: copy.rail.strategy }];
+  if (routeId === "/strategy") {
+    return [{ label: copy.rail.strategy }];
+  }
+  // "/" (Home) and anything unmatched.
+  return [{ label: copy.rail.home }];
 }
 
 // Matches SidebarProvider's own SIDEBAR_COOKIE_NAME (components/ui/sidebar.tsx,
@@ -381,6 +384,14 @@ function RootLayout() {
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip={copy.rail.home}>
+                      <Link to="/" activeOptions={{ exact: true }}>
+                        <House />
+                        <span>{copy.rail.home}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
                     <SidebarMenuButton asChild tooltip={copy.rail.new}>
                       <Link to="/new">
                         <Plus />
@@ -391,7 +402,7 @@ function RootLayout() {
                   {defineItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild tooltip={item.title}>
-                        <Link to={item.to} params={item.params} activeOptions={{ exact: item.to === "/" }}>
+                        <Link to={item.to} params={item.params}>
                           <item.icon />
                           <span>{item.title}</span>
                         </Link>

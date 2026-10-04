@@ -208,6 +208,8 @@ export function httpClient(
     graph: (focus) => answer(wire.GET("/graph", { params: { query: focus ? { focus } : {} } })),
     order: () => answer(wire.GET("/order")),
     glossary: () => answer(wire.GET("/glossary", { params: { query: {} } })),
+    understand: (text) => answer(wire.POST("/understand", { body: { text } })),
+    match: (kind, text, level) => answer(wire.POST("/match", { body: { kind, text, ...(level ? { level } : {}) } })),
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
     deleteGoal: (id, reason) =>
       done(wire.DELETE("/manifests/Goal/{id}", { params: { path: { id } }, body: { reason } })),

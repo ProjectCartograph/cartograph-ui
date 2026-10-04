@@ -19,6 +19,8 @@ const every: Record<keyof Client, true> = {
   graph: true,
   order: true,
   glossary: true,
+  understand: true,
+  match: true,
   gapCoverage: true,
   deleteGoal: true,
   projectState: true,

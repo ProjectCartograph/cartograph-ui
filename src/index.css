@@ -55,25 +55,32 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    /* Motion, in one place (engine DESIGN_RULES "The interface
+       answers"): Material 3's standard, entering and leaving easings.
+       Durations follow size: 100 ms for a press or a toggle, 150 ms for a
+       change of colour, 250 ms for a step or a pane, never past 400. */
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
 }
 
 :root {
     /* Where the eye lands (engine docs/DESIGN_RULES.md). The page is a
        quiet ground and the card the work happens on is white, so the
-       focal surface stands off it. One accent hue, primary, marks focus
-       only: the action the view exists for, the selected item and where
-       the person is. Kinds and levels stay neutral. Status has tones of
-       its own, each with one meaning: destructive blocks, warning
-       advises, success is met. */
-    --background: oklch(0.982 0.003 264);
+       focal surface stands off it. Primary is shadcn's own near-black,
+       and it is scarce: the action the view exists for, the selected item
+       and where the person is, as a fill, a tint and a leading bar. Kinds
+       and levels stay neutral. Status has tones of its own, each with one
+       meaning: destructive blocks, warning advises, success is met. */
+    --background: oklch(0.985 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.49 0.2 264);
+    --primary: oklch(0.205 0 0);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.96 0.004 264);
+    --secondary: oklch(0.97 0 0);
     --secondary-foreground: oklch(0.205 0 0);
     --muted: oklch(0.97 0 0);
     --muted-foreground: oklch(0.556 0 0);
@@ -84,9 +91,9 @@
     --success-foreground: oklch(0.985 0 0);
     --warning: oklch(0.7 0.15 65);
     --warning-foreground: oklch(0.27 0.06 60);
-    --border: oklch(0.912 0.004 264);
-    --input: oklch(0.912 0.004 264);
-    --ring: oklch(0.62 0.17 264);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
     /* The risk matrix's four severity levels. The theme's own chart ramp
        carries the same five greys in both modes, so its dark end would sit
        on a dark card almost invisibly; these are stepped per surface
@@ -108,14 +115,14 @@
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
     --radius: 0.625rem;
-    --sidebar: oklch(0.965 0.004 264);
+    --sidebar: oklch(0.97 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.49 0.2 264);
+    --sidebar-primary: oklch(0.205 0 0);
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.97 0 0);
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.62 0.17 264);
+    --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
@@ -125,8 +132,8 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.7 0.16 264);
-    --primary-foreground: oklch(0.16 0.02 264);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
@@ -140,7 +147,7 @@
     --warning-foreground: oklch(0.2 0.04 60);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.6 0.15 264);
+    --ring: oklch(0.556 0 0);
     /* Dark steps are chosen against the dark card, not flipped. */
     --severity-1: oklch(0.28 0 0);
     --severity-2: oklch(0.43 0 0);
@@ -157,12 +164,12 @@
     --chart-5: oklch(0.269 0 0);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.7 0.16 264);
+    --sidebar-primary: oklch(0.922 0 0);
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.6 0.15 264);
+    --sidebar-ring: oklch(0.556 0 0);
 }
 
 /* Where the person is: the sidebar's current section in the accent's
@@ -172,6 +179,22 @@
     background-color: color-mix(in oklch, var(--sidebar-primary) 11%, transparent);
     color: var(--sidebar-primary);
     font-weight: 500;
+}
+
+/* Less motion means no movement, not no answer: under reduced motion
+   every entrance keeps its fade and loses its slide, zoom and spin, and
+   pressing changes colour without shrinking. */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        --tw-enter-translate-x: 0 !important;
+        --tw-enter-translate-y: 0 !important;
+        --tw-enter-scale: 1 !important;
+        --tw-enter-rotate: 0 !important;
+        --tw-exit-translate-x: 0 !important;
+        --tw-exit-translate-y: 0 !important;
+        --tw-exit-scale: 1 !important;
+        --tw-exit-rotate: 0 !important;
+    }
 }
 
 @layer base {

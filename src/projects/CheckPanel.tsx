@@ -83,7 +83,7 @@ export function CheckPanel({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl p-4 ring-1 ring-inset ring-border" data-cartograph-region="checks">
+    <div className="flex flex-col gap-3 rounded-xl p-4 bg-card ring-1 ring-foreground/10" data-cartograph-region="checks">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{cc.title}</h2>
         {/* The state of the section as three marks and three numbers,

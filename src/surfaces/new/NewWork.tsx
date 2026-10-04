@@ -9,7 +9,7 @@ import type { OrderStage } from "@/client/port";
 import { copy } from "@/copy";
 import { entryFor, useGlossary } from "@/components/glossary";
 import { Term } from "@/components/Term";
-import { kindOf, type Ends, type NewKind as Kind, type Size, type Today } from "@/definition/kindOf";
+import { kindOf, type Ends, type InCharge, type NewKind as Kind, type PartOf, type Today } from "@/definition/kindOf";
 import { ChoiceCard } from "@/components/ChoiceCard";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
 
@@ -20,7 +20,7 @@ const STRATEGY = ["purpose", "goal", "objective", "outcome", "kpi", "gap", "assu
 
 /** Where each strategy stage is written. A KPI is added in a dialog here. */
 const WHERE: Record<string, string> = {
-  purpose: "/",
+  purpose: "/strategy",
   goal: "/goals",
   objective: "/goals",
   outcome: "/goals",
@@ -106,7 +106,7 @@ function StageRow({ stage, n, next }: { stage: OrderStage; n: number; next: bool
   return (
     <li
       className={`flex items-center gap-3 rounded-xl transition-colors motion-reduce:transition-none ${
-        next ? "my-1 bg-card p-5 shadow-md ring-2 ring-primary" : "px-3 py-2 ring-1 ring-inset ring-border"
+        next ? "my-1 bg-card p-5 shadow-md ring-2 ring-primary" : "px-3 py-2 bg-card ring-1 ring-foreground/10"
       } ${waiting ? "opacity-55" : ""}`}
       data-cartograph-stage={stage.key}
       data-state={next ? "next" : stage.state}
@@ -152,12 +152,13 @@ function StageRow({ stage, n, next }: { stage: OrderStage; n: number; next: bool
 function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStage>; next?: string; loaded: boolean }) {
   const navigate = useNavigate();
   const [ends, setEnds] = useState<Ends | null>(null);
-  const [answer, setAnswer] = useState<Size | Today | null>(null);
+  const [answer, setAnswer] = useState<InCharge | Today | null>(null);
+  const [partOf, setPartOf] = useState<PartOf | null>(null);
   // Work that finishes serves an outcome, so it waits until the strategy
   // has one. A service waits on nothing: one that runs today is recorded
   // as it is (TAXONOMY.md D30).
   const finishWaits = !loaded || stages.get("project")?.state === "waiting";
-  const kind = ends === "finishes" && finishWaits ? null : kindOf(ends, answer);
+  const kind = ends === "finishes" && finishWaits ? null : kindOf(ends, answer, partOf);
   const stage = kind ? stages.get(STAGE_OF[kind]) : undefined;
   const kindWaits = stage?.state === "waiting";
   const nextName = next ? (nc.stage[next] ?? next) : "";
@@ -172,6 +173,11 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
   function pickEnds(next: Ends) {
     setEnds(next);
     setAnswer(null);
+    setPartOf(null);
+  }
+  function pickInCharge(next: InCharge) {
+    setAnswer(next);
+    setPartOf(null);
   }
 
   return (
@@ -183,7 +189,7 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
       </Question>
 
       {ends === "runs" ? (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-300 motion-reduce:animate-none">
+        <div className="animate-in fade-in slide-in-from-top-2 duration-250 ease-enter">
           <Question label={nc.todayQuestion} region="new-today">
             <ChoiceCard icon={Settings2} title={nc.today} detail={nc.todayDetail} picked={answer === "today"} onPick={() => setAnswer("today")} />
             <ChoiceCard icon={Hourglass} title={nc.isNew} detail={nc.isNewDetail} picked={answer === "new"} onPick={() => setAnswer("new")} />
@@ -199,18 +205,26 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
       ) : null}
 
       {ends === "finishes" ? (
-        <div className={`animate-in fade-in slide-in-from-top-2 duration-300 motion-reduce:animate-none ${finishWaits ? "opacity-60" : ""}`}>
-          <Question label={nc.sizeQuestion} region="new-size" columns={3}>
-            <ChoiceCard icon={FolderKanban} title={nc.one} detail={nc.oneDetail} picked={answer === "one"} disabled={finishWaits} onPick={() => setAnswer("one")} />
-            <ChoiceCard icon={Boxes} title={nc.part} detail={nc.partDetail} picked={answer === "part"} disabled={finishWaits} onPick={() => setAnswer("part")} />
-            <ChoiceCard icon={Layers} title={nc.many} detail={nc.manyDetail} picked={answer === "many"} disabled={finishWaits} onPick={() => setAnswer("many")} />
+        <div className={`animate-in fade-in slide-in-from-top-2 duration-250 ease-enter ${finishWaits ? "opacity-60" : ""}`}>
+          <Question label={nc.inChargeQuestion} region="new-in-charge">
+            <ChoiceCard icon={FolderKanban} title={nc.one} detail={nc.oneDetail} picked={answer === "one"} disabled={finishWaits} onPick={() => pickInCharge("one")} />
+            <ChoiceCard icon={Layers} title={nc.many} detail={nc.manyDetail} picked={answer === "many"} disabled={finishWaits} onPick={() => pickInCharge("many")} />
+          </Question>
+        </div>
+      ) : null}
+
+      {ends === "finishes" && answer === "one" && !finishWaits ? (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-250 ease-enter">
+          <Question label={nc.partOfQuestion} region="new-part-of">
+            <ChoiceCard icon={FolderKanban} title={nc.own} detail={nc.ownDetail} picked={partOf === "own"} onPick={() => setPartOf("own")} />
+            <ChoiceCard icon={Boxes} title={nc.part} detail={nc.partDetail} picked={partOf === "part"} onPick={() => setPartOf("part")} />
           </Question>
         </div>
       ) : null}
 
       {kind ? (
         <div
-          className="flex flex-col gap-3 rounded-xl bg-primary/5 p-4 ring-1 ring-primary/20 animate-in fade-in zoom-in-95 duration-300 motion-reduce:animate-none"
+          className="flex flex-col gap-3 rounded-xl bg-primary/5 p-4 ring-1 ring-primary/20 animate-in fade-in zoom-in-95 duration-250 ease-enter"
           data-slot="new-verdict"
           data-cartograph-region="new-verdict"
           role="status"
@@ -252,11 +266,13 @@ function KindMark({ kind }: { kind: Kind }) {
   return <Icon className="size-5 text-primary" aria-hidden="true" />;
 }
 
-function Question({ label, region, columns = 2, children }: { label: string; region: string; columns?: 2 | 3; children: React.ReactNode }) {
+/** A question answered by picking, its choices one per line so each reads
+ * in full. */
+function Question({ label, region, children }: { label: string; region: string; children: React.ReactNode }) {
   return (
     <fieldset className="flex flex-col gap-3" data-cartograph-region={region}>
       <legend className="mb-3 text-base font-medium">{label}</legend>
-      <div className={`grid gap-3 ${columns === 3 ? "md:grid-cols-3" : "sm:grid-cols-2"}`}>{children}</div>
+      <div className="flex flex-col gap-2">{children}</div>
     </fieldset>
   );
 }

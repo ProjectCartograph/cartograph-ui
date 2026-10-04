@@ -38,7 +38,7 @@ function SectionRail({ id, current }: { id: string; current: InitiationSection }
   const here = stageOfSection(current);
 
   return (
-    <div className="flex w-56 shrink-0 flex-col gap-1" data-cartograph-region="section-rail">
+    <div className="flex w-56 shrink-0 flex-col gap-1 rounded-xl p-2 bg-card ring-1 ring-foreground/10" data-cartograph-region="section-rail">
       {/* The whole walk, not the stage in hand. Somebody filling a
           definition in wants to see what there is to assemble before
           assembling it (Programme Lead, 2026-09-29), and a rail that
@@ -165,7 +165,11 @@ export function InitiationShell({
             <p className="text-sm text-muted-foreground">{pc.record.loading}</p>
           ) : (
             <>
-              {children}
+              {/* The step arrives from the side the walk is heading (engine
+                  DESIGN_RULES "The interface answers"). */}
+              <div key={section} className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-3 duration-250 ease-enter">
+                {children}
+              </div>
               <ProjectSectionNotes section={section} />
             </>
           )}
@@ -190,7 +194,7 @@ function ProjectStep({ id, path, section, isCurrent, state }: { id: string; path
       to={`/projects/$id${path}` as never}
       params={{ id } as never}
       style={sectionRing(shown)}
-      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-150 ease-standard active:bg-muted ${
         isCurrent ? "bg-primary/10 font-medium text-primary shadow-[inset_2px_0_0_var(--color-primary)]" : "text-foreground hover:bg-accent/60"
       }`}
     >

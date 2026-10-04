@@ -319,6 +319,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/understand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Which existing records say what a text a person typed says
+         * @description Across every stage a person writes. Where a decision model is configured (docs/adr/0023), it is asked of each candidate whether the text says the same; without one, available is false and matches come from the words the text shares with existing records. It does not say what kind of thing the text is: measured, the model was not reliable at that, and New's questions are. Nothing is stored.
+         */
+        post: operations["understand"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The existing records of a kind that say what a text says
+         * @description Most likely first: judged by the decision model where one is configured, else by the words they share. For a Goal, level narrows it to one level. Asked before something new is defined, so a record that already says it is offered first.
+         */
+        post: operations["matchExisting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/glossary": {
         parameters: {
             query?: never;
@@ -1101,6 +1141,29 @@ export interface components {
             /** @description The stages it waits on, while it waits. */
             waiting?: string[];
         };
+        Understanding: {
+            /** @description False when no decision model answered; matches are then by the words they share. */
+            available: boolean;
+            matches: components["schemas"]["Match"][];
+        };
+        Match: {
+            kind: string;
+            id: string;
+            name: string;
+            level?: string;
+            /** @description What the record says, beside its name. */
+            detail?: string;
+            /**
+             * Format: double
+             * @description How likely it is to say the same thing, from 0 to 1.
+             */
+            likelihood: number;
+            /**
+             * @description Whether the decision model judged it, or the words the two share.
+             * @enum {string}
+             */
+            by: "model" | "words";
+        };
         GlossaryEntry: {
             /** @description The stage's key in the order of work, or for a register its kind. */
             key: string;
@@ -1533,6 +1596,8 @@ export interface components {
              * @enum {string}
              */
             when: "before" | "after";
+            /** @description True for a before item no record of which exists yet, which is defined first; an agent's draft naming what does not exist is refused. */
+            missing?: boolean;
             kind: string;
             level?: string;
             /** @description What it is needed for, as Kind or Kind (level). */
@@ -2447,6 +2512,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Order"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    understand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    text: string;
+                    locale?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Understanding"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    matchExisting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    kind: string;
+                    level?: string;
+                    text: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Match"][];
                 };
             };
             401: components["responses"]["Unauthenticated"];

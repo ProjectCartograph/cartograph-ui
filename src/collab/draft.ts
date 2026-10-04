@@ -32,13 +32,24 @@ export function valueAt(doc: unknown, pointer: string): unknown {
 }
 
 /** The manifest's metadata and spec, as a store holds them. */
+/** A reference a person could not make yet, because what it names is not
+ * defined yet: the field, the kind and the name of the record still to be
+ * defined (metadata.pending; engine TAXONOMY.md D31). */
+export interface Pending {
+  path: string;
+  kind: string;
+  name: string;
+  note?: string;
+}
+
 export function partsOf<S>(doc: ManifestDocument, blank: () => S) {
-  const metadata = (doc.metadata ?? {}) as { name?: string; alias?: string; labels?: Record<string, string> };
+  const metadata = (doc.metadata ?? {}) as { name?: string; alias?: string; labels?: Record<string, string>; pending?: Pending[] };
   return {
     spec: (doc.spec as S | undefined) ?? blank(),
     name: metadata.name ?? "",
     alias: metadata.alias ?? "",
     labels: metadata.labels ?? {},
+    pending: metadata.pending ?? [],
   };
 }
 

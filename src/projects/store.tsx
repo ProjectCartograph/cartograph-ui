@@ -49,6 +49,7 @@ import { useBlocker } from "@tanstack/react-router";
 import { stringify as stringifyYAML } from "yaml";
 
 import { aliasAfterRename } from "@/alias";
+import type { Pending } from "@/collab/draft";
 import { useClient } from "@/client/context";
 import {
   ClientError,
@@ -144,6 +145,10 @@ interface ProjectStoreApi {
   /** metadata.alias: the short reference people quote this by, which
    * follows the name until somebody changes it (see @/alias). */
   alias: string;
+  /** metadata.pending: references held by a placeholder until what they
+   * name is defined (engine TAXONOMY.md D31). */
+  pending: Pending[];
+  setPending: (next: Pending[]) => void;
   setAlias: (v: string) => void;
   spec: ProjectSpec;
   updateSpec: (updater: (spec: ProjectSpec) => ProjectSpec) => void;
@@ -194,6 +199,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
   const [loadError, setLoadError] = useState(false);
   const [name, setNameState] = useState("");
   const [alias, setAliasState] = useState("");
+  const [pending, setPendingState] = useState<Pending[]>([]);
+  const pendingRef = useRef<Pending[]>([]);
   const [spec, setSpec] = useState<ProjectSpec>(blankProjectSpec());
   const [mapSpec, setMapSpec] = useState<StakeholderMapSpec>(() => blankStakeholderMap(id));
   const [version, setVersion] = useState(0);
@@ -249,6 +256,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     nameRef.current = read.name;
     setAliasState(read.alias);
     aliasRef.current = read.alias;
+    setPendingState(read.pending);
+    pendingRef.current = read.pending;
   }, []);
 
   const hydrateMap = useCallback(
@@ -282,6 +291,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         let loadedSpec: ProjectSpec | undefined;
         let loadedName = "";
         let loadedAlias = "";
+        let loadedPending: Pending[] = [];
         let loadedVersion = 0;
 
         const [manifest, shared, sharedMap] = await Promise.all([
@@ -299,6 +309,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
           loadedSpec = read.spec;
           loadedName = read.name;
           loadedAlias = read.alias;
+          loadedPending = read.pending;
           loadedVersion = (manifest as unknown as { version?: { number: number } } | undefined)?.version?.number ?? 0;
           draftRef.current = shared;
           setDraft(shared);
@@ -307,6 +318,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
           loadedSpec = view.manifest.spec ?? blankProjectSpec();
           loadedName = view.manifest.metadata?.name ?? "";
           loadedAlias = view.manifest.metadata?.alias ?? "";
+          loadedPending = ((view.manifest.metadata as { pending?: Pending[] } | undefined)?.pending ?? []) as Pending[];
           loadedVersion = view.version.number;
         }
 
@@ -322,6 +334,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         nameRef.current = loadedName;
         setAliasState(loadedAlias);
         aliasRef.current = loadedAlias;
+        setPendingState(loadedPending);
+        pendingRef.current = loadedPending;
         setVersion(loadedVersion);
         versionRef.current = loadedVersion;
 
@@ -405,6 +419,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
             id,
             name: nameRef.current.trim() || id,
             ...(aliasRef.current.trim() ? { alias: aliasRef.current.trim() } : {}),
+            ...(pendingRef.current.length ? { pending: pendingRef.current } : {}),
           },
           spec: specRef.current,
         };
@@ -485,6 +500,20 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
       aliasRef.current = v;
       if (draftRef.current) {
         share(draftRef.current, (e) => e.set("/metadata/alias", v));
+        return;
+      }
+      specDirty.current = true;
+      scheduleSave();
+    },
+    [scheduleSave, share],
+  );
+
+  const setPending = useCallback(
+    (v: Pending[]) => {
+      setPendingState(v);
+      pendingRef.current = v;
+      if (draftRef.current) {
+        share(draftRef.current, (e) => e.set("/metadata/pending", v));
         return;
       }
       specDirty.current = true;
@@ -689,6 +718,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     setName,
     alias,
     setAlias,
+    pending,
+    setPending,
     spec,
     updateSpec,
     mapSpec,

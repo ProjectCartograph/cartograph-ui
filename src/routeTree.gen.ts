@@ -15,6 +15,7 @@ import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as ChangesetsIndexRouteImport } from './routes/changesets/index'
 import { Route as ChangesetsIdRouteImport } from './routes/changesets/$id'
 import { Route as GapsIndexRouteImport } from './routes/gaps/index'
@@ -109,6 +110,11 @@ const GraphRoute = GraphRouteImport.update({
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StrategyRoute = StrategyRouteImport.update({
+  id: '/strategy',
+  path: '/strategy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChangesetsIndexRoute = ChangesetsIndexRouteImport.update({
@@ -456,6 +462,7 @@ export interface FileRoutesByFullPath {
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/new': typeof NewRoute
+  '/strategy': typeof StrategyRoute
   '/changesets/$id': typeof ChangesetsIdRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
@@ -529,6 +536,7 @@ export interface FileRoutesByTo {
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/new': typeof NewRoute
+  '/strategy': typeof StrategyRoute
   '/changesets/$id': typeof ChangesetsIdRoute
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
@@ -598,6 +606,7 @@ export interface FileRoutesById {
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/new': typeof NewRoute
+  '/strategy': typeof StrategyRoute
   '/changesets/$id': typeof ChangesetsIdRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
@@ -673,6 +682,7 @@ export interface FileRouteTypes {
     | '/glossary'
     | '/graph'
     | '/new'
+    | '/strategy'
     | '/changesets/$id'
     | '/gaps/$id'
     | '/gaps/new'
@@ -746,6 +756,7 @@ export interface FileRouteTypes {
     | '/glossary'
     | '/graph'
     | '/new'
+    | '/strategy'
     | '/changesets/$id'
     | '/gaps/new'
     | '/goals/$id'
@@ -814,6 +825,7 @@ export interface FileRouteTypes {
     | '/glossary'
     | '/graph'
     | '/new'
+    | '/strategy'
     | '/changesets/$id'
     | '/gaps/$id'
     | '/gaps/new'
@@ -888,6 +900,7 @@ export interface RootRouteChildren {
   GlossaryRoute: typeof GlossaryRoute
   GraphRoute: typeof GraphRoute
   NewRoute: typeof NewRoute
+  StrategyRoute: typeof StrategyRoute
   ChangesetsIdRoute: typeof ChangesetsIdRoute
   GapsIdRoute: typeof GapsIdRouteWithChildren
   GapsNewRoute: typeof GapsNewRoute
@@ -956,6 +969,13 @@ declare module '@tanstack/react-router' {
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/strategy': {
+      id: '/strategy'
+      path: '/strategy'
+      fullPath: '/strategy'
+      preLoaderRoute: typeof StrategyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/changesets/': {
@@ -1554,6 +1574,7 @@ const rootRouteChildren: RootRouteChildren = {
   GlossaryRoute: GlossaryRoute,
   GraphRoute: GraphRoute,
   NewRoute: NewRoute,
+  StrategyRoute: StrategyRoute,
   ChangesetsIdRoute: ChangesetsIdRoute,
   GapsIdRoute: GapsIdRouteWithChildren,
   GapsNewRoute: GapsNewRoute,

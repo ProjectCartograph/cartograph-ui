@@ -67,6 +67,7 @@ const SHEET_KINDS = [
 ];
 const routes = [
   "/",
+  "/strategy",
   "/new",
   "/goals",
   "/projects",

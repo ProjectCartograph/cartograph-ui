@@ -2,6 +2,23 @@
 export const copy = {
   appName: "Cartograph",
   appLine: "Definitions",
+  // The home page: one question, read against the taxonomy and the record
+  // (engine docs/adr/0023).
+  home: {
+    title: "What are you working on?",
+    placeholder: "Describe it in your own words",
+    ask: "Look for it",
+    reading: "Looking through Cartograph",
+    already: "Already in Cartograph",
+    sameWords: "Records with the same words",
+    byMeaning: "Says the same",
+    byWords: "Shares words",
+    open: "Open",
+    nothing: "Nothing in Cartograph says this yet.",
+    defineNew: "Define something new",
+    defineHint: "New asks a few questions and leads you to the right place.",
+    next: "Next in your strategy",
+  },
   // The taxonomy as a dictionary gives it (TAXONOMY.md D29): the word,
   // then the engine's plain sentence and example.
   glossary: {
@@ -314,6 +331,7 @@ export const copy = {
   },
   rail: {
     graph: "Graph",
+    home: "Home",
     new: "New",
     define: "Define",
     work: "Work",
@@ -1350,16 +1368,17 @@ export const copy = {
       running: "Running",
       retired: "Retired",
     } as Record<string, string>,
-    setUp: "Start the project that sets it up",
-    // A planned service, added from the project that sets it up (D30).
-    add: {
-      title: "New planned service",
-      button: "Add a service",
-      save: "Add as planned",
-      reason: "Planned, to be set up by a project",
-      failed: "The service could not be added. Try again.",
+    // The end of a planned service's walk (TAXONOMY.md D30).
+    setUpNext: {
+      title: "Next: the project that sets this service up",
+      saveFirst: "Save the service first. The project names it, so it has to be saved before the project can start.",
+      question: "This service is planned. A project sets it up and hands it over. Start that project now?",
+      now: "Start the project now",
+      later: "Later",
+      laterNote: "If you leave it for later, the service's checks keep asking for the project.",
+      backQuestion: "A project is waiting on this service. Go back to it and name the service there.",
+      back: "Back to the project",
     },
-    setUpShort: "Project to set it up",
     statusHint: "Planned until the project that sets it up hands it over. Running once it is in use. Retired once it stops.",
     subtitle: "",
     empty: "No operations yet.",
@@ -1424,14 +1443,17 @@ export const copy = {
     todayDetail: "Record it as it is. A change to it later is a project that names it.",
     isNew: "No, it is new",
     isNewDetail: "Record it as planned first, then start the project that sets it up.",
-    // For work that finishes: who answers for it (TAXONOMY.md D15).
-    sizeQuestion: "How is the work organised?",
-    one: "As one piece of work",
-    oneDetail: "One accountable person and one budget. One results framework covers all of it.",
-    part: "As a part of an existing project",
-    partDetail: "Under that project's accountable person and budget, counted in its results framework.",
-    many: "As several projects, each with its own person and budget",
-    manyDetail: "Run together towards one change, as a theory of change sets out.",
+    // For work that finishes, one yes or no at a time (TAXONOMY.md D15).
+    inChargeQuestion: "Is one person in charge of all of it, with one budget?",
+    one: "Yes",
+    oneDetail: "One person answers for the whole of the work, and one budget pays for it.",
+    many: "No",
+    manyDetail: "It needs several projects, each with its own person in charge and its own budget.",
+    partOfQuestion: "Is it part of a bigger project?",
+    own: "No, it stands on its own",
+    ownDetail: "It is a project of its own.",
+    part: "Yes, it is one part of a bigger project",
+    partDetail: "It has the same person in charge and the same budget as that project.",
     verdict: {
       project: "This is a project.",
       component: "This is a component of a project.",
@@ -1440,12 +1462,10 @@ export const copy = {
       service: "This is a new service.",
     } as Record<string, string>,
     because: {
-      project:
-        "One accountable person and one budget cover all of it. Its results framework says what it delivers and how success is measured.",
+      project: "One person is in charge of all of it, with one budget, and it stands on its own.",
       component:
-        "It sits under an existing project's accountable person and budget, and counts towards that project's results framework. If it needs its own person or budget, it is a project of its own.",
-      programme:
-        "Its projects each have their own accountable person and budget. The programme runs them together towards one change, set out in its theory of change.",
+        "It is one part of a bigger project, with the same person in charge and the same budget. If it needs its own, it is a project of its own.",
+      programme: "It needs several projects, each with its own person in charge and budget, run together towards one change.",
       operation: "It runs today with no end date. Record it as it is. A change to it later is a project that names it.",
       service:
         "Record the service first, as planned. Then start the project that sets it up: the project names the service, and hands it over when it ends.",
@@ -2407,6 +2427,15 @@ export const copy = {
       operationLabel: "Operation",
       operationPlaceholder: "Choose a service",
       legacyNewOperation: "A new service, not yet defined",
+      // A placeholder for a service not defined yet (TAXONOMY.md D31).
+      notDefinedYet: "Not defined yet",
+      notDefinedYetHint: "Name the service this will land in. You can carry on, and the checks keep it in view until the service is defined and named here.",
+      placeholderName: "Service name",
+      holdItsPlace: "Hold its place",
+      waitingOn: (name: string) => `Waiting on "${name}", a service not defined yet.`,
+      defineIt: "Define it",
+      removePlaceholder: "Remove",
+      nameIt: (name: string) => `Name "${name}" here`,
       confirmedByTitle: "Accepted by",
       confirmedByEmpty: "Name a service owner in Resources: the role that accepts the handover.",
     },

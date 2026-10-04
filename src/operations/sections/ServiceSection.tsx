@@ -1,14 +1,9 @@
-import { Link } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldHeading } from "@/components/guidance";
 import { copy } from "@/copy";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
-import { useReferencing } from "@/operations/api";
 import { STATUS_ICON, statusOf } from "@/operations/status";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import type { OperationSpec } from "../types";
@@ -85,13 +80,12 @@ export function ServiceSection() {
 /**
  * Where the service is in its life (TAXONOMY.md D30): planned while the
  * project that sets it up is under way, running once in use, retired when
- * it stops. A planned service with no project yet offers to start that
- * project, which names the service as where it lands.
+ * it stops. A planned service is defined in full first; the end of its
+ * walk asks for the project that sets it up (SetUpNext).
  */
 function StatusField() {
   const store = useDefinitionStore<OperationSpec>();
   const status = statusOf(store.spec);
-  const setUpBy = useReferencing("Operation", store.id, "Project");
   return (
     <div className="flex flex-col gap-2">
       <FieldHeading label={oc.status.label} hint={oc.statusHint} />
@@ -115,14 +109,6 @@ function StatusField() {
             );
           })}
         </ToggleGroup>
-        {status === "planned" && setUpBy.data && setUpBy.data.length === 0 ? (
-          <Button asChild size="sm" variant="outline" aria-label={oc.setUp}>
-            <Link to="/projects/new" search={{ operation: store.id }} data-slot="set-up-project">
-              <Plus />
-              {oc.setUpShort}
-            </Link>
-          </Button>
-        ) : null}
       </div>
     </div>
   );

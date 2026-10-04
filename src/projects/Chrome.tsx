@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { ProgressRing } from "@/components/ProgressRing";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -39,8 +40,16 @@ export function SaveStatus({ state }: { state: SaveState }) {
           ? pc.header.notSaved
           : pc.header.saved;
   return (
-    <span data-slot="save-status" data-state={state} className={className}>
-      {label}
+    // A save is answered where it happened, quietly (engine DESIGN_RULES
+    // "The interface answers"): each change of state fades in, and a
+    // landed save draws a check, moving nothing else.
+    <span data-slot="save-status" data-state={state} className={`inline-flex items-center gap-1 ${className}`}>
+      {state === "saved" ? (
+        <Check key="saved" className="size-3.5 text-success animate-in fade-in zoom-in-75 duration-200 ease-enter" aria-hidden="true" />
+      ) : null}
+      <span key={state} className="animate-in fade-in duration-150 ease-standard">
+        {label}
+      </span>
     </span>
   );
 }

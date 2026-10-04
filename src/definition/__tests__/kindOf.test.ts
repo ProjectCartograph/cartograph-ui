@@ -3,10 +3,8 @@ import { describe, it, expect } from "vitest";
 import { copy } from "@/copy";
 import { kindOf } from "../kindOf";
 
-// The questions every standard asks first (TAXONOMY.md D14, D15, D30).
-// The case that started this: a national assessment that runs every year
-// is a service, and the work to set one up is a project that hands over to
-// it, recorded after the service it sets up.
+// The questions every standard asks first (TAXONOMY.md D14, D15, D30), one
+// yes-or-no at a time.
 describe("what are you describing", () => {
   it("splits work that keeps running by whether it runs today", () => {
     expect(kindOf("runs", "today")).toBe("operation");
@@ -14,14 +12,16 @@ describe("what are you describing", () => {
     expect(kindOf("runs", "many")).toBeNull();
   });
 
-  it("splits work that finishes by who answers for it", () => {
-    expect(kindOf("finishes", "one")).toBe("project");
-    expect(kindOf("finishes", "part")).toBe("component");
+  it("splits work that finishes by who is in charge, then by whether it is a part", () => {
     expect(kindOf("finishes", "many")).toBe("programme");
-    expect(kindOf("finishes", "today")).toBeNull();
+    expect(kindOf("finishes", "one")).toBeNull();
+    expect(kindOf("finishes", "one", "own")).toBe("project");
+    expect(kindOf("finishes", "one", "part")).toBe("component");
+    // A programme is never asked whether it is a part.
+    expect(kindOf("finishes", "many", "part")).toBe("programme");
   });
 
-  it("waits for the second answer", () => {
+  it("waits for each answer", () => {
     expect(kindOf("finishes", null)).toBeNull();
     expect(kindOf("runs", null)).toBeNull();
     expect(kindOf(null, null)).toBeNull();

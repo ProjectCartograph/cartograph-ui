@@ -62,7 +62,7 @@ describe("New, in the order of work", () => {
     expect(await within(row).findByText("Why your organisation exists.")).toBeTruthy();
     expect(within(row).getByRole("button", { name: copy.glossary.whatIs("Purpose") })).toBeTruthy();
     expect(row.getAttribute("aria-current")).toBe("step");
-    expect(within(row).getAllByRole("link")[0].getAttribute("href")).toBe("/");
+    expect(within(row).getAllByRole("link")[0].getAttribute("href")).toBe("/strategy");
     // Everything below it waits, and says on what.
     const goals = container.querySelector('[data-cartograph-stage="goal"]')!;
     expect(goals.getAttribute("data-state")).toBe("waiting");
@@ -92,17 +92,27 @@ describe("New, in the order of work", () => {
     expect(container.querySelector('[data-cartograph-stage="outcome"]')!.getAttribute("data-state")).toBe("next");
   });
 
-  it("opens the work once there is an outcome to serve, and holds a programme to its gap", async () => {
+  it("opens the work once there is an outcome to serve, one yes or no at a time", async () => {
     const container = renderNew(orderWith(5));
     await screen.findByText("Purpose");
     const work = container.querySelector('[data-cartograph-region="new-work"]') as HTMLElement;
-    fireEvent.click(within(work).getAllByRole("radio")[0]);
-    fireEvent.click(within(work).getAllByRole("radio")[4]);
-    const verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
-    // A programme answers a gap, and none is written yet: it leads there.
+    const radios = () => within(work).getAllByRole("radio");
+    fireEvent.click(radios()[0]);
+    // Not one person in charge with one budget: a programme, which answers
+    // a gap; none is written yet, so it leads there.
+    fireEvent.click(radios()[3]);
+    let verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
+    expect(verdict.textContent).toContain(copy.newWork.verdict.programme);
     expect(within(verdict).getByRole("link").getAttribute("href")).toBe("/gaps/new");
-    // A project needs only the outcome.
-    fireEvent.click(within(work).getAllByRole("radio")[2]);
-    expect((within(verdict).getByRole("button") as HTMLButtonElement).disabled).toBe(false);
+    // One person in charge: then whether it is a part of a bigger project.
+    fireEvent.click(radios()[2]);
+    expect(container.querySelector('[data-cartograph-region="new-verdict"]')).toBeNull();
+    expect(container.querySelector('[data-cartograph-region="new-part-of"]')).not.toBeNull();
+    fireEvent.click(radios()[4]);
+    verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
+    expect(verdict.textContent).toContain(copy.newWork.verdict.project);
+    expect((within(verdict).getByRole("button", { name: new RegExp(copy.newWork.start.project) }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(radios()[5]);
+    expect(container.querySelector('[data-cartograph-region="new-verdict"]')!.textContent).toContain(copy.newWork.verdict.component);
   });
 });

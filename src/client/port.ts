@@ -26,6 +26,8 @@ export type GraphEdge = Schemas["GraphEdge"];
 export type Order = Schemas["Order"];
 export type OrderStage = Schemas["OrderStage"];
 export type GlossaryEntry = Schemas["GlossaryEntry"];
+export type Understanding = Schemas["Understanding"];
+export type Match = Schemas["Match"];
 export type GoalCheck = Schemas["GoalCheck"];
 export type ProgrammeCheck = Schemas["ProgrammeCheck"];
 export type ProjectChecks = Schemas["ProjectChecks"];
@@ -346,6 +348,12 @@ export interface Client {
   /** Every word of the taxonomy, defined plainly with an example, in the
    * order of work (TAXONOMY.md D29). */
   glossary(): Promise<GlossaryEntry[]>;
+  /** What a typed text reads as, by the glossary, and which existing
+   * records say the same; without a decision model, matches by words
+   * only (engine docs/adr/0023). */
+  understand(text: string): Promise<Understanding>;
+  /** The existing records of a kind that say what a text says. */
+  match(kind: string, text: string, level?: string): Promise<Match[]>;
   /** Which part of a gap each piece of work addresses. */
   gapCoverage(id: string): Promise<GapCoverage>;
   /** Deletes a goal nothing references. Throws Refused naming what does. */

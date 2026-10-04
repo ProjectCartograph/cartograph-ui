@@ -55,7 +55,7 @@ export function OutlineStrip({ id, parts, loaded }: { id: string; parts: Outline
         <span className="font-medium">{ac.title}</span>
         <span aria-live="polite" className="ml-auto min-h-4">
           {freshLabel ? (
-            <span className="text-success animate-in fade-in slide-in-from-right-1 duration-300 motion-reduce:animate-none">
+            <span className="text-success animate-in fade-in slide-in-from-right-1 duration-300">
               {ac.done(freshLabel)}
             </span>
           ) : null}
@@ -92,7 +92,7 @@ export function OutlineStrip({ id, parts, loaded }: { id: string; parts: Outline
                         : p.filled
                           ? "bg-success/12 text-success ring-success/35"
                           : "bg-background text-muted-foreground ring-border group-hover:ring-primary/50"
-                    } ${fresh === p.key ? "animate-in zoom-in-75 duration-500 motion-reduce:animate-none" : ""}`}
+                    } ${fresh === p.key ? "animate-in zoom-in-75 duration-500" : ""}`}
                   >
                     <Icon className="size-4" aria-hidden="true" />
                   </span>

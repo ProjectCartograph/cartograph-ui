@@ -53,7 +53,11 @@ export function PhaseShell({
             <p className="text-sm text-muted-foreground">{pc.record.loading}</p>
           ) : (
             <>
-              {children}
+              {/* The step arrives from the side the walk is heading (engine
+                  DESIGN_RULES "The interface answers"). */}
+              <div key={phase} className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-3 duration-250 ease-enter">
+                {children}
+              </div>
               {/* Closing and Landing are one section each, so the phase
                   name is the step the note belongs to. */}
               <ProjectSectionNotes section={phase} />

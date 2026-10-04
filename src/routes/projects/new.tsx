@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { aliasFor } from "@/alias";
+import { AlreadyThere } from "@/components/AlreadyThere";
 import { useClient } from "@/client/context";
 import { ClientError } from "@/client/port";
 import { copy } from "@/copy";
@@ -21,7 +22,8 @@ export const Route = createFileRoute("/projects/new")({
   // project (TAXONOMY.md D14, D15).
   // Arriving from a planned service, the project that sets it up lands in
   // it (TAXONOMY.md D30).
-  validateSearch: (search: Record<string, unknown>): { partOf?: boolean; operation?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { partOf?: boolean; operation?: string; name?: string } => ({
+    ...(typeof search.name === "string" && search.name ? { name: search.name } : {}),
     ...(search.partOf === true || search.partOf === "true" ? { partOf: true } : {}),
     ...(typeof search.operation === "string" && search.operation ? { operation: search.operation } : {}),
   }),
@@ -48,11 +50,11 @@ function slugify(name: string): string {
 function NewProjectPage() {
   const navigate = useNavigate();
   const client = useClient();
-  const { partOf: isComponent, operation } = Route.useSearch();
+  const { partOf: isComponent, operation, name: typed } = Route.useSearch();
   const { data: teams, isLoading: teamsLoading } = useReferenceOptions("Team");
   const [parent, setParent] = useState<string | undefined>(undefined);
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState(typed ?? "");
   const [team, setTeam] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -119,6 +121,7 @@ function NewProjectPage() {
       <div className="flex flex-col gap-2">
         <Label>{nc.nameLabel}</Label>
         <Input data-cartograph-field="/metadata/name" value={name} onChange={(e) => setName(e.target.value)} placeholder={nc.namePlaceholder} autoFocus />
+        <AlreadyThere kind="Project" text={name} />
       </div>
 
       <div className="flex flex-col gap-2">

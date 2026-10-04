@@ -33,7 +33,7 @@ function StepLink({ step, id, isCurrent, state }: { step: DefinitionStep; id: st
       to={step.to}
       params={ID_PARAM(id)}
       style={sectionRing(shown)}
-      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-150 ease-standard active:bg-muted ${
         isCurrent ? "bg-primary/10 font-medium text-primary shadow-[inset_2px_0_0_var(--color-primary)]" : "text-foreground hover:bg-accent/60"
       }`}
     >
@@ -102,6 +102,7 @@ export function DefinitionShell({
   heading,
   subtitle,
   aside,
+  finish,
   children,
 }: {
   /** Where Back goes from the first step. */
@@ -111,6 +112,9 @@ export function DefinitionShell({
   heading: string;
   subtitle: string;
   aside?: ReactNode;
+  /** What the walk ends on, in place of the last step's note: a question
+   * that leads to the next piece of work, where the kind has one. */
+  finish?: ReactNode;
   children: ReactNode;
 }) {
   const store = useDefinitionStore();
@@ -159,7 +163,7 @@ export function DefinitionShell({
       {outline ? <OutlineStrip id={store.id} parts={outline} loaded={store.loaded} /> : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr]">
-        <div className="flex w-full shrink-0 flex-col gap-1 xl:w-56" data-cartograph-region="step-rail">
+        <div className="flex w-full shrink-0 flex-col gap-1 rounded-xl p-2 xl:w-56 bg-card ring-1 ring-foreground/10" data-cartograph-region="step-rail">
           {steps.map((step) => (
             <StepLink key={step.section} step={step} id={store.id} isCurrent={step.section === current} state={bySection.get(step.section)} />
           ))}
@@ -201,7 +205,11 @@ export function DefinitionShell({
             <p className="text-sm text-muted-foreground">{copy.projects.record.loading}</p>
           ) : (
             <>
-              {children}
+              {/* The step arrives from the side the walk is heading (engine
+                  DESIGN_RULES "The interface answers"). */}
+              <div key={current} className="flex flex-col gap-4 animate-in fade-in slide-in-from-right-3 duration-250 ease-enter">
+                {children}
+              </div>
               <ConflictNotes conflicts={store.conflicts} onResolve={store.resolveConflict} />
               {aside}
               {/* The save sits under the step, once, so every kind this
@@ -234,6 +242,7 @@ export function DefinitionShell({
                   <span className="text-sm text-muted-foreground">{copy.definition.lastStep}</span>
                 )}
               </div>
+              {!next && finish ? finish : null}
             </>
           )}
         </div>

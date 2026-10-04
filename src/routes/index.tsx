@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { StrategyView } from "@/surfaces/goals/StrategyView";
+import { Home } from "@/surfaces/home/Home";
 
-// Opening Cartograph opens on the strategy, read top-down (TAXONOMY.md D24);
-// the goal board that edits it lives at /goals.
-export const Route = createFileRoute("/")({ component: StrategyView });
+// Opening Cartograph opens on one question: what are you working on? What
+// a person types is read as a word of the taxonomy, matched against the
+// record, and led to its next step (engine docs/adr/0023).
+export const Route = createFileRoute("/")({ component: Home });

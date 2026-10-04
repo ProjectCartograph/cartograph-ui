@@ -3,12 +3,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { copy } from "@/copy";
 import { NewDefinition } from "@/definition/NewDefinition";
 
-export const Route = createFileRoute("/programmes/new")({ component: NewProgrammePage });
+export const Route = createFileRoute("/programmes/new")({
+  component: NewProgrammePage,
+  // From the home page: the name of what was typed (engine docs/adr/0023).
+  validateSearch: (search: Record<string, unknown>): { name?: string } =>
+    typeof search.name === "string" && search.name ? { name: search.name } : {},
+});
 
 function NewProgrammePage() {
   const c = copy.programmes.newProgramme;
   return (
     <NewDefinition
+      initialName={Route.useSearch().name}
       kind="Programme"
       title={c.title}
       subtitle={c.subtitle}
