@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { ProgressRing } from "@/components/ProgressRing";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
@@ -159,8 +159,17 @@ export function StageStepper({ id, current }: { id: string; current: Stage }) {
   const checks = useProjectChecks(id, true);
   const blocked = new Set((checks.data?.items ?? []).filter((c) => c.state === "block").map((c) => c.section));
   const checked = new Set((checks.data?.items ?? []).map((c) => c.section));
+  // Where the row scrolls sideways (a narrow screen), the stage on screen
+  // is brought into the middle of it, without moving the page.
+  const row = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const scroller = row.current?.parentElement;
+    const here = row.current?.querySelector<HTMLElement>("[data-current-stage]");
+    if (!scroller || !here || scroller.scrollWidth <= scroller.clientWidth) return;
+    scroller.scrollLeft = here.offsetLeft - row.current!.offsetLeft - (scroller.clientWidth - here.offsetWidth) / 2;
+  }, [current, checks.data]);
   return (
-    <div className="flex shrink-0 items-center gap-1.5" data-cartograph-region="stage-stepper">
+    <div ref={row} className="flex shrink-0 items-center gap-1.5" data-cartograph-region="stage-stepper">
       {STAGES.map((stage, i) => {
         const first = stepsOfStage(stage)[0];
         const Icon = STAGE_ICON[stage];
@@ -171,6 +180,7 @@ export function StageStepper({ id, current }: { id: string; current: Stage }) {
             params={{ id }}
             title={pc.stageQuestion[stage]}
             aria-current={stage === current ? "step" : undefined}
+            data-current-stage={stage === current ? "" : undefined}
           >
             <Badge
               variant={stage === current ? "current" : i < currentIdx ? "secondary" : "outline"}

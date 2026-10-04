@@ -35,6 +35,7 @@ import {
   SidebarMenuBadge,
 } from "@/components/ui/sidebar";
 import { copy, manifestKindLabels } from "@/copy";
+import { stageOfSection } from "@/projects/types";
 import { useProjectManifest } from "@/projects/api";
 import { useGoalManifest } from "@/surfaces/goals/api";
 import { PeopleHere } from "@/collab/PeopleHere";
@@ -178,7 +179,10 @@ function useBreadcrumbCrumbs(): Crumb[] {
     ];
     if (routeId !== "/projects/$id/") {
       const section = routeId?.split("/").pop() ?? "";
+      // A step of the walk is shown as its stage, as its page is headed
+      // (TAXONOMY.md D33).
       const sectionLabel =
+        (routeId?.includes("/initiation/") ? copy.projects.stages[stageOfSection(section)] : undefined) ??
         copy.projects.sections[section] ??
         copy.projects.stepper[section as "closing" | "landing"] ??
         // Not steps of the walk: views read off the definition.
@@ -524,14 +528,17 @@ function RootLayout() {
             <Breadcrumb className="min-w-0 flex-1">
               <BreadcrumbList className="flex-nowrap">
                 {crumbs.map((crumb, i) => {
-                  const isLast = i === crumbs.length - 1;
                   return (
                     <Fragment key={`${crumb.label}-${i}`}>
                       {i > 0 ? <BreadcrumbSeparator /> : null}
-                      <BreadcrumbItem className={isLast ? "min-w-0" : "shrink-0"}>
+                      {/* Every crumb shortens before the row overflows, the
+                          ones before the page most. */}
+                      <BreadcrumbItem className="min-w-0">
                         {crumb.to ? (
                           <BreadcrumbLink asChild>
-                            <Link to={crumb.to}>{crumb.label}</Link>
+                            <Link to={crumb.to} className="block max-w-28 truncate sm:max-w-48">
+                              {crumb.label}
+                            </Link>
                           </BreadcrumbLink>
                         ) : (
                           <BreadcrumbPage className="block max-w-64 truncate">{crumb.label}</BreadcrumbPage>

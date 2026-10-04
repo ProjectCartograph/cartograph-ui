@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, FileText, OctagonAlert, Table2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { RailSheet } from "@/components/RailSheet";
 import { copy } from "@/copy";
 import { useProjectChecks } from "./api";
 import { CheckPanel } from "./CheckPanel";
@@ -39,7 +40,7 @@ function SectionRail({ id, current }: { id: string; current: InitiationSection }
   const here = stageOfSection(current);
 
   return (
-    <div className="flex w-56 shrink-0 flex-col gap-1 rounded-xl p-2 bg-card ring-1 ring-foreground/10" data-cartograph-region="section-rail">
+    <div className="flex w-full shrink-0 flex-col gap-1 rounded-xl p-2 bg-card ring-1 ring-foreground/10 xl:w-56" data-cartograph-region="section-rail">
       {/* The whole walk, not the stage in hand. Somebody filling a
           definition in wants to see what there is to assemble before
           assembling it (Programme Lead, 2026-09-29), and a rail that
@@ -148,18 +149,29 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
     <div className="flex flex-col gap-4">
       <ProjectHeaderBar />
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{pc.stages[stage]}</h1>
-          <p className="text-muted-foreground">{pc.stageQuestion[stage]}</p>
+          <p className="text-muted-foreground text-pretty">{pc.stageQuestion[stage]}</p>
         </div>
-        <div className="flex shrink-0 items-start gap-2">
+        <div className="shrink-0">
           <ShowInGraph kind="Project" id={id} />
-          <StageStepper id={id} current={stage} />
         </div>
+      </div>
+      {/* The stages as a row of their own, scrolled sideways when they do
+          not fit; the wide layout has the rail for them instead. */}
+      <div className="-mx-1 overflow-x-auto px-1 pb-1 xl:hidden">
+        <StageStepper id={id} current={stage} />
       </div>
       <AssemblyStrip id={id} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr_18rem]">
-        <SectionRail id={id} current={section} />
+        {/* Beside the page on a wide screen; behind one small button on a
+            narrow one, where the stages across the top show the way. */}
+        <div className="hidden xl:block">
+          <SectionRail id={id} current={section} />
+        </div>
+        <RailSheet current={pc.stages[stage]}>
+          <SectionRail id={id} current={section} />
+        </RailSheet>
         <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>

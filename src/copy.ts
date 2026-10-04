@@ -85,6 +85,8 @@ export const copy = {
     directoryEmpty: (label: string) => `No ${label} declared yet.`,
     directoryEmptyLink: "Add one",
     cancel: "Cancel",
+    // The steps of a walk on a narrow screen, behind one small button.
+    allSteps: "All steps",
   },
   labels: {
     label: "Tags",

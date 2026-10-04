@@ -61,7 +61,8 @@ export function OutlineStrip({ id, parts, loaded }: { id: string; parts: Outline
           ) : null}
         </span>
       </div>
-      <ol className="flex items-center">
+      {/* Scrolled within itself when the parts do not fit the width. */}
+      <ol className="-mx-1 flex items-center overflow-x-auto px-1 pb-1">
         {parts.map((p, i) => {
           const Icon = p.icon;
           const joined = i > 0 && parts[i - 1].filled && p.filled;
@@ -76,7 +77,7 @@ export function OutlineStrip({ id, parts, loaded }: { id: string; parts: Outline
                   />
                 </li>
               ) : null}
-              <li>
+              <li className="shrink-0">
                 <Link
                   to={p.to}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -37,11 +37,11 @@ export function PhaseShell({
   return (
     <div className="flex flex-col gap-4">
       <ProjectHeaderBar />
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
-          <p className="text-muted-foreground">{subtitle}</p>
-        </div>
+      <div className="min-w-0">
+        <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
+        <p className="text-muted-foreground text-pretty">{subtitle}</p>
+      </div>
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
         <StageStepper id={id} current={stageOfSection(phase)} />
       </div>
       <AssemblyStrip id={id} />

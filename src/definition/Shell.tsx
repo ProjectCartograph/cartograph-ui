@@ -12,6 +12,7 @@ import type { GapSpec } from "@/gaps/types";
 import { gapOutline, operationOutline, programmeOutline } from "./outline";
 
 import { Button } from "@/components/ui/button";
+import { RailSheet } from "@/components/RailSheet";
 import { Separator } from "@/components/ui/separator";
 import { copy } from "@/copy";
 import { SaveStatus } from "@/projects/Chrome";
@@ -145,14 +146,55 @@ export function DefinitionShell({
   const prev = idx > 0 ? steps[idx - 1] : undefined;
   const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
 
+  // The steps and what they add up to, shown beside the page or behind
+  // the steps button, whichever the width allows.
+  const rail = (
+    <>
+      {steps.map((step) => (
+        <StepLink key={step.section} step={step} id={store.id} isCurrent={step.section === current} state={bySection.get(step.section)} />
+      ))}
+
+      {/* Not a step: what the steps above add up to. It sat on one
+          step's aside until 2026-09-29, where nobody found it
+          (Programme Lead). */}
+      {FRAMEWORK_ROUTE[store.kind] || CHARTER_ROUTE[store.kind] ? (
+        <>
+          <Separator className="my-1" />
+          {CHARTER_ROUTE[store.kind] ? (
+            <Link
+              to={CHARTER_ROUTE[store.kind]}
+              params={ID_PARAM(store.id)}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-accent/50"
+            >
+              <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span className="truncate">{copy.charter.title}</span>
+            </Link>
+          ) : null}
+          {FRAMEWORK_ROUTE[store.kind] ? (
+            <Link
+              to={FRAMEWORK_ROUTE[store.kind]}
+              params={ID_PARAM(store.id)}
+              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-accent/50"
+            >
+              <Table2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span className="truncate">{copy.framework.title}</span>
+            </Link>
+          ) : null}
+        </>
+      ) : null}
+    </>
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
-          <p className="text-muted-foreground">{subtitle}</p>
+          <p className="text-muted-foreground text-pretty">{subtitle}</p>
         </div>
-        <span className="flex shrink-0 flex-col items-end gap-1 pt-2">
+        {/* Under the title on a narrow screen, so a long status wraps
+            rather than running past the edge. */}
+        <span className="flex min-w-0 max-w-full flex-col gap-1 sm:items-end sm:pt-2">
           {store.loaded ? <ShowInGraph kind={store.kind} id={store.id} /> : null}
           <SaveStatus state={store.saveState} />
           <OfflineNote />
@@ -163,40 +205,14 @@ export function DefinitionShell({
       {outline ? <OutlineStrip id={store.id} parts={outline} loaded={store.loaded} /> : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr]">
-        <div className="flex w-full shrink-0 flex-col gap-1 rounded-xl p-2 xl:w-56 bg-card ring-1 ring-foreground/10" data-cartograph-region="step-rail">
-          {steps.map((step) => (
-            <StepLink key={step.section} step={step} id={store.id} isCurrent={step.section === current} state={bySection.get(step.section)} />
-          ))}
-
-          {/* Not a step: what the steps above add up to. It sat on one
-              step's aside until 2026-09-29, where nobody found it
-              (Programme Lead). */}
-          {FRAMEWORK_ROUTE[store.kind] || CHARTER_ROUTE[store.kind] ? (
-            <>
-              <Separator className="my-1" />
-              {CHARTER_ROUTE[store.kind] ? (
-                <Link
-                  to={CHARTER_ROUTE[store.kind]}
-                  params={ID_PARAM(store.id)}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-accent/50"
-                >
-                  <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <span className="truncate">{copy.charter.title}</span>
-                </Link>
-              ) : null}
-              {FRAMEWORK_ROUTE[store.kind] ? (
-                <Link
-                  to={FRAMEWORK_ROUTE[store.kind]}
-                  params={ID_PARAM(store.id)}
-                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-accent/50"
-                >
-                  <Table2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <span className="truncate">{copy.framework.title}</span>
-                </Link>
-              ) : null}
-            </>
-          ) : null}
+        {/* Beside the page on a wide screen; behind one small button on a
+            narrow one, where the outline across the top shows the way. */}
+        <div className="hidden w-56 shrink-0 flex-col gap-1 rounded-xl p-2 bg-card ring-1 ring-foreground/10 xl:flex" data-cartograph-region="step-rail">
+          {rail}
         </div>
+        <RailSheet current={steps.find((st) => st.section === current)?.label ?? heading}>
+          <div className="flex flex-col gap-1">{rail}</div>
+        </RailSheet>
 
         <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="step">
           {store.loadError ? (
