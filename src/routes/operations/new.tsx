@@ -1,12 +1,28 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Hourglass, Repeat } from "lucide-react";
 
 import { copy } from "@/copy";
 import { NewDefinition } from "@/definition/NewDefinition";
+import { ChoiceCard } from "@/components/ChoiceCard";
 
-export const Route = createFileRoute("/operations/new")({ component: NewOperationPage });
+type Status = "planned" | "running";
 
+export const Route = createFileRoute("/operations/new")({
+  component: NewOperationPage,
+  // Arriving from New's "No, it is new" starts a planned service
+  // (TAXONOMY.md D30); anything else starts one that runs today.
+  validateSearch: (search: Record<string, unknown>): { status?: Status } =>
+    search.status === "planned" ? { status: "planned" } : {},
+});
+
+/** A service, recorded where it is in its life: running today, as when an
+ * organisation brings what it already runs into Cartograph, or planned,
+ * written before the project that sets it up names it (TAXONOMY.md D30). */
 function NewOperationPage() {
   const c = copy.operations.newOperation;
+  const search = Route.useSearch();
+  const [status, setStatus] = useState<Status>(search.status ?? "running");
   return (
     <NewDefinition
       kind="Operation"
@@ -19,8 +35,16 @@ function NewOperationPage() {
       teamPlaceholder={c.teamPlaceholder}
       createLabel={c.create}
       errorLabel={c.generalError}
-      specFrom={(_name, team) => ({ purpose: "", team })}
+      specFrom={(_name, team) => ({ purpose: "", status, team })}
       firstStep="/operations/$id/service"
-    />
+    >
+      <fieldset className="flex flex-col gap-2" data-cartograph-field="/spec/status">
+        <legend className="mb-2 text-sm font-medium">{c.statusQuestion}</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ChoiceCard icon={Repeat} title={c.running} detail={c.runningDetail} picked={status === "running"} onPick={() => setStatus("running")} />
+          <ChoiceCard icon={Hourglass} title={c.planned} detail={c.plannedDetail} picked={status === "planned"} onPick={() => setStatus("planned")} />
+        </div>
+      </fieldset>
+    </NewDefinition>
   );
 }

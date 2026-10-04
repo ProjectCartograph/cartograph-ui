@@ -1,10 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 
+import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { Help } from "@/components/guidance";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
+import { ServiceAddDialog } from "@/operations/ServiceAddDialog";
 import { PhaseShell } from "@/projects/PhaseShell";
 import { useResourceNames } from "@/projects/RoleRefPicker";
 import { LandingSection } from "@/projects/sections/LandingSection";
@@ -16,30 +19,42 @@ export const Route = createFileRoute("/projects/$id/landing")({ component: Page 
 
 const lc = copy.projects.landing;
 
-/** "Lands in" (card §2, Landing): a Combobox of Operation whose first
- * choice is "Define a new operation alongside" -- the manifest stores the
- * literal id "new", and this option list is the only place that ever maps
- * it to that label, so the field never shows the raw word "new" the way a
- * plain ReferenceField's own unknown-id fallback would. */
+/**
+ * "Lands in": the service that runs the result. A service that does not
+ * run yet is added here as planned, then named, so the project lands in
+ * something that exists (TAXONOMY.md D30). Projects saved before that
+ * named the literal "new"; it still reads, under its own label, and is
+ * offered to nobody else.
+ */
 function LandsInField() {
   const store = useProjectStore();
   const { data } = useReferenceOptions("Operation");
+  const [adding, setAdding] = useState(false);
+  const current = store.spec.operation || undefined;
 
   const options = useMemo<RefOption[]>(
-    () => [{ value: NEW_OPERATION_ID, label: lc.defineNewOperation }, ...(data?.options ?? [])],
-    [data],
+    () => [...(current === NEW_OPERATION_ID ? [{ value: NEW_OPERATION_ID, label: lc.legacyNewOperation }] : []), ...(data?.options ?? [])],
+    [data, current],
   );
+  const set = (next?: string) => store.updateSpec((s) => ({ ...s, operation: next ?? "" }));
   return (
-    <Combobox
-      options={options}
-      value={store.spec.operation || undefined}
-      onValueChange={(next) => store.updateSpec((s) => ({ ...s, operation: next ?? "" }))}
-      placeholder={lc.operationPlaceholder}
-      emptyText={copy.sheets.dialog.noMatches}
-      clearLabel={copy.common.clear}
-      aria-label={lc.landsInTitle}
-      data-cartograph-field="/spec/operation"
-    />
+    <div className="flex items-center gap-2">
+      <Combobox
+        options={options}
+        value={current}
+        onValueChange={set}
+        placeholder={lc.operationPlaceholder}
+        emptyText={copy.sheets.dialog.noMatches}
+        clearLabel={copy.common.clear}
+        aria-label={lc.landsInTitle}
+        data-cartograph-field="/spec/operation"
+      />
+      <Button type="button" variant="outline" size="sm" onClick={() => setAdding(true)} aria-label={copy.operations.add.button}>
+        <Plus />
+        {plusNoun(copy.operations.add.button)}
+      </Button>
+      <ServiceAddDialog open={adding} onOpenChange={setAdding} onAdded={(id) => set(id)} />
+    </div>
   );
 }
 

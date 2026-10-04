@@ -20,6 +20,7 @@ import {
 
 import { useClient } from "@/client/context";
 import { copy } from "@/copy";
+import { STATUS_ICON, statusOf, type ServiceStatus } from "@/operations/status";
 import { useGoalTree } from "@/surfaces/goals/api";
 import type { GoalNode } from "@/surfaces/goals/tree-types";
 import { Fact, Mark, type ExplorerRow } from "./Explorer";
@@ -212,6 +213,7 @@ export function useOperationRows(): { rows: ExplorerRow[]; loading: boolean } {
       folder: [teams.get(str(s.team)) ?? (str(s.team) || rc.noTeam)],
       marks: (
         <>
+          <StatusMark status={statusOf(s)} />
           <Mark icon={UserRound} label={rc.serviceOwner} on={!!str(s.serviceOwner)} />
           <Mark icon={Clock} label={rc.serviceHours} on={!!str(s.serviceWindow)} />
           <Mark icon={Gauge} label={rc.kpis} n={strs(s.kpis).length} />
@@ -221,6 +223,9 @@ export function useOperationRows(): { rows: ExplorerRow[]; loading: boolean } {
       preview: (
         <div className="flex flex-col gap-3">
           <Text>{capital(str(s.purpose))}</Text>
+          <Fact icon={STATUS_ICON[statusOf(s)]} label={copy.operations.status.label}>
+            {copy.operations.status[statusOf(s)]}
+          </Fact>
           <Fact icon={UserRound} label={rc.serviceOwner}>{resources.get(str(s.serviceOwner)) ?? str(s.serviceOwner)}</Fact>
           <Fact icon={Clock} label={rc.serviceHours}>{str(s.serviceWindow)}</Fact>
           <Fact icon={Gauge} label={rc.kpis}>{names(strs(s.kpis), kpis)}</Fact>
@@ -230,6 +235,24 @@ export function useOperationRows(): { rows: ExplorerRow[]; loading: boolean } {
     };
   });
   return { rows, loading: q.isLoading };
+}
+
+/** A service's status as a row's first mark (TAXONOMY.md D30): planned
+ * and retired stand out, running reads as the usual case. */
+function StatusMark({ status }: { status: ServiceStatus }) {
+  const I = STATUS_ICON[status];
+  const text = `${copy.operations.status.label}: ${copy.operations.status[status]}`;
+  return (
+    <span
+      className={`flex items-center ${status === "running" ? "opacity-60" : "text-primary"}`}
+      aria-label={text}
+      title={text}
+      role="img"
+      data-status={status}
+    >
+      <I className="size-3.5" aria-hidden="true" />
+    </span>
+  );
 }
 
 // -------------------------------------------------------------------- Gaps

@@ -2,6 +2,43 @@
 export const copy = {
   appName: "Cartograph",
   appLine: "Definitions",
+  // The taxonomy as a dictionary gives it (TAXONOMY.md D29): the word,
+  // then the engine's plain sentence and example.
+  glossary: {
+    title: "Glossary",
+    subtitle: "The words Cartograph uses, in the order you meet them.",
+    strategy: "Strategy",
+    work: "Work",
+    registers: "Shared lists",
+    example: "Example",
+    comesAfter: (words: string) => `Comes after ${words}`,
+    whatIs: (word: string) => `What "${word}" means`,
+    term: {
+      purpose: "Purpose",
+      goal: "Goal",
+      objective: "Objective",
+      outcome: "Outcome",
+      kpi: "Indicator",
+      gap: "Gap",
+      assumption: "Assumption",
+      programme: "Programme",
+      operation: "Operation",
+      project: "Project",
+      stakeholders: "Stakeholder map",
+      Team: "Team",
+      Resource: "Resource",
+      Unit: "Unit",
+      ReportingCycle: "Reporting cycle",
+      Segment: "Segment",
+      DataSource: "Data source",
+      FundingSource: "Budget",
+      BeneficiaryGroup: "Beneficiary group",
+      KPIReadings: "Readings",
+      component: "Component",
+      "results framework": "Results framework",
+      "theory of change": "Theory of change",
+    } as Record<string, string>,
+  },
   guidance: {
     examples: "Examples",
     examplesTitle: "Examples",
@@ -14,6 +51,7 @@ export const copy = {
     clear: "Clear",
     directoryEmpty: (label: string) => `No ${label} declared yet.`,
     directoryEmptyLink: "Add one",
+    cancel: "Cancel",
   },
   labels: {
     label: "Tags",
@@ -292,6 +330,7 @@ export const copy = {
     kpis: "Indicators",
     changes: "Changes",
     sheets: "Sheets",
+    glossary: "Glossary",
     help: "Help",
   },
   explorer: {
@@ -434,6 +473,7 @@ export const copy = {
     empty: "Nothing here yet.",
     noResults: "Nothing matches the current search and filters.",
     add: "Add",
+    addNamed: (kind: string) => `Add ${kind.toLowerCase()}`,
     edit: "Edit",
     searchPlaceholder: "Search by name",
     // "{field}: any", e.g. "Active: any", "Category: any". Never a bare "Any".
@@ -732,6 +772,7 @@ export const copy = {
       wrongLevel: (level: string, parentLevel: string) => `Wrong level: ${level} under ${parentLevel}`,
       title: "Arrange",
       subtitle: "",
+      levelsLegend: "Levels",
       loading: "Loading the strategy.",
       error: "The strategy could not be loaded.",
       emptyTitle: "No goals yet.",
@@ -1193,6 +1234,7 @@ export const copy = {
     } as Record<string, string>,
   },
   kpis: {
+    newLink: "New indicator",
     title: "Indicators",
     subtitle: "",
     empty: "No indicators yet.",
@@ -1294,7 +1336,31 @@ export const copy = {
       teamPlaceholder: "Choose a team",
       create: "Start",
       generalError: "This could not be started. Try again.",
+      // A service is recorded where it is in its life (TAXONOMY.md D30).
+      statusQuestion: "Does it run today?",
+      running: "Yes, it runs today",
+      runningDetail: "Record it as it is. Changes to it later are projects.",
+      planned: "No, it is new",
+      plannedDetail: "Record it as planned, then start the project that sets it up.",
     },
+    // Where a service is in its life (TAXONOMY.md D30).
+    status: {
+      label: "Status",
+      planned: "Planned",
+      running: "Running",
+      retired: "Retired",
+    } as Record<string, string>,
+    setUp: "Start the project that sets it up",
+    // A planned service, added from the project that sets it up (D30).
+    add: {
+      title: "New planned service",
+      button: "Add a service",
+      save: "Add as planned",
+      reason: "Planned, to be set up by a project",
+      failed: "The service could not be added. Try again.",
+    },
+    setUpShort: "Project to set it up",
+    statusHint: "Planned until the project that sets it up hands it over. Running once it is in use. Retired once it stops.",
     subtitle: "",
     empty: "No operations yet.",
     newLink: "New operation",
@@ -1340,15 +1406,6 @@ export const copy = {
       project: "Projects",
       stakeholders: "Stakeholder maps",
     } as Record<string, string>,
-    stageDetail: {
-      purpose: "The vision and mission every goal serves.",
-      goal: "The long-term aims.",
-      objective: "The specific aims under each goal.",
-      outcome: "The states that will be true once an objective is met.",
-      kpi: "How each aim is measured.",
-      gap: "How far things are from an outcome, on its indicator.",
-      assumption: "What has to hold for the work to lead where it should.",
-    } as Record<string, string>,
     count: (n: number) => `${n} written`,
     startHere: "Start here",
     optional: "Optional",
@@ -1358,33 +1415,47 @@ export const copy = {
     goTo: (stage: string) => `Go to ${stage}`,
     endsQuestion: "Does this work finish?",
     finishes: "Yes, it finishes",
-    finishesDetail: "It builds or changes something, then hands it over.",
+    finishesDetail: "The work builds or changes something, and ends when the result is handed over.",
     runs: "No, it keeps running",
-    runsDetail: "A service that runs every day, term or year.",
-    sizeQuestion: "Can one team, with one sponsor and one budget, deliver it?",
-    one: "Yes",
-    oneDetail: "One piece of work with one objective.",
-    part: "Yes, as part of a bigger project",
-    partDetail: "A piece of a project that shares its sponsor and budget.",
-    many: "No, it needs several pieces of work",
-    manyDetail: "Several projects and services steered towards one change.",
+    runsDetail: "A service you provide every day, season or year, with no end date.",
+    // For a service (TAXONOMY.md D30).
+    todayQuestion: "Does the service run today?",
+    today: "Yes, it runs today",
+    todayDetail: "Record it as it is. A change to it later is a project that names it.",
+    isNew: "No, it is new",
+    isNewDetail: "Record it as planned first, then start the project that sets it up.",
+    // For work that finishes: who answers for it (TAXONOMY.md D15).
+    sizeQuestion: "How is the work organised?",
+    one: "As one piece of work",
+    oneDetail: "One accountable person and one budget. One results framework covers all of it.",
+    part: "As a part of an existing project",
+    partDetail: "Under that project's accountable person and budget, counted in its results framework.",
+    many: "As several projects, each with its own person and budget",
+    manyDetail: "Run together towards one change, as a theory of change sets out.",
     verdict: {
       project: "This is a project.",
       component: "This is a component of a project.",
       programme: "This is a programme.",
-      operation: "This is an operation.",
+      operation: "This is a running service.",
+      service: "This is a new service.",
     } as Record<string, string>,
     because: {
-      project: "It finishes, and one team can deliver it.",
-      component: "It finishes, and it shares a bigger project's sponsor and budget.",
-      programme: "It needs several pieces of work steered together towards one change.",
-      operation: "It keeps running. Work to set it up or change it is a project that hands over to it.",
+      project:
+        "One accountable person and one budget cover all of it. Its results framework says what it delivers and how success is measured.",
+      component:
+        "It sits under an existing project's accountable person and budget, and counts towards that project's results framework. If it needs its own person or budget, it is a project of its own.",
+      programme:
+        "Its projects each have their own accountable person and budget. The programme runs them together towards one change, set out in its theory of change.",
+      operation: "It runs today with no end date. Record it as it is. A change to it later is a project that names it.",
+      service:
+        "Record the service first, as planned. Then start the project that sets it up: the project names the service, and hands it over when it ends.",
     } as Record<string, string>,
     start: {
       project: "Start the project",
       component: "Start the component",
       programme: "Start the programme",
-      operation: "Start the operation",
+      operation: "Record the service",
+      service: "Record the planned service",
     } as Record<string, string>,
   },
   programmes: {
@@ -2332,10 +2403,10 @@ export const copy = {
       heading: "Handover",
       subtitle: "",
       landsInTitle: "Handed over to",
-      landsInHint: "The operation that runs the result.",
+      landsInHint: "The service that runs the result. A service that does not run yet is added here as planned.",
       operationLabel: "Operation",
-      operationPlaceholder: "Choose an operation, or start a new one",
-      defineNewOperation: "Define a new operation alongside",
+      operationPlaceholder: "Choose a service",
+      legacyNewOperation: "A new service, not yet defined",
       confirmedByTitle: "Accepted by",
       confirmedByEmpty: "Name a service owner in Resources: the role that accepts the handover.",
     },
@@ -2364,3 +2435,15 @@ export const manifestKindLabels: Record<string, string> = {
   Operation: copy.rail.operations,
   KPI: copy.rail.kpis,
 };
+
+/**
+ * What an add button shows beside its "+": the noun alone, so "Add a key
+ * result" reads "+ Key result" and "Record a gap" reads "+ Gap", as a file
+ * explorer's new-item buttons do. The full phrase stays the button's
+ * accessible name.
+ */
+export function plusNoun(label: string): string {
+  const m = /^(?:Add|Record|New|Name|Start|Create)\s+(?:a |an |the |one |another )?(.+)$/i.exec(label);
+  if (!m) return label;
+  return m[1].charAt(0).toUpperCase() + m[1].slice(1);
+}

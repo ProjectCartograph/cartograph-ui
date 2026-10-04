@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Explorer } from "@/components/explorer/Explorer";
 import { useGapRows } from "@/components/explorer/registers";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { UnappliedBar } from "@/surfaces/sheet/Unapplied";
 
 export const Route = createFileRoute("/gaps/")({ component: Page });
@@ -21,7 +21,14 @@ function Page() {
         rows={rows}
         loading={loading}
         route="/gaps/$id"
-        action={<Button asChild><Link to="/gaps/new">{copy.gaps.newLink}</Link></Button>}
+        action={
+          <Button asChild aria-label={copy.gaps.newLink}>
+            <Link to="/gaps/new">
+              <Plus />
+              {plusNoun(copy.gaps.newLink)}
+            </Link>
+          </Button>
+        }
       />
     </div>
   );

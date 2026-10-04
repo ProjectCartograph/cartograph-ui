@@ -47,6 +47,7 @@ export function NewDefinition({
   specFrom,
   firstStep,
   teamField,
+  children,
 }: {
   kind: string;
   /** Left out for a kind that belongs to nobody. A Gap is a finding about
@@ -66,6 +67,8 @@ export function NewDefinition({
   firstStep: LinkProps["to"];
   /** Where the team picked here is written in the new spec, by JSON pointer. */
   teamField?: string;
+  /** Any other question the kind asks before it exists, below the team. */
+  children?: React.ReactNode;
 }) {
   const navigate = useNavigate();
   const client = useClient();
@@ -137,6 +140,8 @@ export function NewDefinition({
           />
         </div>
       ) : null}
+
+      {children}
 
       <div className="flex items-center justify-end gap-3 pt-2">
         <Button type="button" size="lg" onClick={handleCreate} disabled={!canCreate || creating}>

@@ -162,8 +162,11 @@ describe("the add dialog asks the five questions", () => {
 
   it("walks the outcome, the measure, the method, the tracker and the confirmer", async () => {
     await openAdd();
+    // Read inside the dialog: the add button behind it is named by a noun
+    // too ("+ Criterion").
+    const dialog = screen.getByRole("dialog");
     for (const step of [dlg.step1, dlg.step2, dlg.step4, dlg.step5]) {
-      expect(screen.getByText(step)).toBeInTheDocument();
+      expect(within(dialog).getByText(step)).toBeInTheDocument();
     }
     // Step three only applies once something is being measured.
     expect(screen.queryByText(dlg.step3)).toBeNull();

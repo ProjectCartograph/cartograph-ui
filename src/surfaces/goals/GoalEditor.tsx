@@ -21,7 +21,7 @@ import { useClient } from "@/client/context";
 import { ConflictNotes } from "@/collab/ConflictNotes";
 import { OfflineNote } from "@/collab/OfflineNote";
 import { useDraftState, useSharedManifest } from "@/collab/draft";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { ErrorAlert } from "@/components/error-alert";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
 import { ShowInGraph } from "@/graph/ShowInGraph";
@@ -431,9 +431,9 @@ export function GoalEditor({ id }: { id: string }) {
                   variant="outline"
                   className="self-start border-dashed"
                   onClick={() => setKrDialog({ open: true, existing: undefined })}
-                >
+                 aria-label={ec.keyResults.add}>
                   <Plus />
-                  {ec.keyResults.add}
+                  {plusNoun(ec.keyResults.add)}
                 </Button>
               </div>
             </div>
@@ -548,9 +548,9 @@ export function GoalEditor({ id }: { id: string }) {
                 size="sm"
                 className="self-start"
                 onClick={() => setLinks((ls) => [...ls, { goal: "" }])}
-              >
+               aria-label={ec.contributesTo.add}>
                 <Plus />
-                {ec.contributesTo.add}
+                {plusNoun(ec.contributesTo.add)}
               </Button>
             </div>
           ) : null}

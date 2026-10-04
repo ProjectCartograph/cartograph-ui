@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldHeading } from "@/components/guidance";
 import { Textarea } from "@/components/ui/textarea";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { ContextRecap } from "../ContextRecap";
 import { useSectionAutosave, useProjectStore } from "../store";
 
@@ -71,9 +71,9 @@ function ScopeList({
           size="sm"
           className="self-start border-dashed"
           onClick={() => onChange([...items, ""])}
-        >
+         aria-label={sc.addSentence}>
           <Plus />
-          {sc.addSentence}
+          {plusNoun(sc.addSentence)}
         </Button>
       </div>
     </div>

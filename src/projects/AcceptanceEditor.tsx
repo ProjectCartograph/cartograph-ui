@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { NameRoleDialog } from "./NameRoleDialog";
 import { RoleRefPicker, roleOptions, type RoleOption, useResourceNames } from "./RoleRefPicker";
 import { useProjectStore } from "./store";
@@ -147,7 +147,7 @@ export function AcceptanceEditor({ index }: { index: number }) {
         aria-label={dc.addAcceptance}
       >
         <Plus />
-        {dc.addAcceptanceShort}
+        {plusNoun(dc.addAcceptanceShort)}
       </Button>
       <NameRoleDialog
         open={addRoleFor !== null}

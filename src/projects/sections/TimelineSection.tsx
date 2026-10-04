@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { MonthPicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { useSectionAutosave, useProjectStore } from "../store";
 import { addTimelineMonths as addMonths, timelineMonthIndex as monthIndex, type TimelinePhase } from "../types";
 import { seg } from "../field";
@@ -233,9 +233,9 @@ export function TimelineSection() {
             </span>
           </div>
         ))}
-        <Button type="button" variant="outline" className="self-start border-dashed" onClick={addPhase}>
+        <Button type="button" variant="outline" className="self-start border-dashed" onClick={addPhase} aria-label={tc.addPhase}>
           <Plus />
-          {tc.addPhase}
+          {plusNoun(tc.addPhase)}
         </Button>
       </div>
     </div>

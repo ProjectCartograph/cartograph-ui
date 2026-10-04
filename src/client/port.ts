@@ -25,6 +25,7 @@ export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
 export type Order = Schemas["Order"];
 export type OrderStage = Schemas["OrderStage"];
+export type GlossaryEntry = Schemas["GlossaryEntry"];
 export type GoalCheck = Schemas["GoalCheck"];
 export type ProgrammeCheck = Schemas["ProgrammeCheck"];
 export type ProjectChecks = Schemas["ProjectChecks"];
@@ -342,6 +343,9 @@ export interface Client {
   /** The order of work (TAXONOMY.md D28): each stage of the strategy, how
    * far the workspace has got, and which to write now. */
   order(): Promise<Order>;
+  /** Every word of the taxonomy, defined plainly with an example, in the
+   * order of work (TAXONOMY.md D29). */
+  glossary(): Promise<GlossaryEntry[]>;
   /** Which part of a gap each piece of work addresses. */
   gapCoverage(id: string): Promise<GapCoverage>;
   /** Deletes a goal nothing references. Throws Refused naming what does. */

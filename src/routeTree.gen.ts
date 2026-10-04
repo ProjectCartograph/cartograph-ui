@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccessRouteImport } from './routes/access'
 import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as ChangesetsIndexRouteImport } from './routes/changesets/index'
@@ -93,6 +94,11 @@ const AccessRoute = AccessRouteImport.update({
 const AgentsRoute = AgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GlossaryRoute = GlossaryRouteImport.update({
+  id: '/glossary',
+  path: '/glossary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GraphRoute = GraphRouteImport.update({
@@ -447,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/new': typeof NewRoute
   '/changesets/$id': typeof ChangesetsIdRoute
@@ -519,6 +526,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/new': typeof NewRoute
   '/changesets/$id': typeof ChangesetsIdRoute
@@ -587,6 +595,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/new': typeof NewRoute
   '/changesets/$id': typeof ChangesetsIdRoute
@@ -661,6 +670,7 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/glossary'
     | '/graph'
     | '/new'
     | '/changesets/$id'
@@ -733,6 +743,7 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/glossary'
     | '/graph'
     | '/new'
     | '/changesets/$id'
@@ -800,6 +811,7 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/glossary'
     | '/graph'
     | '/new'
     | '/changesets/$id'
@@ -873,6 +885,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccessRoute: typeof AccessRoute
   AgentsRoute: typeof AgentsRoute
+  GlossaryRoute: typeof GlossaryRoute
   GraphRoute: typeof GraphRoute
   NewRoute: typeof NewRoute
   ChangesetsIdRoute: typeof ChangesetsIdRoute
@@ -922,6 +935,13 @@ declare module '@tanstack/react-router' {
       path: '/agents'
       fullPath: '/agents'
       preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/glossary': {
+      id: '/glossary'
+      path: '/glossary'
+      fullPath: '/glossary'
+      preLoaderRoute: typeof GlossaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/graph': {
@@ -1531,6 +1551,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccessRoute: AccessRoute,
   AgentsRoute: AgentsRoute,
+  GlossaryRoute: GlossaryRoute,
   GraphRoute: GraphRoute,
   NewRoute: NewRoute,
   ChangesetsIdRoute: ChangesetsIdRoute,

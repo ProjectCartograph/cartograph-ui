@@ -4,7 +4,7 @@ import { Plus, Tag, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 
 const lc = copy.labels;
 
@@ -109,9 +109,9 @@ export function LabelsEditor({
             }
           }}
         />
-        <Button type="button" variant="outline" size="sm" onClick={add} disabled={!key.trim()}>
+        <Button type="button" variant="outline" size="sm" onClick={add} disabled={!key.trim()} aria-label={lc.add}>
           <Plus />
-          {lc.add}
+          {plusNoun(lc.add)}
         </Button>
       </div>
     </div>

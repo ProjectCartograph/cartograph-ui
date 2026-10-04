@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { VocabOption } from "@/components/vocab";
 import { DependencyEdgeEditor } from "./DependencyEdgeEditor";
 import { seg } from "./field";
@@ -193,7 +193,7 @@ export function RiskList({
         aria-label={rc.add}
       >
         <Plus />
-        {rc.addShort}
+        {plusNoun(rc.addShort)}
       </Button>
     </div>
   );

@@ -19,8 +19,12 @@ export const Route = createFileRoute("/projects/new")({
   component: NewProjectPage,
   // Arriving from "What are you describing?" as a component of a bigger
   // project (TAXONOMY.md D14, D15).
-  validateSearch: (search: Record<string, unknown>): { partOf?: boolean } =>
-    search.partOf === true || search.partOf === "true" ? { partOf: true } : {},
+  // Arriving from a planned service, the project that sets it up lands in
+  // it (TAXONOMY.md D30).
+  validateSearch: (search: Record<string, unknown>): { partOf?: boolean; operation?: string } => ({
+    ...(search.partOf === true || search.partOf === "true" ? { partOf: true } : {}),
+    ...(typeof search.operation === "string" && search.operation ? { operation: search.operation } : {}),
+  }),
 });
 
 const nc = copy.projects.newProject;
@@ -44,7 +48,7 @@ function slugify(name: string): string {
 function NewProjectPage() {
   const navigate = useNavigate();
   const client = useClient();
-  const { partOf: isComponent } = Route.useSearch();
+  const { partOf: isComponent, operation } = Route.useSearch();
   const { data: teams, isLoading: teamsLoading } = useReferenceOptions("Team");
   const [parent, setParent] = useState<string | undefined>(undefined);
 
@@ -69,6 +73,7 @@ function NewProjectPage() {
         summary: { problems: [{ problem: {}, change: {} }] },
         team,
         ...(isComponent && parent ? { alignment: { partOf: parent } } : {}),
+        ...(operation ? { operation } : {}),
       },
     };
     let saved = true;

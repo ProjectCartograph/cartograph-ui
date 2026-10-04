@@ -207,6 +207,7 @@ export function httpClient(
     goalTree: () => answer(wire.GET("/goals/tree")),
     graph: (focus) => answer(wire.GET("/graph", { params: { query: focus ? { focus } : {} } })),
     order: () => answer(wire.GET("/order")),
+    glossary: () => answer(wire.GET("/glossary", { params: { query: {} } })),
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
     deleteGoal: (id, reason) =>
       done(wire.DELETE("/manifests/Goal/{id}", { params: { path: { id } }, body: { reason } })),

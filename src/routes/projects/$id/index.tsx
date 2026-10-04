@@ -101,7 +101,7 @@ function summarizeSection(section: string, store: ReturnType<typeof useProjectSt
     case "landing": {
       const n = (spec.successCriteria ?? []).filter((c) => c.when !== "atClosing").length;
       if (!spec.operation) return rc.sectionsEmpty;
-      const operationLabel = spec.operation === NEW_OPERATION_ID ? copy.projects.landing.defineNewOperation : spec.operation;
+      const operationLabel = spec.operation === NEW_OPERATION_ID ? copy.projects.landing.legacyNewOperation : spec.operation;
       return `${operationLabel} · ${n} test line${n === 1 ? "" : "s"}`;
     }
     default:

@@ -3,7 +3,7 @@ import { Pencil, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Help } from "@/components/guidance";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { VocabMark } from "@/components/vocab";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { roleOptions, roleRefLabel, type RoleOption, useResourceNames } from "../RoleRefPicker";
@@ -169,9 +169,9 @@ export function SuccessSection() {
               size="sm"
               className="self-start border-dashed"
               onClick={() => setEditing({ when })}
-            >
+             aria-label={sc.add}>
               <Plus />
-              {sc.add}
+              {plusNoun(sc.add)}
             </Button>
           </section>
         );

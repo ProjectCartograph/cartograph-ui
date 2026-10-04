@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ComboboxMultiple } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldHeading } from "@/components/guidance";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
@@ -277,9 +277,9 @@ export function PathwaySection() {
           variant="outline"
           className="self-start"
           onClick={() => setSteps([{ id: nextStepID(steps) }])}
-        >
+         aria-label={pc.addOutcome}>
           <Plus />
-          {pc.addOutcome}
+          {plusNoun(pc.addOutcome)}
         </Button>
       ) : (
         <Button
@@ -288,9 +288,9 @@ export function PathwaySection() {
           size="sm"
           className="self-start text-muted-foreground"
           onClick={() => setSteps([...steps, { id: nextStepID(steps) }])}
-        >
+         aria-label={pc.addOutcome}>
           <Plus />
-          {pc.addOutcome}
+          {plusNoun(pc.addOutcome)}
         </Button>
       )}
     </div>

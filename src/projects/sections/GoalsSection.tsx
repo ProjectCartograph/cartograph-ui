@@ -20,7 +20,7 @@ import { FieldHeading, Help } from "@/components/guidance";
 import { VocabMark } from "@/components/vocab";
 import { useClient } from "@/client/context";
 import { orUndefined } from "@/client/port";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
 import { useGuide, vocabulary } from "@/components/guide";
 
@@ -436,9 +436,9 @@ export function MeasuresSection() {
             variant="outline"
             className="self-start border-dashed"
             onClick={() => setKrDialog({ open: true, existing: undefined })}
-          >
+           aria-label={gc.addKeyResult}>
             <Plus />
-            {gc.addKeyResult}
+            {plusNoun(gc.addKeyResult)}
           </Button>
         </div>
       </Block>
@@ -453,9 +453,9 @@ export function MeasuresSection() {
         region="kpis"
         title={gc.kpiTitle}
         action={
-          <Button type="button" variant="outline" size="sm" onClick={() => setAddKpi(true)}>
+          <Button type="button" variant="outline" size="sm" onClick={() => setAddKpi(true)} aria-label={gc.addKpi}>
             <Plus />
-            {gc.addKpi}
+            {plusNoun(gc.addKpi)}
           </Button>
         }
       >

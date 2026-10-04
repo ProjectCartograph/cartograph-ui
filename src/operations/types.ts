@@ -3,12 +3,16 @@ import { Compass, Gauge, Settings2 } from "lucide-react";
 import type { DefinitionStep } from "@/definition/Shell";
 import type { DataUse, Mandate } from "@/projects/types";
 
-/** An operation: continuing work with no end date. It has no problems and
+/** An operation: continuing work with no end date, planned before it runs
+ * and retired when it stops. It has no problems and
  * no goals of its own — it runs a service, and what that service is for is
  * carried by the programmes it belongs to and the KPIs it moves. */
 export interface OperationSpec {
   name?: string;
   purpose?: string;
+  /** Where the service is in its life (TAXONOMY.md D30); running when
+   * absent, as every service saved before 2.7 is. */
+  status?: "planned" | "running" | "retired";
   /** Accountable for the service end to end (ITIL service owner): a role
    * from the Resource catalogue. `team` is the unit that runs it. */
   serviceOwner?: string;

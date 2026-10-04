@@ -29,7 +29,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { useClient } from "@/client/context";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
+import { Term } from "@/components/Term";
 import { ErrorAlert } from "@/components/error-alert";
 import { goalReferencesQueryOptions, projectReferencesQueryOptions, useGoalTree } from "./api";
 import { InlineTitle } from "./InlineTitle";
@@ -150,11 +151,12 @@ function InlineAddRow({
       <button
         type="button"
         onClick={() => setEditing(true)}
+        aria-label={label}
         className="rounded-lg border border-dashed p-3 text-left text-sm text-muted-foreground hover:bg-accent"
       >
         <span className="flex items-center gap-1 font-medium text-foreground">
           <Plus className="size-4" />
-          {label}
+          {plusNoun(label)}
         </span>
       </button>
     );
@@ -1104,6 +1106,16 @@ export function GoalsHome() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{hc.title}</h1>
           <p className="text-muted-foreground">{hc.subtitle}</p>
+          {/* The three levels, each defined behind its "?" (TAXONOMY.md D29). */}
+          <ul className="mt-2 flex flex-wrap items-center gap-3 text-sm" aria-label={hc.levelsLegend} data-slot="level-legend">
+            {(["goal", "objective", "outcome"] as const).map((level) => (
+              <li key={level} className="flex items-center gap-1">
+                <LevelMarkTag level={level} />
+                <span>{levelName(level, treeQuery.data?.levels)}</span>
+                <Term word={level} />
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="flex flex-wrap gap-2">
           {ALIGN_KINDS.map((k) => (

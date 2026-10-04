@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ClientProvider } from "@/client/context";
 import { fakeClient } from "@/client/fake";
 import type { Order } from "@/client/port";
+import { copy } from "@/copy";
 import { NewWork } from "../NewWork";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -15,7 +16,7 @@ vi.mock("@tanstack/react-router", () => ({
 const keys = ["purpose", "goal", "objective", "outcome", "kpi", "gap", "assumption", "programme", "operation", "project", "stakeholders"];
 const after: Record<string, string[]> = {
   goal: ["purpose"], objective: ["goal"], outcome: ["objective"], kpi: ["outcome"], gap: ["outcome", "kpi"],
-  assumption: ["kpi"], programme: ["gap"], operation: ["outcome"], project: ["outcome"], stakeholders: ["project"],
+  assumption: ["kpi"], programme: ["gap"], project: ["outcome"], stakeholders: ["project"],
 };
 
 /** An order with the first n stages written. */
@@ -36,7 +37,10 @@ function orderWith(n: number): Order {
 }
 
 function renderNew(order: Order) {
-  const client = fakeClient({ order: async () => order });
+  const client = fakeClient({
+    order: async () => order,
+    glossary: async () => [{ key: "purpose", kind: "Purpose", summary: "Why your organisation exists.", example: "A fair living." }],
+  });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const { container } = render(
     <ClientProvider client={client}>
@@ -54,18 +58,30 @@ describe("New, in the order of work", () => {
     const purpose = await screen.findByText("Purpose");
     const row = purpose.closest("li")!;
     expect(row.getAttribute("data-state")).toBe("next");
+    // What it is, as the glossary defines it, and the "?" beside the word.
+    expect(await within(row).findByText("Why your organisation exists.")).toBeTruthy();
+    expect(within(row).getByRole("button", { name: copy.glossary.whatIs("Purpose") })).toBeTruthy();
     expect(row.getAttribute("aria-current")).toBe("step");
-    expect(within(row).getByRole("link").getAttribute("href")).toBe("/");
+    expect(within(row).getAllByRole("link")[0].getAttribute("href")).toBe("/");
     // Everything below it waits, and says on what.
     const goals = container.querySelector('[data-cartograph-stage="goal"]')!;
     expect(goals.getAttribute("data-state")).toBe("waiting");
     expect(within(goals as HTMLElement).queryByRole("link")).toBeNull();
-    // The work waits for the strategy: its questions cannot be answered.
-    const work = container.querySelector('[data-cartograph-region="new-work"]')!;
-    expect(within(work as HTMLElement).getByRole("status").textContent).toContain("Purpose");
-    for (const radio of within(work as HTMLElement).getAllByRole("radio")) {
+    // Work that finishes waits for the strategy: its questions cannot be
+    // answered yet.
+    const work = container.querySelector('[data-cartograph-region="new-work"]') as HTMLElement;
+    fireEvent.click(within(work).getAllByRole("radio")[0]);
+    expect(within(work).getByRole("status").textContent).toContain("Purpose");
+    for (const radio of within(work).getAllByRole("radio").slice(2)) {
       expect((radio as HTMLButtonElement).disabled).toBe(true);
     }
+    // A service waits on nothing: one running today can be recorded first,
+    // and a new one is recorded as planned (TAXONOMY.md D30).
+    fireEvent.click(within(work).getAllByRole("radio")[1]);
+    fireEvent.click(within(work).getAllByRole("radio")[3]);
+    const verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
+    expect(verdict.textContent).toContain(copy.newWork.verdict.service);
+    expect((within(verdict).getByRole("button", { name: new RegExp(copy.newWork.start.service) }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it("lists the strategy top-down, each stage after what it names", async () => {

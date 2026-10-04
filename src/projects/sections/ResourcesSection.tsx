@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { FieldHeading, Help } from "@/components/guidance";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { CURRENCIES } from "../currencies";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useSectionAutosave, useProjectStore } from "../store";
@@ -222,9 +222,9 @@ export function ResourcesSection() {
               ))}
             </SelectContent>
           </Select>
-          <Button type="button" variant="outline" className="border-dashed" onClick={addRole}>
+          <Button type="button" variant="outline" className="border-dashed" onClick={addRole} aria-label={pc.addRole}>
             <Plus />
-            {pc.addRole}
+            {plusNoun(pc.addRole)}
           </Button>
         </div>
 
@@ -308,9 +308,9 @@ export function ResourcesSection() {
               </div>
             </div>
           ))}
-          <Button type="button" variant="outline" className="self-start border-dashed" onClick={addFunding}>
+          <Button type="button" variant="outline" className="self-start border-dashed" onClick={addFunding} aria-label={pc.addFunding}>
             <Plus />
-            {pc.addFunding}
+            {plusNoun(pc.addFunding)}
           </Button>
         </div>
       </section>

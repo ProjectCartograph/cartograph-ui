@@ -204,7 +204,8 @@ describe("Goals home drag and drop", () => {
   // property that actually has to hold.
   it("every card names its level, as a mark", async () => {
     await mountHome();
-    const marks = Array.from(document.querySelectorAll('[data-slot="level-mark"]'));
+    // The cards' marks; the legend above the board is a key to them.
+    const marks = Array.from(document.querySelectorAll('[data-slot="level-mark"]')).filter((el) => !el.closest('[data-slot="level-legend"]'));
     const named = marks.map((el) => el.getAttribute("aria-label"));
     expect(named.filter((name) => name === "Pillar")).toHaveLength(2);
     expect(named.filter((name) => name === "Strategic")).toHaveLength(2);

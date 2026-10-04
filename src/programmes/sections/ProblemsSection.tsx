@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { ProblemCard } from "@/projects/ProblemCard";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
@@ -55,9 +55,9 @@ export function ProblemsSection() {
           setProblems([...problems, { problem: {}, change: {} }]);
           setOpen(problems.length);
         }}
-      >
+       aria-label={pc.addProblem}>
         <Plus />
-        {pc.addProblem}
+        {plusNoun(pc.addProblem)}
       </Button>
     </div>
   );

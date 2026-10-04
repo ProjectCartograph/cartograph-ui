@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Settings2 } from "lucide-react";
+import { Settings2, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Explorer } from "@/components/explorer/Explorer";
 import { useOperationRows } from "@/components/explorer/registers";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 
 export const Route = createFileRoute("/operations/")({ component: Page });
 
@@ -19,7 +19,14 @@ function Page() {
         rows={rows}
         loading={loading}
         route="/operations/$id"
-        action={<Button asChild><Link to="/new">{copy.operations.newLink}</Link></Button>}
+        action={
+          <Button asChild aria-label={copy.operations.newLink}>
+            <Link to="/operations/new">
+              <Plus />
+              {plusNoun(copy.operations.newLink)}
+            </Link>
+          </Button>
+        }
       />
     </div>
   );

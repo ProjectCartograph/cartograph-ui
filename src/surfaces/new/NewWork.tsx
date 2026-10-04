@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import type { LucideIcon } from "lucide-react";
-import { ArrowRight, Boxes, Check, Circle, CircleDot, Flag, FolderKanban, Layers, Lock, Plus, Repeat, Settings2 } from "lucide-react";
+import { ArrowRight, Boxes, Check, Circle, CircleDot, Flag, FolderKanban, Hourglass, Layers, Lock, Plus, Repeat, Settings2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useClient } from "@/client/context";
 import type { OrderStage } from "@/client/port";
 import { copy } from "@/copy";
-import { kindOf, type Ends, type NewKind as Kind, type Size } from "@/definition/kindOf";
+import { entryFor, useGlossary } from "@/components/glossary";
+import { Term } from "@/components/Term";
+import { kindOf, type Ends, type NewKind as Kind, type Size, type Today } from "@/definition/kindOf";
+import { ChoiceCard } from "@/components/ChoiceCard";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
 
 const nc = copy.newWork;
@@ -26,8 +28,10 @@ const WHERE: Record<string, string> = {
   assumption: "/sheets/Assumption",
 };
 
-/** The work stage each answer makes. */
-const STAGE_OF: Record<Kind, string> = { project: "project", component: "project", programme: "programme", operation: "operation" };
+/** The work stage each answer makes, and the word the glossary defines
+ * it by. */
+const STAGE_OF: Record<Kind, string> = { project: "project", component: "project", programme: "programme", operation: "operation", service: "operation" };
+const TERM_OF: Record<Kind, string> = { project: "project", component: "component", programme: "programme", operation: "operation", service: "operation" };
 
 /**
  * New, in the order of work (TAXONOMY.md D28). The record is written from
@@ -71,6 +75,8 @@ export function NewWork() {
 
 function StageRow({ stage, next }: { stage: OrderStage; next: boolean }) {
   const navigate = useNavigate();
+  // What the stage is, as the glossary defines it (TAXONOMY.md D29).
+  const meaning = entryFor(useGlossary().data, stage.key)?.summary;
   const [adding, setAdding] = useState(false);
   const waiting = stage.state === "waiting";
   const Icon = stage.state === "done" ? Check : waiting ? Lock : next ? CircleDot : Circle;
@@ -102,8 +108,11 @@ function StageRow({ stage, next }: { stage: OrderStage; next: boolean }) {
     >
       <Icon className={`size-5 shrink-0 ${next || stage.state === "done" ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="font-medium">{label}</span>
-        <span className="text-sm text-muted-foreground">{nc.stageDetail[stage.key]}</span>
+        <span className="flex items-center gap-1 font-medium">
+          {label}
+          <Term word={stage.key} />
+        </span>
+        {meaning ? <span className="text-sm text-muted-foreground">{meaning}</span> : null}
       </span>
       {status ? <span className={`shrink-0 text-xs ${next ? "font-medium text-primary" : "text-muted-foreground"}`}>{status}</span> : null}
       {waiting ? null : stage.key === "kpi" ? (
@@ -129,56 +138,61 @@ function StageRow({ stage, next }: { stage: OrderStage; next: boolean }) {
 function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStage>; next?: string; loaded: boolean }) {
   const navigate = useNavigate();
   const [ends, setEnds] = useState<Ends | null>(null);
-  const [size, setSize] = useState<Size | null>(null);
-  // Work serves an outcome: until the strategy has one, it waits.
-  const waits = !loaded || stages.get("project")?.state === "waiting";
-  const kind = waits ? null : kindOf(ends, size);
+  const [answer, setAnswer] = useState<Size | Today | null>(null);
+  // Work that finishes serves an outcome, so it waits until the strategy
+  // has one. A service waits on nothing: one that runs today is recorded
+  // as it is (TAXONOMY.md D30).
+  const finishWaits = !loaded || stages.get("project")?.state === "waiting";
+  const kind = ends === "finishes" && finishWaits ? null : kindOf(ends, answer);
   const stage = kind ? stages.get(STAGE_OF[kind]) : undefined;
   const kindWaits = stage?.state === "waiting";
   const nextName = next ? (nc.stage[next] ?? next) : "";
 
   function go() {
-    if (kind === "operation") void navigate({ to: "/operations/new" });
+    if (kind === "operation") void navigate({ to: "/operations/new", search: {} });
+    else if (kind === "service") void navigate({ to: "/operations/new", search: { status: "planned" } });
     else if (kind === "programme") void navigate({ to: "/programmes/new" });
     else if (kind === "component") void navigate({ to: "/projects/new", search: { partOf: true } });
     else if (kind === "project") void navigate({ to: "/projects/new", search: {} });
+  }
+  function pickEnds(next: Ends) {
+    setEnds(next);
+    setAnswer(null);
   }
 
   return (
     <section className="flex flex-col gap-6" aria-label={nc.work} data-cartograph-region="new-work">
       <h2 className="text-base font-medium">{nc.work}</h2>
-      {waits && loaded ? (
+      <Question label={nc.endsQuestion} region="new-ends">
+        <ChoiceCard icon={Flag} title={nc.finishes} detail={nc.finishesDetail} picked={ends === "finishes"} onPick={() => pickEnds("finishes")} />
+        <ChoiceCard icon={Repeat} title={nc.runs} detail={nc.runsDetail} picked={ends === "runs"} onPick={() => pickEnds("runs")} />
+      </Question>
+
+      {ends === "runs" ? (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-300 motion-reduce:animate-none">
+          <Question label={nc.todayQuestion} region="new-today">
+            <ChoiceCard icon={Settings2} title={nc.today} detail={nc.todayDetail} picked={answer === "today"} onPick={() => setAnswer("today")} />
+            <ChoiceCard icon={Hourglass} title={nc.isNew} detail={nc.isNewDetail} picked={answer === "new"} onPick={() => setAnswer("new")} />
+          </Question>
+        </div>
+      ) : null}
+
+      {ends === "finishes" && finishWaits && loaded ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
           <Lock className="size-4 shrink-0" aria-hidden="true" />
           {nc.workWaits(nextName)}
         </p>
       ) : null}
-      <div className={`flex flex-col gap-8 ${waits ? "opacity-60" : ""}`}>
-        <Question label={nc.endsQuestion} region="new-ends">
-          <Choice icon={Flag} title={nc.finishes} detail={nc.finishesDetail} picked={ends === "finishes"} disabled={waits} onPick={() => setEnds("finishes")} />
-          <Choice
-            icon={Repeat}
-            title={nc.runs}
-            detail={nc.runsDetail}
-            picked={ends === "runs"}
-            disabled={waits}
-            onPick={() => {
-              setEnds("runs");
-              setSize(null);
-            }}
-          />
-        </Question>
 
-        {ends === "finishes" ? (
-          <div className="animate-in fade-in slide-in-from-top-2 duration-300 motion-reduce:animate-none">
-            <Question label={nc.sizeQuestion} region="new-size">
-              <Choice icon={FolderKanban} title={nc.one} detail={nc.oneDetail} picked={size === "one"} disabled={waits} onPick={() => setSize("one")} />
-              <Choice icon={Boxes} title={nc.part} detail={nc.partDetail} picked={size === "part"} disabled={waits} onPick={() => setSize("part")} />
-              <Choice icon={Layers} title={nc.many} detail={nc.manyDetail} picked={size === "many"} disabled={waits} onPick={() => setSize("many")} />
-            </Question>
-          </div>
-        ) : null}
-      </div>
+      {ends === "finishes" ? (
+        <div className={`animate-in fade-in slide-in-from-top-2 duration-300 motion-reduce:animate-none ${finishWaits ? "opacity-60" : ""}`}>
+          <Question label={nc.sizeQuestion} region="new-size" columns={3}>
+            <ChoiceCard icon={FolderKanban} title={nc.one} detail={nc.oneDetail} picked={answer === "one"} disabled={finishWaits} onPick={() => setAnswer("one")} />
+            <ChoiceCard icon={Boxes} title={nc.part} detail={nc.partDetail} picked={answer === "part"} disabled={finishWaits} onPick={() => setAnswer("part")} />
+            <ChoiceCard icon={Layers} title={nc.many} detail={nc.manyDetail} picked={answer === "many"} disabled={finishWaits} onPick={() => setAnswer("many")} />
+          </Question>
+        </div>
+      ) : null}
 
       {kind ? (
         <div
@@ -190,6 +204,7 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
           <p className="flex items-center gap-2 font-medium">
             <KindMark kind={kind} />
             {nc.verdict[kind]}
+            <Term word={TERM_OF[kind]} />
           </p>
           <p className="text-sm text-muted-foreground">{nc.because[kind]}</p>
           {kindWaits && stage ? (
@@ -219,50 +234,15 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
 }
 
 function KindMark({ kind }: { kind: Kind }) {
-  const Icon = { project: FolderKanban, component: Boxes, programme: Layers, operation: Settings2 }[kind];
+  const Icon = { project: FolderKanban, component: Boxes, programme: Layers, operation: Settings2, service: Hourglass }[kind];
   return <Icon className="size-5 text-primary" aria-hidden="true" />;
 }
 
-function Question({ label, region, children }: { label: string; region: string; children: React.ReactNode }) {
+function Question({ label, region, columns = 2, children }: { label: string; region: string; columns?: 2 | 3; children: React.ReactNode }) {
   return (
     <fieldset className="flex flex-col gap-3" data-cartograph-region={region}>
       <legend className="mb-3 text-base font-medium">{label}</legend>
-      <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+      <div className={`grid gap-3 ${columns === 3 ? "md:grid-cols-3" : "sm:grid-cols-2"}`}>{children}</div>
     </fieldset>
-  );
-}
-
-function Choice({
-  icon: Icon,
-  title,
-  detail,
-  picked,
-  disabled,
-  onPick,
-}: {
-  icon: LucideIcon;
-  title: string;
-  detail: string;
-  picked: boolean;
-  disabled?: boolean;
-  onPick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={picked}
-      disabled={disabled}
-      onClick={onPick}
-      className={`flex items-start gap-3 rounded-xl p-4 text-left ring-1 transition-all duration-200 hover:ring-primary/50 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:pointer-events-none motion-reduce:transition-none ${
-        picked ? "bg-primary/5 ring-2 ring-primary" : "ring-foreground/10"
-      }`}
-    >
-      <Icon className={`mt-0.5 size-5 shrink-0 ${picked ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
-      <span className="flex flex-col gap-1">
-        <span className="font-medium">{title}</span>
-        <span className="text-sm text-muted-foreground">{detail}</span>
-      </span>
-    </button>
   );
 }

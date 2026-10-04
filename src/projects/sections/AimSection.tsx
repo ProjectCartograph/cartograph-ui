@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { ContextRecap } from "../ContextRecap";
 import { ProblemCard } from "../ProblemCard";
@@ -108,9 +108,9 @@ export function AimSection() {
             canRemove={problems.length > 1}
           />
         ))}
-        <Button type="button" variant="outline" className="self-start border-dashed" onClick={addProblem}>
+        <Button type="button" variant="outline" className="self-start border-dashed" onClick={addProblem} aria-label={ac.addProblem}>
           <Plus />
-          {ac.addProblem}
+          {plusNoun(ac.addProblem)}
         </Button>
       </div>
 
@@ -172,9 +172,9 @@ export function AimSection() {
               </div>
             </div>
           ))}
-          <Button type="button" variant="outline" className="self-start border-dashed" onClick={addMandate}>
+          <Button type="button" variant="outline" className="self-start border-dashed" onClick={addMandate} aria-label={ac.addMandate}>
             <Plus />
-            {ac.addMandate}
+            {plusNoun(ac.addMandate)}
           </Button>
         </div>
       </div>

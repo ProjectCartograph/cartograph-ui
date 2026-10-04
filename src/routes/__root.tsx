@@ -6,7 +6,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { Archive, Bot, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest } from "lucide-react";
+import { Archive, BookOpen, Bot, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -111,6 +111,11 @@ const workItems: Array<{
     title: "Snapshots",
     icon: Archive,
     to: "/snapshots",
+    params: undefined,
+  },  {
+    title: copy.rail.glossary,
+    icon: BookOpen,
+    to: "/glossary",
     params: undefined,
   },
 ];
@@ -235,6 +240,9 @@ function useBreadcrumbCrumbs(): Crumb[] {
   }
   if (routeId === "/new") {
     return [{ label: copy.newWork.title }];
+  }
+  if (routeId === "/glossary") {
+    return [{ label: copy.glossary.title }];
   }
   if (routeId === "/programmes/new") {
     return [

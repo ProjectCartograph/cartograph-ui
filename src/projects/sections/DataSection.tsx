@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FieldHeading, Help } from "@/components/guidance";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { VocabOption } from "@/components/vocab";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useSectionAutosave, useProjectStore } from "../store";
@@ -187,9 +187,9 @@ export function DataSection() {
           variant="outline"
           className="self-start border-dashed"
           onClick={() => updateConsumes([...consumes, { source: "", purpose: "" }])}
-        >
+         aria-label={dc.addUse}>
           <Plus />
-          {dc.addUse}
+          {plusNoun(dc.addUse)}
         </Button>
       </div>
 
@@ -274,9 +274,9 @@ export function DataSection() {
               { output: "recordsInExistingSource", sink: "", purpose: "", personalData: "none" },
             ])
           }
-        >
+         aria-label={dc.addOutput}>
           <Plus />
-          {dc.addOutput}
+          {plusNoun(dc.addOutput)}
         </Button>
       </div>
     </div>

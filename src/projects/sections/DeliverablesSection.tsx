@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Help, FieldHeading } from "@/components/guidance";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 import { AcceptanceEditor } from "../AcceptanceEditor";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { Deliverable } from "../types";
@@ -117,9 +117,9 @@ export function DeliverablesSection() {
         </div>
       ))}
 
-      <Button type="button" variant="outline" className="self-start border-dashed" onClick={add}>
+      <Button type="button" variant="outline" className="self-start border-dashed" onClick={add} aria-label={dc.add}>
         <Plus />
-        {dc.add}
+        {plusNoun(dc.add)}
       </Button>
     </div>
   );

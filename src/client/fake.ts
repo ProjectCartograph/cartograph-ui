@@ -18,6 +18,7 @@ const every: Record<keyof Client, true> = {
   goalTree: true,
   graph: true,
   order: true,
+  glossary: true,
   gapCoverage: true,
   deleteGoal: true,
   projectState: true,

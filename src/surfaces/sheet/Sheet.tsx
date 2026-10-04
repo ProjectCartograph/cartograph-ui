@@ -33,6 +33,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 import { useClient } from "@/client/context";
 import { copy } from "@/copy";
+import { Term } from "@/components/Term";
 import { ErrorAlert } from "@/components/error-alert";
 import { type FieldDef, type SheetKind, parseSpecFields, unitHint } from "./schema";
 import { SheetForm, type SheetRow } from "./SheetForm";
@@ -256,12 +257,15 @@ export function Sheet({ kind }: { kind: SheetKind }) {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{kindLabel}</h1>
+          <h1 className="flex items-center gap-1.5 text-2xl font-semibold tracking-tight">
+            {kindLabel}
+            <Term word={kind} />
+          </h1>
           <p className="max-w-[70ch] text-muted-foreground">{summary ?? copy.sheets.subtitle}</p>
         </div>
-        <Button onClick={openAdd}>
+        <Button onClick={openAdd} aria-label={copy.sheets.addNamed(kindLabelSingular)}>
           <Plus />
-          {copy.sheets.add}
+          {kindLabelSingular}
         </Button>
       </div>
 

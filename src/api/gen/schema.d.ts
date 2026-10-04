@@ -319,6 +319,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/glossary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every word of the taxonomy, defined as a dictionary defines it, in the order of work
+         * @description One entry per stage of the order of work (a kind, or a Goal at a level), then per register: what it is in one plain sentence, and one example (TAXONOMY.md D29). An interface shows an entry wherever its word appears, so a person meeting the word for the first time reads the same definition everywhere.
+         */
+        get: operations["getGlossary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/kinds": {
         parameters: {
             query?: never;
@@ -1080,6 +1100,21 @@ export interface components {
             state: "done" | "next" | "ready" | "waiting";
             /** @description The stages it waits on, while it waits. */
             waiting?: string[];
+        };
+        GlossaryEntry: {
+            /** @description The stage's key in the order of work, or for a register its kind. */
+            key: string;
+            kind: string;
+            /** @description For a Goal, the level the entry defines. */
+            level?: string;
+            /** @description What it is, in one plain sentence that does not repeat its name. */
+            summary: string;
+            /** @description One instance of it, from the example workspace. */
+            example?: string;
+            /** @description The stages it comes after in the order of work. */
+            after?: string[];
+            /** @description A root kind, added when a field first asks for one. */
+            register?: boolean;
         };
         KindCount: {
             kind: string;
@@ -2412,6 +2447,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Order"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getGlossary: {
+        parameters: {
+            query?: {
+                /** @description A language the guidance is written in; English when left out or unknown. */
+                locale?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GlossaryEntry"][];
                 };
             };
             401: components["responses"]["Unauthenticated"];

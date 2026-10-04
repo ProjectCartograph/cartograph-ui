@@ -22,7 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { copy } from "@/copy";
+import { copy, plusNoun } from "@/copy";
 
 import { roles, useSession } from "./access";
 
@@ -65,9 +65,9 @@ export function AccessPage() {
     <div className="mx-auto max-w-5xl space-y-5" data-cartograph-region="access">
       <div className="flex items-start justify-between gap-6">
         <p className="max-w-2xl text-sm text-muted-foreground">{copy.access.intro}</p>
-        <Button onClick={() => setEditing({})}>
+        <Button onClick={() => setEditing({})} aria-label={copy.access.add}>
           <Plus />
-          {copy.access.add}
+          {plusNoun(copy.access.add)}
         </Button>
       </div>
       <div className="relative max-w-sm">
