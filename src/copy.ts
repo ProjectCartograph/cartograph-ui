@@ -1,4 +1,13 @@
 // Every user-facing string lives here: simple nouns, no em-dashes, no emoji.
+/** "a" or "an" before a word. */
+function an(word: string): string {
+  return /^[aeiou]/i.test(word) ? "an" : "a";
+}
+
+function capital(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export const copy = {
   appName: "Cartograph",
   appLine: "Definitions",
@@ -16,7 +25,12 @@ export const copy = {
     open: "Open",
     nothing: "Nothing in Cartograph says this yet.",
     defineNew: "Define something new",
-    defineHint: "New asks a few questions and leads you to the right place.",
+    defineAs: "Define it as",
+    defineAsHint: "The three Cartograph finds likeliest. Choose one, and it opens with what you wrote.",
+    defineAsNoModel: "Choose what it is, and it opens with what you wrote.",
+    somethingElse: "Something else",
+    notSure: "Not sure? Answer a few questions",
+    needsFirst: (names: string) => `Comes after ${names} in the order of work`,
     next: "Next in your strategy",
   },
   // The taxonomy as a dictionary gives it (TAXONOMY.md D29): the word,
@@ -796,6 +810,22 @@ export const copy = {
       emptyTitle: "No goals yet.",
       emptySubtitle: "Start with a pillar.",
       newLevel: (level: string) => `New ${level.toLowerCase()}`,
+      // Arriving from the home page with a name and a level (engine
+      // docs/adr/0023): where the new goal sits.
+      place: {
+        title: (level: string) => `Add ${an(level)} ${level.toLowerCase()}`,
+        name: "Name",
+        level: "Level",
+        parent: (parentLevel: string) => `Under which ${parentLevel.toLowerCase()}?`,
+        none: (level: string, parentLevel: string) =>
+          `${capital(an(level))} ${level.toLowerCase()} sits under ${an(parentLevel)} ${parentLevel.toLowerCase()}, and there is none yet. Add that first; this one comes next.`,
+        under: (parentLevel: string, name: string) => `Under the ${parentLevel.toLowerCase()} "${name}".`,
+        first: (parentLevel: string) => `Add ${an(parentLevel)} ${parentLevel.toLowerCase()} first`,
+        then: (name: string, parentLevel: string) => `Then "${name}" goes under this ${parentLevel.toLowerCase()}.`,
+        taken: "One with this name already exists. Choose another name.",
+        add: "Add",
+        cancel: "Cancel",
+      },
       addPillar: "Add a pillar",
       addPillarNamePlaceholder: "Name this pillar",
       addNamePlaceholder: "Name this goal",

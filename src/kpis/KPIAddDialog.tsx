@@ -43,14 +43,17 @@ export function KPIAddDialog({
   open,
   onOpenChange,
   onAdded,
+  initialName,
 }: {
   open: boolean;
+  /** A name to start from, as typed on the home page. */
+  initialName?: string;
   onOpenChange: (open: boolean) => void;
   onAdded?: (id: string, name: string) => void;
 }) {
   const queryClient = useQueryClient();
   const client = useClient();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName ?? "");
   const [definition, setDefinition] = useState("");
   const [unit, setUnit] = useState<string | undefined>();
   const [direction, setDirection] = useState<string | undefined>();

@@ -142,7 +142,7 @@ function SpecCell({
  * The one generic Sheet component, built once, used by /sheets/$kind for
  * all seven directory kinds.
  */
-export function Sheet({ kind }: { kind: SheetKind }) {
+export function Sheet({ kind, initialName, adding }: { kind: SheetKind; initialName?: string; adding?: boolean }) {
   const client = useClient();
   // What this kind is, in one sentence, as the engine's guidance says it.
   const summary = useQuery({ queryKey: ["kinds"], queryFn: () => client.kinds() }).data?.find((k) => k.kind === kind)?.summary;
@@ -154,7 +154,7 @@ export function Sheet({ kind }: { kind: SheetKind }) {
   const [enumFilters, setEnumFilters] = useState<Record<string, string>>({});
   const [refFilters, setRefFilters] = useState<Record<string, string>>({});
   const [page, setPage] = useState(0);
-  const [dialog, setDialog] = useState<{ open: boolean; row?: SheetRow }>({ open: false });
+  const [dialog, setDialog] = useState<{ open: boolean; row?: SheetRow }>({ open: !!adding });
 
   useEffect(() => {
     setPage(0);
@@ -456,6 +456,7 @@ export function Sheet({ kind }: { kind: SheetKind }) {
           open={dialog.open}
           onOpenChange={(open) => setDialog((prev) => ({ ...prev, open }))}
           existing={dialog.row}
+          initialName={dialog.row ? undefined : initialName}
         />
       ) : null}
     </div>

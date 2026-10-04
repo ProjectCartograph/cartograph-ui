@@ -93,7 +93,10 @@ export function SheetForm({
   onOpenChange,
   existing,
   onSaved,
+  initialName,
 }: {
+  /** A name to start a new entry from, as typed on the home page. */
+  initialName?: string;
   kind: SheetKind;
   kindLabel: string;
   fields: FieldDef[];
@@ -115,7 +118,7 @@ export function SheetForm({
 
   const defaultValues = useMemo<FormValues>(() => {
     const base: FormValues = {
-      _name: existing?.name ?? "",
+      _name: existing?.name ?? initialName ?? "",
       _id: existing?.id ?? "",
       _reason: "",
     };
@@ -125,7 +128,7 @@ export function SheetForm({
     }
     return base;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [existing, fields]);
+  }, [existing, fields, initialName]);
 
   const form = useForm<FormValues>({ defaultValues });
 

@@ -329,8 +329,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Which existing records say what a text a person typed says
-         * @description Across every stage a person writes. Where a decision model is configured (docs/adr/0023), it is asked of each candidate whether the text says the same; without one, available is false and matches come from the words the text shares with existing records. It does not say what kind of thing the text is: measured, the model was not reliable at that, and New's questions are. Nothing is stored.
+         * Which existing record says what a text a person typed says, and which flows may define it
+         * @description Across every stage a person writes. Where a decision model is configured (docs/adr/0023), it is asked of each candidate whether the text says the same; without one, available is false and matches come from the words the text shares with existing records. Routes are the three flows likeliest to define the text, for the person to choose among; the model is never trusted to pick one. Nothing is stored.
          */
         post: operations["understand"];
         delete?: never;
@@ -1142,9 +1142,18 @@ export interface components {
             waiting?: string[];
         };
         Understanding: {
-            /** @description False when no decision model answered; matches are then by the words they share. */
+            /** @description False when no decision model answered; matches are then by the words they share, and there are no routes. */
             available: boolean;
             matches: components["schemas"]["Match"][];
+            /** @description The flows likeliest to define the text, likeliest first, one per kind: offered to the person, who chooses. Measured, the first was right half the time and the right one was among the three nine times in ten (docs/adr/0023). */
+            routes: components["schemas"]["Route"][];
+        };
+        Route: {
+            /** @description The stage of the order of work (GET /order). */
+            key: string;
+            kind: string;
+            level?: string;
+            likelihood: number;
         };
         Match: {
             kind: string;
