@@ -31,7 +31,7 @@ export interface PresenceMessage {
 
 const TOP = new Set(["v", "session", "actor", "name", "color", "route", "focus", "caret", "pointer", "at", "leaving", "agent"]);
 const STEPS = ["guide", "read", "draft", "checks", "propose"];
-const AGENT = ["for", "seq", "step", "kind", "id", "name", "fields", "met", "open", "proposal", "parts"];
+const AGENT = ["for", "seq", "step", "kind", "id", "name", "fields", "met", "open", "proposal", "parts", "changeSet"];
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -77,6 +77,7 @@ function validAgent(v: unknown): boolean {
   if (v.fields !== undefined && !(Array.isArray(v.fields) && v.fields.length <= 32 && v.fields.every((f) => str(f, 512)))) return false;
   for (const k of ["met", "open", "parts"] as const) if (v[k] !== undefined && !count(v[k])) return false;
   if (v.proposal !== undefined && !str(v.proposal, 64)) return false;
+  if (v.changeSet !== undefined && !str(v.changeSet, 64)) return false;
   return true;
 }
 

@@ -1,6 +1,7 @@
 import { AssemblyStrip } from "./Assembly";
 import type { ReactNode } from "react";
 import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
+import { ShowInGraph } from "@/graph/ShowInGraph";
 import { Link } from "@tanstack/react-router";
 
 import { Separator } from "@/components/ui/separator";
@@ -149,7 +150,10 @@ export function InitiationShell({
           <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
           <p className="text-muted-foreground">{subtitle}</p>
         </div>
-        <StageStepper id={id} current={stageOfSection(section)} />
+        <div className="flex shrink-0 items-start gap-2">
+          <ShowInGraph kind="Project" id={id} />
+          <StageStepper id={id} current={stageOfSection(section)} />
+        </div>
       </div>
       <AssemblyStrip id={id} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr_18rem]">

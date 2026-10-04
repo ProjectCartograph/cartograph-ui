@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccessRouteImport } from './routes/access'
 import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as GraphRouteImport } from './routes/graph'
 import { Route as NewRouteImport } from './routes/new'
+import { Route as ChangesetsIndexRouteImport } from './routes/changesets/index'
+import { Route as ChangesetsIdRouteImport } from './routes/changesets/$id'
 import { Route as GapsIndexRouteImport } from './routes/gaps/index'
 import { Route as GapsIdRouteImport } from './routes/gaps/$id'
 import { Route as GapsNewRouteImport } from './routes/gaps/new'
@@ -92,9 +95,24 @@ const AgentsRoute = AgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GraphRoute = GraphRouteImport.update({
+  id: '/graph',
+  path: '/graph',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewRoute = NewRouteImport.update({
   id: '/new',
   path: '/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChangesetsIndexRoute = ChangesetsIndexRouteImport.update({
+  id: '/changesets/',
+  path: '/changesets/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChangesetsIdRoute = ChangesetsIdRouteImport.update({
+  id: '/changesets/$id',
+  path: '/changesets/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GapsIndexRoute = GapsIndexRouteImport.update({
@@ -429,7 +447,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/graph': typeof GraphRoute
   '/new': typeof NewRoute
+  '/changesets/$id': typeof ChangesetsIdRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
@@ -443,6 +463,7 @@ export interface FileRoutesByFullPath {
   '/projects/new': typeof ProjectsNewRoute
   '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
+  '/changesets/': typeof ChangesetsIndexRoute
   '/gaps/': typeof GapsIndexRoute
   '/goals/': typeof GoalsIndexRoute
   '/kpis/': typeof KpisIndexRoute
@@ -498,7 +519,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/graph': typeof GraphRoute
   '/new': typeof NewRoute
+  '/changesets/$id': typeof ChangesetsIdRoute
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
   '/manifests/$kind': typeof ManifestsKindRoute
@@ -507,6 +530,7 @@ export interface FileRoutesByTo {
   '/projects/new': typeof ProjectsNewRoute
   '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
+  '/changesets': typeof ChangesetsIndexRoute
   '/gaps': typeof GapsIndexRoute
   '/goals': typeof GoalsIndexRoute
   '/kpis': typeof KpisIndexRoute
@@ -563,7 +587,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/graph': typeof GraphRoute
   '/new': typeof NewRoute
+  '/changesets/$id': typeof ChangesetsIdRoute
   '/gaps/$id': typeof GapsIdRouteWithChildren
   '/gaps/new': typeof GapsNewRoute
   '/goals/$id': typeof GoalsIdRoute
@@ -577,6 +603,7 @@ export interface FileRoutesById {
   '/projects/new': typeof ProjectsNewRoute
   '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
+  '/changesets/': typeof ChangesetsIndexRoute
   '/gaps/': typeof GapsIndexRoute
   '/goals/': typeof GoalsIndexRoute
   '/kpis/': typeof KpisIndexRoute
@@ -634,7 +661,9 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/graph'
     | '/new'
+    | '/changesets/$id'
     | '/gaps/$id'
     | '/gaps/new'
     | '/goals/$id'
@@ -648,6 +677,7 @@ export interface FileRouteTypes {
     | '/projects/new'
     | '/proposals/$id'
     | '/sheets/$kind'
+    | '/changesets/'
     | '/gaps/'
     | '/goals/'
     | '/kpis/'
@@ -703,7 +733,9 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/graph'
     | '/new'
+    | '/changesets/$id'
     | '/gaps/new'
     | '/goals/$id'
     | '/manifests/$kind'
@@ -712,6 +744,7 @@ export interface FileRouteTypes {
     | '/projects/new'
     | '/proposals/$id'
     | '/sheets/$kind'
+    | '/changesets'
     | '/gaps'
     | '/goals'
     | '/kpis'
@@ -767,7 +800,9 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/graph'
     | '/new'
+    | '/changesets/$id'
     | '/gaps/$id'
     | '/gaps/new'
     | '/goals/$id'
@@ -781,6 +816,7 @@ export interface FileRouteTypes {
     | '/projects/new'
     | '/proposals/$id'
     | '/sheets/$kind'
+    | '/changesets/'
     | '/gaps/'
     | '/goals/'
     | '/kpis/'
@@ -837,7 +873,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccessRoute: typeof AccessRoute
   AgentsRoute: typeof AgentsRoute
+  GraphRoute: typeof GraphRoute
   NewRoute: typeof NewRoute
+  ChangesetsIdRoute: typeof ChangesetsIdRoute
   GapsIdRoute: typeof GapsIdRouteWithChildren
   GapsNewRoute: typeof GapsNewRoute
   GoalsIdRoute: typeof GoalsIdRoute
@@ -851,6 +889,7 @@ export interface RootRouteChildren {
   ProjectsNewRoute: typeof ProjectsNewRoute
   ProposalsIdRoute: typeof ProposalsIdRoute
   SheetsKindRoute: typeof SheetsKindRoute
+  ChangesetsIndexRoute: typeof ChangesetsIndexRoute
   GapsIndexRoute: typeof GapsIndexRoute
   GoalsIndexRoute: typeof GoalsIndexRoute
   KpisIndexRoute: typeof KpisIndexRoute
@@ -885,11 +924,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/graph': {
+      id: '/graph'
+      path: '/graph'
+      fullPath: '/graph'
+      preLoaderRoute: typeof GraphRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/new': {
       id: '/new'
       path: '/new'
       fullPath: '/new'
       preLoaderRoute: typeof NewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/changesets/': {
+      id: '/changesets/'
+      path: '/changesets'
+      fullPath: '/changesets/'
+      preLoaderRoute: typeof ChangesetsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/changesets/$id': {
+      id: '/changesets/$id'
+      path: '/changesets/$id'
+      fullPath: '/changesets/$id'
+      preLoaderRoute: typeof ChangesetsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gaps/': {
@@ -1471,7 +1531,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccessRoute: AccessRoute,
   AgentsRoute: AgentsRoute,
+  GraphRoute: GraphRoute,
   NewRoute: NewRoute,
+  ChangesetsIdRoute: ChangesetsIdRoute,
   GapsIdRoute: GapsIdRouteWithChildren,
   GapsNewRoute: GapsNewRoute,
   GoalsIdRoute: GoalsIdRoute,
@@ -1485,6 +1547,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProjectsNewRoute: ProjectsNewRoute,
   ProposalsIdRoute: ProposalsIdRoute,
   SheetsKindRoute: SheetsKindRoute,
+  ChangesetsIndexRoute: ChangesetsIndexRoute,
   GapsIndexRoute: GapsIndexRoute,
   GoalsIndexRoute: GoalsIndexRoute,
   KpisIndexRoute: KpisIndexRoute,

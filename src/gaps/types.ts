@@ -15,7 +15,9 @@ export interface GapSpec {
   outcomes?: string[];
   segments?: string[];
   source?: string;
+  /** Deprecated: one data source, as saved before 2.7.0; read into dataSources. */
   measuredBy?: string;
+  dataSources?: string[];
   note?: string;
 }
 

@@ -160,7 +160,10 @@ const homes: Record<string, string> = {
 };
 
 /** Where a step happened, if it happened anywhere a person can open. */
-export function placeOf(step: Pick<AgentStep, "step" | "kind" | "id" | "proposal">): { to: string; params?: Record<string, string> } | undefined {
+export function placeOf(step: Pick<AgentStep, "step" | "kind" | "id" | "proposal" | "changeSet">): { to: string; params?: Record<string, string> } | undefined {
+  // Work in a change set is followed on its review, where every draft of
+  // it shows as the agent writes it.
+  if (step.changeSet && step.step !== "guide") return { to: "/changesets/$id", params: { id: step.changeSet } };
   if (step.step === "propose" && step.proposal) return { to: "/proposals/$id", params: { id: step.proposal } };
   if (!step.kind) return undefined;
   if (step.id && step.step !== "guide") return manifestLink({ kind: step.kind, manifestId: step.id });
@@ -172,6 +175,53 @@ export function whereNow(lane: AgentLane | undefined): AgentStep | undefined {
   const steps = lane?.steps ?? [];
   for (let i = steps.length - 1; i >= 0; i--) if (placeOf(steps[i])) return steps[i];
   return undefined;
+}
+
+/** One record's activity in a lane: every step the agent took on it, as
+ * one entry where it last worked on it. */
+export interface StepGroup {
+  key: string;
+  /** The latest step, which the entry reads as. */
+  last: AgentStep;
+  /** How many drafts it saved of this record. */
+  edits: number;
+  /** Every field it changed, across them all. */
+  fields: string[];
+  /** The latest checks it saw on this record. */
+  met?: number;
+  open?: number;
+}
+
+/** Steps grouped by what they were on, each group placed where its latest
+ * step was: an agent working on one goal through many saves reads as one
+ * entry that moves down as it returns to it. A proposal is its own. */
+export function groupSteps(steps: readonly AgentStep[]): StepGroup[] {
+  const groups = new Map<string, StepGroup>();
+  for (const s of steps) {
+    const key = s.step === "propose" && s.proposal ? `proposal:${s.proposal}` : s.id && s.kind ? `${s.kind}/${s.id}` : `${s.step}:${s.kind ?? ""}`;
+    const g = groups.get(key) ?? { key, last: s, edits: 0, fields: [] };
+    groups.delete(key);
+    g.last = s;
+    if (s.step === "draft") g.edits++;
+    for (const f of s.fields ?? []) if (!g.fields.includes(f)) g.fields.push(f);
+    if (s.met !== undefined || s.open !== undefined) {
+      g.met = s.met;
+      g.open = s.open;
+    }
+    groups.set(key, g);
+  }
+  return [...groups.values()];
+}
+
+/** Brings a change set's record into view and makes it glow. */
+function glowItem(id: string) {
+  const el = typeof document === "undefined" ? null : document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  el.classList.remove("cartograph-agent-glow");
+  void el.offsetWidth;
+  el.classList.add("cartograph-agent-glow");
+  window.setTimeout(() => el.classList.remove("cartograph-agent-glow"), GLOW_MS);
 }
 
 /** Makes the fields an agent changed glow, and brings the first into view. */
@@ -222,6 +272,11 @@ export function FollowProvider({ children }: { children?: ReactNode }) {
       if (!place) return;
       if (step.step === "propose") setLanded(step);
       void navigate({ to: place.to as never, params: place.params as never }).then(() => {
+        if (step.changeSet && step.kind && step.id) {
+          // On the change set's review: the record it worked on, in view.
+          window.setTimeout(() => glowItem(`item-${step.kind}-${step.id}`), 350);
+          return;
+        }
         if (step.step === "draft" && step.fields?.length) window.setTimeout(() => glow(step.fields!), 350);
       });
     },

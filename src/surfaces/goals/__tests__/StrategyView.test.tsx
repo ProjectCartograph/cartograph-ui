@@ -62,7 +62,7 @@ function renderView(settings: Settings) {
 describe("StrategyView", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("shows the purpose on one line each and the tree as names and marks", async () => {
+  it("shows the purpose, and the tree as names with a quiet mark on what is unfinished", async () => {
     renderView({ goalLevels: [], projectLevelName: "Project", operator: "x", purpose: { vision: "Power in every home", source: "Plan, section 2" } });
     expect(await screen.findByText("Power in every home")).toBeTruthy();
     // No mission stated: said so, not left blank.
@@ -72,8 +72,27 @@ describe("StrategyView", () => {
     expect(screen.getByText("Faults caught at intake")).toBeTruthy();
     // The aim and the reason are not on the page until a goal is opened.
     expect(screen.queryByText("Customers leave after a second outage.")).toBeNull();
-    expect(screen.getByLabelText("Gaps: 1")).toBeTruthy();
-    expect(screen.getByLabelText("Work: 2")).toBeTruthy();
+    // No counts and no letters on the tree: one mark, saying what is missing.
+    expect(screen.queryByLabelText("Gaps: 1")).toBeNull();
+    expect(screen.getAllByRole("img", { name: /no indicator measures it/ })).toHaveLength(1);
+  });
+
+  it("previews one item after another beside the tree on a wide screen", async () => {
+    const matchMedia = window.matchMedia;
+    window.matchMedia = ((q: string) => ({ matches: true, media: q, addEventListener: () => {}, removeEventListener: () => {} })) as never;
+    try {
+      renderView({ goalLevels: [], projectLevelName: "Project", operator: "x" });
+      const pane = await screen.findByRole("complementary", { name: "Preview" });
+      fireEvent.click(screen.getByRole("button", { name: /Reliable service/ }));
+      expect(within(pane).getByText("Keep every customer supplied")).toBeTruthy();
+      // One click to the next: no close in between.
+      fireEvent.click(screen.getByRole("button", { name: /Faults caught at intake/ }));
+      expect(within(pane).getByRole("list", { name: "Gaps" })).toBeTruthy();
+      expect(within(pane).getByLabelText("Work: 2")).toBeTruthy();
+      expect(within(pane).queryByText("Keep every customer supplied")).toBeNull();
+    } finally {
+      window.matchMedia = matchMedia;
+    }
   });
 
   it("opens an outcome's gaps, from current to desired, and what else it leads to", async () => {
@@ -91,5 +110,30 @@ describe("StrategyView", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Reliable service/ }));
     expect(await screen.findByText("Keep every customer supplied")).toBeTruthy();
     expect(screen.getByText("Customers leave after a second outage.")).toBeTruthy();
+  });
+
+  it("states the purpose at the top of the strategy, as its own manifest", async () => {
+    const saveVersion = vi.fn(async () => ({ number: 1 }) as never);
+    const client = fakeClient({
+      goalTree: async () => tree,
+      settings: async () => ({ goalLevels: [], projectLevelName: "Project", operator: "x" }),
+      get: async () => Promise.reject(new Error("not found")),
+      session: async () => ({ actor: "ren", canWrite: true }) as never,
+      saveVersion,
+      list: async () => [],
+    });
+    render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <StrategyView />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "State the purpose" }));
+    fireEvent.change(screen.getByLabelText("Vision"), { target: { value: "Every member earns a fair living" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await vi.waitFor(() => expect(saveVersion).toHaveBeenCalled());
+    const [kind, id, doc] = saveVersion.mock.calls[0] as unknown as [string, string, { kind: string; spec: { vision: string } }];
+    expect([kind, id, doc.kind, doc.spec.vision]).toEqual(["Purpose", "default", "Purpose", "Every member earns a fair living"]);
   });
 });

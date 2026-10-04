@@ -18,6 +18,7 @@ import { SaveStatus } from "@/projects/Chrome";
 import { ConflictNotes } from "@/collab/ConflictNotes";
 import { OfflineNote } from "@/collab/OfflineNote";
 import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
+import { ShowInGraph } from "@/graph/ShowInGraph";
 import { SaveBar } from "./SaveBar";
 import { useDefinitionStore } from "./store";
 
@@ -148,6 +149,7 @@ export function DefinitionShell({
           <p className="text-muted-foreground">{subtitle}</p>
         </div>
         <span className="flex shrink-0 flex-col items-end gap-1 pt-2">
+          {store.loaded ? <ShowInGraph kind={store.kind} id={store.id} /> : null}
           <SaveStatus state={store.saveState} />
           <OfflineNote />
         </span>

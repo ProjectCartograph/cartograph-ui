@@ -89,7 +89,7 @@ export function KPIAddDialog({
       apiVersion: "cartograph/v1",
       kind: "KPI",
       metadata: Object.keys(labels).length > 0 ? { id, name, labels } : { id, name },
-      spec: { name, definition, unit, direction, source, ...(cycle ? { cycle } : {}) },
+      spec: { definition, unit, direction, sources: [source], ...(cycle ? { cycle } : {}) },
     };
     try {
       await client.saveVersion("KPI", id, manifest, kc.addReason);

@@ -3,7 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
-import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
+import { ComboboxMultiple } from "@/components/ui/combobox";
+import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { GapSpec } from "../types";
 
 const gc = copy.gaps;
@@ -14,6 +15,9 @@ const gc = copy.gaps;
 export function EvidenceSection() {
   useSectionAutosave();
   const store = useDefinitionStore<GapSpec>();
+  const sources = useReferenceOptions("DataSource");
+  // A draft from before 2.7.0 may hold one, as measuredBy.
+  const dataSources = store.spec.dataSources ?? (store.spec.measuredBy ? [store.spec.measuredBy] : []);
   return (
     <div data-cartograph-region="gap-evidence" className="flex max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -39,13 +43,17 @@ export function EvidenceSection() {
       </div>
       <div className="flex flex-col gap-2">
         <FieldHeading label={gc.measuredByLabel} hint={gc.measuredByHint} />
-        <ReferencePicker
-          data-cartograph-field="/spec/measuredBy"
-          refKind="DataSource"
-          value={store.spec.measuredBy}
-          onChange={(v) => store.updateSpec((s) => ({ ...s, measuredBy: v || undefined }))}
+        <ComboboxMultiple
+          data-cartograph-field="/spec/dataSources"
+          options={sources.data?.options ?? []}
+          value={dataSources}
+          onValueChange={(next) =>
+            store.updateSpec((s) => ({ ...s, measuredBy: undefined, dataSources: next.length > 0 ? next : undefined }))
+          }
           placeholder={gc.measuredByPlaceholder}
-          label={gc.measuredByLabel}
+          emptyText={gc.measuredByNone}
+          removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+          aria-label={gc.measuredByLabel}
         />
       </div>
       <div className="flex flex-col gap-2">

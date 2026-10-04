@@ -33,7 +33,9 @@ export interface KPIDefinitionSpec {
   direction?: string;
   baseline?: KPIBaseline;
   target?: { value: number; date: string };
+  /** Deprecated: one data source, as saved before 2.7.0; read into sources. */
   source?: string;
+  sources?: string[];
   cycle?: string;
   goals?: string[];
   resultLevel?: string;

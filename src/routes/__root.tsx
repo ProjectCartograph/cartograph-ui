@@ -6,7 +6,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { Archive, Bot, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert } from "lucide-react";
+import { Archive, Bot, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -41,7 +41,7 @@ import { PeopleHere } from "@/collab/PeopleHere";
 import { PresenceOverlay } from "@/collab/PresenceOverlay";
 import { PresenceProvider } from "@/collab/presence";
 import { FollowProvider, useFollow } from "@/collab/follow";
-import { FollowPanel } from "@/collab/FollowPanel";
+import { FollowChip, FollowPanel } from "@/collab/FollowPanel";
 import { PresenceTracker } from "@/collab/PresenceTracker";
 import { screenFor } from "@/collab/screen";
 import { useManifestName } from "@/api/names";
@@ -95,6 +95,12 @@ const workItems: Array<{
   to: string;
   params?: any;
 }> = [
+  {
+    title: copy.rail.graph,
+    icon: Waypoints,
+    to: "/graph",
+    params: undefined,
+  },
   {
     title: copy.rail.sheets,
     icon: Table2,
@@ -329,6 +335,9 @@ function RootLayout() {
   // the entry wherever agents are allowed or something waits.
   const client = useClient();
   const proposals = useQuery({ queryKey: ["proposals"], queryFn: () => client.proposals(), retry: false });
+  // Change sets waiting for this person to review.
+  const changeSets = useQuery({ queryKey: ["changesets"], queryFn: () => client.changeSets(), retry: false, refetchInterval: 15_000 });
+  const waiting = (changeSets.data ?? []).filter((c) => c.status === "proposed").length;
   const agentsHere = session?.access?.agents === true;
   // Signed in through the proxy, but not on the access list: nothing here
   // is theirs to see, and the engine would refuse every request.
@@ -344,6 +353,7 @@ function RootLayout() {
       <PresenceTracker />
       <PresenceOverlay />
       <FollowPanel />
+      <FollowChip />
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <Sidebar variant="inset" collapsible="icon" data-cartograph-region="rail">
           <SidebarHeader>
@@ -400,19 +410,31 @@ function RootLayout() {
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-            {session?.agents === true || agentsHere || (proposals.data?.length ?? 0) > 0 ? (
+            {session?.agents === true || agentsHere || waiting > 0 || (proposals.data?.length ?? 0) > 0 ? (
               <SidebarGroup>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild tooltip={copy.rail.proposals}>
-                        <Link to="/proposals">
-                          <Bot />
-                          <span>{copy.rail.proposals}</span>
+                      <SidebarMenuButton asChild tooltip={copy.changeSets.rail}>
+                        <Link to="/changesets">
+                          <GitPullRequest />
+                          <span>{copy.changeSets.rail}</span>
                         </Link>
                       </SidebarMenuButton>
-                      {(proposals.data?.length ?? 0) > 0 ? <SidebarMenuBadge>{proposals.data?.length}</SidebarMenuBadge> : null}
+                      {waiting > 0 ? <SidebarMenuBadge>{waiting}</SidebarMenuBadge> : null}
                     </SidebarMenuItem>
+                    {/* What agents proposed before change sets, while any is open. */}
+                    {(proposals.data?.length ?? 0) > 0 ? (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild tooltip={copy.rail.proposals}>
+                          <Link to="/proposals">
+                            <Bot />
+                            <span>{copy.rail.proposals}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                        <SidebarMenuBadge>{proposals.data?.length}</SidebarMenuBadge>
+                      </SidebarMenuItem>
+                    ) : null}
                     <AgentsAtWork />
                     {agentsHere ? (
                       <SidebarMenuItem>

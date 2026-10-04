@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { copy } from "@/copy";
 
-import { placeOf, useFollow, whereNow, type AgentLane, type AgentStep } from "./follow";
+import { groupSteps, placeOf, useFollow, whereNow, type AgentLane, type AgentStep, type StepGroup } from "./follow";
 
 const fc = copy.follow;
 const MINE = "__mine__";
@@ -60,8 +60,11 @@ function CheckProgress({ met, open }: { met: number; open: number }) {
   );
 }
 
-function Step({ step, color }: { step: AgentStep; color: string }) {
+/** One record's activity: what the agent last did on it, how often it
+ * edited it, every field it changed and where its checks stand now. */
+function Step({ group, color }: { group: StepGroup; color: string }) {
   const f = useFollow();
+  const step = group.last;
   const Icon = icons[step.step];
   const proposed = step.step === "propose";
   const there = placeOf(step) !== undefined;
@@ -85,9 +88,19 @@ function Step({ step, color }: { step: AgentStep; color: string }) {
         ) : (
           <p className="truncate">{stepText(step)}</p>
         )}
-        {step.step === "draft" && step.fields?.length ? <p className="text-xs text-muted-foreground">{fc.changed(step.fields.length)}</p> : null}
-        {step.step === "draft" || step.step === "checks" ? <CheckProgress met={step.met ?? 0} open={step.open ?? 0} /> : null}
-        {proposed && step.proposal ? (
+        {group.fields.length > 0 || group.edits > 1 ? (
+          <p className="text-xs text-muted-foreground">
+            {[group.edits > 1 ? fc.edits(group.edits) : "", group.fields.length > 0 ? fc.changed(group.fields.length) : ""].filter(Boolean).join(" · ")}
+          </p>
+        ) : null}
+        {group.met !== undefined || group.open !== undefined ? <CheckProgress met={group.met ?? 0} open={group.open ?? 0} /> : null}
+        {proposed && step.changeSet ? (
+          <Button size="xs" className="mt-1" asChild data-cartograph-follow>
+            <Link to="/changesets/$id" params={{ id: step.changeSet }}>
+              {fc.review}
+            </Link>
+          </Button>
+        ) : proposed && step.proposal ? (
           <Button size="xs" className="mt-1" asChild data-cartograph-follow>
             <Link to="/proposals/$id" params={{ id: step.proposal }}>
               {fc.review}
@@ -151,7 +164,7 @@ export function FollowPanel() {
 
   const visible = f.lanes.filter((l) => !f.hidden.has(l.session));
   const shown = f.lanes.find((l) => l.session === f.following) ?? visible.find((l) => l.active) ?? visible[0];
-  const steps = shown?.steps.slice(-30) ?? [];
+  const groups = groupSteps(shown?.steps ?? []).slice(-30);
   return (
     <aside
       className="fixed inset-y-2 right-2 z-40 flex w-80 max-w-[calc(100vw-1rem)] flex-col rounded-xl border bg-background shadow-xl animate-in fade-in slide-in-from-right-8 duration-300"
@@ -199,9 +212,45 @@ export function FollowPanel() {
       </div>
 
       <ol className="flex-1 space-y-3 overflow-y-auto p-3" data-cartograph-region="follow-steps">
-        {shown ? steps.map((s) => <Step key={s.seq} step={s} color={shown.color} />) : null}
+        {shown ? groups.map((g) => <Step key={g.key} group={g} color={shown.color} />) : null}
       </ol>
       {f.following ? <p className="border-t p-2 text-center text-xs text-muted-foreground">{fc.takeBack}</p> : null}
     </aside>
+  );
+}
+
+/**
+ * Following goes on with the panel closed: a small chip says whom, what
+ * they last did, and gives the panel back or stops. Pressing it never
+ * takes the view back.
+ */
+export function FollowChip() {
+  const f = useFollow();
+  if (f.panelOpen || !f.following) return null;
+  const lane = f.lanes.find((l) => l.session === f.following);
+  if (!lane) return null;
+  const last = lane.steps.at(-1);
+  return (
+    <div
+      className="fixed bottom-4 right-4 z-40 flex max-w-[calc(100vw-2rem)] items-center gap-2 rounded-full border bg-background/95 py-1 pr-1 pl-3 text-sm shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200"
+      data-cartograph-follow
+      role="status"
+      aria-label={fc.following(lane.label)}
+    >
+      <span className="relative flex size-2.5 shrink-0">
+        {lane.active ? <span className="absolute inline-flex size-full animate-ping rounded-full opacity-60" style={{ backgroundColor: lane.color }} /> : null}
+        <span className="relative inline-flex size-2.5 rounded-full" style={{ backgroundColor: lane.color }} />
+      </span>
+      <span className="min-w-0 truncate">
+        <span className="font-medium">{fc.following(lane.label)}</span>
+        {last ? <span className="text-muted-foreground"> · {stepText(last)}</span> : null}
+      </span>
+      <Button variant="ghost" size="xs" onClick={() => f.setPanelOpen(true)} aria-label={fc.openPanel} title={fc.openPanel}>
+        <Bot />
+      </Button>
+      <Button variant="secondary" size="xs" className="rounded-full" onClick={() => f.unfollow()}>
+        {fc.stop}
+      </Button>
+    </div>
   );
 }

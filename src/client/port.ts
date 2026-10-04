@@ -20,6 +20,9 @@ export type References = Schemas["References"];
 export type KindCount = Schemas["KindCount"];
 export type Settings = Schemas["Settings"];
 export type GoalTree = Schemas["GoalTree"];
+export type Graph = Schemas["Graph"];
+export type GraphNode = Schemas["GraphNode"];
+export type GraphEdge = Schemas["GraphEdge"];
 export type GoalCheck = Schemas["GoalCheck"];
 export type ProgrammeCheck = Schemas["ProgrammeCheck"];
 export type ProjectChecks = Schemas["ProjectChecks"];
@@ -43,6 +46,10 @@ export type Role = Schemas["Role"];
  * (engine docs/adr/0016). */
 export type Proposal = Schemas["Proposal"];
 export type ProposalReview = Schemas["ProposalReview"];
+export type ChangeSet = Schemas["ChangeSet"];
+export type ChangeSetReview = Schemas["ChangeSetReview"];
+export type ChangeSetItem = Schemas["ChangeSetItem"];
+export type ChangeSetStatus = ChangeSet["status"];
 export type ProposalPart = Schemas["ProposalPart"];
 export type Guide = Schemas["Guide"];
 export type GuideField = Schemas["GuideField"];
@@ -175,6 +182,8 @@ export interface PresenceAgent {
   open?: number;
   proposal?: string;
   parts?: number;
+  /** The change set the step was in (engine docs/adr/0022). */
+  changeSet?: string;
 }
 
 export interface Peer {
@@ -324,6 +333,10 @@ export interface Client {
   // What the engine derives across manifests.
   /** Every goal, objective and outcome as one tree. */
   goalTree(): Promise<GoalTree>;
+  /** Every element of the workspace and every reference between them,
+   * placed by the engine; with focus (Kind/id), each node's distance from
+   * that one. */
+  graph(focus?: string): Promise<Graph>;
   /** Which part of a gap each piece of work addresses. */
   gapCoverage(id: string): Promise<GapCoverage>;
   /** Deletes a goal nothing references. Throws Refused naming what does. */
@@ -390,6 +403,19 @@ export interface Client {
   /** One proposal as its person reviews it: what it would change, field
    * by field, and the checks on what it proposes. */
   getProposal(id: string): Promise<ProposalReview>;
+  /** Change sets (engine docs/adr/0022): the person's own and their
+   * agents', newest first; everyone's for an administrator who asks. */
+  changeSets(opts?: { status?: ChangeSetStatus; everyone?: boolean }): Promise<ChangeSet[]>;
+  /** A change set as its person reviews it. */
+  changeSet(id: string): Promise<ChangeSetReview>;
+  /** Include an item in the next acceptance, or trim it from it. */
+  includeChangeSetItem(set: string, kind: string, id: string, included: boolean): Promise<void>;
+  /** Accept a proposed change set as its person: whole, after trimming. */
+  acceptChangeSet(set: string, reason?: string): Promise<ChangeSet>;
+  /** Take a proposed change set back to work, asking for changes. */
+  reopenChangeSet(set: string, reason?: string): Promise<ChangeSet>;
+  /** End a change set without saving it. */
+  closeChangeSet(set: string, reason?: string): Promise<ChangeSet>;
   /** Makes the record a proposal proposed, as the caller. Conflict when
    * it was decided already or its manifest changed since. */
   acceptProposal(id: string, reason?: string): Promise<Proposal>;

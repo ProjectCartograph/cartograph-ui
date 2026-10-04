@@ -205,6 +205,7 @@ export function httpClient(
     checks: checks as Client["checks"],
 
     goalTree: () => answer(wire.GET("/goals/tree")),
+    graph: (focus) => answer(wire.GET("/graph", { params: { query: focus ? { focus } : {} } })),
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
     deleteGoal: (id, reason) =>
       done(wire.DELETE("/manifests/Goal/{id}", { params: { path: { id } }, body: { reason } })),
@@ -237,6 +238,15 @@ export function httpClient(
     getGuide: (kind, opts) =>
       answer(wire.GET("/guides/{kind}", { params: { path: { kind }, query: { level: opts?.level || undefined, locale: opts?.locale || undefined } } })),
     getProposal: (id) => answer(wire.GET("/proposals/{proposal}", { params: { path: { proposal: id } } })),
+    changeSets: (opts) =>
+      answer(wire.GET("/changesets", { params: { query: { ...(opts?.status ? { status: opts.status } : {}), ...(opts?.everyone ? { everyone: true } : {}) } } })),
+    changeSet: (id) => answer(wire.GET("/changesets/{set}", { params: { path: { set: id } } })),
+    includeChangeSetItem: async (set, kind, id, included) => {
+      await answer(wire.PATCH("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } }, body: { included } }));
+    },
+    acceptChangeSet: (set, reason) => answer(wire.POST("/changesets/{set}/accept", { params: { path: { set } }, body: reason ? { reason } : {} })),
+    reopenChangeSet: (set, reason) => answer(wire.POST("/changesets/{set}/reopen", { params: { path: { set } }, body: reason ? { reason } : {} })),
+    closeChangeSet: (set, reason) => answer(wire.POST("/changesets/{set}/close", { params: { path: { set } }, body: reason ? { reason } : {} })),
     acceptProposal: (id, reason) =>
       answer(wire.POST("/proposals/{proposal}/accept", { params: { path: { proposal: id } }, body: reason ? { reason } : {} })),
     declineProposal: (id, reason) =>

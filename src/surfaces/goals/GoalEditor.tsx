@@ -24,6 +24,7 @@ import { useDraftState, useSharedManifest } from "@/collab/draft";
 import { copy } from "@/copy";
 import { ErrorAlert } from "@/components/error-alert";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
+import { ShowInGraph } from "@/graph/ShowInGraph";
 import { useGoalChecks, useGoalManifest, useGoalReferences, useGoalTree, useSettings } from "./api";
 import { InlineTitle } from "./InlineTitle";
 import { KeyResultCard } from "./KeyResultCard";
@@ -327,6 +328,7 @@ export function GoalEditor({ id }: { id: string }) {
             </Badge>
             <SmartMarks smart={smart} />
             {version ? <span className="shrink-0 text-sm text-muted-foreground">{ec.version(version)}</span> : null}
+            <ShowInGraph kind="Goal" id={id} />
           </div>
           <AimContext horizon={node?.horizon} owner={node?.owner} />
           {version !== undefined && version > 0 ? (

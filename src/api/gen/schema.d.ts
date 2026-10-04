@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every manifest and every reference between them, for the workspace graph
+         * @description Read from the reference index: a node per manifest of every kind but Settings and KPIReadings, and an edge wherever one names another in its spec. An edge points from the manifest that holds the reference to the one it names. The engine places every node (x, y), the same way for the same workspace, so every interface draws the graph alike; with focus, each node also says how many edges it is from that one.
+         */
+        get: operations["getGraph"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/Goal/{id}/checks": {
         parameters: {
             query?: never;
@@ -578,6 +598,130 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/changesets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Change sets (docs/adr/0022): the caller's own and their agents', newest first; everyone's for an administrator who asks. */
+        get: operations["listChangeSets"];
+        put?: never;
+        /** Open a change set for the caller to work in, apart from the record and the shared drafts. */
+        post: operations["startChangeSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/changesets/{set}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A change set as its person reviews it: every item, what it changes against the version it started from, its checks with the rest of the change set, and whether the record has moved on since. */
+        get: operations["getChangeSet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Change what a change set says it is. */
+        patch: operations["retitleChangeSet"];
+        trace?: never;
+    };
+    "/changesets/{set}/items/{kind}/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A manifest as it stands in a change set, its draft there, else the record. */
+        get: operations["getChangeSetItem"];
+        /** Keep a manifest's draft in a change set. With previous (the text the editor last had), only the fields that changed since are applied, so what someone else changed in other fields meanwhile is kept. */
+        put: operations["putChangeSetItem"];
+        post?: never;
+        /** Take an item out of a change set altogether. */
+        delete: operations["dropChangeSetItem"];
+        options?: never;
+        head?: never;
+        /** Include an item in the change set's next acceptance, or trim it from it, keeping it as a draft for later. */
+        patch: operations["includeChangeSetItem"];
+        trace?: never;
+    };
+    "/changesets/{set}/propose": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Put a change set up for its person to accept: every included item is checked with the others, open checks refused unless each is left open with a reason. */
+        post: operations["proposeChangeSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/changesets/{set}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a proposed change set as the person it is for: every included item saved as a version, in one transaction. Trimmed items stay, and the change set is open again with them. Refused with 409 when a manifest in it has changed since it started. */
+        post: operations["acceptChangeSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/changesets/{set}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** End a change set without saving it. */
+        post: operations["closeChangeSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/changesets/{set}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take a proposed change set back to work, to ask for changes or to withdraw it. */
+        post: operations["reopenChangeSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/proposals/{proposal}/accept": {
         parameters: {
             query?: never;
@@ -895,6 +1039,8 @@ export interface components {
         KindCount: {
             kind: string;
             count: number;
+            /** @description The kind in one sentence, from its guidance, for a list of kinds to show beside its name. */
+            summary?: string;
         };
         Summary: {
             kind: string;
@@ -1206,6 +1352,8 @@ export interface components {
             waivers?: components["schemas"]["Waiver"][];
         };
         Waiver: {
+            /** @description The manifest it is on, as Kind/id, in a change set. */
+            on?: string;
             check: string;
             /** @description What the check said. */
             message: string;
@@ -1240,6 +1388,8 @@ export interface components {
             level?: string;
             /** @description What the asked level is. */
             levelIs?: string;
+            /** @description The work around this kind, in order, from the flows' links: what it answers to, settled before it, deepest first (for an objective, the gaps its outcomes close, each measured by a KPI and observed in segments, then the outcomes). */
+            plan?: components["schemas"]["GuidePlanItem"][];
             /** @description What each level is, when no level was asked for. */
             levels?: {
                 [key: string]: string;
@@ -1297,12 +1447,95 @@ export interface components {
             ifNone?: string;
             candidates?: components["schemas"]["GuideCandidate"][];
         };
+        GuidePlanItem: {
+            kind: string;
+            level?: string;
+            /** @description What it is needed for, as Kind or Kind (level). */
+            for: string;
+            /** @description How the two are joined, as the holding kind and the path that names the other. */
+            link: string;
+            /** @description The check that reports whether the link is made. */
+            check?: string;
+            ask?: string;
+            ifNone?: string;
+            existing?: components["schemas"]["GuideCandidate"][];
+        };
         GuideCandidate: {
             id: string;
             name: string;
             detail?: string;
             /** @description A goal's parent. */
             under?: string;
+        };
+        /** @description A piece of work kept apart from the record and from every other piece of work until it is accepted, as a pull request is (docs/adr/0022). */
+        ChangeSet: {
+            id: string;
+            title: string;
+            description?: string;
+            /** @description The agent working in it, if one is. */
+            agent?: string;
+            /** @description The person it is for, who accepts it. */
+            for?: string;
+            /** @enum {string} */
+            status: "open" | "proposed" | "merging" | "merged" | "closed";
+            /** @description What proposing it said. */
+            reason?: string;
+            waivers?: components["schemas"]["Waiver"][];
+            /** Format: date-time */
+            at: string;
+            /** Format: date-time */
+            updated: string;
+            decidedBy?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            decisionReason?: string;
+        };
+        ChangeSetTitle: {
+            title?: string;
+            description?: string;
+        };
+        ChangeSetItem: {
+            kind: string;
+            id: string;
+            name?: string;
+            /** @description The version it started from; 0 for a manifest the change set creates. */
+            base: number;
+            /** @description False for an item trimmed from the next acceptance. */
+            included: boolean;
+            by?: string;
+            /** Format: date-time */
+            at?: string;
+            /** @description What accepting it would change, against the version it started from. */
+            changes: components["schemas"]["Change"][];
+            checks: components["schemas"]["ManifestCheck"][];
+            /** @description The version saved since it started, when one was; accepting is refused until it is reviewed again. */
+            stale?: number;
+        };
+        ChangeSetReview: {
+            changeSet: components["schemas"]["ChangeSet"];
+            items: components["schemas"]["ChangeSetItem"][];
+        };
+        ChangeSetDraft: {
+            yaml: string;
+            /** @description Whether the change set has its own draft of it; false when this is the record. */
+            inChangeSet: boolean;
+        };
+        ChangeSetEdit: {
+            yaml: string;
+            /** @description The text the editor last had, so only what it changed since is applied. */
+            previous?: string;
+        };
+        ChangeSetInclude: {
+            included: boolean;
+        };
+        ChangeSetProposal: {
+            reason?: string;
+            /** @description Checks left open, by Kind/id, then check id, each with why. */
+            openChecks?: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
         };
         ProposalDecision: {
             /** @description Why, recorded with the decision. */
@@ -1377,6 +1610,31 @@ export interface components {
             keyResults: number;
             aligned: components["schemas"]["GoalAligned"];
             children: components["schemas"]["GoalNode"][];
+        };
+        Graph: {
+            nodes: components["schemas"]["GraphNode"][];
+            edges: components["schemas"]["GraphEdge"][];
+        };
+        GraphNode: {
+            /**
+             * Format: double
+             * @description Where the engine's layout placed it, in units an interface scales to its screen.
+             */
+            x: number;
+            /** Format: double */
+            y: number;
+            /** @description How many edges, either way, from the focus asked for; absent when nothing joins them or no focus was asked for. */
+            distance?: number;
+            kind: string;
+            id: string;
+            /** @description metadata.name */
+            name: string;
+            /** @description A goal's level (goal, objective, outcome); absent for every other kind. */
+            level?: string;
+        };
+        GraphEdge: {
+            from: components["schemas"]["Ref"];
+            to: components["schemas"]["Ref"];
         };
         GoalTree: {
             levels: string[];
@@ -1538,6 +1796,8 @@ export interface components {
         KindParam: string;
         IdParam: string;
         GrantParam: string;
+        /** @description A change set's id. */
+        ChangeSetParam: string;
         ProposalParam: string;
     };
     requestBodies: never;
@@ -1584,6 +1844,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GoalTree"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getGraph: {
+        parameters: {
+            query?: {
+                /** @description A manifest as Kind/id, to measure every node's distance from. */
+                focus?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Graph"];
                 };
             };
             401: components["responses"]["Unauthenticated"];
@@ -2533,6 +2818,428 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listChangeSets: {
+        parameters: {
+            query?: {
+                status?: "open" | "proposed" | "merging" | "merged" | "closed";
+                everyone?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSet"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    startChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeSetTitle"];
+            };
+        };
+        responses: {
+            /** @description Opened */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSet"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSetReview"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    retitleChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeSetTitle"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSet"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change set has moved on, or a manifest in it changed since it started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+        };
+    };
+    getChangeSetItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSetDraft"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    putChangeSetItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeSetEdit"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSetDraft"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change set has moved on, or a manifest in it changed since it started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    dropChangeSetItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dropped */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change set has moved on, or a manifest in it changed since it started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+        };
+    };
+    includeChangeSetItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeSetInclude"];
+            };
+        };
+        responses: {
+            /** @description Done */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change set has moved on, or a manifest in it changed since it started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+        };
+    };
+    proposeChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ChangeSetProposal"];
+            };
+        };
+        responses: {
+            /** @description Proposed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSet"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change set has moved on, or a manifest in it changed since it started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    acceptChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProposalDecision"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSet"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change set has moved on, or a manifest in it changed since it started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    closeChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProposalDecision"];
+            };
+        };
+        responses: {
+            /** @description Closed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSet"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change set has moved on, or a manifest in it changed since it started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
+        };
+    };
+    reopenChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProposalDecision"];
+            };
+        };
+        responses: {
+            /** @description Reopened */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChangeSet"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description The change set has moved on, or a manifest in it changed since it started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemList"];
+                };
+            };
         };
     };
     acceptProposal: {

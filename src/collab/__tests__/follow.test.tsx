@@ -4,7 +4,7 @@
 // moves the view with it; the viewer chooses what to see.
 
 import { describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, createRootRoute, createRoute, createRouter, Outlet, RouterProvider } from "@tanstack/react-router";
@@ -15,8 +15,8 @@ import { fakeClient } from "@/client/fake";
 import type { Peer, PresenceAgent, PresenceChannel } from "@/client/port";
 import { isPresenceMessage } from "@/client/presence";
 import { copy } from "@/copy";
-import { FollowFeed, FollowProvider, mergeLanes, useFollow, type AgentLane } from "@/collab/follow";
-import { FollowPanel } from "@/collab/FollowPanel";
+import { FollowFeed, FollowProvider, groupSteps, mergeLanes, useFollow, type AgentLane, type AgentStep } from "@/collab/follow";
+import { FollowChip, FollowPanel } from "@/collab/FollowPanel";
 import { PresenceProvider } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 
@@ -101,6 +101,22 @@ function Opener() {
   );
 }
 
+describe("the log", () => {
+  it("reads as one entry per record, where the agent last worked on it", () => {
+    const at = (seq: number, step: AgentStep["step"], id: string, more: Partial<AgentStep> = {}): AgentStep => ({ for: "", seq, step, kind: "Goal", id, heard: seq, ...more });
+    const groups = groupSteps([
+      at(1, "draft", "children", { fields: ["/metadata/name", "/spec/objective"], met: 3, open: 5 }),
+      at(2, "draft", "children", { fields: ["/spec/objective"], met: 3, open: 5 }),
+      at(3, "draft", "system", { fields: ["/spec/why"], met: 3, open: 5 }),
+      at(4, "draft", "children", { fields: ["/spec/owner"], met: 5, open: 3 }),
+      at(5, "propose", "children", { proposal: "p1" }),
+    ]);
+    expect(groups.map((g) => g.key)).toEqual(["Goal/system", "Goal/children", "proposal:p1"]);
+    expect(groups[1]).toMatchObject({ edits: 3, met: 5, open: 3 });
+    expect(groups[1].fields).toEqual(["/metadata/name", "/spec/objective", "/spec/owner"]);
+  });
+});
+
 describe("following", () => {
   it("moves the view with the agent, to the draft and then to its proposal", async () => {
     const { channel, say } = feed();
@@ -147,6 +163,27 @@ describe("following", () => {
     // Any step it took is a place to go.
     await userEvent.click(screen.getByRole("button", { name: fc.steps.read("Cut loss after picking") }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/goals/g1"));
+  });
+
+  it("goes on with the panel closed, and says so", async () => {
+    const { channel, say } = feed();
+    const router = mount(
+      <FollowProvider>
+        <Opener />
+        <FollowPanel />
+        <FollowChip />
+      </FollowProvider>,
+      fakeClient({ followAgents: async () => channel }),
+    );
+    await userEvent.click(await screen.findByRole("button", { name: "open" }));
+    say([agentPeer("agent-1", { for: "", seq: 1, step: "guide", kind: "Goal" })]);
+    await userEvent.click(await screen.findByRole("button", { name: fc.follow }));
+    await userEvent.click(screen.getByRole("button", { name: fc.close }));
+    const chip = await screen.findByRole("status", { name: fc.following("Ada's agent (Claude)") });
+    say([agentPeer("agent-1", { for: "", seq: 2, step: "draft", kind: "Goal", id: "g1", name: "Cut loss" })]);
+    await waitFor(() => expect(router.state.location.pathname).toBe("/goals/g1"));
+    await userEvent.click(within(chip).getByRole("button", { name: fc.stop }));
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("hands the view back on the viewer's own input", async () => {

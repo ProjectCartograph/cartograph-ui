@@ -143,6 +143,8 @@ function SpecCell({
  */
 export function Sheet({ kind }: { kind: SheetKind }) {
   const client = useClient();
+  // What this kind is, in one sentence, as the engine's guidance says it.
+  const summary = useQuery({ queryKey: ["kinds"], queryFn: () => client.kinds() }).data?.find((k) => k.kind === kind)?.summary;
   const kindLabel = copy.sheets.kinds[kind] ?? kind;
   const kindLabelSingular = copy.sheets.kindsSingular[kind] ?? kind;
 
@@ -255,7 +257,7 @@ export function Sheet({ kind }: { kind: SheetKind }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{kindLabel}</h1>
-          <p className="text-muted-foreground">{copy.sheets.subtitle}</p>
+          <p className="max-w-[70ch] text-muted-foreground">{summary ?? copy.sheets.subtitle}</p>
         </div>
         <Button onClick={openAdd}>
           <Plus />

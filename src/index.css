@@ -322,3 +322,31 @@
 @keyframes cartograph-icon-drop { 0% { transform: translateY(-4px) scale(0.9); } 60% { transform: translateY(1px) scale(1.06); } 100% { transform: translateY(0) scale(1); } }
 @keyframes cartograph-icon-alive { 0%, 100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-2px) rotate(-6deg); } 65% { transform: translateY(0) rotate(5deg); } }
 @keyframes cartograph-icon-nudge { 0%, 100% { transform: translate(0, 0); } 45% { transform: translate(1.5px, -1.5px); } }
+
+/* The workspace graph: lit edges flow from what holds a reference to what
+ * it names, a node eases into its dimmed or lit state, and the chosen one
+ * breathes. Still for anyone who asked for less motion. */
+.cartograph-graph-node {
+  transition: opacity 180ms ease-out;
+}
+.cartograph-graph-node:focus-visible circle:not(.cartograph-graph-halo) {
+  stroke: var(--ring);
+  stroke-width: 3;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cartograph-graph-flow {
+    stroke-dasharray: 6 5;
+    animation: cartograph-graph-flow 900ms linear infinite;
+  }
+  .cartograph-graph-halo {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: cartograph-graph-breathe 2.4s ease-in-out infinite;
+  }
+  [data-slot="graph-nodes"] > .cartograph-graph-node {
+    animation: cartograph-graph-in 420ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  }
+}
+@keyframes cartograph-graph-flow { from { stroke-dashoffset: 22; } to { stroke-dashoffset: 0; } }
+@keyframes cartograph-graph-breathe { 0%, 100% { transform: scale(1); opacity: 0.18; } 50% { transform: scale(1.25); opacity: 0.08; } }
+@keyframes cartograph-graph-in { from { opacity: 0; } }

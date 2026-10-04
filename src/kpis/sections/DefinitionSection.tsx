@@ -146,6 +146,7 @@ export function DefinitionSection() {
     store.updateSpec((s) => ({ ...s, ...patch }));
   const { data: goals } = useReferenceOptions("Goal");
   const { data: segments } = useReferenceOptions("Segment");
+  const dataSources = useReferenceOptions("DataSource");
   const [addingSegment, setAddingSegment] = useState(false);
 
   return (
@@ -208,13 +209,15 @@ export function DefinitionSection() {
 
       <div className="flex flex-col gap-2">
         <FieldHeading label={kc.sourceLabel} hint={kc.sourceHint} />
-        <ReferencePicker
-          refKind="DataSource"
-          data-cartograph-field="/spec/source"
-          value={spec.source}
-          onChange={(v) => set({ source: v || undefined })}
+        <ComboboxMultiple
+          data-cartograph-field="/spec/sources"
+          options={dataSources.data?.options ?? []}
+          value={spec.sources ?? (spec.source ? [spec.source] : [])}
+          onValueChange={(next) => set({ source: undefined, sources: next.length > 0 ? next : undefined })}
           placeholder={kc.sourcePlaceholder}
-          label={kc.sourceLabel}
+          emptyText={kc.sourceNone}
+          removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+          aria-label={kc.sourceLabel}
         />
       </div>
 

@@ -27,7 +27,7 @@ export function fieldLabel(path: string): string {
   return words.join(" › ") || "Everything";
 }
 
-function show(v: unknown): string {
+export function show(v: unknown): string {
   if (v === undefined || v === null) return "";
   if (typeof v === "string") return v;
   return JSON.stringify(v, null, 2);
