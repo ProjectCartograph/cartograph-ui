@@ -164,7 +164,7 @@ export function StageStepper({ id, current }: { id: string; current: Stage }) {
             aria-current={stage === current ? "step" : undefined}
           >
             <Badge
-              variant={stage === current ? "default" : i < currentIdx ? "secondary" : "outline"}
+              variant={stage === current ? "current" : i < currentIdx ? "secondary" : "outline"}
               className="gap-1"
             >
               <Icon className="size-3.5 shrink-0" aria-hidden="true" />
@@ -178,7 +178,7 @@ export function StageStepper({ id, current }: { id: string; current: Stage }) {
                     value={clear / steps.length}
                     size={12}
                     label={pc.assembly.stageProgress(clear, steps.length)}
-                    className="ml-0.5"
+                    className="ml-0.5 text-success"
                   />
                 );
               })()}
@@ -203,7 +203,7 @@ export function ProjectHeaderBar() {
           <OfflineNote />
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => setDiscardOpen(true)}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setDiscardOpen(true)}>
             {pc.header.discardDraft}
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={() => setSaveOpen(true)}>

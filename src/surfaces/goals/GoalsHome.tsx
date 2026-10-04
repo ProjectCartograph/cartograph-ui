@@ -1119,7 +1119,7 @@ export function GoalsHome() {
         </div>
         <div className="flex flex-wrap gap-2">
           {ALIGN_KINDS.map((k) => (
-            <Badge key={k} asChild variant={activeFilters.has(k) ? "default" : "outline"}>
+            <Badge key={k} asChild variant={activeFilters.has(k) ? "current" : "outline"}>
               <button
                 type="button"
                 className="cursor-pointer select-none"

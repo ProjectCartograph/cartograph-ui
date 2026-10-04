@@ -30,6 +30,10 @@
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -54,31 +58,42 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
+    /* Where the eye lands (engine docs/DESIGN_RULES.md). The page is a
+       quiet ground and the card the work happens on is white, so the
+       focal surface stands off it. One accent hue, primary, marks focus
+       only: the action the view exists for, the selected item and where
+       the person is. Kinds and levels stay neutral. Status has tones of
+       its own, each with one meaning: destructive blocks, warning
+       advises, success is met. */
+    --background: oklch(0.982 0.003 264);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
+    --primary: oklch(0.49 0.2 264);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
+    --secondary: oklch(0.96 0.004 264);
     --secondary-foreground: oklch(0.205 0 0);
     --muted: oklch(0.97 0 0);
     --muted-foreground: oklch(0.556 0 0);
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --success: oklch(0.56 0.13 155);
+    --success-foreground: oklch(0.985 0 0);
+    --warning: oklch(0.7 0.15 65);
+    --warning-foreground: oklch(0.27 0.06 60);
+    --border: oklch(0.912 0.004 264);
+    --input: oklch(0.912 0.004 264);
+    --ring: oklch(0.62 0.17 264);
     /* The risk matrix's four severity levels. The theme's own chart ramp
        carries the same five greys in both modes, so its dark end would sit
        on a dark card almost invisibly; these are stepped per surface
        instead, at fifteen steps of OKLab lightness apart so adjacent
-       levels are actually distinguishable. Achromatic, because
-       this theme is: the only chromatic token is destructive, and it is
-       kept for escalation, which is a state rather than a magnitude. */
+       levels are actually distinguishable. Achromatic: a
+       severity is a magnitude, and the theme's hues are kept for focus
+       (primary) and for states (destructive, warning, success). */
     --severity-1: oklch(0.94 0 0);
     --severity-2: oklch(0.79 0 0);
     --severity-3: oklch(0.64 0 0);
@@ -93,14 +108,14 @@
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
+    --sidebar: oklch(0.965 0.004 264);
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary: oklch(0.49 0.2 264);
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.97 0 0);
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar-ring: oklch(0.62 0.17 264);
 }
 
 .dark {
@@ -110,8 +125,8 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
+    --primary: oklch(0.7 0.16 264);
+    --primary-foreground: oklch(0.16 0.02 264);
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
@@ -119,9 +134,13 @@
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
     --destructive: oklch(0.704 0.191 22.216);
+    --success: oklch(0.72 0.14 155);
+    --success-foreground: oklch(0.16 0.02 155);
+    --warning: oklch(0.8 0.14 70);
+    --warning-foreground: oklch(0.2 0.04 60);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
+    --ring: oklch(0.6 0.15 264);
     /* Dark steps are chosen against the dark card, not flipped. */
     --severity-1: oklch(0.28 0 0);
     --severity-2: oklch(0.43 0 0);
@@ -138,12 +157,21 @@
     --chart-5: oklch(0.269 0 0);
     --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary: oklch(0.7 0.16 264);
     --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+    --sidebar-ring: oklch(0.6 0.15 264);
+}
+
+/* Where the person is: the sidebar's current section in the accent's
+   tint (engine DESIGN_RULES "Where the eye lands"). TanStack's Link marks
+   the active route itself. */
+[data-sidebar="menu-button"][data-status="active"] {
+    background-color: color-mix(in oklch, var(--sidebar-primary) 11%, transparent);
+    color: var(--sidebar-primary);
+    font-weight: 500;
 }
 
 @layer base {

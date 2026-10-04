@@ -110,7 +110,7 @@ export function StrategyView() {
         {wide ? (
           <aside
             aria-label={sc.preview}
-            className="sticky top-4 flex max-h-[calc(100vh-2rem)] flex-col overflow-y-auto rounded-xl border bg-card"
+            className="sticky top-4 flex max-h-[calc(100vh-2rem)] flex-col overflow-y-auto rounded-xl bg-card shadow-sm ring-1 ring-foreground/5"
             data-cartograph-region="goal-detail"
           >
             {open ? (
@@ -268,13 +268,13 @@ function PurposeDialog({ initial, onClose }: { initial: { vision?: string; missi
  * width (Programme Lead, 2026-09-30: side by side, as in the guide). */
 function Statement({ icon: Icon, label, text }: { icon: typeof Eye; label: string; text?: string }) {
   return (
-    <Card className="gap-2 p-4">
+    <Card className="gap-2 bg-transparent p-4 shadow-none ring-1 ring-inset ring-border">
       <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         <Icon className="size-3.5" aria-hidden="true" />
         {label}
       </span>
       {text ? (
-        <p className="max-w-[60ch] text-sm leading-relaxed">{text}</p>
+        <p className="max-w-[60ch] text-base font-medium leading-relaxed text-pretty">{text}</p>
       ) : (
         <p className="text-sm text-muted-foreground">{sc.notSet}</p>
       )}
@@ -312,14 +312,14 @@ function Attention({ node }: { node: GoalNode }) {
   if (what.length === 0) return null;
   const label = sc.attention(what);
   return (
-    <span className="mt-1.5 flex size-2 shrink-0 rounded-full bg-amber-500/60" role="img" aria-label={label} title={label} data-slot="attention" />
+    <span className="mt-1.5 flex size-2 shrink-0 rounded-full bg-warning/60" role="img" aria-label={label} title={label} data-slot="attention" />
   );
 }
 
 function Column({ node, levels, chosen, onOpen }: { node: GoalNode; levels: string[]; chosen?: string; onOpen: (n: GoalNode) => void }) {
   const objectives = node.children ?? [];
   const row = (n: GoalNode, cls: string) =>
-    `flex w-full items-start gap-2 rounded-md text-left transition-colors ${cls} ${chosen === n.id ? "bg-accent text-accent-foreground" : "hover:bg-muted/60"}`;
+    `flex w-full items-start gap-2 rounded-md text-left transition-colors ${cls} ${chosen === n.id ? "bg-primary/10 text-primary" : "hover:bg-muted/60"}`;
   return (
     <section aria-label={node.name} className="flex flex-col gap-2" data-cartograph-region={`goal-${node.id}`}>
       <button type="button" onClick={() => onOpen(node)} aria-current={chosen === node.id || undefined} className={row(node, "px-1 py-1 font-semibold")}>
@@ -334,7 +334,7 @@ function Column({ node, levels, chosen, onOpen }: { node: GoalNode; levels: stri
         <p className="px-1 text-sm text-muted-foreground">{sc.noObjectives}</p>
       ) : (
         objectives.map((o) => (
-          <Card key={o.id} className="gap-1 p-2">
+          <Card key={o.id} className="gap-1 bg-transparent p-2 shadow-none ring-1 ring-inset ring-border">
             <button type="button" onClick={() => onOpen(o)} aria-current={chosen === o.id || undefined} className={row(o, "px-1 py-1 text-sm font-medium")}>
               <LevelIcon node={o} levels={levels} />
               <span className="flex-1">{o.name}</span>
@@ -405,8 +405,8 @@ function NodeDetail({ node, levels, names, Title }: {
       />
       <div className="flex flex-col gap-5 p-4 text-sm">
         {what.length > 0 ? (
-          <p className="flex items-start gap-2 rounded-md bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-200" data-slot="unfinished">
-            <span className="mt-1 size-1.5 shrink-0 rounded-full bg-amber-500" aria-hidden="true" />
+          <p className="flex items-start gap-2 rounded-md bg-warning/10 px-2.5 py-2 text-xs text-warning-foreground" data-slot="unfinished">
+            <span className="mt-1 size-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true" />
             {sc.attention(what)}
           </p>
         ) : null}

@@ -42,12 +42,12 @@ function CheckProgress({ met, open }: { met: number; open: number }) {
     <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
         <div
-          className={`h-full rounded-full transition-[width] duration-700 ease-out ${done ? "bg-emerald-500" : "bg-violet-500"}`}
+          className={`h-full rounded-full transition-[width] duration-700 ease-out ${done ? "bg-success" : "bg-violet-500"}`}
           style={{ width: `${Math.round((met / total) * 100)}%` }}
         />
       </div>
       {done ? (
-        <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+        <span className="flex items-center gap-1 text-success">
           <svg className="cartograph-draw size-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
             <polyline points="3,8.5 6.5,12 13,4.5" />
           </svg>

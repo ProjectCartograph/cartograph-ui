@@ -46,7 +46,7 @@ export function PhaseShell({
       </div>
       <AssemblyStrip id={id} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_18rem]">
-        <div className="min-w-0 flex flex-col gap-4" data-cartograph-region="section">
+        <div className="min-w-0 flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
           ) : !store.loaded ? (
@@ -64,7 +64,7 @@ export function PhaseShell({
               Next read their neighbours out of STEPS like every other
               step rather than naming them here. */}
           <div className="flex items-center justify-between gap-2 pt-6">
-            <Button asChild variant="outline" size="lg">
+            <Button asChild variant="ghost" size="lg">
               {prev ? (
                 <Link to={`/projects/$id${prev.path}`} params={{ id }}>
                   <ArrowLeft />

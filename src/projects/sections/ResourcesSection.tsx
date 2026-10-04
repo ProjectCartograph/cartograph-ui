@@ -183,7 +183,7 @@ export function ResourcesSection() {
             const present = roleRows.some(({ r }) => r.role === role);
             return (
               <Badge key={role} variant={present ? "secondary" : "outline"} className="gap-1 font-normal">
-                {present ? <Check className="size-3 text-emerald-600" /> : null}
+                {present ? <Check className="size-3 text-success" /> : null}
                 {label}
               </Badge>
             );

@@ -182,7 +182,7 @@ export function QualityMarks({ title, marks }: { title: string; marks: QualityMa
           data-met={m.met}
           className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${
             m.met
-              ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+              ? "bg-success/12 text-success"
               : "text-muted-foreground ring-1 ring-border"
           }`}
         >

@@ -43,10 +43,10 @@ function ConflictMarks({ conflicts }: { conflicts: FieldConflict[] }) {
             key={c.path}
             data-slot="conflict-mark"
             data-field={c.path}
-            className="absolute rounded-md outline-2 outline-dashed outline-amber-500"
+            className="absolute rounded-md outline-2 outline-dashed outline-warning"
             style={{ left: r.left - 3, top: r.top - 3, width: r.width + 6, height: r.height + 6 }}
           >
-            <AlertTriangle className="absolute -right-2 -top-2 size-4 rounded-full bg-background text-amber-600" />
+            <AlertTriangle className="absolute -right-2 -top-2 size-4 rounded-full bg-background text-warning" />
           </div>
         );
       })}
@@ -80,13 +80,13 @@ export function ConflictNotes({
         data-slot="conflict-notes"
         data-cartograph-region="conflicts"
         aria-label={cc.conflictsTitle}
-        className="flex flex-col gap-3 rounded-lg border border-amber-500/50 p-4"
+        className="flex flex-col gap-3 rounded-lg border border-warning/40 p-4"
       >
         <h2 className="text-sm font-semibold">{cc.conflictsTitle}</h2>
         <ul className="flex flex-col gap-3">
           {scoped.map((c) => (
             <li key={c.path} data-conflict={c.path} className="flex items-start gap-2 text-sm">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
+              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <span>{cc.conflict(labelOf(c.path))}</span>
                 <div className="flex flex-wrap items-center gap-2">

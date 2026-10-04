@@ -34,16 +34,16 @@ function StepLink({ step, id, isCurrent, state }: { step: DefinitionStep; id: st
       params={ID_PARAM(id)}
       style={sectionRing(shown)}
       className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
-        isCurrent ? "bg-accent font-medium text-accent-foreground" : "text-foreground hover:bg-accent/50"
+        isCurrent ? "bg-primary/10 font-medium text-primary shadow-[inset_2px_0_0_var(--color-primary)]" : "text-foreground hover:bg-accent/60"
       }`}
     >
-      {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" /> : null}
+      {Icon ? <Icon className={`size-4 shrink-0 ${isCurrent ? "text-primary" : "text-muted-foreground"}`} /> : null}
       <span className="truncate">{step.label}</span>
       <SectionPeers peers={shown} />
       {state === "ok" ? (
-        <CheckCircle2 className={`${at}size-3.5 shrink-0 text-muted-foreground`} aria-label={copy.projects.checks.railDone} />
+        <CheckCircle2 className={`${at}size-3.5 shrink-0 text-success/70`} aria-label={copy.projects.checks.railDone} />
       ) : state === "warn" ? (
-        <AlertTriangle className={`${at}size-3.5 shrink-0 text-muted-foreground`} aria-label={copy.projects.checks.railWarn} />
+        <AlertTriangle className={`${at}size-3.5 shrink-0 text-warning`} aria-label={copy.projects.checks.railWarn} />
       ) : null}
     </Link>
   );
@@ -159,7 +159,7 @@ export function DefinitionShell({
       {outline ? <OutlineStrip id={store.id} parts={outline} loaded={store.loaded} /> : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr]">
-        <div className="flex w-full shrink-0 flex-col gap-1 rounded-lg border p-2 xl:w-56" data-cartograph-region="step-rail">
+        <div className="flex w-full shrink-0 flex-col gap-1 xl:w-56" data-cartograph-region="step-rail">
           {steps.map((step) => (
             <StepLink key={step.section} step={step} id={store.id} isCurrent={step.section === current} state={bySection.get(step.section)} />
           ))}
@@ -194,7 +194,7 @@ export function DefinitionShell({
           ) : null}
         </div>
 
-        <div className="flex min-w-0 flex-col gap-4" data-cartograph-region="step">
+        <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="step">
           {store.loadError ? (
             <p className="text-sm text-destructive">{copy.projects.record.error}</p>
           ) : !store.loaded ? (
@@ -209,7 +209,7 @@ export function DefinitionShell({
                   each route remembering to host it. */}
               <SaveBar />
               <div className="flex items-center justify-between gap-2 pt-6">
-                <Button asChild variant="outline" size="lg">
+                <Button asChild variant="ghost" size="lg">
                   {prev ? (
                     <Link to={prev.to} params={ID_PARAM(store.id)}>
                       <ArrowLeft />

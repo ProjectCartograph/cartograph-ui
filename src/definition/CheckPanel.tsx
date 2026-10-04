@@ -45,7 +45,7 @@ export function DefinitionCheckPanel({
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-2 rounded-lg border p-4" data-cartograph-region="checks">
+      <div className="flex flex-col gap-2 rounded-xl p-4 ring-1 ring-inset ring-border" data-cartograph-region="checks">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-4/6" />
       </div>
@@ -59,9 +59,9 @@ export function DefinitionCheckPanel({
     return (
       <li className="flex items-start gap-2 text-sm">
         {item.state === "ok" ? (
-          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success/70" />
         ) : (
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
         )}
         <span className="flex-1">{item.message}</span>
       </li>
@@ -69,7 +69,7 @@ export function DefinitionCheckPanel({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-4" data-cartograph-region="checks">
+    <div className="flex flex-col gap-3 rounded-xl p-4 ring-1 ring-inset ring-border" data-cartograph-region="checks">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{c.title}</h2>
         <div className="flex items-center gap-1">

@@ -102,7 +102,9 @@ export function Explorer({
           {title}
           <span className="text-sm font-normal text-muted-foreground">{rows.reduce((n, r) => n + 1 + (r.children?.length ?? 0), 0)}</span>
         </h1>
-        {action}
+        {/* One filled action per view: an empty register offers it in
+            its empty state instead. */}
+        {!loading && rows.length === 0 ? null : action}
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_26rem]">
@@ -128,7 +130,13 @@ export function Explorer({
               {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}
             </div>
           ) : flat.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">{query ? ec.noMatch : ec.empty}</p>
+            // An empty register is one sentence and the action that fills
+            // it, never a dead end (engine DESIGN_RULES "Where the eye
+            // lands").
+            <div className="flex flex-col items-center gap-3 rounded-xl py-10 text-center ring-1 ring-inset ring-border" data-slot="explorer-empty">
+              <p className="text-sm text-muted-foreground">{query ? ec.noMatch : ec.empty}</p>
+              {!query && action ? action : null}
+            </div>
           ) : (
             <div
               ref={listRef}
@@ -136,7 +144,7 @@ export function Explorer({
               aria-label={title}
               data-cartograph-region="explorer-list"
               tabIndex={0}
-              className="flex flex-col rounded-lg border p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex flex-col rounded-xl p-1 ring-1 ring-inset ring-border outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onKeyDown={(e) => {
                 if (e.key === "ArrowDown") { e.preventDefault(); move(1); }
                 if (e.key === "ArrowUp") { e.preventDefault(); move(-1); }
@@ -167,10 +175,12 @@ export function Explorer({
                     data-row={f.row.id}
                     onClick={() => setSelected(f.row.id)}
                     onDoubleClick={() => open(f.row.id)}
-                    className={`group flex cursor-default items-center gap-2 rounded-md py-1.5 pr-2 text-sm ${f.row.id === selected ? "bg-accent" : "hover:bg-muted/60"}`}
+                    className={`group flex cursor-default items-center gap-2 rounded-md py-1.5 pr-2 text-sm ${
+                      f.row.id === selected ? "bg-primary/10 font-medium text-primary shadow-[inset_2px_0_0_var(--color-primary)]" : "hover:bg-muted/60"
+                    }`}
                     style={{ paddingLeft: `${1.4 + f.depth * 1.25}rem` }}
                   >
-                    <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    <Icon className={`size-3.5 shrink-0 ${f.row.id === selected ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1 truncate">{f.row.name}</span>
                     <Link
                       to={route}
@@ -189,11 +199,11 @@ export function Explorer({
           )}
         </div>
 
-        <aside aria-label={ec.preview} data-cartograph-region="explorer-preview" className="sticky top-4 hidden rounded-lg border p-4 lg:block">
+        <aside aria-label={ec.preview} data-cartograph-region="explorer-preview" className="sticky top-4 hidden rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 lg:block">
           {selectedRow ? (
             <div className="flex flex-col gap-4">
               <div className="flex items-start justify-between gap-3">
-                <h2 className="text-base font-semibold">{selectedRow.name}</h2>
+                <h2 className="text-lg font-semibold leading-snug">{selectedRow.name}</h2>
                 <Button size="sm" variant="outline" asChild>
                   <Link to={route} params={{ id: selectedRow.id } as never}>{ec.open}</Link>
                 </Button>

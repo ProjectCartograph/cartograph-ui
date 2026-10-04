@@ -64,7 +64,7 @@ export function NewWork() {
         <h2 className="text-base font-medium">{nc.strategy}</h2>
         <ol className="flex flex-col gap-2">
           {strategy.map((s) => (
-            <StageRow key={s.key} stage={s} next={order.data?.next === s.key} />
+            <StageRow key={s.key} stage={s} n={strategy.indexOf(s) + 1} next={order.data?.next === s.key} />
           ))}
         </ol>
       </section>
@@ -73,7 +73,13 @@ export function NewWork() {
   );
 }
 
-function StageRow({ stage, next }: { stage: OrderStage; next: boolean }) {
+/**
+ * One stage of the strategy. The stage to write now is the page's focal
+ * point (engine DESIGN_RULES "Where the eye lands"): a larger raised card
+ * with its number, its meaning and the page's one filled action. Done and
+ * waiting stages are compact rows, so the eye goes to the one that is not.
+ */
+function StageRow({ stage, n, next }: { stage: OrderStage; n: number; next: boolean }) {
   const navigate = useNavigate();
   // What the stage is, as the glossary defines it (TAXONOMY.md D29).
   const meaning = entryFor(useGlossary().data, stage.key)?.summary;
@@ -99,25 +105,33 @@ function StageRow({ stage, next }: { stage: OrderStage; next: boolean }) {
   );
   return (
     <li
-      className={`flex items-center gap-3 rounded-xl p-3 ring-1 transition-colors motion-reduce:transition-none ${
-        next ? "bg-primary/5 ring-2 ring-primary" : "ring-foreground/10"
-      } ${waiting ? "opacity-60" : ""}`}
+      className={`flex items-center gap-3 rounded-xl transition-colors motion-reduce:transition-none ${
+        next ? "my-1 bg-card p-5 shadow-md ring-2 ring-primary" : "px-3 py-2 ring-1 ring-inset ring-border"
+      } ${waiting ? "opacity-55" : ""}`}
       data-cartograph-stage={stage.key}
       data-state={next ? "next" : stage.state}
       aria-current={next ? "step" : undefined}
     >
-      <Icon className={`size-5 shrink-0 ${next || stage.state === "done" ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
+      {next ? (
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-base font-semibold text-primary-foreground" aria-hidden="true">
+          {n}
+        </span>
+      ) : (
+        <Icon className={`size-4 shrink-0 ${stage.state === "done" ? "text-success" : "text-muted-foreground"}`} aria-hidden="true" />
+      )}
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="flex items-center gap-1 font-medium">
+        <span className={`flex items-center gap-1 font-medium ${next ? "text-lg" : "text-sm"}`}>
           {label}
           <Term word={stage.key} />
         </span>
-        {meaning ? <span className="text-sm text-muted-foreground">{meaning}</span> : null}
+        {meaning && (next || stage.state !== "done") ? (
+          <span className={`text-muted-foreground ${next ? "text-sm" : "text-xs"}`}>{meaning}</span>
+        ) : null}
       </span>
       {status ? <span className={`shrink-0 text-xs ${next ? "font-medium text-primary" : "text-muted-foreground"}`}>{status}</span> : null}
       {waiting ? null : stage.key === "kpi" ? (
         <>
-          <Button type="button" size="sm" variant={next ? "default" : "outline"} onClick={() => setAdding(true)}>
+          <Button type="button" size={next ? "default" : "sm"} variant={next ? "default" : "ghost"} onClick={() => setAdding(true)}>
             {action}
           </Button>
           <KPIAddDialog
@@ -127,7 +141,7 @@ function StageRow({ stage, next }: { stage: OrderStage; next: boolean }) {
           />
         </>
       ) : WHERE[stage.key] ? (
-        <Button asChild size="sm" variant={next ? "default" : "outline"}>
+        <Button asChild size={next ? "default" : "sm"} variant={next ? "default" : "ghost"}>
           <Link to={WHERE[stage.key]}>{action}</Link>
         </Button>
       ) : null}

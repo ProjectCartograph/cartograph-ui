@@ -51,11 +51,11 @@ export function OutlineStrip({ id, parts, loaded }: { id: string; parts: Outline
   return (
     <nav aria-label={ac.title} className="flex flex-col gap-2 rounded-xl bg-muted/30 px-3 py-2.5" data-slot="assembly" data-cartograph-region="outline">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ProgressRing value={filled / parts.length} size={16} label={ac.progress(filled, parts.length)} className="text-primary" />
+        <ProgressRing value={filled / parts.length} size={16} label={ac.progress(filled, parts.length)} className="text-success" />
         <span className="font-medium">{ac.title}</span>
         <span aria-live="polite" className="ml-auto min-h-4">
           {freshLabel ? (
-            <span className="text-primary animate-in fade-in slide-in-from-right-1 duration-300 motion-reduce:animate-none">
+            <span className="text-success animate-in fade-in slide-in-from-right-1 duration-300 motion-reduce:animate-none">
               {ac.done(freshLabel)}
             </span>
           ) : null}
@@ -70,7 +70,7 @@ export function OutlineStrip({ id, parts, loaded }: { id: string; parts: Outline
               {i > 0 ? (
                 <li aria-hidden="true" className="relative mx-1 h-0.5 min-w-3 flex-1 overflow-hidden rounded bg-border">
                   <span
-                    className={`absolute inset-0 origin-left bg-primary transition-transform duration-500 ease-out motion-reduce:transition-none ${
+                    className={`absolute inset-0 origin-left bg-success/60 transition-transform duration-500 ease-out motion-reduce:transition-none ${
                       joined ? "scale-x-100" : "scale-x-0"
                     }`}
                   />
@@ -88,9 +88,9 @@ export function OutlineStrip({ id, parts, loaded }: { id: string; parts: Outline
                   <span
                     className={`flex size-8 items-center justify-center rounded-full ring-1 transition-colors duration-300 motion-reduce:transition-none ${
                       p.inherited
-                        ? "bg-primary/15 text-primary ring-primary/40"
+                        ? "bg-muted text-muted-foreground ring-success/40"
                         : p.filled
-                          ? "bg-primary text-primary-foreground ring-primary"
+                          ? "bg-success/12 text-success ring-success/35"
                           : "bg-background text-muted-foreground ring-border group-hover:ring-primary/50"
                     } ${fresh === p.key ? "animate-in zoom-in-75 duration-500 motion-reduce:animate-none" : ""}`}
                   >

@@ -12,9 +12,9 @@ import { ALL_SECTIONS } from "./types";
 const cc = copy.projects.checks;
 
 function iconFor(state: string) {
-  if (state === "ok") return <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-muted-foreground" />;
+  if (state === "ok") return <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success/70" />;
   if (state === "block") return <OctagonAlert className="mt-0.5 size-4 shrink-0 text-destructive" />;
-  return <AlertTriangle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />;
+  return <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />;
 }
 
 /**
@@ -83,7 +83,7 @@ export function CheckPanel({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-4" data-cartograph-region="checks">
+    <div className="flex flex-col gap-3 rounded-xl p-4 ring-1 ring-inset ring-border" data-cartograph-region="checks">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{cc.title}</h2>
         {/* The state of the section as three marks and three numbers,

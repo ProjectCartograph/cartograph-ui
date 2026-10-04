@@ -382,7 +382,7 @@ function RootLayout() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild tooltip={copy.rail.new}>
-                      <Link to="/new" className="font-medium text-primary">
+                      <Link to="/new">
                         <Plus />
                         <span>{copy.rail.new}</span>
                       </Link>

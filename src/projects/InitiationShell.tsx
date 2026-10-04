@@ -38,7 +38,7 @@ function SectionRail({ id, current }: { id: string; current: InitiationSection }
   const here = stageOfSection(current);
 
   return (
-    <div className="flex w-56 shrink-0 flex-col gap-1 rounded-lg border p-2" data-cartograph-region="section-rail">
+    <div className="flex w-56 shrink-0 flex-col gap-1" data-cartograph-region="section-rail">
       {/* The whole walk, not the stage in hand. Somebody filling a
           definition in wants to see what there is to assemble before
           assembling it (Programme Lead, 2026-09-29), and a rail that
@@ -97,7 +97,7 @@ export function InitiationBackNext({ id, section }: { id: string; section: Initi
 
   return (
     <div className="flex items-center justify-between gap-2 pt-6">
-      <Button asChild variant="outline" size="lg">
+      <Button asChild variant="ghost" size="lg">
         {prev ? (
           <Link to={`/projects/$id${prev.path}`} params={{ id }}>
             <ArrowLeft />
@@ -158,7 +158,7 @@ export function InitiationShell({
       <AssemblyStrip id={id} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr_18rem]">
         <SectionRail id={id} current={section} />
-        <div className="flex min-w-0 flex-col gap-4" data-cartograph-region="section">
+        <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
           ) : !store.loaded ? (
@@ -191,18 +191,18 @@ function ProjectStep({ id, path, section, isCurrent, state }: { id: string; path
       params={{ id } as never}
       style={sectionRing(shown)}
       className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
-        isCurrent ? "bg-accent font-medium text-accent-foreground" : "text-foreground hover:bg-accent/50"
+        isCurrent ? "bg-primary/10 font-medium text-primary shadow-[inset_2px_0_0_var(--color-primary)]" : "text-foreground hover:bg-accent/60"
       }`}
     >
-      {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
+      {Icon ? <Icon className={`size-4 shrink-0 ${isCurrent ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" /> : null}
       <span className="truncate">{pc.sections[section]}</span>
       <SectionPeers peers={shown} />
       {state === "ok" ? (
-        <CheckCircle2 className={`${at}size-3.5 shrink-0 text-muted-foreground`} aria-label={pc.checks.railDone} />
+        <CheckCircle2 className={`${at}size-3.5 shrink-0 text-success/70`} aria-label={pc.checks.railDone} />
       ) : state === "block" ? (
         <OctagonAlert className={`${at}size-3.5 shrink-0 text-destructive`} aria-label={pc.checks.railBlocked} />
       ) : state === "warn" ? (
-        <AlertTriangle className={`${at}size-3.5 shrink-0 text-muted-foreground`} aria-label={pc.checks.railWarn} />
+        <AlertTriangle className={`${at}size-3.5 shrink-0 text-warning`} aria-label={pc.checks.railWarn} />
       ) : null}
     </Link>
   );

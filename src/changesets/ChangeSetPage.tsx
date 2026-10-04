@@ -85,9 +85,9 @@ function Review({ review }: { review: ChangeSetReview }) {
       </header>
 
       {cs.waivers && cs.waivers.length > 0 ? (
-        <section className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950" data-cartograph-region="waivers">
+        <section className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-4" data-cartograph-region="waivers">
           <h2 className="flex items-center gap-2 font-medium">
-            <AlertTriangle className="size-4 text-amber-600" />
+            <AlertTriangle className="size-4 text-warning" />
             {cc.waived}
           </h2>
           <ul className="space-y-1 text-sm">
@@ -110,7 +110,7 @@ function Review({ review }: { review: ChangeSetReview }) {
               {Icon ? <Icon className="size-3.5 text-muted-foreground" aria-hidden="true" /> : null}
               {kindName(kind)}
               <span className="text-muted-foreground">{items.length}</span>
-              {open > 0 ? <span className="size-1.5 rounded-full bg-amber-500/70" aria-label={cc.openChecks(open)} title={cc.openChecks(open)} /> : null}
+              {open > 0 ? <span className="size-1.5 rounded-full bg-warning/70" aria-label={cc.openChecks(open)} title={cc.openChecks(open)} /> : null}
             </a>
           );
         })}
@@ -170,7 +170,7 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
             <span className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
               {isNew ? <span>{cc.isNew}</span> : <span>{cc.changed(item.changes.length)}</span>}
               {openChecks.length > 0 ? (
-                <span className="text-amber-700 dark:text-amber-300">{cc.openChecks(openChecks.length)}</span>
+                <span className="text-warning">{cc.openChecks(openChecks.length)}</span>
               ) : (
                 <span>{cc.allMet}</span>
               )}
@@ -193,10 +193,10 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
                 <dt className="text-sm font-medium">{fieldLabel(c.path)}</dt>
                 <dd className="space-y-1 text-sm">
                   {c.op !== "add" && c.from !== undefined ? (
-                    <pre className="whitespace-pre-wrap rounded bg-red-50 px-2 py-1 text-red-900 line-through dark:bg-red-950 dark:text-red-200">{show(c.from)}</pre>
+                    <pre className="whitespace-pre-wrap rounded bg-destructive/10 px-2 py-1 text-destructive line-through">{show(c.from)}</pre>
                   ) : null}
                   {c.op !== "remove" ? (
-                    <pre className="whitespace-pre-wrap rounded bg-green-50 px-2 py-1 text-green-900 dark:bg-green-950 dark:text-green-200">{show(c.to)}</pre>
+                    <pre className="whitespace-pre-wrap rounded bg-success/10 px-2 py-1 text-success">{show(c.to)}</pre>
                   ) : (
                     <span className="text-xs text-muted-foreground">{copy.proposals.removed}</span>
                   )}
@@ -208,14 +208,14 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
             <ul className="space-y-1 text-sm">
               {openChecks.map((c) => (
                 <li key={c.id} className="flex items-start gap-2" data-cartograph-check={c.id}>
-                  <CircleDashed className={`mt-0.5 size-4 shrink-0 ${c.state === "block" ? "text-destructive" : "text-amber-600"}`} />
+                  <CircleDashed className={`mt-0.5 size-4 shrink-0 ${c.state === "block" ? "text-destructive" : "text-warning"}`} />
                   {c.message}
                 </li>
               ))}
             </ul>
           ) : (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="size-4 text-green-600" />
+              <CheckCircle2 className="size-4 text-success" />
               {cc.allMet}
             </p>
           )}

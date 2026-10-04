@@ -56,7 +56,7 @@ function ProposalCard({ proposal: p }: { proposal: Proposal }) {
           </p>
           {p.reason ? <p className="text-sm">{p.reason}</p> : null}
           {waived > 0 ? (
-            <p className="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400">
+            <p className="flex items-center gap-1 text-xs text-warning">
               <AlertTriangle className="size-3.5" />
               {pc.waivers(waived)}
             </p>

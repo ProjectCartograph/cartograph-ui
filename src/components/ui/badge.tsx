@@ -9,6 +9,12 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+        // Where the person is (engine DESIGN_RULES "Where the eye lands"):
+        // the accent as a tint, so it marks the place without competing
+        // with the view's one filled action.
+        current: "bg-primary/10 text-primary ring-1 ring-inset ring-primary/25 [a]:hover:bg-primary/15",
+        success: "bg-success/12 text-success ring-1 ring-inset ring-success/25",
+        warning: "bg-warning/15 text-warning-foreground ring-1 ring-inset ring-warning/35 dark:text-warning",
         secondary:
           "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
         destructive:
