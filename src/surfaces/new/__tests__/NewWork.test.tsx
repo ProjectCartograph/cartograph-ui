@@ -13,10 +13,10 @@ vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => () => {},
 }));
 
-const keys = ["purpose", "goal", "objective", "outcome", "kpi", "gap", "assumption", "programme", "operation", "project", "stakeholders"];
+const keys = ["purpose", "goal", "objective", "outcome", "kpi", "gap", "assumption", "portfolio", "programme", "operation", "project", "stakeholders"];
 const after: Record<string, string[]> = {
   goal: ["purpose"], objective: ["goal"], outcome: ["objective"], kpi: ["outcome"], gap: ["outcome", "kpi"],
-  assumption: ["kpi"], programme: ["gap"], project: ["outcome"], stakeholders: ["project"],
+  assumption: ["kpi"], portfolio: ["objective"], programme: ["gap"], project: ["outcome"], stakeholders: ["project"],
 };
 
 /** An order with the first n stages written. */
@@ -25,7 +25,7 @@ function orderWith(n: number): Order {
   let next: string | undefined;
   const stages = keys.map((key) => {
     const waiting = (after[key] ?? []).filter((a) => !done.has(a));
-    const optional = ["assumption", "programme", "operation", "stakeholders"].includes(key);
+    const optional = ["assumption", "portfolio", "programme", "operation", "stakeholders"].includes(key);
     let state: Order["stages"][number]["state"] = done.has(key) ? "done" : waiting.length ? "waiting" : "ready";
     if (state === "ready" && !next && !optional) {
       state = "next";
@@ -98,12 +98,27 @@ describe("New, in the order of work", () => {
     const work = container.querySelector('[data-cartograph-region="new-work"]') as HTMLElement;
     const radios = () => within(work).getAllByRole("radio");
     fireEvent.click(radios()[0]);
-    // Not one person in charge with one budget: a programme, which answers
-    // a gap; none is written yet, so it leads there.
+    // Not one person in charge with one budget: several projects, told
+    // apart by why they are together, never by being grouped (D32).
     fireEvent.click(radios()[3]);
+    expect(container.querySelector('[data-cartograph-region="new-verdict"]')).toBeNull();
+    // Each needs the others for one change: a programme, which answers a
+    // gap; none is written yet, so it leads there.
+    fireEvent.click(radios()[4]);
     let verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
     expect(verdict.textContent).toContain(copy.newWork.verdict.programme);
     expect(within(verdict).getByRole("link").getAttribute("href")).toBe("/gaps/new");
+    // They stand apart: are they grouped to decide what to fund?
+    fireEvent.click(radios()[5]);
+    expect(container.querySelector('[data-cartograph-region="new-funds"]')).not.toBeNull();
+    fireEvent.click(radios()[6]);
+    verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
+    expect(verdict.textContent).toContain(copy.newWork.verdict.portfolio);
+    expect(within(verdict).getByRole("button", { name: new RegExp(copy.newWork.start.portfolio) })).toBeTruthy();
+    // Neither: a collection, which is not a kind and starts nothing.
+    fireEvent.click(radios()[7]);
+    verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
+    expect(verdict.textContent).toContain(copy.newWork.verdict.collection);
     // One person in charge: then whether it is a part of a bigger project.
     fireEvent.click(radios()[2]);
     expect(container.querySelector('[data-cartograph-region="new-verdict"]')).toBeNull();

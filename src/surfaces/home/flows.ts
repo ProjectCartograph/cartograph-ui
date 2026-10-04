@@ -1,6 +1,6 @@
 /** The stages a person defines, in the order of work (engine GET /order),
  * each opening the flow that defines it. */
-export const FLOW_KEYS = ["purpose", "goal", "objective", "outcome", "kpi", "gap", "assumption", "programme", "operation", "project"] as const;
+export const FLOW_KEYS = ["purpose", "goal", "objective", "outcome", "kpi", "gap", "assumption", "portfolio", "programme", "operation", "project"] as const;
 
 /** Where a stage is defined, with what was typed as its name where the
  * flow takes one. Never New: the person has already said what it is. */
@@ -18,6 +18,7 @@ export function flowLink(key: string, name: string): { to: string; search?: Reco
     case "assumption":
       return { to: "/sheets/Assumption", search: { add: "1", ...named } };
     case "gap":
+    case "portfolio":
     case "programme":
     case "operation":
     case "project":

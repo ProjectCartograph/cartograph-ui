@@ -109,7 +109,7 @@ export function useProjectRows(): { rows: ExplorerRow[]; loading: boolean } {
       folder: [names(strs(al.programmes).slice(0, 1), programmes) || rc.noProgramme],
       marks: (
         <>
-          <Mark icon={Target} label={rc.objectives} n={list(s.objectives).length} />
+          <Mark icon={Target} label={rc.strategicObjectives} n={list(s.objectives).length} />
           <Mark icon={Package} label={rc.deliverables} n={list(s.deliverables).length} />
           <Mark icon={Users} label={rc.roles} n={list(s.resources).length} />
           <Mark icon={ShieldAlert} label={rc.risks} n={list(s.risks).length} />
@@ -120,7 +120,7 @@ export function useProjectRows(): { rows: ExplorerRow[]; loading: boolean } {
       preview: (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground">
-            <Mark icon={Target} label={rc.objectives} n={list(s.objectives).length} />
+            <Mark icon={Target} label={rc.strategicObjectives} n={list(s.objectives).length} />
             <Mark icon={Package} label={rc.deliverables} n={list(s.deliverables).length} />
             <Mark icon={Users} label={rc.roles} n={list(s.resources).length} />
             <Mark icon={ShieldAlert} label={rc.risks} n={list(s.risks).length} />
@@ -189,6 +189,48 @@ export function useProgrammeRows(): { rows: ExplorerRow[]; loading: boolean } {
           <Fact icon={UserRound} label={rc.sponsor}>{resources.get(str(s.sponsor)) ?? str(s.sponsor)}</Fact>
           <Fact icon={Users} label={rc.team}>{teams.get(str(s.leadTeam)) ?? str(s.leadTeam)}</Fact>
           <Fact icon={Route} label={rc.pathway}>{list(s.pathway).length ? rc.steps(list(s.pathway).length) : ""}</Fact>
+        </div>
+      ),
+    };
+  });
+  return { rows, loading: q.isLoading };
+}
+
+// -------------------------------------------------------------- Portfolios
+
+/** Portfolios, filed under the first goal they are prioritised against
+ * (engine TAXONOMY.md D32). What each holds is counted from what names it. */
+export function usePortfolioRows(): { rows: ExplorerRow[]; loading: boolean } {
+  const q = useRegister("Portfolio");
+  const programmes = useRegister("Programme");
+  const projects = useRegister("Project");
+  const teams = useNames("Team");
+  const { goalOf, name: goals } = useGoalOf();
+  const rows = (q.data ?? []).map((i): ExplorerRow => {
+    const s = i.spec ?? {};
+    const objectives = strs(s.objectives);
+    const holds = [
+      ...(programmes.data ?? []).filter((p) => strs(p.spec?.portfolios).includes(i.id)),
+      ...(projects.data ?? []).filter((p) => strs(obj(p.spec?.alignment).portfolios).includes(i.id)),
+    ];
+    return {
+      id: i.id,
+      name: i.name,
+      labels: i.labels,
+      folder: [goalOf.get(objectives[0] ?? "") ?? goals.get(objectives[0] ?? "") ?? rc.noGoal],
+      marks: (
+        <>
+          <Mark icon={Target} label={rc.strategicObjectives} n={objectives.length} />
+          <Mark icon={Package} label={rc.holds} n={holds.length} />
+          <Mark icon={Banknote} label={rc.budgets} n={strs(s.funding).length} />
+        </>
+      ),
+      preview: (
+        <div className="flex flex-col gap-3">
+          <Text>{str(s.aim)}</Text>
+          <Fact icon={Target} label={rc.strategicObjectives}>{names(objectives, goals)}</Fact>
+          <Fact icon={Package} label={rc.holds}>{holds.map((p) => p.name).join(", ")}</Fact>
+          <Fact icon={Users} label={rc.team}>{teams.get(str(s.leadTeam)) ?? str(s.leadTeam)}</Fact>
         </div>
       ),
     };

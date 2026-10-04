@@ -143,6 +143,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/Portfolio/{id}/checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether a portfolio can make the decisions a portfolio exists for: what it is prioritised against, what it holds, and whether each of those has a decision (TAXONOMY.md D32). Advisory only, in the programme's shape, because each is read from other manifests. */
+        get: operations["getPortfolioChecks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/Goal/{id}": {
         parameters: {
             query?: never;
@@ -2139,6 +2156,31 @@ export interface operations {
         };
     };
     getProgrammeChecks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgrammeCheck"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getPortfolioChecks: {
         parameters: {
             query?: never;
             header?: never;

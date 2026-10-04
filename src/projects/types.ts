@@ -329,6 +329,9 @@ export interface ProjectAlignment {
    * component serves its parent's goals and belongs to its programmes, so
    * it names neither. */
   partOf?: string;
+  /** The portfolios that select and fund this project (engine TAXONOMY.md
+   * D32), independent of its programmes. */
+  portfolios?: string[];
 }
 
 // The People and resources section's own role vocabulary

@@ -333,7 +333,7 @@ export interface Client {
   /** A manifest's checks, in the shape its kind answers with. */
   checks(kind: "Project", id: string): Promise<ProjectChecks>;
   checks(kind: "Goal", id: string): Promise<GoalCheck[]>;
-  checks(kind: "Programme" | "Operation" | "Gap", id: string): Promise<ProgrammeCheck[]>;
+  checks(kind: "Programme" | "Portfolio" | "Operation" | "Gap", id: string): Promise<ProgrammeCheck[]>;
 
   // What the engine derives across manifests.
   /** Every goal, objective and outcome as one tree. */

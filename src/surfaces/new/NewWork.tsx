@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Boxes, Check, Circle, CircleDot, Flag, FolderKanban, Hourglass, Layers, Lock, Plus, Repeat, Settings2 } from "lucide-react";
+import { ArrowRight, Boxes, Check, Circle, CircleDot, Flag, FolderKanban, Hourglass, Layers, Lock, Plus, Repeat, Settings2, BriefcaseBusiness, Folders } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useClient } from "@/client/context";
@@ -9,7 +9,7 @@ import type { OrderStage } from "@/client/port";
 import { copy } from "@/copy";
 import { entryFor, useGlossary } from "@/components/glossary";
 import { Term } from "@/components/Term";
-import { kindOf, type Ends, type InCharge, type NewKind as Kind, type PartOf, type Today } from "@/definition/kindOf";
+import { kindOf, type Ends, type InCharge, type NewKind as Kind, type PartOf, type Today, type YesNo } from "@/definition/kindOf";
 import { ChoiceCard } from "@/components/ChoiceCard";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
 
@@ -30,8 +30,24 @@ const WHERE: Record<string, string> = {
 
 /** The work stage each answer makes, and the word the glossary defines
  * it by. */
-const STAGE_OF: Record<Kind, string> = { project: "project", component: "project", programme: "programme", operation: "operation", service: "operation" };
-const TERM_OF: Record<Kind, string> = { project: "project", component: "component", programme: "programme", operation: "operation", service: "operation" };
+const STAGE_OF: Record<Kind, string> = {
+  project: "project",
+  component: "project",
+  programme: "programme",
+  portfolio: "portfolio",
+  collection: "project",
+  operation: "operation",
+  service: "operation",
+};
+const TERM_OF: Record<Kind, string> = {
+  project: "project",
+  component: "component",
+  programme: "programme",
+  portfolio: "portfolio",
+  collection: "project",
+  operation: "operation",
+  service: "operation",
+};
 
 /**
  * New, in the order of work (TAXONOMY.md D28). The record is written from
@@ -154,11 +170,18 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
   const [ends, setEnds] = useState<Ends | null>(null);
   const [answer, setAnswer] = useState<InCharge | Today | null>(null);
   const [partOf, setPartOf] = useState<PartOf | null>(null);
+  const [together, setTogether] = useState<YesNo | null>(null);
+  const [funds, setFunds] = useState<YesNo | null>(null);
   // Work that finishes serves an outcome, so it waits until the strategy
   // has one. A service waits on nothing: one that runs today is recorded
   // as it is (TAXONOMY.md D30).
   const finishWaits = !loaded || stages.get("project")?.state === "waiting";
-  const kind = ends === "finishes" && finishWaits ? null : kindOf(ends, answer, partOf);
+  const kind =
+    ends === "finishes" && finishWaits
+      ? null
+      : ends === "runs"
+        ? kindOf({ ends, today: answer as Today | null })
+        : kindOf({ ends, inCharge: answer as InCharge | null, partOf, together, funds });
   const stage = kind ? stages.get(STAGE_OF[kind]) : undefined;
   const kindWaits = stage?.state === "waiting";
   const nextName = next ? (nc.stage[next] ?? next) : "";
@@ -167,6 +190,8 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
     if (kind === "operation") void navigate({ to: "/operations/new", search: {} });
     else if (kind === "service") void navigate({ to: "/operations/new", search: { status: "planned" } });
     else if (kind === "programme") void navigate({ to: "/programmes/new" });
+    else if (kind === "portfolio") void navigate({ to: "/portfolios/new" });
+    else if (kind === "collection") void navigate({ to: "/projects" });
     else if (kind === "component") void navigate({ to: "/projects/new", search: { partOf: true } });
     else if (kind === "project") void navigate({ to: "/projects/new", search: {} });
   }
@@ -174,10 +199,14 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
     setEnds(next);
     setAnswer(null);
     setPartOf(null);
+    setTogether(null);
+    setFunds(null);
   }
   function pickInCharge(next: InCharge) {
     setAnswer(next);
     setPartOf(null);
+    setTogether(null);
+    setFunds(null);
   }
 
   return (
@@ -222,6 +251,24 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
         </div>
       ) : null}
 
+      {ends === "finishes" && answer === "many" && !finishWaits ? (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-250 ease-enter">
+          <Question label={nc.togetherQuestion} region="new-together">
+            <ChoiceCard icon={Layers} title={nc.together} detail={nc.togetherDetail} picked={together === "yes"} onPick={() => (setTogether("yes"), setFunds(null))} />
+            <ChoiceCard icon={Folders} title={nc.apart} detail={nc.apartDetail} picked={together === "no"} onPick={() => setTogether("no")} />
+          </Question>
+        </div>
+      ) : null}
+
+      {ends === "finishes" && answer === "many" && together === "no" && !finishWaits ? (
+        <div className="animate-in fade-in slide-in-from-top-2 duration-250 ease-enter">
+          <Question label={nc.fundsQuestion} region="new-funds">
+            <ChoiceCard icon={BriefcaseBusiness} title={nc.funds} detail={nc.fundsDetail} picked={funds === "yes"} onPick={() => setFunds("yes")} />
+            <ChoiceCard icon={Folders} title={nc.loose} detail={nc.looseDetail} picked={funds === "no"} onPick={() => setFunds("no")} />
+          </Question>
+        </div>
+      ) : null}
+
       {kind ? (
         <div
           className="flex flex-col gap-3 rounded-xl bg-primary/5 p-4 ring-1 ring-primary/20 animate-in fade-in zoom-in-95 duration-250 ease-enter"
@@ -262,7 +309,15 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
 }
 
 function KindMark({ kind }: { kind: Kind }) {
-  const Icon = { project: FolderKanban, component: Boxes, programme: Layers, operation: Settings2, service: Hourglass }[kind];
+  const Icon = {
+    project: FolderKanban,
+    component: Boxes,
+    programme: Layers,
+    portfolio: BriefcaseBusiness,
+    collection: Folders,
+    operation: Settings2,
+    service: Hourglass,
+  }[kind];
   return <Icon className="size-5 text-primary" aria-hidden="true" />;
 }
 

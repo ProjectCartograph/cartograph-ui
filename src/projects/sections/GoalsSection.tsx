@@ -132,6 +132,7 @@ export function AlignmentSection() {
   const treeQuery = useGoalTree();
   const { data: teams, isLoading: teamsLoading } = useReferenceOptions("Team");
   const { data: programmeOptions } = useReferenceOptions("Programme");
+  const { data: portfolioOptions } = useReferenceOptions("Portfolio");
   const { data: programmeGoals } = useProgrammeGoals();
 
   const { data: projectOptions } = useReferenceOptions("Project");
@@ -288,6 +289,21 @@ export function AlignmentSection() {
             )}
           </p>
         ) : null}
+        <div className="mt-2 flex flex-col gap-2" data-slot="portfolios">
+          <FieldHeading label={gc.portfoliosLabel} hint={gc.portfoliosHint} />
+          <ComboboxMultiple
+            options={portfolioOptions?.options ?? []}
+            value={store.spec.alignment?.portfolios ?? []}
+            onValueChange={(next) =>
+              store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } }))
+            }
+            emptyText={copy.sheets.dialog.noMatches}
+            removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+            aria-label={gc.portfoliosLabel}
+            data-cartograph-field="/spec/alignment/portfolios"
+            className="sm:max-w-xl"
+          />
+        </div>
       </div>
       )}
 

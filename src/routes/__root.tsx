@@ -6,7 +6,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { Archive, BookOpen, Bot, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest } from "lucide-react";
+import { Archive, BookOpen, Bot, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest, BriefcaseBusiness } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -61,6 +61,12 @@ const defineItems = [
     title: copy.rail.projects,
     icon: FolderKanban,
     to: "/projects",
+    params: undefined,
+  },
+  {
+    title: copy.rail.portfolios,
+    icon: BriefcaseBusiness,
+    to: "/portfolios",
     params: undefined,
   },
   {
@@ -147,6 +153,9 @@ function useBreadcrumbCrumbs(): Crumb[] {
   const programmeQuery = useManifestName("Programme", programmeId);
   const programmeName = programmeQuery.data;
 
+  const portfolioId = routeId?.startsWith("/portfolios/$id") ? params.id : undefined;
+  const portfolioName = useManifestName("Portfolio", portfolioId).data;
+
   const operationId = routeId?.startsWith("/operations/$id") ? params.id : undefined;
   const operationName = useManifestName("Operation", operationId).data;
 
@@ -198,6 +207,22 @@ function useBreadcrumbCrumbs(): Crumb[] {
   }
   if (routeId === "/programmes/") {
     return [{ label: copy.rail.programmes }];
+  }
+  if (routeId?.startsWith("/portfolios/$id")) {
+    const label = copy.portfolios.sections[routeId.split("/").pop() ?? ""]?.heading;
+    const crumbs: Crumb[] = [{ label: copy.rail.portfolios, to: "/portfolios" }];
+    crumbs.push({ label: portfolioName ?? params.id ?? "", to: label ? "/portfolios" : undefined });
+    if (label) crumbs.push({ label });
+    return crumbs;
+  }
+  if (routeId === "/portfolios/") {
+    return [{ label: copy.rail.portfolios }];
+  }
+  if (routeId === "/portfolios/new") {
+    return [
+      { label: copy.rail.portfolios, to: "/portfolios" },
+      { label: copy.portfolios.newLink },
+    ];
   }
   if (routeId?.startsWith("/operations/$id")) {
     const crumbs: Crumb[] = [{ label: copy.rail.operations, to: "/operations" }];

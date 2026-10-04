@@ -90,7 +90,7 @@ describe("home", () => {
     // Where the flow stands in the order of work is said, not enforced.
     expect(region.querySelector("a[data-flow='gap']")?.textContent).toContain(hc.needsFirst("indicator"));
     // The others are one step away, and New only when the person is unsure.
-    expect(within(region).getByRole("list", { name: hc.somethingElse }).querySelectorAll("a")).toHaveLength(7);
+    expect(within(region).getByRole("list", { name: hc.somethingElse }).querySelectorAll("a")).toHaveLength(8);
     expect(within(region).getByRole("link", { name: hc.notSure }).getAttribute("href")).toBe("/new");
   });
 
@@ -102,7 +102,7 @@ describe("home", () => {
     // A match by words alone never leads.
     expect(within(region).queryByRole("link", { name: new RegExp(`^${hc.open} `) })).toBeNull();
     const chips = within(region).getByRole("list", { name: hc.somethingElse }).querySelectorAll("a");
-    expect(chips).toHaveLength(10);
+    expect(chips).toHaveLength(11);
     expect(region.querySelector("a[data-flow='kpi']")?.className).toContain("font-medium");
   });
 });

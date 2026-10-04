@@ -306,4 +306,4 @@ export function Fact({ icon: I, label, children }: { icon: LucideIcon; label: st
   );
 }
 
-export type ExplorerRoute = "/projects/$id" | "/programmes/$id" | "/operations/$id" | "/gaps/$id" | "/kpis/$id";
+export type ExplorerRoute = "/projects/$id" | "/portfolios/$id" | "/programmes/$id" | "/operations/$id" | "/gaps/$id" | "/kpis/$id";

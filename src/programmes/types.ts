@@ -40,6 +40,10 @@ export interface ProgrammeSpec {
   supportingTeams?: string[];
   goals?: string[];
   kpis?: string[];
+  /** The programmes this one is a sub-programme of, and the portfolios
+   * that fund it (engine TAXONOMY.md D32). */
+  programmes?: string[];
+  portfolios?: string[];
   risks?: Risk[];
   pathway?: PathwayStep[];
   mandate?: Mandate[];

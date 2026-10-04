@@ -29,6 +29,9 @@ import { Route as ManifestsKindRouteImport } from './routes/manifests/$kind'
 import { Route as OperationsIndexRouteImport } from './routes/operations/index'
 import { Route as OperationsIdRouteImport } from './routes/operations/$id'
 import { Route as OperationsNewRouteImport } from './routes/operations/new'
+import { Route as PortfoliosIndexRouteImport } from './routes/portfolios/index'
+import { Route as PortfoliosIdRouteImport } from './routes/portfolios/$id'
+import { Route as PortfoliosNewRouteImport } from './routes/portfolios/new'
 import { Route as ProgrammesIndexRouteImport } from './routes/programmes/index'
 import { Route as ProgrammesIdRouteImport } from './routes/programmes/$id'
 import { Route as ProgrammesNewRouteImport } from './routes/programmes/new'
@@ -52,6 +55,11 @@ import { Route as OperationsIdAlignmentRouteImport } from './routes/operations/$
 import { Route as OperationsIdCharterRouteImport } from './routes/operations/$id/charter'
 import { Route as OperationsIdMeasuresRouteImport } from './routes/operations/$id/measures'
 import { Route as OperationsIdServiceRouteImport } from './routes/operations/$id/service'
+import { Route as PortfoliosIdIndexRouteImport } from './routes/portfolios/$id/index'
+import { Route as PortfoliosIdAimRouteImport } from './routes/portfolios/$id/aim'
+import { Route as PortfoliosIdGovernanceRouteImport } from './routes/portfolios/$id/governance'
+import { Route as PortfoliosIdHoldsRouteImport } from './routes/portfolios/$id/holds'
+import { Route as PortfoliosIdStrategyRouteImport } from './routes/portfolios/$id/strategy'
 import { Route as ProgrammesIdIndexRouteImport } from './routes/programmes/$id/index'
 import { Route as ProgrammesIdAimRouteImport } from './routes/programmes/$id/aim'
 import { Route as ProgrammesIdAlignmentRouteImport } from './routes/programmes/$id/alignment'
@@ -182,6 +190,21 @@ const OperationsNewRoute = OperationsNewRouteImport.update({
   path: '/operations/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortfoliosIndexRoute = PortfoliosIndexRouteImport.update({
+  id: '/portfolios/',
+  path: '/portfolios/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortfoliosIdRoute = PortfoliosIdRouteImport.update({
+  id: '/portfolios/$id',
+  path: '/portfolios/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortfoliosNewRoute = PortfoliosNewRouteImport.update({
+  id: '/portfolios/new',
+  path: '/portfolios/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgrammesIndexRoute = ProgrammesIndexRouteImport.update({
   id: '/programmes/',
   path: '/programmes/',
@@ -296,6 +319,31 @@ const OperationsIdServiceRoute = OperationsIdServiceRouteImport.update({
   id: '/service',
   path: '/service',
   getParentRoute: () => OperationsIdRoute,
+} as any)
+const PortfoliosIdIndexRoute = PortfoliosIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PortfoliosIdRoute,
+} as any)
+const PortfoliosIdAimRoute = PortfoliosIdAimRouteImport.update({
+  id: '/aim',
+  path: '/aim',
+  getParentRoute: () => PortfoliosIdRoute,
+} as any)
+const PortfoliosIdGovernanceRoute = PortfoliosIdGovernanceRouteImport.update({
+  id: '/governance',
+  path: '/governance',
+  getParentRoute: () => PortfoliosIdRoute,
+} as any)
+const PortfoliosIdHoldsRoute = PortfoliosIdHoldsRouteImport.update({
+  id: '/holds',
+  path: '/holds',
+  getParentRoute: () => PortfoliosIdRoute,
+} as any)
+const PortfoliosIdStrategyRoute = PortfoliosIdStrategyRouteImport.update({
+  id: '/strategy',
+  path: '/strategy',
+  getParentRoute: () => PortfoliosIdRoute,
 } as any)
 const ProgrammesIdIndexRoute = ProgrammesIdIndexRouteImport.update({
   id: '/',
@@ -471,6 +519,8 @@ export interface FileRoutesByFullPath {
   '/manifests/$kind': typeof ManifestsKindRoute
   '/operations/$id': typeof OperationsIdRouteWithChildren
   '/operations/new': typeof OperationsNewRoute
+  '/portfolios/$id': typeof PortfoliosIdRouteWithChildren
+  '/portfolios/new': typeof PortfoliosNewRoute
   '/programmes/$id': typeof ProgrammesIdRouteWithChildren
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/$id': typeof ProjectsIdRouteWithChildren
@@ -482,6 +532,7 @@ export interface FileRoutesByFullPath {
   '/goals/': typeof GoalsIndexRoute
   '/kpis/': typeof KpisIndexRoute
   '/operations/': typeof OperationsIndexRoute
+  '/portfolios/': typeof PortfoliosIndexRoute
   '/programmes/': typeof ProgrammesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/proposals/': typeof ProposalsIndexRoute
@@ -496,6 +547,10 @@ export interface FileRoutesByFullPath {
   '/operations/$id/charter': typeof OperationsIdCharterRoute
   '/operations/$id/measures': typeof OperationsIdMeasuresRoute
   '/operations/$id/service': typeof OperationsIdServiceRoute
+  '/portfolios/$id/aim': typeof PortfoliosIdAimRoute
+  '/portfolios/$id/governance': typeof PortfoliosIdGovernanceRoute
+  '/portfolios/$id/holds': typeof PortfoliosIdHoldsRoute
+  '/portfolios/$id/strategy': typeof PortfoliosIdStrategyRoute
   '/programmes/$id/aim': typeof ProgrammesIdAimRoute
   '/programmes/$id/alignment': typeof ProgrammesIdAlignmentRoute
   '/programmes/$id/charter': typeof ProgrammesIdCharterRoute
@@ -514,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/gaps/$id/': typeof GapsIdIndexRoute
   '/kpis/$id/': typeof KpisIdIndexRoute
   '/operations/$id/': typeof OperationsIdIndexRoute
+  '/portfolios/$id/': typeof PortfoliosIdIndexRoute
   '/programmes/$id/': typeof ProgrammesIdIndexRoute
   '/projects/$id/': typeof ProjectsIdIndexRoute
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
@@ -542,6 +598,7 @@ export interface FileRoutesByTo {
   '/goals/$id': typeof GoalsIdRoute
   '/manifests/$kind': typeof ManifestsKindRoute
   '/operations/new': typeof OperationsNewRoute
+  '/portfolios/new': typeof PortfoliosNewRoute
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/new': typeof ProjectsNewRoute
   '/proposals/$id': typeof ProposalsIdRoute
@@ -551,6 +608,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsIndexRoute
   '/kpis': typeof KpisIndexRoute
   '/operations': typeof OperationsIndexRoute
+  '/portfolios': typeof PortfoliosIndexRoute
   '/programmes': typeof ProgrammesIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/proposals': typeof ProposalsIndexRoute
@@ -565,6 +623,10 @@ export interface FileRoutesByTo {
   '/operations/$id/charter': typeof OperationsIdCharterRoute
   '/operations/$id/measures': typeof OperationsIdMeasuresRoute
   '/operations/$id/service': typeof OperationsIdServiceRoute
+  '/portfolios/$id/aim': typeof PortfoliosIdAimRoute
+  '/portfolios/$id/governance': typeof PortfoliosIdGovernanceRoute
+  '/portfolios/$id/holds': typeof PortfoliosIdHoldsRoute
+  '/portfolios/$id/strategy': typeof PortfoliosIdStrategyRoute
   '/programmes/$id/aim': typeof ProgrammesIdAimRoute
   '/programmes/$id/alignment': typeof ProgrammesIdAlignmentRoute
   '/programmes/$id/charter': typeof ProgrammesIdCharterRoute
@@ -583,6 +645,7 @@ export interface FileRoutesByTo {
   '/gaps/$id': typeof GapsIdIndexRoute
   '/kpis/$id': typeof KpisIdIndexRoute
   '/operations/$id': typeof OperationsIdIndexRoute
+  '/portfolios/$id': typeof PortfoliosIdIndexRoute
   '/programmes/$id': typeof ProgrammesIdIndexRoute
   '/projects/$id': typeof ProjectsIdIndexRoute
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
@@ -615,6 +678,8 @@ export interface FileRoutesById {
   '/manifests/$kind': typeof ManifestsKindRoute
   '/operations/$id': typeof OperationsIdRouteWithChildren
   '/operations/new': typeof OperationsNewRoute
+  '/portfolios/$id': typeof PortfoliosIdRouteWithChildren
+  '/portfolios/new': typeof PortfoliosNewRoute
   '/programmes/$id': typeof ProgrammesIdRouteWithChildren
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/$id': typeof ProjectsIdRouteWithChildren
@@ -626,6 +691,7 @@ export interface FileRoutesById {
   '/goals/': typeof GoalsIndexRoute
   '/kpis/': typeof KpisIndexRoute
   '/operations/': typeof OperationsIndexRoute
+  '/portfolios/': typeof PortfoliosIndexRoute
   '/programmes/': typeof ProgrammesIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/proposals/': typeof ProposalsIndexRoute
@@ -640,6 +706,10 @@ export interface FileRoutesById {
   '/operations/$id/charter': typeof OperationsIdCharterRoute
   '/operations/$id/measures': typeof OperationsIdMeasuresRoute
   '/operations/$id/service': typeof OperationsIdServiceRoute
+  '/portfolios/$id/aim': typeof PortfoliosIdAimRoute
+  '/portfolios/$id/governance': typeof PortfoliosIdGovernanceRoute
+  '/portfolios/$id/holds': typeof PortfoliosIdHoldsRoute
+  '/portfolios/$id/strategy': typeof PortfoliosIdStrategyRoute
   '/programmes/$id/aim': typeof ProgrammesIdAimRoute
   '/programmes/$id/alignment': typeof ProgrammesIdAlignmentRoute
   '/programmes/$id/charter': typeof ProgrammesIdCharterRoute
@@ -658,6 +728,7 @@ export interface FileRoutesById {
   '/gaps/$id/': typeof GapsIdIndexRoute
   '/kpis/$id/': typeof KpisIdIndexRoute
   '/operations/$id/': typeof OperationsIdIndexRoute
+  '/portfolios/$id/': typeof PortfoliosIdIndexRoute
   '/programmes/$id/': typeof ProgrammesIdIndexRoute
   '/projects/$id/': typeof ProjectsIdIndexRoute
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
@@ -691,6 +762,8 @@ export interface FileRouteTypes {
     | '/manifests/$kind'
     | '/operations/$id'
     | '/operations/new'
+    | '/portfolios/$id'
+    | '/portfolios/new'
     | '/programmes/$id'
     | '/programmes/new'
     | '/projects/$id'
@@ -702,6 +775,7 @@ export interface FileRouteTypes {
     | '/goals/'
     | '/kpis/'
     | '/operations/'
+    | '/portfolios/'
     | '/programmes/'
     | '/projects/'
     | '/proposals/'
@@ -716,6 +790,10 @@ export interface FileRouteTypes {
     | '/operations/$id/charter'
     | '/operations/$id/measures'
     | '/operations/$id/service'
+    | '/portfolios/$id/aim'
+    | '/portfolios/$id/governance'
+    | '/portfolios/$id/holds'
+    | '/portfolios/$id/strategy'
     | '/programmes/$id/aim'
     | '/programmes/$id/alignment'
     | '/programmes/$id/charter'
@@ -734,6 +812,7 @@ export interface FileRouteTypes {
     | '/gaps/$id/'
     | '/kpis/$id/'
     | '/operations/$id/'
+    | '/portfolios/$id/'
     | '/programmes/$id/'
     | '/projects/$id/'
     | '/projects/$id/initiation/aim'
@@ -762,6 +841,7 @@ export interface FileRouteTypes {
     | '/goals/$id'
     | '/manifests/$kind'
     | '/operations/new'
+    | '/portfolios/new'
     | '/programmes/new'
     | '/projects/new'
     | '/proposals/$id'
@@ -771,6 +851,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/kpis'
     | '/operations'
+    | '/portfolios'
     | '/programmes'
     | '/projects'
     | '/proposals'
@@ -785,6 +866,10 @@ export interface FileRouteTypes {
     | '/operations/$id/charter'
     | '/operations/$id/measures'
     | '/operations/$id/service'
+    | '/portfolios/$id/aim'
+    | '/portfolios/$id/governance'
+    | '/portfolios/$id/holds'
+    | '/portfolios/$id/strategy'
     | '/programmes/$id/aim'
     | '/programmes/$id/alignment'
     | '/programmes/$id/charter'
@@ -803,6 +888,7 @@ export interface FileRouteTypes {
     | '/gaps/$id'
     | '/kpis/$id'
     | '/operations/$id'
+    | '/portfolios/$id'
     | '/programmes/$id'
     | '/projects/$id'
     | '/projects/$id/initiation/aim'
@@ -834,6 +920,8 @@ export interface FileRouteTypes {
     | '/manifests/$kind'
     | '/operations/$id'
     | '/operations/new'
+    | '/portfolios/$id'
+    | '/portfolios/new'
     | '/programmes/$id'
     | '/programmes/new'
     | '/projects/$id'
@@ -845,6 +933,7 @@ export interface FileRouteTypes {
     | '/goals/'
     | '/kpis/'
     | '/operations/'
+    | '/portfolios/'
     | '/programmes/'
     | '/projects/'
     | '/proposals/'
@@ -859,6 +948,10 @@ export interface FileRouteTypes {
     | '/operations/$id/charter'
     | '/operations/$id/measures'
     | '/operations/$id/service'
+    | '/portfolios/$id/aim'
+    | '/portfolios/$id/governance'
+    | '/portfolios/$id/holds'
+    | '/portfolios/$id/strategy'
     | '/programmes/$id/aim'
     | '/programmes/$id/alignment'
     | '/programmes/$id/charter'
@@ -877,6 +970,7 @@ export interface FileRouteTypes {
     | '/gaps/$id/'
     | '/kpis/$id/'
     | '/operations/$id/'
+    | '/portfolios/$id/'
     | '/programmes/$id/'
     | '/projects/$id/'
     | '/projects/$id/initiation/aim'
@@ -909,6 +1003,8 @@ export interface RootRouteChildren {
   ManifestsKindRoute: typeof ManifestsKindRoute
   OperationsIdRoute: typeof OperationsIdRouteWithChildren
   OperationsNewRoute: typeof OperationsNewRoute
+  PortfoliosIdRoute: typeof PortfoliosIdRouteWithChildren
+  PortfoliosNewRoute: typeof PortfoliosNewRoute
   ProgrammesIdRoute: typeof ProgrammesIdRouteWithChildren
   ProgrammesNewRoute: typeof ProgrammesNewRoute
   ProjectsIdRoute: typeof ProjectsIdRouteWithChildren
@@ -920,6 +1016,7 @@ export interface RootRouteChildren {
   GoalsIndexRoute: typeof GoalsIndexRoute
   KpisIndexRoute: typeof KpisIndexRoute
   OperationsIndexRoute: typeof OperationsIndexRoute
+  PortfoliosIndexRoute: typeof PortfoliosIndexRoute
   ProgrammesIndexRoute: typeof ProgrammesIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   ProposalsIndexRoute: typeof ProposalsIndexRoute
@@ -1067,6 +1164,27 @@ declare module '@tanstack/react-router' {
       path: '/operations/new'
       fullPath: '/operations/new'
       preLoaderRoute: typeof OperationsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portfolios/': {
+      id: '/portfolios/'
+      path: '/portfolios'
+      fullPath: '/portfolios/'
+      preLoaderRoute: typeof PortfoliosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portfolios/$id': {
+      id: '/portfolios/$id'
+      path: '/portfolios/$id'
+      fullPath: '/portfolios/$id'
+      preLoaderRoute: typeof PortfoliosIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portfolios/new': {
+      id: '/portfolios/new'
+      path: '/portfolios/new'
+      fullPath: '/portfolios/new'
+      preLoaderRoute: typeof PortfoliosNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/programmes/': {
@@ -1229,6 +1347,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/operations/$id/service'
       preLoaderRoute: typeof OperationsIdServiceRouteImport
       parentRoute: typeof OperationsIdRoute
+    }
+    '/portfolios/$id/': {
+      id: '/portfolios/$id/'
+      path: '/'
+      fullPath: '/portfolios/$id/'
+      preLoaderRoute: typeof PortfoliosIdIndexRouteImport
+      parentRoute: typeof PortfoliosIdRoute
+    }
+    '/portfolios/$id/aim': {
+      id: '/portfolios/$id/aim'
+      path: '/aim'
+      fullPath: '/portfolios/$id/aim'
+      preLoaderRoute: typeof PortfoliosIdAimRouteImport
+      parentRoute: typeof PortfoliosIdRoute
+    }
+    '/portfolios/$id/governance': {
+      id: '/portfolios/$id/governance'
+      path: '/governance'
+      fullPath: '/portfolios/$id/governance'
+      preLoaderRoute: typeof PortfoliosIdGovernanceRouteImport
+      parentRoute: typeof PortfoliosIdRoute
+    }
+    '/portfolios/$id/holds': {
+      id: '/portfolios/$id/holds'
+      path: '/holds'
+      fullPath: '/portfolios/$id/holds'
+      preLoaderRoute: typeof PortfoliosIdHoldsRouteImport
+      parentRoute: typeof PortfoliosIdRoute
+    }
+    '/portfolios/$id/strategy': {
+      id: '/portfolios/$id/strategy'
+      path: '/strategy'
+      fullPath: '/portfolios/$id/strategy'
+      preLoaderRoute: typeof PortfoliosIdStrategyRouteImport
+      parentRoute: typeof PortfoliosIdRoute
     }
     '/programmes/$id/': {
       id: '/programmes/$id/'
@@ -1488,6 +1641,26 @@ const OperationsIdRouteWithChildren = OperationsIdRoute._addFileChildren(
   OperationsIdRouteChildren,
 )
 
+interface PortfoliosIdRouteChildren {
+  PortfoliosIdAimRoute: typeof PortfoliosIdAimRoute
+  PortfoliosIdGovernanceRoute: typeof PortfoliosIdGovernanceRoute
+  PortfoliosIdHoldsRoute: typeof PortfoliosIdHoldsRoute
+  PortfoliosIdStrategyRoute: typeof PortfoliosIdStrategyRoute
+  PortfoliosIdIndexRoute: typeof PortfoliosIdIndexRoute
+}
+
+const PortfoliosIdRouteChildren: PortfoliosIdRouteChildren = {
+  PortfoliosIdAimRoute: PortfoliosIdAimRoute,
+  PortfoliosIdGovernanceRoute: PortfoliosIdGovernanceRoute,
+  PortfoliosIdHoldsRoute: PortfoliosIdHoldsRoute,
+  PortfoliosIdStrategyRoute: PortfoliosIdStrategyRoute,
+  PortfoliosIdIndexRoute: PortfoliosIdIndexRoute,
+}
+
+const PortfoliosIdRouteWithChildren = PortfoliosIdRoute._addFileChildren(
+  PortfoliosIdRouteChildren,
+)
+
 interface ProgrammesIdRouteChildren {
   ProgrammesIdAimRoute: typeof ProgrammesIdAimRoute
   ProgrammesIdAlignmentRoute: typeof ProgrammesIdAlignmentRoute
@@ -1583,6 +1756,8 @@ const rootRouteChildren: RootRouteChildren = {
   ManifestsKindRoute: ManifestsKindRoute,
   OperationsIdRoute: OperationsIdRouteWithChildren,
   OperationsNewRoute: OperationsNewRoute,
+  PortfoliosIdRoute: PortfoliosIdRouteWithChildren,
+  PortfoliosNewRoute: PortfoliosNewRoute,
   ProgrammesIdRoute: ProgrammesIdRouteWithChildren,
   ProgrammesNewRoute: ProgrammesNewRoute,
   ProjectsIdRoute: ProjectsIdRouteWithChildren,
@@ -1594,6 +1769,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsIndexRoute: GoalsIndexRoute,
   KpisIndexRoute: KpisIndexRoute,
   OperationsIndexRoute: OperationsIndexRoute,
+  PortfoliosIndexRoute: PortfoliosIndexRoute,
   ProgrammesIndexRoute: ProgrammesIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   ProposalsIndexRoute: ProposalsIndexRoute,

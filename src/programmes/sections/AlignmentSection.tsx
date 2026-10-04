@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
+import { ComboboxMultiple } from "@/components/ui/combobox";
 import { FieldHeading } from "@/components/guidance";
 import { copy } from "@/copy";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
@@ -32,6 +33,8 @@ export function AlignmentSection() {
   const store = useDefinitionStore<ProgrammeSpec>();
   const treeQuery = useGoalTree();
   const { data: kpis } = useReferenceOptions("KPI");
+  const { data: programmes } = useReferenceOptions("Programme");
+  const { data: portfolios } = useReferenceOptions("Portfolio");
 
   const goals = store.spec.goals ?? [];
 
@@ -150,6 +153,26 @@ export function AlignmentSection() {
           }
         />
       </div>
+
+      {(
+        [
+          ["programmes", pc.partOfLabel, pc.partOfHint, (programmes?.options ?? []).filter((o) => o.value !== store.id)],
+          ["portfolios", pc.portfoliosLabel, pc.portfoliosHint, portfolios?.options ?? []],
+        ] as const
+      ).map(([field, label, hint, options]) => (
+        <div key={field} className="flex flex-col gap-2">
+          <FieldHeading label={label} hint={hint} />
+          <ComboboxMultiple
+            data-cartograph-field={`/spec/${field}`}
+            options={[...options]}
+            value={store.spec[field] ?? []}
+            onValueChange={(next) => store.updateSpec((s) => ({ ...s, [field]: next.length > 0 ? next : undefined }))}
+            emptyText={copy.sheets.dialog.noMatches}
+            removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+            aria-label={label}
+          />
+        </div>
+      ))}
     </div>
   );
 }

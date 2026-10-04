@@ -77,6 +77,8 @@ export function httpClient(
         return answer(wire.GET("/manifests/Goal/{id}/checks", params));
       case "Programme":
         return answer(wire.GET("/manifests/Programme/{id}/checks", params));
+      case "Portfolio":
+        return answer(wire.GET("/manifests/Portfolio/{id}/checks", params));
       case "Operation":
         return answer(wire.GET("/manifests/Operation/{id}/checks", params));
       case "Gap":
