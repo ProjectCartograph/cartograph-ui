@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import flow from "../../../contract/flows/project.flow.json";
+import portfolioFlow from "../../../contract/flows/portfolio.flow.json";
 import { ClientProvider } from "@/client/context";
 import { fakeClient } from "@/client/fake";
 import { copy } from "@/copy";
@@ -20,7 +21,7 @@ vi.mock("@tanstack/react-router", () => ({
 const pc = copy.prepare;
 const prepared = (flow as { spec: { prepare: { kind: string; level?: string }[] } }).spec.prepare;
 
-function mount() {
+function mount(kind: "Project" | "Programme" | "Portfolio" = "Project") {
   const client = fakeClient({
     list: async () => [],
     goalTree: async () => ({ levels: ["Goal", "Objective", "Outcome"], nodes: [] }),
@@ -29,7 +30,7 @@ function mount() {
   return render(
     <ClientProvider client={client}>
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <Prepare />
+        <Prepare kind={kind} />
       </QueryClientProvider>
     </ClientProvider>,
   );
@@ -60,10 +61,19 @@ describe("before a project's walk", () => {
     expect(container.querySelector("[data-open]")?.getAttribute("data-prepare")).toBe("Team");
   });
 
+  it("prepares a programme or a portfolio from its own list, and starts its own walk", () => {
+    const { container, unmount } = mount("Portfolio");
+    const rows = [...container.querySelectorAll("[data-prepare]")].map((el) => el.getAttribute("data-prepare"));
+    expect(rows).toEqual((portfolioFlow as { spec: { prepare: { kind: string }[] } }).spec.prepare.map((p) => p.kind));
+    fireEvent.click(screen.getAllByRole("button", { name: new RegExp(pc.start(pc.what.Portfolio)) })[0]);
+    expect(navigate).toHaveBeenCalledWith({ to: "/portfolios/new", search: {} });
+    unmount();
+  });
+
   it("starts the project whenever asked, carrying the idea as what it is about", () => {
     mount();
     fireEvent.change(screen.getByLabelText(pc.ideaLabel), { target: { value: "Train depot staff on one checklist. Then roll it out." } });
-    fireEvent.click(screen.getAllByRole("button", { name: new RegExp(pc.start) })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: new RegExp(pc.start(pc.what.Project)) })[0]);
     expect(navigate).toHaveBeenCalledWith({ to: "/projects/new", search: { about: "Train depot staff on one checklist." } });
   });
 });

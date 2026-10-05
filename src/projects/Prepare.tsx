@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Check, ChevronRight, CircleDashed, Plus, SkipForward, Sparkles } from "lucide-react";
 
-import flow from "../../contract/flows/project.flow.json";
+import portfolioFlow from "../../contract/flows/portfolio.flow.json";
+import programmeFlow from "../../contract/flows/programme.flow.json";
+import projectFlow from "../../contract/flows/project.flow.json";
 import { termOf } from "@/components/glossary";
 import { WorkTextProvider } from "@/components/relevance";
 import { useRelevant } from "@/components/useRelevant";
@@ -18,11 +20,24 @@ import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 
 const pc = copy.prepare;
-const route = getRouteApi("/projects/prepare");
+const projectRoute = getRouteApi("/projects/prepare");
 
-/** The page: preparing a project, or a component of one. */
+/** The kinds whose walks say what to prepare. */
+export type PreparedKind = "Project" | "Programme" | "Portfolio";
+
+/** Preparing a project, or a component of one. */
 export function PreparePage() {
-  return <Prepare partOf={route.useSearch().partOf} />;
+  return <Prepare kind="Project" partOf={projectRoute.useSearch().partOf} />;
+}
+
+/** Preparing a programme. */
+export function PrepareProgrammePage() {
+  return <Prepare kind="Programme" />;
+}
+
+/** Preparing a portfolio. */
+export function PreparePortfolioPage() {
+  return <Prepare kind="Portfolio" />;
 }
 
 interface Item {
@@ -32,15 +47,19 @@ interface Item {
   guide: string;
 }
 
-/** What the project walk picks from, in the order to prepare it: the
- * contract's own list (engine TAXONOMY.md D34). */
-const ITEMS: Item[] = (flow as { spec: { prepare: Item[] } }).spec.prepare;
+/** What each walk picks from, in the order to prepare it: the contract's
+ * own lists (engine TAXONOMY.md D34). */
+const ITEMS: Record<PreparedKind, Item[]> = {
+  Project: (projectFlow as { spec: { prepare: Item[] } }).spec.prepare,
+  Programme: (programmeFlow as { spec: { prepare: Item[] } }).spec.prepare,
+  Portfolio: (portfolioFlow as { spec: { prepare: Item[] } }).spec.prepare,
+};
 
-const STORE = "cartograph.prepare";
+const storeOf = (kind: PreparedKind) => `cartograph.prepare.${kind}`;
 
-function load(): { idea: string; seen: string[] } {
+function load(kind: PreparedKind): { idea: string; seen: string[] } {
   try {
-    const raw = sessionStorage.getItem(STORE);
+    const raw = sessionStorage.getItem(storeOf(kind));
     if (raw) return JSON.parse(raw) as { idea: string; seen: string[] };
   } catch {
     // Storage may be unavailable; preparing works without it.
@@ -48,9 +67,9 @@ function load(): { idea: string; seen: string[] } {
   return { idea: "", seen: [] };
 }
 
-function keep(state: { idea: string; seen: string[] }) {
+function keep(kind: PreparedKind, state: { idea: string; seen: string[] }) {
   try {
-    sessionStorage.setItem(STORE, JSON.stringify(state));
+    sessionStorage.setItem(storeOf(kind), JSON.stringify(state));
   } catch {
     // As above.
   }
@@ -61,7 +80,7 @@ const keyOf = (i: Item) => i.kind + (i.level ? `/${i.level}` : "");
 /** The word for a prepared kind, as the glossary names it. */
 function wordOf(i: Item): string {
   if (pc.names[i.kind]) return pc.names[i.kind];
-  const key = i.level ?? ({ KPI: "kpi", Gap: "gap", Assumption: "assumption", Programme: "programme", Portfolio: "portfolio", Operation: "operation" } as Record<string, string>)[i.kind] ?? i.kind;
+  const key = i.level ?? (i.kind === "Goal" ? "objective" : undefined) ?? ({ KPI: "kpi", Gap: "gap", Assumption: "assumption", Programme: "programme", Portfolio: "portfolio", Operation: "operation" } as Record<string, string>)[i.kind] ?? i.kind;
   return termOf(key);
 }
 
@@ -74,17 +93,18 @@ function wordOf(i: Item): string {
  * can be started at any point. Preparing makes the walk a matter of
  * picking; it is never a gate (engine TAXONOMY.md D34).
  */
-export function Prepare({ partOf }: { partOf?: boolean }) {
+export function Prepare({ kind, partOf }: { kind: PreparedKind; partOf?: boolean }) {
   const navigate = useNavigate();
-  const [state, setState] = useState(load);
+  const items = ITEMS[kind];
+  const [state, setState] = useState(() => load(kind));
   const [open, setOpen] = useState<string | null>(null);
   const seen = new Set(state.seen);
-  const current = open ?? ITEMS.map(keyOf).find((k) => !seen.has(k)) ?? null;
+  const current = open ?? items.map(keyOf).find((k) => !seen.has(k)) ?? null;
 
   function update(next: { idea?: string; seen?: string[] }) {
     const merged = { ...state, ...next };
     setState(merged);
-    keep(merged);
+    keep(kind, merged);
   }
   function markSeen(i: Item) {
     const k = keyOf(i);
@@ -92,6 +112,8 @@ export function Prepare({ partOf }: { partOf?: boolean }) {
     setOpen(null);
   }
   function start() {
+    if (kind === "Programme") return void navigate({ to: "/programmes/new", search: {} });
+    if (kind === "Portfolio") return void navigate({ to: "/portfolios/new", search: {} });
     const about = state.idea.trim().split(/(?<=[.!?])\s|\n/)[0]?.slice(0, 300) ?? "";
     void navigate({ to: "/projects/new", search: { ...(partOf ? { partOf: true } : {}), ...(about ? { about } : {}) } });
   }
@@ -102,10 +124,10 @@ export function Prepare({ partOf }: { partOf?: boolean }) {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight">{pc.title}</h1>
-            <p className="text-muted-foreground text-pretty">{pc.subtitle}</p>
+            <p className="text-muted-foreground text-pretty">{pc.subtitle(pc.what[kind])}</p>
           </div>
           <Button type="button" onClick={start}>
-            {pc.start}
+            {pc.start(pc.what[kind])}
             <ArrowRight />
           </Button>
         </div>
@@ -116,10 +138,10 @@ export function Prepare({ partOf }: { partOf?: boolean }) {
         </div>
 
         <p className="text-sm text-muted-foreground" aria-live="polite">
-          {pc.progress(ITEMS.filter((i) => seen.has(keyOf(i))).length, ITEMS.length)}
+          {pc.progress(items.filter((i) => seen.has(keyOf(i))).length, items.length)}
         </p>
         <ol className="flex flex-col gap-2">
-          {ITEMS.map((i) => (
+          {items.map((i) => (
             <li key={keyOf(i)}>
               <PrepareRow item={i} isOpen={current === keyOf(i)} seen={seen.has(keyOf(i))} onOpen={() => setOpen(keyOf(i))} onDone={() => markSeen(i)} />
             </li>
@@ -128,7 +150,7 @@ export function Prepare({ partOf }: { partOf?: boolean }) {
 
         <div className="flex justify-end">
           <Button type="button" size="lg" onClick={start}>
-            {pc.start}
+            {pc.start(pc.what[kind])}
             <ArrowRight />
           </Button>
         </div>
@@ -151,6 +173,18 @@ function useCount(i: Item): number {
       }
     };
     walk((tree.data?.nodes ?? []) as never);
+    if (!i.level) {
+      // A portfolio's: goals and objectives, never outcomes.
+      let all = 0;
+      const every = (ns: { level: string; children: unknown[] }[]) => {
+        for (const node of ns) {
+          if (node.level !== "outcome") all++;
+          every(node.children as { level: string; children: unknown[] }[]);
+        }
+      };
+      every((tree.data?.nodes ?? []) as never);
+      return all;
+    }
     return n;
   }, [i, refs.data, tree.data]);
 }
@@ -242,7 +276,7 @@ function AddOne({ item, onAdded }: { item: Item; onAdded: () => void }) {
         {label}
       </Button>
       {open && item.kind === "Goal" ? (
-        <PlaceGoal level={(item.level ?? "outcome") as "outcome"} name="" tree={tree.data} onDone={(id) => (setOpen(false), id ? onAdded() : undefined)} />
+        <PlaceGoal level={(item.level ?? "objective") as "outcome" | "objective"} name="" tree={tree.data} onDone={(id) => (setOpen(false), id ? onAdded() : undefined)} />
       ) : null}
       {item.kind === "KPI" ? (
         <KPIAddDialog open={open} onOpenChange={setOpen} onAdded={() => (setOpen(false), onAdded())} />

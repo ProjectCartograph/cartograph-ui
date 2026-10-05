@@ -1573,7 +1573,8 @@ export const copy = {
   // walk is a matter of choosing (engine TAXONOMY.md D34).
   prepare: {
     title: "Before you start",
-    subtitle: "Get what the project will pick from ready, in order. Skip anything; start whenever you like.",
+    subtitle: (what: string) => `Get what the ${what} will pick from ready, in order. Skip anything; start whenever you like.`,
+    what: { Project: "project", Programme: "programme", Portfolio: "portfolio" } as Record<string, string>,
     ideaLabel: "Roughly, what is your idea?",
     ideaHint: "A sentence or two in your own words. It is kept, and Cartograph uses it to show what is already relevant.",
     needed: "A hand-over needs one",
@@ -1585,7 +1586,7 @@ export const copy = {
     haveWhatINeed: "Ready",
     skip: "Skip for now",
     reopen: "Open",
-    start: "Start the project",
+    start: (what: string) => `Start the ${what}`,
     progress: (done: number, all: number) => `${done} of ${all} looked at`,
     reason: "Prepared for a new project",
     names: { Resource: "Roles" } as Record<string, string>,

@@ -32,9 +32,11 @@ import { Route as OperationsNewRouteImport } from './routes/operations/new'
 import { Route as PortfoliosIndexRouteImport } from './routes/portfolios/index'
 import { Route as PortfoliosIdRouteImport } from './routes/portfolios/$id'
 import { Route as PortfoliosNewRouteImport } from './routes/portfolios/new'
+import { Route as PortfoliosPrepareRouteImport } from './routes/portfolios/prepare'
 import { Route as ProgrammesIndexRouteImport } from './routes/programmes/index'
 import { Route as ProgrammesIdRouteImport } from './routes/programmes/$id'
 import { Route as ProgrammesNewRouteImport } from './routes/programmes/new'
+import { Route as ProgrammesPrepareRouteImport } from './routes/programmes/prepare'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as ProjectsIdRouteImport } from './routes/projects/$id'
 import { Route as ProjectsNewRouteImport } from './routes/projects/new'
@@ -207,6 +209,11 @@ const PortfoliosNewRoute = PortfoliosNewRouteImport.update({
   path: '/portfolios/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortfoliosPrepareRoute = PortfoliosPrepareRouteImport.update({
+  id: '/portfolios/prepare',
+  path: '/portfolios/prepare',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgrammesIndexRoute = ProgrammesIndexRouteImport.update({
   id: '/programmes/',
   path: '/programmes/',
@@ -220,6 +227,11 @@ const ProgrammesIdRoute = ProgrammesIdRouteImport.update({
 const ProgrammesNewRoute = ProgrammesNewRouteImport.update({
   id: '/programmes/new',
   path: '/programmes/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgrammesPrepareRoute = ProgrammesPrepareRouteImport.update({
+  id: '/programmes/prepare',
+  path: '/programmes/prepare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
@@ -534,8 +546,10 @@ export interface FileRoutesByFullPath {
   '/operations/new': typeof OperationsNewRoute
   '/portfolios/$id': typeof PortfoliosIdRouteWithChildren
   '/portfolios/new': typeof PortfoliosNewRoute
+  '/portfolios/prepare': typeof PortfoliosPrepareRoute
   '/programmes/$id': typeof ProgrammesIdRouteWithChildren
   '/programmes/new': typeof ProgrammesNewRoute
+  '/programmes/prepare': typeof ProgrammesPrepareRoute
   '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
   '/projects/prepare': typeof ProjectsPrepareRoute
@@ -614,7 +628,9 @@ export interface FileRoutesByTo {
   '/manifests/$kind': typeof ManifestsKindRoute
   '/operations/new': typeof OperationsNewRoute
   '/portfolios/new': typeof PortfoliosNewRoute
+  '/portfolios/prepare': typeof PortfoliosPrepareRoute
   '/programmes/new': typeof ProgrammesNewRoute
+  '/programmes/prepare': typeof ProgrammesPrepareRoute
   '/projects/new': typeof ProjectsNewRoute
   '/projects/prepare': typeof ProjectsPrepareRoute
   '/proposals/$id': typeof ProposalsIdRoute
@@ -697,8 +713,10 @@ export interface FileRoutesById {
   '/operations/new': typeof OperationsNewRoute
   '/portfolios/$id': typeof PortfoliosIdRouteWithChildren
   '/portfolios/new': typeof PortfoliosNewRoute
+  '/portfolios/prepare': typeof PortfoliosPrepareRoute
   '/programmes/$id': typeof ProgrammesIdRouteWithChildren
   '/programmes/new': typeof ProgrammesNewRoute
+  '/programmes/prepare': typeof ProgrammesPrepareRoute
   '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
   '/projects/prepare': typeof ProjectsPrepareRoute
@@ -783,8 +801,10 @@ export interface FileRouteTypes {
     | '/operations/new'
     | '/portfolios/$id'
     | '/portfolios/new'
+    | '/portfolios/prepare'
     | '/programmes/$id'
     | '/programmes/new'
+    | '/programmes/prepare'
     | '/projects/$id'
     | '/projects/new'
     | '/projects/prepare'
@@ -863,7 +883,9 @@ export interface FileRouteTypes {
     | '/manifests/$kind'
     | '/operations/new'
     | '/portfolios/new'
+    | '/portfolios/prepare'
     | '/programmes/new'
+    | '/programmes/prepare'
     | '/projects/new'
     | '/projects/prepare'
     | '/proposals/$id'
@@ -945,8 +967,10 @@ export interface FileRouteTypes {
     | '/operations/new'
     | '/portfolios/$id'
     | '/portfolios/new'
+    | '/portfolios/prepare'
     | '/programmes/$id'
     | '/programmes/new'
+    | '/programmes/prepare'
     | '/projects/$id'
     | '/projects/new'
     | '/projects/prepare'
@@ -1030,8 +1054,10 @@ export interface RootRouteChildren {
   OperationsNewRoute: typeof OperationsNewRoute
   PortfoliosIdRoute: typeof PortfoliosIdRouteWithChildren
   PortfoliosNewRoute: typeof PortfoliosNewRoute
+  PortfoliosPrepareRoute: typeof PortfoliosPrepareRoute
   ProgrammesIdRoute: typeof ProgrammesIdRouteWithChildren
   ProgrammesNewRoute: typeof ProgrammesNewRoute
+  ProgrammesPrepareRoute: typeof ProgrammesPrepareRoute
   ProjectsIdRoute: typeof ProjectsIdRouteWithChildren
   ProjectsNewRoute: typeof ProjectsNewRoute
   ProjectsPrepareRoute: typeof ProjectsPrepareRoute
@@ -1213,6 +1239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortfoliosNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portfolios/prepare': {
+      id: '/portfolios/prepare'
+      path: '/portfolios/prepare'
+      fullPath: '/portfolios/prepare'
+      preLoaderRoute: typeof PortfoliosPrepareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/programmes/': {
       id: '/programmes/'
       path: '/programmes'
@@ -1232,6 +1265,13 @@ declare module '@tanstack/react-router' {
       path: '/programmes/new'
       fullPath: '/programmes/new'
       preLoaderRoute: typeof ProgrammesNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/programmes/prepare': {
+      id: '/programmes/prepare'
+      path: '/programmes/prepare'
+      fullPath: '/programmes/prepare'
+      preLoaderRoute: typeof ProgrammesPrepareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/': {
@@ -1800,8 +1840,10 @@ const rootRouteChildren: RootRouteChildren = {
   OperationsNewRoute: OperationsNewRoute,
   PortfoliosIdRoute: PortfoliosIdRouteWithChildren,
   PortfoliosNewRoute: PortfoliosNewRoute,
+  PortfoliosPrepareRoute: PortfoliosPrepareRoute,
   ProgrammesIdRoute: ProgrammesIdRouteWithChildren,
   ProgrammesNewRoute: ProgrammesNewRoute,
+  ProgrammesPrepareRoute: ProgrammesPrepareRoute,
   ProjectsIdRoute: ProjectsIdRouteWithChildren,
   ProjectsNewRoute: ProjectsNewRoute,
   ProjectsPrepareRoute: ProjectsPrepareRoute,

@@ -189,8 +189,8 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
   function go() {
     if (kind === "operation") void navigate({ to: "/operations/new", search: {} });
     else if (kind === "service") void navigate({ to: "/operations/new", search: { status: "planned" } });
-    else if (kind === "programme") void navigate({ to: "/programmes/new" });
-    else if (kind === "portfolio") void navigate({ to: "/portfolios/new" });
+    else if (kind === "programme") void navigate({ to: "/programmes/prepare" });
+    else if (kind === "portfolio") void navigate({ to: "/portfolios/prepare" });
     else if (kind === "collection") void navigate({ to: "/projects" });
     // A project starts by preparing what its walk picks from
     // (TAXONOMY.md D34); it can be started from there at any point.
