@@ -26,6 +26,7 @@ import { copy } from "@/copy";
 import { slugify } from "@/surfaces/sheet/schema";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { CycleSignature } from "./CycleSignature";
+import { DidYouMean } from "@/components/DidYouMean";
 
 const kc = copy.kpis;
 const dc = kc.definition;
@@ -126,6 +127,16 @@ export function KPIAddDialog({
               placeholder={kc.namePlaceholder}
               aria-invalid={refused && !name.trim()}
               maxLength={160}
+            />
+            {/* Already measured under another name: that one is handed
+                back, as adding would. */}
+            <DidYouMean
+              kind="KPI"
+              name={name}
+              onUse={(m) => {
+                onAdded?.(m.id, m.name);
+                onOpenChange(false);
+              }}
             />
           </div>
 

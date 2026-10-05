@@ -38,6 +38,7 @@ import { ReferenceField } from "./ReferenceField";
 import { ReferencePicker } from "./ReferencePicker";
 import { fieldVocab, VocabOption } from "@/components/vocab";
 import { type FieldDef, type SheetKind, slugify, unitHint } from "./schema";
+import { DidYouMean } from "@/components/DidYouMean";
 
 type Problem = components["schemas"]["Problem"];
 
@@ -256,6 +257,18 @@ export function SheetForm({
                     />
                   </FormControl>
                   <FormMessage />
+                  {/* Adding one already there under another spelling: the
+                      one there is handed back, as a save would. */}
+                  {isEdit ? null : (
+                    <DidYouMean
+                      kind={kind}
+                      name={field.value as string}
+                      onUse={(m) => {
+                        onSaved?.(m.id, m.name);
+                        onOpenChange(false);
+                      }}
+                    />
+                  )}
                 </FormItem>
               )}
             />

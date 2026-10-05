@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, BookOpen, Plus } from "lucide-react";
 import { useClient } from "@/client/context";
 import type { Client } from "@/client/port";
 import { fieldGuide, useGuide } from "@/components/guide";
+import { DidYouMean } from "@/components/DidYouMean";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -270,7 +271,7 @@ export function Onboarding() {
               </div>
             }
           >
-            <Names names={goalNames} made={goals} onChange={setGoalNames} label={oc.goalLabel} add={oc.addGoal} field="/metadata/name" />
+            <Names names={goalNames} made={goals} onChange={setGoalNames} level="goal" onUse={(m) => (setGoals((p) => [...p, m]), setChosen((c) => c || m.id))} label={oc.goalLabel} add={oc.addGoal} field="/metadata/name" />
             <Definition term={word("goal")} text={goalGuide.data?.levelIs} example={fieldGuide(goalGuide.data, "/spec/objective")?.good?.[0]} />
           </WalkerQuestion>
         ) : step === "pick" ? (
@@ -299,7 +300,7 @@ export function Onboarding() {
           </WalkerQuestion>
         ) : step === "objectives" ? (
           <WalkerQuestion title={oc.objectivesQuestion(goal?.name ?? "")} hint={oc.objectivesHint}>
-            <Names names={objectiveNames} made={objectives} onChange={setObjectiveNames} label={oc.objectiveLabel} add={oc.addObjective} field="/metadata/name" />
+            <Names names={objectiveNames} made={objectives} onChange={setObjectiveNames} level="objective" onUse={(m) => (setObjectives((p) => [...p, m]), setForObjective((o) => o || m.id))} label={oc.objectiveLabel} add={oc.addObjective} field="/metadata/name" />
             <Definition term={word("objective")} text={objectiveGuide.data?.levelIs} example={fieldGuide(objectiveGuide.data, "/spec/objective")?.good?.[0]} />
           </WalkerQuestion>
         ) : (
@@ -316,7 +317,7 @@ export function Onboarding() {
                 </ToggleGroup>
               </div>
             ) : null}
-            <Names names={outcomeNames} made={outcomes} onChange={setOutcomeNames} label={oc.outcomeLabel} add={oc.addOutcome} field="/metadata/name" />
+            <Names names={outcomeNames} made={outcomes} onChange={setOutcomeNames} level="outcome" onUse={(m) => setOutcomes((p) => [...p, m])} label={oc.outcomeLabel} add={oc.addOutcome} field="/metadata/name" />
             <Definition term={word("outcome")} text={outcomeGuide.data?.levelIs} example={fieldGuide(outcomeGuide.data, "/spec/objective")?.good?.[0]} />
           </WalkerQuestion>
         )}
@@ -390,7 +391,26 @@ function Forward({ onClick, disabled }: { onClick: () => void; disabled?: boolea
  * A few names, one to a box, with a box added on asking. Those already
  * made are shown as made, and stay.
  */
-function Names({ names, made, onChange, label, add, field }: { names: string[]; made: Made[]; onChange: (next: string[]) => void; label: (n: number) => string; add: string; field: string }) {
+function Names({
+  names,
+  made,
+  onChange,
+  onUse,
+  level,
+  label,
+  add,
+  field,
+}: {
+  names: string[];
+  made: Made[];
+  onChange: (next: string[]) => void;
+  /** One already in the tree, used instead of naming it again. */
+  onUse: (m: Made) => void;
+  level: GoalLevel;
+  label: (n: number) => string;
+  add: string;
+  field: string;
+}) {
   const madeNames = new Set(made.map((m) => m.name));
   const open = names.filter((n) => !madeNames.has(n.trim()));
   const boxes = open.length ? open : [""];
@@ -404,7 +424,18 @@ function Names({ names, made, onChange, label, add, field }: { names: string[]; 
         </div>
       ))}
       {boxes.map((b, i) => (
-        <Input key={i} value={b} onChange={(e) => set(i, e.target.value)} aria-label={label(made.length + i + 1)} data-cartograph-field={field} className="h-11 text-base" autoFocus={i === boxes.length - 1} />
+        <div key={i} className="flex flex-col gap-2">
+          <Input value={b} onChange={(e) => set(i, e.target.value)} aria-label={label(made.length + i + 1)} data-cartograph-field={field} className="h-11 text-base" autoFocus={i === boxes.length - 1} />
+          <DidYouMean
+            kind="Goal"
+            level={level}
+            name={b}
+            onUse={(m) => {
+              onUse({ id: m.id, name: m.name });
+              onChange([...made.map((x) => x.name), m.name, ...boxes.filter((_, j) => j !== i)]);
+            }}
+          />
+        </div>
       ))}
       {total < 3 ? (
         <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => onChange([...made.map((m) => m.name), ...boxes, ""])} disabled={!boxes[boxes.length - 1].trim()}>

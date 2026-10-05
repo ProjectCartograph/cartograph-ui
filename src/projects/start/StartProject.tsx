@@ -16,6 +16,7 @@ import { copy } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
 import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
 import { WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker";
+import { DidYouMean } from "@/components/DidYouMean";
 import { slugify } from "@/surfaces/sheet/schema";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { ProjectManifest } from "../types";
@@ -344,7 +345,7 @@ function Pick({
   }
 
   return (
-    <Choose words={words} word={word} hasAny={items.length > 0} onAdd={add}>
+    <Choose words={words} word={word} hasAny={items.length > 0} onAdd={add} kind={kind} onUse={(id) => (selected.includes(id) ? undefined : onChange([...selected, id]))}>
       <Suggested kind={kind} selected={selected} onPick={toggle} />
       <div className="flex flex-col gap-2">
         <p className="text-xs text-muted-foreground">{sc.all}</p>
@@ -404,6 +405,9 @@ function PickOutcomes({
     <Choose
       words="goals"
       word="goal"
+      kind="Goal"
+      level="outcome"
+      onUse={(id) => (selected.includes(id) ? undefined : onChange([...selected, id]))}
       hasAny={chips.length > 0}
       onAdd={async (n) => setPlacing(n)}
       adding={
@@ -469,12 +473,19 @@ function Choose({
   hasAny,
   onAdd,
   adding,
+  kind,
+  level,
+  onUse,
   children,
 }: {
   words: string;
   word: string;
   hasAny: boolean;
   onAdd: (name: string) => Promise<void>;
+  /** What is being named, to offer the one already there (DidYouMean). */
+  kind: string;
+  level?: string;
+  onUse: (id: string) => void;
   /** What is asked of the one being named, in place of the name box. */
   adding?: ReactNode;
   children: ReactNode;
@@ -498,7 +509,7 @@ function Choose({
       ) : null}
       <section className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10" data-slot="name-new-section">
         <h2 className="text-sm font-semibold">{sc.nameNew(sc.words[word])}</h2>
-        {adding ?? <NameNew label={sc.nameNew(sc.words[word])} onAdd={onAdd} />}
+        {adding ?? <NameNew label={sc.nameNew(sc.words[word])} onAdd={onAdd} kind={kind} level={level} onUse={onUse} />}
       </section>
     </div>
   );
@@ -506,7 +517,7 @@ function Choose({
 
 /** A name, typed and added: the one thing asked of a record named in
  * passing. */
-function NameNew({ label, onAdd }: { label: string; onAdd: (name: string) => Promise<void> }) {
+function NameNew({ label, onAdd, kind, level, onUse }: { label: string; onAdd: (name: string) => Promise<void>; kind: string; level?: string; onUse: (id: string) => void }) {
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
   async function submit() {
@@ -521,20 +532,32 @@ function NameNew({ label, onAdd }: { label: string; onAdd: (name: string) => Pro
     }
   }
   return (
-    <form
-      className="flex items-center gap-2"
-      onSubmit={(e) => {
-        e.preventDefault();
-        void submit();
-      }}
-      data-slot="name-new"
-    >
-      <Input value={value} onChange={(e) => setValue(e.target.value.slice(0, 160))} placeholder={label} aria-label={label} />
-      <Button type="submit" variant="outline" disabled={busy || !value.trim()}>
-        <Plus />
-        {sc.add}
-      </Button>
-    </form>
+    <div className="flex flex-col gap-2">
+      <form
+        className="flex items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
+        }}
+        data-slot="name-new"
+      >
+        <Input value={value} onChange={(e) => setValue(e.target.value.slice(0, 160))} placeholder={label} aria-label={label} />
+        <Button type="submit" variant="outline" disabled={busy || !value.trim()}>
+          <Plus />
+          {sc.add}
+        </Button>
+      </form>
+      {/* Already there under another spelling: chosen, not named twice. */}
+      <DidYouMean
+        kind={kind}
+        level={level}
+        name={value}
+        onUse={(m) => {
+          onUse(m.id);
+          setValue("");
+        }}
+      />
+    </div>
   );
 }
 

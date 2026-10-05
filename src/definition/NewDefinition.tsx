@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { AlreadyThere } from "@/components/AlreadyThere";
+import { DidYouMean } from "@/components/DidYouMean";
+import { manifestLink } from "@/proposals/links";
 import { useNavigate, type LinkProps } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { stringify as stringifyYAML } from "yaml";
@@ -131,6 +133,15 @@ export function NewDefinition({
           onChange={(e) => setName(e.target.value)}
           placeholder={namePlaceholder}
           autoFocus
+        />
+        {/* Already there under another spelling: opened, not defined twice. */}
+        <DidYouMean
+          kind={kind}
+          name={name}
+          onUse={(m) => {
+            const link = manifestLink({ kind: m.kind, manifestId: m.id });
+            if (link) void navigate({ to: link.to, params: link.params } as never);
+          }}
         />
         <AlreadyThere kind={kind} text={name} />
       </div>

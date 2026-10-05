@@ -1597,6 +1597,12 @@ export const copy = {
   },
   // Starting a project: four questions on one page, each thing it names
   // picked or named in place, finished later in the walk.
+  // A record already there under another spelling (components/DidYouMean).
+  didYouMean: {
+    ask: "Did you mean",
+    use: "Use it",
+    keep: "No, a new one",
+  },
   // Opening a new workspace (src/onboarding): the organisation, why it
   // exists, then how it gets there, top-down (engine TAXONOMY.md D28, D37).
   onboarding: {

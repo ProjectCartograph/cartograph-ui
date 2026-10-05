@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useClient } from "@/client/context";
 import type { GoalTree } from "@/client/port";
+import { DidYouMean } from "@/components/DidYouMean";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -170,6 +171,21 @@ export function PlaceGoalForm({ level, name, tree, onDone, fixedLevel = false, f
           <Label htmlFor={`${ids}-name`}>{pc.name}</Label>
           <Input id={`${ids}-name`} data-cartograph-field="/metadata/name" value={now.name} onChange={(e) => setNow({ ...now, name: e.target.value })} autoFocus />
         </div>
+        {/* Already in the tree under another spelling: that one is used,
+            and the one waiting on it goes under it. */}
+        <DidYouMean
+          kind="Goal"
+          level={now.level}
+          name={now.name}
+          onUse={(m) => {
+            if (waiting) {
+              setNow({ level: waiting.level, name: waiting.name, parent: m.id, parentName: m.name });
+              setWaiting(null);
+              return;
+            }
+            onDone(m.id);
+          }}
+        />
         {parentLevel && now.parentName ? <p className="text-sm text-muted-foreground">{pc.under(word(parentLevel), now.parentName)}</p> : null}
         {parentLevel && unplaced !== null ? (
           <div className="flex flex-col gap-2 rounded-lg bg-muted/50 p-3 text-sm" data-slot="unplaced">
