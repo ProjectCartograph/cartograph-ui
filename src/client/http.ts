@@ -213,6 +213,7 @@ export function httpClient(
     understand: (text) => answer(wire.POST("/understand", { body: { text } })),
     relevant: (text, kinds, level) => answer(wire.POST("/relevant", { body: { text, ...(kinds ? { kinds } : {}), ...(level ? { level } : {}) } })),
     decisionModel: () => answer(wire.GET("/decision-model")),
+    fromIdea: (kind, idea) => answer(wire.POST("/from-idea", { body: { kind, idea } })),
     match: (kind, text, level) => answer(wire.POST("/match", { body: { kind, text, ...(level ? { level } : {}) } })),
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
     deleteGoal: (id, reason) =>

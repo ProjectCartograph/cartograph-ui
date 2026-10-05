@@ -70,10 +70,13 @@ describe("before a project's walk", () => {
     unmount();
   });
 
-  it("starts the project whenever asked, carrying the idea as what it is about", () => {
+  it("starts the project whenever asked, carrying the idea, and its first sentence as what it is about", () => {
     mount();
     fireEvent.change(screen.getByLabelText(pc.ideaLabel), { target: { value: "Train depot staff on one checklist. Then roll it out." } });
     fireEvent.click(screen.getAllByRole("button", { name: new RegExp(pc.start(pc.what.Project)) })[0]);
-    expect(navigate).toHaveBeenCalledWith({ to: "/projects/new", search: { about: "Train depot staff on one checklist." } });
+    expect(navigate).toHaveBeenCalledWith({
+      to: "/projects/new",
+      search: { about: "Train depot staff on one checklist.", idea: "Train depot staff on one checklist. Then roll it out." },
+    });
   });
 });

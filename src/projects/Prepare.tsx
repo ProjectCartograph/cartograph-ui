@@ -115,7 +115,8 @@ export function Prepare({ kind, partOf }: { kind: PreparedKind; partOf?: boolean
     if (kind === "Programme") return void navigate({ to: "/programmes/new", search: {} });
     if (kind === "Portfolio") return void navigate({ to: "/portfolios/new", search: {} });
     const about = state.idea.trim().split(/(?<=[.!?])\s|\n/)[0]?.slice(0, 300) ?? "";
-    void navigate({ to: "/projects/new", search: { ...(partOf ? { partOf: true } : {}), ...(about ? { about } : {}) } });
+    const idea = state.idea.trim().slice(0, 1000);
+    void navigate({ to: "/projects/new", search: { ...(partOf ? { partOf: true } : {}), ...(about ? { about } : {}), ...(idea ? { idea } : {}) } });
   }
 
   return (

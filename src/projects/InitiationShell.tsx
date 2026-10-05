@@ -1,5 +1,6 @@
 import { AssemblyStrip } from "./Assembly";
 import { createElement, useEffect } from "react";
+import { FromIdeaProvider } from "@/components/FromIdea";
 import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
 import { ShowInGraph } from "@/graph/ShowInGraph";
 import { Link } from "@tanstack/react-router";
@@ -159,6 +160,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
   }, [section, store.loaded, steps]);
   return (
     <WorkTextProvider text={workText}>
+    <FromIdeaProvider kind="Project" idea={spec.summary.idea}>
     <div className="flex flex-col gap-4">
       <ProjectHeaderBar />
       <div className="flex items-start justify-between gap-4">
@@ -224,6 +226,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
         </div>
       </div>
     </div>
+    </FromIdeaProvider>
     </WorkTextProvider>
   );
 }

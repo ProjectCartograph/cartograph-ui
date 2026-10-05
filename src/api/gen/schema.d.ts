@@ -376,6 +376,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/from-idea": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The sentence of a rough idea that answers each question a walk asks
+         * @description Reads an idea, sentence by sentence, for the questions a kind's walk asks (its guidance's fromIdea), and returns, for each question it can answer with confidence, the sentence that does: only when a decision model is sure of it and it is clear of the next (docs/adr/0023). A hint to use or ignore; nothing is placed or stored. Without a model, available is false and there are none.
+         */
+        post: operations["fromIdea"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/decision-model": {
         parameters: {
             query?: never;
@@ -1209,6 +1229,17 @@ export interface components {
             /** @description False when no decision model answered; the ranking is then by shared words. */
             available: boolean;
             matches: components["schemas"]["Match"][];
+        };
+        IdeaReading: {
+            available: boolean;
+            answers: {
+                key: string;
+                question: string;
+                /** @description The field the question fills, by JSON pointer. */
+                field: string;
+                sentence: string;
+                likelihood: number;
+            }[];
         };
         DecisionModel: {
             configured: boolean;
@@ -2675,6 +2706,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Relevance"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    fromIdea: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    kind: string;
+                    idea: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdeaReading"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

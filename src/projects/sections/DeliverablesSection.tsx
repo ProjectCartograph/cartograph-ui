@@ -1,5 +1,6 @@
 import { Plus, X } from "lucide-react";
 
+import { FromIdea } from "@/components/FromIdea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,6 +60,10 @@ export function DeliverablesSection() {
 
   return (
     <div className="flex flex-col gap-4" data-cartograph-region="deliverables">
+      <FromIdea
+        field="/spec/deliverables"
+        onUse={(t) => store.updateSpec((s) => ({ ...s, deliverables: [...(s.deliverables ?? []), { id: `d-${randomSuffix()}`, name: t.slice(0, 120) }] }))}
+      />
       {deliverables.length === 0 ? <p className="text-sm text-muted-foreground">{dc.empty}</p> : null}
 
       {deliverables.map((d, idx) => (

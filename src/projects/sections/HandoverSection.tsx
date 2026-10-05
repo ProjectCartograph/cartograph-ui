@@ -1,3 +1,4 @@
+import { FromIdea } from "@/components/FromIdea";
 import { Help } from "@/components/guidance";
 import { Label } from "@/components/ui/label";
 import { copy } from "@/copy";
@@ -26,6 +27,7 @@ export function HandoverSection({ resolve }: { resolve?: string }) {
           <Label>{lc.landsInTitle}</Label>
           <Help label={lc.landsInTitle} hint={lc.landsInHint} />
         </div>
+        <FromIdea field="/spec/operation" />
         <LandsInField resolve={resolve} />
       </div>
       <div className="flex flex-col gap-2">

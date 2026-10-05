@@ -245,6 +245,19 @@ export function AlignmentSection() {
           className="sm:max-w-xl"
         />
       </div>
+      {store.spec.summary.idea !== undefined ? (
+        <div className="flex flex-col gap-2" data-cartograph-region="idea">
+          <FieldHeading label={copy.common.yourIdea} htmlFor="project-idea" />
+          <Textarea
+            id="project-idea"
+            data-cartograph-field="/spec/summary/idea"
+            value={store.spec.summary.idea}
+            onChange={(e) => store.updateSpec((s) => ({ ...s, summary: { ...s.summary, idea: e.target.value.slice(0, 1000) } }))}
+            rows={3}
+            className="sm:max-w-xl"
+          />
+        </div>
+      ) : null}
       {/* What this is part of comes first: a programme carries goals with
           it, so naming one turns the whole tree into a short list. */}
       <div className="flex flex-col gap-3" data-cartograph-region="part-of">

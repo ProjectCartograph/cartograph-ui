@@ -29,6 +29,7 @@ export type GlossaryEntry = Schemas["GlossaryEntry"];
 export type Understanding = Schemas["Understanding"];
 export type Match = Schemas["Match"];
 export type Relevance = Schemas["Relevance"];
+export type IdeaReading = Schemas["IdeaReading"];
 export type DecisionModel = Schemas["DecisionModel"];
 export type GoalCheck = Schemas["GoalCheck"];
 export type ProgrammeCheck = Schemas["ProgrammeCheck"];
@@ -357,6 +358,9 @@ export interface Client {
   /** What in the workspace is relevant to a piece of work: the likeliest
    * few records of each kind (engine docs/adr/0023). */
   relevant(text: string, kinds?: string[], level?: string): Promise<Relevance>;
+  /** The sentence of a rough idea that answers each question a walk
+   * asks, where a decision model is sure (engine docs/adr/0023). */
+  fromIdea(kind: string, idea: string): Promise<IdeaReading>;
   /** Whether a decision model is configured and answering now. */
   decisionModel(): Promise<DecisionModel>;
   /** The existing records of a kind that say what a text says. */

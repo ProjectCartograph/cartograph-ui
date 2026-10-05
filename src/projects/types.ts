@@ -104,6 +104,8 @@ export interface ProjectSummary {
   /** What the project is about, in one sentence: the first thing asked,
    * and what suggestions are ranked against (engine docs/adr/0023). */
   about?: string;
+  /** The idea as first written, kept as it was (TAXONOMY.md D34). */
+  idea?: string;
   problems: ProblemLine[];
   scopeIn?: string[];
   scopeOut?: string[];

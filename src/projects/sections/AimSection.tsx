@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 
+import { FromIdea } from "@/components/FromIdea";
 import { Button } from "@/components/ui/button";
 import { FieldHeading } from "@/components/guidance";
 import { copy, plusNoun } from "@/copy";
@@ -50,6 +51,19 @@ export function AimSection() {
     });
   }
 
+  // A sentence of the idea goes into the first problem that has none,
+  // or a new one when every problem has.
+  function fillFirst(part: "problem" | "change", sentence: string) {
+    store.updateSpec((s) => {
+      const list = [...(s.summary.problems ?? [])];
+      const at = list.findIndex((p) => !(part === "problem" ? p.problem?.situation : p.change?.what));
+      const i = at >= 0 ? at : list.length;
+      const line = list[i] ?? { problem: {}, change: {} };
+      list[i] = part === "problem" ? { ...line, problem: { ...line.problem, situation: sentence } } : { ...line, change: { ...line.change, what: sentence } };
+      return { ...s, summary: { ...s.summary, problems: list } };
+    });
+  }
+
   function addProblem() {
     store.updateSpec((s) => ({
       ...s,
@@ -71,6 +85,8 @@ export function AimSection() {
       <ContextRecap omit={["aim", "measures", "deliverables"]} />
 
       <div className="flex flex-col gap-3" data-cartograph-region="problems">
+        <FromIdea field="/spec/summary/problems/-/problem/situation" onUse={(t) => fillFirst("problem", t)} />
+        <FromIdea field="/spec/summary/problems/-/change/what" onUse={(t) => fillFirst("change", t)} />
         <FieldHeading label={ac.problemsTitle} />
         {problems.map((line, idx) => (
           <ProblemCard

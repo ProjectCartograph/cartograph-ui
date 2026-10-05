@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pencil, Plus, X } from "lucide-react";
 
+import { FromIdea } from "@/components/FromIdea";
 import { Button } from "@/components/ui/button";
 import { Help } from "@/components/guidance";
 import { copy, plusNoun } from "@/copy";
@@ -143,6 +144,7 @@ export function SuccessSection() {
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
+      <FromIdea field="/spec/successCriteria" />
       {GROUPS.map((when) => {
         const inGroup = criteria.filter((k) => k.when === when);
         return (

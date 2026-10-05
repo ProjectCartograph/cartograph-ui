@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { FromIdea } from "@/components/FromIdea";
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { copy } from "@/copy";
 import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
@@ -47,6 +48,7 @@ export function BeneficiariesSection() {
 
   return (
     <>
+      <FromIdea field="/spec/summary/beneficiaries" />
       <Suggested kind="BeneficiaryGroup" selected={picked} onPick={toggle} />
       <ChipPicker
         slot="beneficiary-chips"

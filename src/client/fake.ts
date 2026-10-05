@@ -22,6 +22,7 @@ const every: Record<keyof Client, true> = {
   understand: true,
   relevant: true,
   decisionModel: true,
+  fromIdea: true,
   match: true,
   gapCoverage: true,
   deleteGoal: true,

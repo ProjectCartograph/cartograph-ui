@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { GripVertical, Plus, X } from "lucide-react";
 
+import { FromIdea } from "@/components/FromIdea";
 import { Button } from "@/components/ui/button";
 import { MonthPicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
@@ -90,6 +91,7 @@ export function TimelineSection() {
 
   return (
     <div className="flex flex-col gap-4">
+      <FromIdea field="/spec/timeline" />
       <div className="flex items-center gap-4">
         <div className="flex flex-col gap-2">
           <Label>{tc.startLabel}</Label>

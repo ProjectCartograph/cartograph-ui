@@ -91,6 +91,9 @@ export const copy = {
     // docs/adr/0023): put first, never chosen for the person.
     suggested: "Suggested from what you wrote",
     suggestedByWords: "Shares words with what you wrote",
+    fromIdea: "From your idea",
+    useIt: "Use this",
+    yourIdea: "Your idea, as you first wrote it",
   },
   labels: {
     label: "Tags",
