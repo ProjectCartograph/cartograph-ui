@@ -17,7 +17,7 @@ export const copy = {
     // What was started and not finished (surfaces/home/leftToDo).
     left: {
       title: "Pick up where you left off",
-      hint: "Started, not finished yet. Each opens where it is finished.",
+      hint: "Started but not finished. Click one to finish it.",
       purpose: "Purpose",
       noVision: "No vision yet",
       noMission: "No mission yet",
@@ -883,7 +883,7 @@ export const copy = {
       // Defined before what they sit under (engine TAXONOMY.md D35).
       unplaced: {
         title: "Unplaced",
-        hint: "Defined before what they sit under. Place each once its parent exists.",
+        hint: "These are not in the tree yet. Place each one when what it belongs under exists.",
         place: (above: string) => `Place it under ${/^[aeiou]/i.test(above) ? "an" : "a"} ${above.toLowerCase()}`,
         under: (name: string) => `Under ${name}`,
       },
@@ -1610,6 +1610,76 @@ export const copy = {
   },
   // Starting a project: four questions on one page, each thing it names
   // picked or named in place, finished later in the walk.
+  // The guided tour (src/tour): a hand points, a box beside it explains,
+  // and the person does each thing themselves, until a project is defined.
+  tour: {
+    rail: "Take the tour",
+    invite: "New here? A short tour shows you around and ends with your own project started.",
+    start: "Start the tour",
+    notNow: "Not now",
+    next: "Next",
+    back: "Back",
+    end: "End the tour",
+    done: "Finish",
+    goThere: "Take me there",
+    count: (n: number, of: number) => `${n} of ${of}`,
+    openProject: "Open the project you started to carry on.",
+    // Placeholder words until the final ones are given.
+    steps: {
+      home: {
+        title: "Welcome to Cartograph",
+        body: "Type what you are working on here in plain words. Cartograph tries to match your work to existing context in the workspace, to help you get started faster.",
+      },
+      rail: { title: "What is here", body: "" },
+      start: {
+        title: "Your first project",
+        body: "Run the tutorial for creating a project from start to end.",
+      },
+      walker: {
+        title: "Define your project",
+        body: "Answer each question in turn. Anything you skip, you can come back to.",
+      },
+      placement: {
+        title: "Where it sits",
+        body: "This is one of your projects. At its top, it says what it is about and whether it is part of something bigger: another project, a programme or a portfolio. Saying so connects it to the goals they serve.",
+      },
+      sections: { title: "Its sections", body: "" },
+      together: { title: "Working together", body: "" },
+      finish: {
+        title: "You are ready",
+        body: "You have started your first project. Work through its sections until the checks pass, and it will be fully defined. You can take this tour again at any time from the menu.",
+      },
+    },
+    stops: {
+      projects: { title: "Projects", body: "A project is a time-bound piece of work that delivers unique value to beneficiaries and closes gaps." },
+      gaps: { title: "Gaps", body: "Related to your strategy are gaps: an area in which you identify a disparity between a desired state (your outcomes) and the current state. They are areas which your work will target." },
+      indicators: { title: "Indicators", body: "Indicators are the *measures* of your gaps. They are key to ensuring your work in filling gaps can be tracked." },
+      strategy: { title: "Strategy", body: "Strategy is where you define your Organization's goals, objectives and outcomes. They act as guides for you when defining work, always ensuring it stays aligned with the Organization's direction. It is always a good idea to review your strategy and keep it up-to-date." },
+      portfolios: { title: "Portfolios", body: "Portfolios group your work by the Organization's strategic objectives. They are where you weigh projects and programmes against each other, and decide which to invest in, hold or stop." },
+      programmes: { title: "Programmes", body: "Programmes are a collection of work targeted towards creating change and achieving an outcome. They state your theory as to what set of projects and other programmes will be necessary to achieve a specific outcome." },
+      operations: { title: "Operations", body: "Operations are ongoing efforts which help you achieve or monitor your outcomes, or maintain internal organizational functions outside of your strategic goals. Usually, when completing a project or working on a programme, they help maintain the results of those efforts. As such, they also include indicators which are reported on at a defined cadence." },
+      // The project walker, a question at a time (tour/steps "walker").
+      walkAbout: { title: "What it is about", body: "Start with what your project is about, in your own words. Everything Cartograph suggests from here builds on it." },
+      walkGaps: { title: "The gaps it targets", body: "Which gaps will your project target? Choose ones already identified, or name a new one and describe it later." },
+      walkOutcomes: { title: "The outcomes it serves", body: "Which outcomes from your strategy will your project help achieve? This keeps your work aligned with the Organization's direction." },
+      walkPeople: { title: "Its beneficiaries", body: "Who are your project's beneficiaries? These are the people it delivers unique value to." },
+      walkTeam: { title: "The team", body: "Which team will run your project? It is the one accountable for delivering it." },
+      walkDetails: { title: "What you named", body: "You named some new items along the way. Fill in what defines them now, while they are fresh." },
+      walkReady: { title: "Name it", body: "Finally, your project gets a name. Naming it is what creates it; this one is a tutorial, so it is not saved. Next, a project already in your workspace." },
+      walk: { title: "Its sections", body: "These are your project's sections, in the order they build on each other. You do not need to complete them in one sitting; each opens where you left it." },
+      outline: { title: "What is left", body: "This shows what your project still needs. Once it is empty and the checks pass, your project is fully defined." },
+      versions: { title: "Versions", body: "Your draft is saved as you type. When a section is ready for others, save a version: it records what changed, and why." },
+      multiplayer: { title: "Working together", body: "When your teammates open the same screen, you will see them here, along with their pointer and the field they are working in. This one is only an example, visible to you alone. It lets your team define a project together, at the same time." },
+      walking: { title: "Guided flows are private", body: "Guided flows like this one are your own: nobody sees your screen while you are in one, and you do not see theirs, only a mark beside each name. Anything you save reaches everyone straight away." },
+    },
+    demoName: "Sam, an example",
+    // What the tutorial types into the project walker; nothing is saved.
+    sample: {
+      about: (gap?: string) => (gap ? `A project to close the gap: ${gap}.` : "A project that shows how work is defined, from the gaps it closes to the team that runs it."),
+      name: "My first project",
+    },
+    tutorial: "Tutorial: this fills itself in, and nothing is saved.",
+  },
   // A record already there under another spelling (components/DidYouMean).
   didYouMean: {
     ask: "Did you mean",
@@ -1631,13 +1701,13 @@ export const copy = {
       objectives: "Objectives",
       outcomes: "Outcomes",
     } as Record<string, string>,
-    lead: "Welcome to Cartograph. First, who is this workspace for?",
+    lead: "Welcome to Cartograph.",
     nameQuestion: "Give your organisation a name",
     nameLabel: "Organisation",
     visionQuestion: (org: string) => `What is the vision of ${org}?`,
     missionQuestion: (org: string) => `What is the mission of ${org}?`,
     reviewQuestion: (org: string) => `Here is ${org} so far`,
-    reviewHint: "Change anything you like, or carry on. All of it can be changed later, on the strategy page.",
+    reviewHint: "Change anything, or carry on. You can also change these later on the strategy page.",
     change: "Change",
     notYet: "Not yet",
     visionIs: (org: string) => `The vision of ${org} is`,
@@ -1647,7 +1717,7 @@ export const copy = {
     goalLabel: (n: number) => `Goal ${n}`,
     addGoal: "Add another goal",
     pickQuestion: (n: number) => `You have named ${n} goal${n === 1 ? "" : "s"}. Choose one to refine.`,
-    pickHint: "You refine one now, to learn the way. The others wait in the strategy, to refine the same way when you are ready.",
+    pickHint: "Refine one now. You can refine the others later from the strategy page.",
     aimQuestion: (goal: string) => `What does "${goal}" set out to do?`,
     aimLabel: "The aim, in a sentence",
     objectivesQuestion: (goal: string) => `Which objectives sit under "${goal}"?`,
@@ -1661,7 +1731,7 @@ export const copy = {
     forObjective: "For the objective",
     definition: "What it is",
     example: "For example",
-    terms: { organisation: "Organisation", vision: "Vision", mission: "Mission" },
+    terms: { organisation: "Organisation", vision: "Vision", mission: "Mission", purpose: "Purpose" },
     next: "Next",
     back: "Back",
     skip: "Skip for now",
@@ -1669,7 +1739,7 @@ export const copy = {
     failed: "This did not save. Try again.",
     reason: "Defined when the workspace was opened",
     mapTitle: (org: string) => `The map of ${org}`,
-    mapHint: "What you defined, from why you exist down to what will be true. What is left to fill in waits for you inside.",
+    mapHint: "Everything you defined so far. You can fill in the rest later.",
     begin: "Enter Cartograph",
     more: (n: number) => `and ${n} more`,
   },
@@ -1677,7 +1747,7 @@ export const copy = {
     steps: { about: "About", gaps: "Gaps", goals: "Outcomes", groups: "People", team: "Team", details: "Details", ready: "Ready" } as Record<string, string>,
     teamQuestion: "Which team owns it?",
     // Walked again from a draft, and the way out to the full page.
-    again: "Walking it again: every answer is filled in from the draft, to change or keep.",
+    again: "Your answers so far are filled in. Change what you like.",
     toPage: "Skip to the full page",
     saveAgain: "Save and open",
     untitled: "New project",

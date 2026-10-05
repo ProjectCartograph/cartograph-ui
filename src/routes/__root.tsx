@@ -52,6 +52,8 @@ import { useQuery } from "@tanstack/react-query";
 import { NotListed } from "@/access/NotListed";
 import { useSettings } from "@/surfaces/goals/api";
 import { useLeftToDo } from "@/surfaces/home/leftToDo";
+import { TourProvider } from "@/tour/TourProvider";
+import { TourEntry } from "@/tour/TourEntry";
 
 const defineItems = [
   {
@@ -432,6 +434,7 @@ function RootLayout() {
       <FollowPanel />
       <FollowChip />
       <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      <TourProvider>
         <Sidebar variant="inset" collapsible="icon" data-cartograph-region="rail">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1.5">
@@ -564,6 +567,7 @@ function RootLayout() {
           </SidebarContent>
           <SidebarFooter>
             <SidebarMenu>
+              <TourEntry />
             </SidebarMenu>
           </SidebarFooter>
         </Sidebar>
@@ -601,6 +605,7 @@ function RootLayout() {
             {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
           </main>
         </SidebarInset>
+      </TourProvider>
       </SidebarProvider>
     </PresenceProvider>
     </FollowProvider>

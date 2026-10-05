@@ -64,6 +64,10 @@ export function Onboarding() {
   const goalGuide = useGuide("Goal", "goal");
   const objectiveGuide = useGuide("Goal", "objective");
   const outcomeGuide = useGuide("Goal", "outcome");
+  // The words for a person, where the guide's are for writing (the
+  // glossary's summary and example).
+  const glossary = useQuery({ queryKey: ["glossary"], queryFn: () => client.glossary(), retry: false, staleTime: Infinity });
+  const purposeEntry = glossary.data?.find((e) => e.key === "purpose");
   // What is there already, when the walk is opened again.
   const stated = useQuery({
     queryKey: ["purpose"],
@@ -252,7 +256,7 @@ export function Onboarding() {
                 </div>
               ))}
             </dl>
-            <Definition term={purposeGuide.data?.kind ?? "Purpose"} text={purposeGuide.data?.definition} />
+            <Definition term={oc.terms.purpose} text={purposeEntry?.summary} example={purposeEntry?.example} />
           </WalkerQuestion>
         ) : step === "goals" ? (
           <WalkerQuestion

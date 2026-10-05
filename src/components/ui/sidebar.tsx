@@ -43,9 +43,13 @@ type SidebarContextProps = {
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
 
-function useSidebar() {
+// Optional: null outside a SidebarProvider, for what may run with or
+// without one (the guided tour).
+function useSidebar(): SidebarContextProps
+function useSidebar(optional: true): SidebarContextProps | null
+function useSidebar(optional?: true) {
   const context = React.useContext(SidebarContext)
-  if (!context) {
+  if (!context && !optional) {
     throw new Error("useSidebar must be used within a SidebarProvider.")
   }
 
@@ -187,6 +191,18 @@ function Sidebar({
           data-slot="sidebar"
           data-mobile="true"
           className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          // What keeps the sidebar open (the guided tour, pointing into
+          // it) does not close it when touched.
+          // A touch is judged after its click has run, when what was
+          // touched may already be gone: that is not a touch outside.
+          onInteractOutside={(e) => {
+            const target = e.target as Element | null
+            if (target?.closest?.("[data-keeps-sidebar]") || (target && !target.isConnected)) e.preventDefault()
+          }}
+          onFocusOutside={(e) => {
+            const target = e.target as Element | null
+            if (target?.closest?.("[data-keeps-sidebar]") || (target && !target.isConnected)) e.preventDefault()
+          }}
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,

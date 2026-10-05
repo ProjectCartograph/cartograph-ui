@@ -17,6 +17,9 @@ import { useGoalTree } from "@/surfaces/goals/api";
 import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
 import { WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker";
 import { DidYouMean } from "@/components/DidYouMean";
+import { STEPS as TOUR_STEPS } from "@/tour/steps";
+import { useTour } from "@/tour/tourContext";
+import { useTutorial } from "./tutorial";
 import { slugify } from "@/surfaces/sheet/schema";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { ProjectManifest } from "../types";
@@ -132,6 +135,23 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
     setStep(to);
   };
   const chosen = { gaps, goals, groups, team: team ? [team] : [] } as const;
+  // Walked as the guided tour's tutorial: it fills itself in, and saves
+  // nothing (projects/start/tutorial).
+  const tour = useTour();
+  const tutorial = tour.at !== null && TOUR_STEPS[tour.at]?.key === "walker";
+  useTutorial(tutorial, {
+    about,
+    setAbout,
+    setGaps,
+    setGoals,
+    setGroups,
+    setTeam,
+    setName,
+    show: (s) => {
+      setForward(true);
+      setStep(s);
+    },
+  });
   // The name is the person's to give: what it is about is shown in the
   // field as a cue, never put in it.
   const projectName = name;
@@ -190,7 +210,12 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
 
   return (
     <WorkTextProvider text={about}>
-      <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 pt-[6vh] pb-12" data-cartograph-region="start-project">
+      <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 pt-[6vh] pb-12" data-cartograph-region="start-project" data-tutorial={tutorial || undefined}>
+        {tutorial ? (
+          <p className="self-start rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary" role="status" data-slot="tutorial">
+            {copy.tour.tutorial}
+          </p>
+        ) : null}
         <WalkerProgress
           labels={STEPS.map((s) => sc.steps[s])}
           at={at}
@@ -278,7 +303,7 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
           </Button>
           {/* The full page is always a step away: what has been answered
               is saved, and the rest is asked there. */}
-          {step !== "ready" ? (
+          {step !== "ready" && !tutorial ? (
             <Button
               type="button"
               variant="ghost"
@@ -292,7 +317,7 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
             </Button>
           ) : null}
           {step === "ready" ? (
-            <Button type="button" size="lg" onClick={() => void start()} disabled={saving || !projectName.trim()}>
+            <Button type="button" size="lg" onClick={() => void start()} disabled={saving || tutorial || !projectName.trim()}>
               {from ? sc.saveAgain : sc.start}
               <ArrowRight />
             </Button>

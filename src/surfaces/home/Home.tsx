@@ -13,6 +13,7 @@ import { manifestLink } from "@/proposals/links";
 import { FLOW_KEYS, flowLink, nameFrom } from "./flows";
 import { onboarded, useNewWorkspace } from "@/onboarding/firstRun";
 import { LeftToDo } from "./LeftToDo";
+import { TourInvite } from "@/tour/TourInvite";
 
 const hc = copy.home;
 
@@ -103,6 +104,8 @@ export function Home() {
       ) : null}
       {/* What was started and not finished, while nothing is being asked. */}
       {read.data || read.isPending ? null : <LeftToDo />}
+      {/* Someone new to a workspace others started is offered the tour. */}
+      {read.data || read.isPending || isNew ? null : <TourInvite />}
     </div>
   );
 }
