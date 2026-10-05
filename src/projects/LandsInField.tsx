@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { ArrowRight, Hourglass } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
+import { Suggested } from "@/components/relevance";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,7 @@ export function LandsInField({ resolve }: { resolve?: string }) {
           ready={resolve && resolvedName ? { name: resolvedName, onName: () => set(resolve) } : undefined}
         />
       ) : null}
+      <Suggested kind="Operation" selected={current ? [current] : []} onPick={(id) => set(id === current ? undefined : id)} />
       <div className="flex items-center gap-2">
         <Combobox
           options={options}

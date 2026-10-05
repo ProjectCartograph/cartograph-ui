@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Plus, X } from "lucide-react";
 
+import { Suggested } from "@/components/relevance";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
@@ -235,6 +236,21 @@ export function ResourcesSection() {
       <section className="flex flex-col gap-3" data-cartograph-region="funding">
         <FieldHeading label={pc.fundingTitle} hint={pc.fundingHint} />
         <div className="flex flex-col gap-2">
+          <Suggested
+            kind="FundingSource"
+            selected={funding.map((f) => f.source ?? "").filter(Boolean)}
+            onPick={(id) =>
+              store.updateSpec((s) => {
+                const cur = s.funding ?? [];
+                return {
+                  ...s,
+                  funding: cur.some((f) => f.source === id)
+                    ? cur.filter((f) => f.source !== id)
+                    : [...cur, { amount: 0, currency: "", source: id, status: "requested" }],
+                };
+              })
+            }
+          />
           {funding.length === 0 ? <p className="text-sm text-muted-foreground">{pc.fundingEmpty}</p> : null}
           {funding.map((f, idx) => (
             <div key={idx} className="flex flex-col gap-2 rounded-lg border p-3" data-cartograph-region={`funding-${idx}`}>

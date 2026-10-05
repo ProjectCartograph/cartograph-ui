@@ -1,5 +1,6 @@
 import { ArrowDownToLine, ArrowUpFromLine, Plus, X } from "lucide-react";
 
+import { Suggested } from "@/components/relevance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -135,6 +136,13 @@ export function DataSection() {
           </Label>
           <Help label={dc.usesTitle} hint={dc.usesHint} />
         </div>
+        <Suggested
+          kind="DataSource"
+          selected={consumes.map((c) => c.source).filter(Boolean)}
+          onPick={(id) =>
+            updateConsumes(consumes.some((c) => c.source === id) ? consumes.filter((c) => c.source !== id) : [...consumes, { source: id, purpose: "" }])
+          }
+        />
         {consumes.length === 0 ? <p className="text-sm text-muted-foreground">{dc.usesEmpty}</p> : null}
         {consumes.map((c, idx) => (
           <Row key={idx} region={`data-use-${idx}`} onRemove={() => updateConsumes(consumes.filter((_, i) => i !== idx))}>
