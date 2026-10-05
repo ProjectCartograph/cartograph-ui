@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 
+import { FinishDetails } from "@/projects/FinishDetails";
 import { FromIdea } from "@/components/FromIdea";
 import { Button } from "@/components/ui/button";
 import { FieldHeading } from "@/components/guidance";
@@ -85,6 +86,7 @@ export function AimSection() {
       <ContextRecap omit={["aim", "measures", "deliverables"]} />
 
       <div className="flex flex-col gap-3" data-cartograph-region="problems">
+        <FinishDetails kind="Gap" ids={[...new Set(problems.flatMap((p) => (p.gaps ?? []).map((g) => g.gap)))]} />
         <FromIdea field="/spec/summary/problems/-/problem/situation" onUse={(t) => fillFirst("problem", t)} />
         <FromIdea field="/spec/summary/problems/-/change/what" onUse={(t) => fillFirst("change", t)} />
         <FieldHeading label={ac.problemsTitle} />

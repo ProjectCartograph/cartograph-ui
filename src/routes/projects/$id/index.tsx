@@ -299,6 +299,7 @@ function ProjectRecordPage() {
               <Button
                 type="button"
                 onClick={handleSaveVersion}
+                data-celebrate=""
                 disabled={!reason.trim() || isSaving}
               >
                 {isSaving ? "Saving..." : "Save"}

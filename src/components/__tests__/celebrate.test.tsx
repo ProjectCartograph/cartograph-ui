@@ -1,5 +1,6 @@
 /// <reference types="@testing-library/jest-dom" />
-// Confetti for what commits something, from the button pressed for it.
+// Confetti for a definition completed, from the button pressed for it,
+// and for nothing else.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -17,7 +18,7 @@ beforeEach(() => burst.mockClear());
 describe("celebrating", () => {
   it("bursts from the button pressed when a version is saved", async () => {
     const client = celebrating(fakeClient({ saveVersion: async () => ({ number: 2 }) as never }));
-    render(<button type="button">Save as version</button>);
+    render(<button type="button" data-celebrate="">Save as version</button>);
     const button = screen.getByRole("button");
     button.getBoundingClientRect = () => ({ left: 10, top: 20, width: 100, height: 30 }) as DOMRect;
     fireEvent.pointerDown(button);
@@ -27,7 +28,7 @@ describe("celebrating", () => {
 
   it("never for a draft, nor for a save nobody pressed for", async () => {
     const client = celebrating(fakeClient({ saveWorking: async () => undefined, saveVersion: async () => ({ number: 2 }) as never }));
-    render(<button type="button">Save</button>);
+    render(<button type="button" data-celebrate="">Save</button>);
     fireEvent.pointerDown(screen.getByRole("button"));
     await client.saveWorking("Goal", "g1", "text");
     expect(burst).not.toHaveBeenCalled();
@@ -36,9 +37,17 @@ describe("celebrating", () => {
     expect(burst).toHaveBeenCalledTimes(1);
   });
 
+  it("never for a button that does not complete a definition, such as naming a gap in passing", async () => {
+    const client = celebrating(fakeClient({ saveVersion: async () => ({ number: 1 }) as never }));
+    render(<button type="button">Add</button>);
+    fireEvent.pointerDown(screen.getByRole("button"));
+    await client.saveVersion("Gap", "g1", {}, "r");
+    expect(burst).not.toHaveBeenCalled();
+  });
+
   it("not when it fails", async () => {
     const client = celebrating(fakeClient({ acceptProposal: async () => Promise.reject(new Error("refused")) }));
-    render(<button type="button">Accept</button>);
+    render(<button type="button" data-celebrate="">Accept</button>);
     fireEvent.pointerDown(screen.getByRole("button"));
     await expect(client.acceptProposal("p1")).rejects.toThrow("refused");
     expect(burst).not.toHaveBeenCalled();

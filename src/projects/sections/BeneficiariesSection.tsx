@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { FinishDetails } from "@/projects/FinishDetails";
 import { FromIdea } from "@/components/FromIdea";
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { copy } from "@/copy";
@@ -49,6 +50,7 @@ export function BeneficiariesSection() {
   return (
     <>
       <FromIdea field="/spec/summary/beneficiaries" />
+      <FinishDetails kind="BeneficiaryGroup" ids={picked} />
       <Suggested kind="BeneficiaryGroup" selected={picked} onPick={toggle} />
       <ChipPicker
         slot="beneficiary-chips"

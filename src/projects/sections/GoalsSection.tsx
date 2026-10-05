@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Boxes, FolderKanban, Plus, TriangleAlert, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
+import { FinishDetails } from "@/projects/FinishDetails";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -362,6 +363,7 @@ export function AlignmentSection() {
       {treeQuery.isError ? <p className="text-sm text-destructive">{copy.goals.home.error}</p> : null}
       {treeQuery.data && !(partOf === "project" && parent) ? (
         <div className="flex flex-col gap-6" data-cartograph-region="goal-picker">
+          <FinishDetails kind="Goal" ids={goals} />
           <Suggested kind="Goal" level="outcome" selected={goals} onPick={toggleGoal} />
           {programmes.length > 0 ? (
             <div className="flex flex-col gap-3">

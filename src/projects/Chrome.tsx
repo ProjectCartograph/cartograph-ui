@@ -103,7 +103,7 @@ export function SaveVersionDialog({ open, onOpenChange }: { open: boolean; onOpe
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {pc.common.cancel}
           </Button>
-          <Button type="button" onClick={handleSave} disabled={saving || !reason.trim()}>
+          <Button type="button" onClick={handleSave} disabled={saving || !reason.trim()} data-celebrate="">
             {pc.common.save}
           </Button>
         </DialogFooter>

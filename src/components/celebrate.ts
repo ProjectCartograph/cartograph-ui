@@ -1,11 +1,11 @@
-// Celebrates what changes the record of truth: a version saved, a
-// snapshot taken, a project moved on, files applied from the vault, a
-// proposal accepted. Drafts save themselves all the time and are never
-// celebrated; neither is anything a person did not press for (a goal
-// dragged in the tree saves a version too). So a burst needs a button
-// pressed in the moments before the call that succeeded, and it comes
-// out of that button, or out of where it was if the dialog it sat in has
-// closed since.
+// Celebrates one moment: a definition completed, its version saved from
+// the button that says so. Drafts save themselves all the time, and a
+// record named in passing (a gap added while starting a project) saves a
+// version too; neither is a definition completed, so confetti is opt-in:
+// only a button marked data-celebrate earns it, pressed in the moments
+// before the call that succeeded, and it comes out of that button, or out
+// of where it was if the dialog it sat in has closed since. What is merely
+// new gets a sparkle instead (components/Sparkle).
 
 import type { Client } from "@/client/port";
 import { confetti, type Origin } from "./confetti";
@@ -38,7 +38,7 @@ function listen() {
 export function celebrate(now = Date.now()) {
   const p = pressed;
   pressed = undefined;
-  if (!p || now - p.at > RECENT_MS) return;
+  if (!p || now - p.at > RECENT_MS || !p.el.closest("[data-celebrate]")) return;
   if (p.el.isConnected) {
     const r = p.el.getBoundingClientRect();
     if (r.width > 0 && r.height > 0) {

@@ -195,7 +195,9 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
     // A project starts by preparing what its walk picks from
     // (TAXONOMY.md D34); it can be started from there at any point.
     else if (kind === "component") void navigate({ to: "/projects/prepare", search: { partOf: true } });
-    else if (kind === "project") void navigate({ to: "/projects/prepare", search: {} });
+    // A project starts in four guided questions, each thing it names
+    // picked or named in place.
+    else if (kind === "project") void navigate({ to: "/projects/start" });
   }
   function pickEnds(next: Ends) {
     setEnds(next);

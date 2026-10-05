@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { describe, it, expect, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { parse } from "yaml";
 
@@ -54,6 +54,9 @@ describe("a placeholder on a project", () => {
       </ClientProvider>,
     );
     await screen.findByText("loaded");
+    // The probe hands over the store after its render; under load that
+    // can be a render behind what the screen shows.
+    await waitFor(() => expect(api?.loaded).toBe(true));
     expect(api!.pending).toEqual([{ path: "/spec/operation", kind: "Operation", name: "Quality Check Service" }]);
 
     await act(async () => {

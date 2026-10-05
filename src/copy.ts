@@ -87,6 +87,7 @@ export const copy = {
     cancel: "Cancel",
     // The steps of a walk on a narrow screen, behind one small button.
     allSteps: "All steps",
+    isNew: "New",
     // What the workspace holds that is relevant to the work (engine
     // docs/adr/0023): put first, never chosen for the person.
     suggested: "Suggested from what you wrote",
@@ -1571,6 +1572,63 @@ export const copy = {
       operation: "Record the service",
       service: "Record the planned service",
     } as Record<string, string>,
+  },
+  // Starting a project: four questions on one page, each thing it names
+  // picked or named in place, finished later in the walk.
+  start: {
+    steps: { about: "About", gaps: "Gaps", goals: "Outcomes", groups: "People", team: "Team", details: "Details", ready: "Ready" } as Record<string, string>,
+    teamQuestion: "Which team owns it?",
+    teamHint: "The team the project belongs to, and who changes it.",
+    // What a project is, in a line, under the first question.
+    lead: "A project is time-bound work that brings unique value to the people it serves, and closes the gaps they face.",
+    aboutQuestion: "What is your project about?",
+    aboutHint: "A sentence or two, as you would tell a colleague. Everything after this is suggested from it.",
+    gapsQuestion: "What gaps does it address?",
+    gapsHint: "The shortfalls it closes: how things are, against how they should be.",
+    goalsQuestion: "Which outcomes does it serve?",
+    goalsHint: "The changes in your strategy it moves.",
+    groupsQuestion: "Who is it for?",
+    groupsHint: "The groups of people who gain from it.",
+    readyQuestion: "Ready to start",
+    readyHint: "Everything here can be refined in the walk. Name it, and start.",
+    fromGaps: "Named by the gaps you chose",
+    all: "Everything else",
+    existing: (what: string) => `Choose from existing ${what}`,
+    or: "or",
+    searchPlaceholder: "Search",
+    none: (what: string) => `No ${what} yet. Name the first one below.`,
+    nameNew: (what: string) => `Name a new ${what}`,
+    add: "Add",
+    words: { gaps: "gaps", goals: "outcomes", groups: "groups", gap: "gap", goal: "outcome", group: "group", teams: "teams", team: "team" } as Record<string, string>,
+    // Part two: what was named in passing, filled in, one at a time.
+    fillTitle: "You named new items for this project. Let's fill them in.",
+    fillLeft: (n: number) => (n === 1 ? "1 left" : `${n} left`),
+    fillKind: { Gap: "Gap", Goal: "Outcome", BeneficiaryGroup: "Group" } as Record<string, string>,
+    gapCurrent: "How are things now?",
+    gapCurrentHint: "Where things are today, in one short sentence.",
+    gapDesired: "How should they be?",
+    gapDesiredHint: "Where things should be, in one short sentence.",
+    gapOutcomes: "Which of the project's outcomes would close it?",
+    outcomeStatement: "What will be true once it is met?",
+    outcomeHint: "A state, not a task: what people would see, in a short sentence.",
+    groupDescription: "Who are they?",
+    groupHint: "Enough that someone else would know who is in the group and who is not.",
+    fillNext: "Next",
+    editName: "Edit the name",
+    fillDone: "Done",
+    nameLabel: "Its name",
+    chosen: { gaps: "Gaps", goals: "Outcomes", groups: "For" } as Record<string, string>,
+    nothingChosen: "None yet",
+    next: "Next",
+    skip: "Skip for now",
+    back: "Back",
+    start: "Start the project",
+    failed: "This did not save. Try again.",
+    reason: "Named while starting a project",
+    // The friendly prompt where a record named in passing is first met
+    // in the walk.
+    finish: (name: string) => `Finish ${name}`,
+    finishHint: "Named while starting the project. Add its details when you are ready.",
   },
   // Before a project's walk: what it will pick from, added first, so the
   // walk is a matter of choosing (engine TAXONOMY.md D34).

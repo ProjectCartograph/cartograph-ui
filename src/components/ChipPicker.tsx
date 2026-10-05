@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { Check, Plus, Search } from "lucide-react";
+import { Check, Plus, Search, Sparkles } from "lucide-react";
 
+import { copy } from "@/copy";
+import { SparkleBurst } from "@/components/Sparkle";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 
@@ -19,6 +21,10 @@ export interface ChipItem {
    * beside the chip, for a flat register that still needs one. */
   tag?: string;
   title?: string;
+  /** Named just now, in the flow on screen: marked as new while it lasts. */
+  isNew?: boolean;
+  /** Named this moment: it sparkles as it appears. */
+  fresh?: boolean;
 }
 
 interface Branch {
@@ -118,10 +124,13 @@ export function ChipPicker({
         aria-pressed={isPicked}
         title={c.title ?? c.tag}
         onClick={() => onToggle(c.id)}
-        className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors ${
+        className={`relative inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors ${
           isPicked ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-accent"
-        }`}
+        } ${c.isNew ? "cartograph-new" : ""}`}
+        data-new={c.isNew ? "" : undefined}
       >
+        {c.fresh ? <SparkleBurst /> : null}
+        {c.isNew ? <Sparkles className="size-3.5 shrink-0 text-new" aria-label={copy.common.isNew} /> : null}
         {isPicked ? <Check className="size-3.5 shrink-0" aria-hidden="true" /> : null}
         <span className="truncate">{c.label}</span>
         {withTag && c.tag ? (
@@ -152,10 +161,12 @@ export function ChipPicker({
         aria-pressed={isPicked}
         title={c.title}
         onClick={() => onToggle(c.id)}
-        className={`flex w-full items-center gap-3 border px-3 py-2.5 text-left transition-colors ${rounded} ${
+        className={`relative flex w-full items-center gap-3 border px-3 py-2.5 text-left transition-colors ${rounded} ${
           position === "middle" || position === "last" ? "-mt-px" : ""
-        } ${isPicked ? "z-10 border-primary bg-accent" : "hover:bg-accent/50"}`}
+        } ${isPicked ? "z-10 border-primary bg-accent" : "hover:bg-accent/50"} ${c.isNew ? "cartograph-new z-20" : ""}`}
+        data-new={c.isNew ? "" : undefined}
       >
+        {c.fresh ? <SparkleBurst /> : null}
         <span
           aria-hidden="true"
           className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${
@@ -165,6 +176,7 @@ export function ChipPicker({
           {isPicked ? <Check className="size-3" /> : null}
         </span>
         <span className={`min-w-0 flex-1 text-sm text-pretty ${isPicked ? "font-medium" : ""}`}>{c.label}</span>
+        {c.isNew ? <Sparkles className="size-4 shrink-0 text-new" aria-label={copy.common.isNew} /> : null}
       </button>
     );
   }
