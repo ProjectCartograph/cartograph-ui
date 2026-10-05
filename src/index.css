@@ -324,6 +324,56 @@
   }
 }
 
+/* The map that ends opening a workspace: each thing defined unfolds in
+   the order it was defined, the lines between them grow down from the
+   one above, the ground drifts like a map being unrolled, and the way in
+   beckons once everything is there. Each element sets --delay. */
+@keyframes cartograph-unfold {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.cartograph-unfold {
+  animation: cartograph-unfold 600ms var(--ease-enter) both;
+  animation-delay: var(--delay, 0ms);
+}
+@keyframes cartograph-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+.cartograph-grow {
+  transform-origin: top;
+  animation: cartograph-grow 400ms var(--ease-enter) both;
+  animation-delay: var(--delay, 0ms);
+}
+@keyframes cartograph-beckon {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 45%, transparent); }
+  50% { box-shadow: 0 0 0 12px color-mix(in oklch, var(--primary) 0%, transparent); }
+}
+.cartograph-beckon {
+  animation: cartograph-unfold 600ms var(--ease-enter) both, cartograph-beckon 2.4s ease-in-out infinite;
+  animation-delay: var(--delay, 0ms), calc(var(--delay, 0ms) + 600ms);
+}
+@keyframes cartograph-drift {
+  from { background-position: 0 0; }
+  to { background-position: 48px 48px; }
+}
+.cartograph-map-ground {
+  background-image: radial-gradient(color-mix(in oklch, var(--foreground) 12%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  animation: cartograph-drift 30s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cartograph-unfold,
+  .cartograph-beckon {
+    animation: cartograph-fade 200ms linear both;
+    animation-delay: 0ms;
+  }
+  .cartograph-grow,
+  .cartograph-map-ground {
+    animation: none;
+  }
+}
+
 /*
  * The sidebar's icons answer the hand that reaches for them: hovering an
  * entry, or reaching it by keyboard, plays one short motion that says

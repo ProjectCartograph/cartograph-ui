@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { ClientProvider } from "@/client/context";
@@ -8,7 +8,9 @@ import type { Understanding } from "@/client/port";
 import { copy } from "@/copy";
 import { Home } from "../Home";
 
+const navigate = vi.fn();
 vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => navigate,
   Link: ({ children, to, search, params, ...rest }: { children: ReactNode; to: string; search?: Record<string, string>; params?: Record<string, string> } & Record<string, unknown>) => {
     const path = Object.entries(params ?? {}).reduce((p, [k, v]) => p.replace(`$${k}`, v), to);
     const query = search && Object.keys(search).length ? `?${new URLSearchParams(search)}` : "";
@@ -111,3 +113,31 @@ async function waitForAnswer(): Promise<HTMLElement> {
   await screen.findByText((_, el) => el?.getAttribute("data-cartograph-region") === "home-answer");
   return document.querySelector('[data-cartograph-region="home-answer"]') as HTMLElement;
 }
+
+// A workspace with nothing in it opens by walking it, once; one with an
+// organisation named never does (src/onboarding).
+describe("a new workspace", () => {
+  it("is sent to be opened, and only a new one", async () => {
+    const empty = { levels: ["Goal", "Objective", "Outcome"], nodes: [], unplaced: [] };
+    for (const [settings, sent] of [
+      [{ goalLevels: [] }, true],
+      [{ goalLevels: [], purpose: { organisation: "Riverside Growers" } }, false],
+    ] as const) {
+      navigate.mockReset();
+      localStorage.clear();
+      const { unmount } = render(
+        <ClientProvider client={fakeClient({ settings: async () => settings as never, goalTree: async () => empty as never, order: async () => ({ stages: [], next: "", registers: [] }) as never })}>
+          <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+            <Home />
+          </QueryClientProvider>
+        </ClientProvider>,
+      );
+      if (sent) await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/welcome", replace: true }));
+      else {
+        await new Promise((r) => setTimeout(r, 50));
+        expect(navigate).not.toHaveBeenCalled();
+      }
+      unmount();
+    }
+  });
+});

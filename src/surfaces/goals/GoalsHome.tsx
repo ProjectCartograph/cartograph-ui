@@ -449,11 +449,9 @@ function FunctionalGoalCard({
 function StrategicGoalCard({
   node,
   activeFilters,
-  pillars,
 }: {
   node: GoalNode;
   activeFilters: Set<AlignKind>;
-  pillars: GoalNode[];
 }) {
   const queryClient = useQueryClient();
   const client = useClient();
@@ -601,7 +599,7 @@ function StrategicGoalCard({
               <Badge variant="destructive" className="self-start">
                 {hc.wrongLevel(child.level, "objective")}
               </Badge>
-              <StrategicGoalCard node={child} activeFilters={activeFilters} pillars={pillars} />
+              <StrategicGoalCard node={child} activeFilters={activeFilters} />
             </div>
           )
         ))}
@@ -753,11 +751,9 @@ function StrategicGoalCard({
 function PillarColumn({
   node,
   activeFilters,
-  pillars,
 }: {
   node: GoalNode;
   activeFilters: Set<AlignKind>;
-  pillars: GoalNode[];
 }) {
   const queryClient = useQueryClient();
   const client = useClient();
@@ -890,7 +886,7 @@ function PillarColumn({
       <div className="ml-2 flex flex-col gap-3 border-l pl-4">
         {node.children.map((child) => (
           child.level === "objective" ? (
-            <StrategicGoalCard key={child.id} node={child} activeFilters={activeFilters} pillars={pillars} />
+            <StrategicGoalCard key={child.id} node={child} activeFilters={activeFilters} />
           ) : (
             <div key={child.id} className="flex flex-col gap-1">
               <Badge variant="destructive" className="self-start">
@@ -1070,7 +1066,6 @@ export function GoalsHome() {
   const [addError, setAddError] = useState<{ path: string; message: string }[] | null>(null);
 
   const nodes = useMemo(() => treeQuery.data?.nodes ?? [], [treeQuery.data]);
-  const pillars = nodes;
 
   function toggleFilter(kind: AlignKind) {
     setActiveFilters((prev) => {
@@ -1150,7 +1145,7 @@ export function GoalsHome() {
       {nodes.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3" data-cartograph-region="goal-tree">
           {nodes.map((n) => (
-            <PillarColumn key={n.id} node={n} activeFilters={activeFilters} pillars={pillars} />
+            <PillarColumn key={n.id} node={n} activeFilters={activeFilters} />
           ))}
           <div className="flex flex-col gap-3">
             <div className="h-9" />

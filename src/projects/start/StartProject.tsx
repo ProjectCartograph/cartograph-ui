@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
 import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
+import { WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker";
 import { slugify } from "@/surfaces/sheet/schema";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { ProjectManifest } from "../types";
@@ -141,15 +142,16 @@ export function StartProject() {
   return (
     <WorkTextProvider text={about}>
       <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 pt-[6vh] pb-12" data-cartograph-region="start-project">
-        <Progress steps={STEPS} at={at} onGo={(s) => (STEPS.indexOf(s) <= at || about.trim() ? go(s) : undefined)} />
+        <WalkerProgress
+          labels={STEPS.map((s) => sc.steps[s])}
+          at={at}
+          label={sc.readyQuestion}
+          onGo={(i) => (i <= at || about.trim() ? go(STEPS[i]) : undefined)}
+        />
 
-        <div
-          key={step}
-          className={`flex flex-col gap-6 animate-in fade-in duration-300 ease-enter ${forward ? "slide-in-from-right-6" : "slide-in-from-left-6"}`}
-          data-step={step}
-        >
+        <WalkerStep key={step} step={step} forward={forward}>
           {step === "about" ? (
-            <Question title={sc.aboutQuestion} hint={sc.aboutHint} lead={sc.lead}>
+            <WalkerQuestion title={sc.aboutQuestion} hint={sc.aboutHint} lead={sc.lead}>
               <Textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value.slice(0, 1000))}
@@ -159,24 +161,24 @@ export function StartProject() {
                 data-cartograph-field="/spec/summary/about"
                 className="text-base"
               />
-            </Question>
+            </WalkerQuestion>
           ) : step === "gaps" ? (
-            <Question title={sc.gapsQuestion} hint={sc.gapsHint}>
+            <WalkerQuestion title={sc.gapsQuestion} hint={sc.gapsHint}>
               <Pick kind="Gap" word="gap" words="gaps" selected={gaps} onChange={setGaps} onCreated={noteCreated} marks={marks} />
-            </Question>
+            </WalkerQuestion>
           ) : step === "goals" ? (
-            <Question title={sc.goalsQuestion} hint={sc.goalsHint}>
+            <WalkerQuestion title={sc.goalsQuestion} hint={sc.goalsHint}>
               <PickOutcomes gaps={gaps} selected={goals} onChange={setGoals} onCreated={noteCreated} marks={marks} />
-            </Question>
+            </WalkerQuestion>
           ) : step === "groups" ? (
-            <Question title={sc.groupsQuestion} hint={sc.groupsHint}>
+            <WalkerQuestion title={sc.groupsQuestion} hint={sc.groupsHint}>
               <Pick kind="BeneficiaryGroup" word="group" words="groups" selected={groups} onChange={setGroups} onCreated={noteCreated} marks={marks} />
-            </Question>
+            </WalkerQuestion>
           ) : step === "team" ? (
-            <Question title={sc.teamQuestion} hint={sc.teamHint}>
+            <WalkerQuestion title={sc.teamQuestion} hint={sc.teamHint}>
               {/* One team: picking another replaces it. */}
               <Pick kind="Team" word="team" words="teams" selected={team ? [team] : []} onChange={(next) => setTeam(next.filter((t) => t !== team)[0] ?? "")} onCreated={(c) => markNew(c.id)} marks={marks} />
-            </Question>
+            </WalkerQuestion>
           ) : step === "details" ? (
             <FillIn
               items={toFill}
@@ -185,7 +187,7 @@ export function StartProject() {
               onDone={() => go("ready")}
             />
           ) : (
-            <Question title={sc.readyQuestion} hint={sc.readyHint}>
+            <WalkerQuestion title={sc.readyQuestion} hint={sc.readyHint}>
               <div className="flex flex-col gap-2">
                 <label htmlFor="start-name" className="text-sm font-medium">
                   {sc.nameLabel}
@@ -201,9 +203,9 @@ export function StartProject() {
               </div>
               <Summary chosen={chosen} newIds={newIds} />
               {failed ? <p className="text-sm text-destructive" role="alert">{sc.failed}</p> : null}
-            </Question>
+            </WalkerQuestion>
           )}
-        </div>
+        </WalkerStep>
 
         <div className="mt-auto flex items-center justify-between gap-2">
           <Button type="button" variant="ghost" size="lg" onClick={() => go(STEPS[at - 1])} disabled={at === 0} className={at === 0 ? "invisible" : ""}>
@@ -224,46 +226,6 @@ export function StartProject() {
         </div>
       </div>
     </WorkTextProvider>
-  );
-}
-
-/** Where the person is: every question, the one in hand marked, those
- * passed open to return to. */
-function Progress({ steps, at, onGo }: { steps: Step[]; at: number; onGo: (s: Step) => void }) {
-  return (
-    <ol className="flex items-center gap-2" aria-label={sc.readyQuestion}>
-      {steps.map((s, i) => (
-        <li key={s} className="flex flex-1 flex-col gap-1.5">
-          <button
-            type="button"
-            onClick={() => onGo(s)}
-            aria-current={i === at ? "step" : undefined}
-            className="flex flex-col gap-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-          >
-            <span className="relative h-1 overflow-hidden rounded-full bg-muted">
-              {/* Filled by scaling, never by width (rule 11). */}
-              <span
-                className={`absolute inset-0 origin-left rounded-full bg-primary transition-transform duration-300 ease-standard motion-reduce:transition-none ${i <= at ? "scale-x-100" : "scale-x-0"}`}
-              />
-            </span>
-            <span className={`text-xs ${i === at ? "font-medium text-foreground" : "text-muted-foreground"}`}>{sc.steps[s]}</span>
-          </button>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
-function Question({ title, hint, lead, children }: { title: string; hint: string; lead?: string; children: ReactNode }) {
-  return (
-    <>
-      <div className="flex flex-col gap-2">
-        {lead ? <p className="text-sm font-medium text-primary/80 text-pretty">{lead}</p> : null}
-        <h1 className="text-3xl font-semibold tracking-tight text-balance">{title}</h1>
-        <p className="text-muted-foreground text-pretty">{hint}</p>
-      </div>
-      {children}
-    </>
   );
 }
 

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, ArrowUp, CircleDot, Sparkles, Type } from "lucide-react";
 
 import { useClient } from "@/client/context";
@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { manifestLink } from "@/proposals/links";
 import { FLOW_KEYS, flowLink, nameFrom } from "./flows";
+import { onboarded, useNewWorkspace } from "@/onboarding/firstRun";
 
 const hc = copy.home;
 
@@ -36,6 +37,13 @@ export function Home() {
   const read = useMutation({ mutationFn: (t: string) => client.understand(t) });
   const order = useQuery({ queryKey: ["order"], queryFn: () => client.order() });
   const next = order.data?.stages.find((s) => s.key === order.data?.next);
+  // A workspace with nothing in it opens by walking its organisation and
+  // strategy, once per browser (src/onboarding).
+  const isNew = useNewWorkspace();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (isNew && !onboarded()) void navigate({ to: "/welcome", replace: true });
+  }, [isNew, navigate]);
 
   function submit() {
     const t = text.trim();

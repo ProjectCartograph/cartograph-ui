@@ -1819,8 +1819,9 @@ export interface components {
             projectLevelName: string;
             /** @description Author name recorded in versions (default local) */
             operator: string;
-            /** @description The vault's vision and mission, stated once above every goal (TAXONOMY.md D24). */
+            /** @description The vault's vision and mission, stated once above every goal (TAXONOMY.md D24), and the organisation's name (D37). */
             purpose?: {
+                organisation?: string;
                 vision?: string;
                 mission?: string;
                 source?: string;

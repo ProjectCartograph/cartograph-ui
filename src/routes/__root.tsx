@@ -50,6 +50,7 @@ import { holds, useSession } from "@/access/access";
 import { useClient } from "@/client/context";
 import { useQuery } from "@tanstack/react-query";
 import { NotListed } from "@/access/NotListed";
+import { useSettings } from "@/surfaces/goals/api";
 
 const defineItems = [
   {
@@ -396,6 +397,22 @@ function RootLayout() {
   const unlisted = session?.access && !session.access.listed;
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarOpenCookie);
   const { screen, route } = usePresenceScreen();
+  const organisation = useSettings().data?.purpose?.organisation ?? "";
+  // Opening a new workspace is a page of its own, with no rail and no
+  // header: nothing to wander off to before there is anything to see.
+  const bare = route === "/welcome";
+
+  if (bare) {
+    return (
+      <VaultExamplesProvider>
+        <TooltipProvider>
+          <main className="min-h-svh min-w-0 bg-background p-6" data-cartograph-region="main">
+            <Outlet />
+          </main>
+        </TooltipProvider>
+      </VaultExamplesProvider>
+    );
+  }
 
   return (
     <VaultExamplesProvider>
@@ -410,12 +427,14 @@ function RootLayout() {
         <Sidebar variant="inset" collapsible="icon" data-cartograph-region="rail">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1.5">
+              {/* The organisation the workspace is about, once named
+                  (engine TAXONOMY.md D37); the product's name until then. */}
               <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
-                A
+                {(organisation || copy.appName).slice(0, 1).toUpperCase()}
               </div>
               <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate text-sm font-semibold">{copy.appName}</span>
-                <span className="truncate text-xs text-muted-foreground">{copy.appLine}</span>
+                <span className="truncate text-sm font-semibold">{organisation || copy.appName}</span>
+                <span className="truncate text-xs text-muted-foreground">{organisation ? copy.appName : copy.appLine}</span>
               </div>
             </div>
           </SidebarHeader>
