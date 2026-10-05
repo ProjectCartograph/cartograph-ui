@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, Check, PencilLine, Plus, Sparkles } from "lucide
 
 import { aliasFor } from "@/alias";
 import { useClient } from "@/client/context";
+import type { GoalTree } from "@/client/port";
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { Suggested, WorkTextProvider } from "@/components/relevance";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
-import { PlaceGoal } from "@/surfaces/goals/PlaceGoal";
+import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
 import { slugify } from "@/surfaces/sheet/schema";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { ProjectManifest } from "../types";
@@ -341,13 +342,18 @@ function PickOutcomes({
   );
   const chips = useMemo<ChipItem[]>(() => {
     const out: ChipItem[] = [];
+    const push = (outcome: GoalTree["nodes"][number], group: string, tag?: string) =>
+      out.push({ id: outcome.id, label: outcome.name, group, tag, isNew: marks.newIds.has(outcome.id), fresh: marks.fresh === outcome.id });
     for (const goal of tree.data?.nodes ?? []) {
       for (const objective of goal.children ?? []) {
-        for (const outcome of objective.children ?? []) {
-          if (outcome.level === "outcome")
-            out.push({ id: outcome.id, label: outcome.name, group: goal.name, tag: objective.name, isNew: marks.newIds.has(outcome.id), fresh: marks.fresh === outcome.id });
-        }
+        for (const outcome of objective.children ?? []) if (outcome.level === "outcome") push(outcome, goal.name, objective.name);
       }
+    }
+    // What is not placed yet is listed too (TAXONOMY.md D35): an outcome
+    // left unplaced, or under an objective that is, is as much a choice.
+    for (const n of tree.data?.unplaced ?? []) {
+      if (n.level === "outcome") push(n, sc.unplaced);
+      else for (const outcome of n.children ?? []) if (outcome.level === "outcome") push(outcome, sc.unplaced, n.name);
     }
     return out;
   }, [tree.data, marks]);
@@ -355,7 +361,31 @@ function PickOutcomes({
 
   return (
     <>
-    <Choose words="goals" word="goal" hasAny={chips.length > 0} onAdd={async (n) => setPlacing(n)}>
+    <Choose
+      words="goals"
+      word="goal"
+      hasAny={chips.length > 0}
+      onAdd={async (n) => setPlacing(n)}
+      adding={
+        placing !== null ? (
+          <PlaceGoalForm
+            key={placing}
+            level="outcome"
+            fixedLevel
+            name={placing}
+            tree={tree.data}
+            onDone={(id) => {
+              const named = placing;
+              setPlacing(null);
+              if (id) {
+                onCreated?.({ kind: "Goal", id, name: named ?? id });
+                onChange([...selected, id]);
+              }
+            }}
+          />
+        ) : undefined
+      }
+    >
       {fromGaps.length > 0 ? (
         <div className="flex flex-col gap-1.5" data-slot="from-gaps">
           <p className="text-xs text-muted-foreground">{sc.fromGaps}</p>
@@ -385,22 +415,6 @@ function PickOutcomes({
         <ChipPicker items={chips} selected={selected} onToggle={toggle} placeholder={sc.searchPlaceholder} empty={sc.none(sc.words.goals)} slot="start-goals" />
       </div>
     </Choose>
-
-      {placing !== null ? (
-        <PlaceGoal
-          level="outcome"
-          name={placing}
-          tree={tree.data}
-          onDone={(id) => {
-            const named = placing;
-            setPlacing(null);
-            if (id) {
-              onCreated?.({ kind: "Goal", id, name: named ?? id });
-              onChange([...selected, id]);
-            }
-          }}
-        />
-      ) : null}
     </>
   );
 }
@@ -409,7 +423,22 @@ function PickOutcomes({
  * Two ways to answer, kept apart: choosing from what exists (the relevant
  * first), or naming a new one. When nothing exists yet, only the second.
  */
-function Choose({ words, word, hasAny, onAdd, children }: { words: string; word: string; hasAny: boolean; onAdd: (name: string) => Promise<void>; children: ReactNode }) {
+function Choose({
+  words,
+  word,
+  hasAny,
+  onAdd,
+  adding,
+  children,
+}: {
+  words: string;
+  word: string;
+  hasAny: boolean;
+  onAdd: (name: string) => Promise<void>;
+  /** What is asked of the one being named, in place of the name box. */
+  adding?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-4">
       {hasAny ? (
@@ -429,7 +458,7 @@ function Choose({ words, word, hasAny, onAdd, children }: { words: string; word:
       ) : null}
       <section className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10" data-slot="name-new-section">
         <h2 className="text-sm font-semibold">{sc.nameNew(sc.words[word])}</h2>
-        <NameNew label={sc.nameNew(sc.words[word])} onAdd={onAdd} />
+        {adding ?? <NameNew label={sc.nameNew(sc.words[word])} onAdd={onAdd} />}
       </section>
     </div>
   );

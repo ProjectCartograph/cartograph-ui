@@ -15,7 +15,7 @@ import { FieldHeading } from "@/components/guidance";
 import { copy } from "@/copy";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
 import { useGoalTree } from "@/surfaces/goals/api";
-import { PlaceGoal } from "@/surfaces/goals/PlaceGoal";
+import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
 import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 
@@ -270,15 +270,26 @@ function AddOne({ item, onAdded }: { item: Item; onAdded: () => void }) {
     );
   }
   const label = item.kind === "Operation" ? pc.plannedService : pc.add;
+  // A goal is placed in the page, on the tree, not in a dialog over it.
+  if (open && item.kind === "Goal") {
+    return (
+      <div className="basis-full">
+        <PlaceGoalForm
+          level={(item.level ?? "objective") as "outcome" | "objective"}
+          fixedLevel
+          name=""
+          tree={tree.data}
+          onDone={(id) => (setOpen(false), id ? onAdded() : undefined)}
+        />
+      </div>
+    );
+  }
   return (
     <>
       <Button type="button" variant="outline" onClick={() => setOpen(true)}>
         <Plus />
         {label}
       </Button>
-      {open && item.kind === "Goal" ? (
-        <PlaceGoal level={(item.level ?? "objective") as "outcome" | "objective"} name="" tree={tree.data} onDone={(id) => (setOpen(false), id ? onAdded() : undefined)} />
-      ) : null}
       {item.kind === "KPI" ? (
         <KPIAddDialog open={open} onOpenChange={setOpen} onAdded={() => (setOpen(false), onAdded())} />
       ) : item.kind !== "Goal" ? (

@@ -78,6 +78,7 @@ export interface GoalManifest {
   metadata: {
     id: string;
     name: string;
+    alias?: string;
     /** References not made yet (TAXONOMY.md D31): an unplaced goal's
      * parent (D35). */
     pending?: { path: string; kind: string; name: string; note?: string }[];

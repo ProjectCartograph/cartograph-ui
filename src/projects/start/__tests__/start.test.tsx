@@ -1,6 +1,6 @@
 /// <reference types="@testing-library/jest-dom" />
 import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { parse } from "yaml";
 
@@ -119,6 +119,48 @@ describe("starting a project", () => {
 // Where a record named in passing is first met in the walk, a friendly
 // prompt asks for its details; a finished one is not mentioned.
 describe("finishing what was named in passing", () => {
+  // A new outcome is placed in the page, on the tree, and may go under an
+  // objective not placed yet; what is not placed yet is listed to choose
+  // from, so nothing named disappears (TAXONOMY.md D35).
+  it("places a new outcome on the tree in the page, and lists what is not placed", async () => {
+    const saveVersion = vi.fn(async () => ({ number: 1 }) as never);
+    const loose = { id: "cut-loss", name: "Cut loss after picking", level: "objective", keyResults: 0, aligned: {}, smart: {}, children: [] };
+    const kept = { id: "kept-cool", name: "Produce is kept cool", level: "outcome", keyResults: 0, aligned: {}, smart: {}, children: [] };
+    const client = fakeClient({
+      list: async () => [] as never,
+      goalTree: async () => ({ ...tree, unplaced: [loose, kept] }) as never,
+      relevant: async () => ({ available: false, matches: [] }),
+      saveVersion,
+      get: async (kind: string, id: string) => ({ version: { number: 1 }, manifest: { apiVersion: "cartograph/v1", kind, metadata: { id, name: id }, spec: {} } }) as never,
+    });
+    render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <StartProject />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    fireEvent.change(screen.getByLabelText(sc.aboutQuestion), { target: { value: "Keep produce cool from field to depot." } });
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(`${sc.next}|${sc.skip}`) }));
+    await screen.findByRole("heading", { name: sc.gapsQuestion });
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(`${sc.next}|${sc.skip}`) }));
+    await screen.findByRole("heading", { name: sc.goalsQuestion });
+
+    // The unplaced outcome is there to choose.
+    expect(await screen.findByText("Produce is kept cool")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(sc.nameNew(sc.words.goal)), { target: { value: "Produce reaches a depot cold" } });
+    fireEvent.click(screen.getByRole("button", { name: sc.add }));
+    // In the page, not a dialog over it.
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const picker = await screen.findByRole("tree");
+    fireEvent.click(within(picker).getByRole("treeitem", { name: /Cut loss after picking/ }));
+    fireEvent.click(screen.getByRole("button", { name: copy.goals.home.place.add }));
+    await waitFor(() => expect(saveVersion).toHaveBeenCalledTimes(1));
+    const m = saveVersion.mock.calls[0][2] as { spec: { level: string; parent?: string } };
+    expect(m.spec).toMatchObject({ level: "outcome", parent: "cut-loss" });
+  });
+
   it("asks only of the records still lacking what defines them", async () => {
     const client = fakeClient({
       get: async (_kind: string, id: string) =>

@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -39,6 +39,7 @@ import { LevelMarkTag, levelName, levelStyle } from "./levels";
 import { SmartMarks } from "./SmartMarks";
 import { type GoalNode } from "./tree-types";
 import type { GoalLevel } from "./types";
+import { GoalTreePicker } from "./GoalTreePicker";
 import { Unplaced } from "./Unplaced";
 import { slugify } from "@/surfaces/sheet/schema";
 
@@ -190,22 +191,52 @@ function InlineAddRow({
   );
 }
 
+/**
+ * Moving a goal, on the tree: what is already under each place is in view
+ * when the person picks one, and the goal is shown where it would land.
+ */
+function MoveGoal({ node, onMove, onClose }: { node: GoalNode; onMove: (parentId: string) => void; onClose: () => void }) {
+  const tree = useGoalTree();
+  const [to, setTo] = useState(node.parent ?? "");
+  const tc = copy.goals.picker;
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg" data-slot="move-goal">
+        <DialogHeader>
+          <DialogTitle id={`move-${node.id}`}>{tc.moveTitle(node.name)}</DialogTitle>
+        </DialogHeader>
+        <GoalTreePicker tree={tree.data} level={node.level as GoalLevel} value={to} onChange={setTo} name={node.name} exclude={node.id} labelledBy={`move-${node.id}`} />
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            {copy.goals.home.place.cancel}
+          </Button>
+          <Button
+            type="button"
+            disabled={!to || to === node.parent}
+            onClick={() => {
+              onClose();
+              onMove(to);
+            }}
+          >
+            {tc.move}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function GoalCardMenu({
   node,
-  pillars,
-  strategicGoals,
   onMove,
   onDeleteAttempt,
 }: {
   node: GoalNode;
-  pillars: GoalNode[];
-  strategicGoals: GoalNode[];
   onMove: (parentId: string) => void;
   onDeleteAttempt: () => void;
 }) {
   const [moveOpen, setMoveOpen] = useState(false);
 
-  const moveOptions = node.level === "objective" ? pillars : strategicGoals;
   const canMove = node.level === "objective" || node.level === "outcome";
 
   return (
@@ -232,33 +263,7 @@ function GoalCardMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      {moveOpen ? (
-        <div className="absolute right-2 top-8 z-10 w-48 rounded-lg border bg-popover p-2 shadow-md">
-          <Select
-            defaultOpen
-            onOpenChange={(open) => {
-              if (!open) setMoveOpen(false);
-            }}
-            onValueChange={(v) => {
-              setMoveOpen(false);
-              onMove(v);
-            }}
-          >
-            <SelectTrigger className="w-full" data-cartograph-field="/spec/parent">
-              <SelectValue placeholder={hc.menu.moveTo} />
-            </SelectTrigger>
-            <SelectContent>
-              {moveOptions
-                .filter((p) => p.id !== node.parent)
-                .map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : null}
+      {moveOpen ? <MoveGoal node={node} onMove={onMove} onClose={() => setMoveOpen(false)} /> : null}
     </div>
   );
 }
@@ -267,11 +272,9 @@ function GoalCardMenu({
 function FunctionalGoalCard({
   node,
   activeFilters,
-  strategicGoals,
 }: {
   node: GoalNode;
   activeFilters: Set<AlignKind>;
-  strategicGoals: GoalNode[];
 }) {
   const queryClient = useQueryClient();
   const client = useClient();
@@ -338,8 +341,6 @@ function FunctionalGoalCard({
           </Link>
           <GoalCardMenu
             node={node}
-            pillars={strategicGoals}
-            strategicGoals={strategicGoals}
             onMove={handleMove}
             onDeleteAttempt={() => setConfirmOpen(true)}
           />
@@ -473,10 +474,6 @@ function StrategicGoalCard({
   const dragDepth = useRef(0);
   const [dragOver, setDragOver] = useState(false);
 
-  const allStrategicGoals = useMemo(
-    () => pillars.flatMap((p) => p.children ?? []),
-    [pillars]
-  );
 
   async function handleDelete() {
     setConfirmOpen(false);
@@ -541,8 +538,6 @@ function StrategicGoalCard({
           </Link>
           <GoalCardMenu
             node={node}
-            pillars={pillars}
-            strategicGoals={allStrategicGoals}
             onMove={handleMove}
             onDeleteAttempt={() => setConfirmOpen(true)}
           />
@@ -600,7 +595,6 @@ function StrategicGoalCard({
               key={child.id}
               node={child}
               activeFilters={activeFilters}
-              strategicGoals={allStrategicGoals}
             />
           ) : (
             <div key={child.id} className="flex flex-col gap-1">
@@ -905,7 +899,6 @@ function PillarColumn({
               <FunctionalGoalCard
                 node={child}
                 activeFilters={activeFilters}
-                strategicGoals={pillars.flatMap((p) => p.children)}
               />
             </div>
           )

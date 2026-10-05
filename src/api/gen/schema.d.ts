@@ -1397,11 +1397,21 @@ export interface components {
             metadata: {
                 id: string;
                 name: string;
+                alias?: string;
                 labels?: {
                     [key: string]: string;
                 };
+                /** @description References not made yet (TAXONOMY.md D31), as stored. An edit made from this copy keeps them. */
+                pending?: components["schemas"]["Pending"][];
             };
             spec: Record<string, never>;
+        };
+        /** @description One placeholder, mirroring common.schema.json Metadata.pending. */
+        Pending: {
+            path: string;
+            kind: string;
+            name: string;
+            note?: string;
         };
         Version: {
             kind: string;

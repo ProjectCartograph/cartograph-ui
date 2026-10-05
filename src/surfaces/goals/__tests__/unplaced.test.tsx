@@ -1,6 +1,6 @@
 /// <reference types="@testing-library/jest-dom" />
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { ClientProvider } from "@/client/context";
@@ -29,7 +29,13 @@ describe("unplaced goals", () => {
     );
     expect(screen.getByRole("heading", { name: copy.goals.home.unplaced.title })).toBeInTheDocument();
     expect(screen.getByText("Produce is kept cool")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: copy.goals.home.unplaced.place("Objective") })).toBeInTheDocument();
+    // Placed on the tree, in its row: the goals hold their objectives.
+    fireEvent.click(screen.getByRole("button", { name: copy.goals.home.unplaced.place("Objective") }));
+    const picker = screen.getByRole("tree");
+    expect(within(picker).getByRole("treeitem", { name: /Raise quality/ })).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(within(picker).getByRole("treeitem", { name: /One standard/ }));
+    expect(within(picker).getByRole("treeitem", { name: /One standard/ })).toHaveAttribute("aria-selected", "true");
+    expect(within(picker).getByText("Produce is kept cool")).toBeInTheDocument();
   });
 
   it("placing one saves its parent and drops the placeholder", async () => {

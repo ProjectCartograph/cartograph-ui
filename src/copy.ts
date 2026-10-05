@@ -845,6 +845,16 @@ export const copy = {
     },
   },
   goals: {
+    // Where a goal goes, picked on the tree (surfaces/goals/GoalTreePicker).
+    picker: {
+      unplaced: "Not placed yet",
+      find: (level: string) => `Find ${/^[aeiou]/i.test(level) ? "an" : "a"} ${level.toLowerCase()}`,
+      noMatch: "Nothing matches.",
+      empty: (level: string) => `No ${level.toLowerCase()} yet.`,
+      landsHere: "It goes here.",
+      move: "Move",
+      moveTitle: (name: string) => `Move "${name}"`,
+    },
     home: {
       wrongLevel: (level: string, parentLevel: string) => `Wrong level: ${level} under ${parentLevel}`,
       title: "Arrange",
@@ -860,7 +870,7 @@ export const copy = {
         title: "Unplaced",
         hint: "Defined before what they sit under. Place each once its parent exists.",
         place: (above: string) => `Place it under ${/^[aeiou]/i.test(above) ? "an" : "a"} ${above.toLowerCase()}`,
-        noneYet: (above: string) => `No ${above.toLowerCase()} to place it under yet`,
+        under: (name: string) => `Under ${name}`,
       },
       // Arriving from the home page with a name and a level (engine
       // docs/adr/0023): where the new goal sits.
@@ -1606,6 +1616,8 @@ export const copy = {
     existing: (what: string) => `Choose from existing ${what}`,
     or: "or",
     searchPlaceholder: "Search",
+    // Defined before what it sits under (engine TAXONOMY.md D35).
+    unplaced: "Not placed yet",
     none: (what: string) => `No ${what} yet. Name the first one below.`,
     nameNew: (what: string) => `Name a new ${what}`,
     add: "Add",

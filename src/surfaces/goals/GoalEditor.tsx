@@ -33,6 +33,7 @@ import { SmartMarks } from "./SmartMarks";
 import { fieldGuide, useGuide } from "@/components/guide";
 
 import { AimEditor } from "./AimEditor";
+import { GoalTreePicker } from "./GoalTreePicker";
 import { HorizonPicker } from "./HorizonPicker";
 import { GoalReview, GoalSteps, StepNav, type GoalStep } from "./GoalSteps";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
@@ -150,12 +151,6 @@ export function GoalEditor({ id }: { id: string }) {
     () => flattenStrategic(treeQuery.data?.nodes ?? []).filter((n) => n.id !== id),
     [treeQuery.data, id]
   );
-  const parentRefOptions = useMemo(() => {
-    const options = level === "objective"
-      ? pillarOptions.map((n) => ({ value: n.id, label: n.name }))
-      : strategicOptions.map((n) => ({ value: n.id, label: n.name }));
-    return options;
-  }, [pillarOptions, strategicOptions, level]);
   // An outcome already leads to its parent; the others it serves are
   // picked from the objectives and goals above it (D24).
   const linkOptions = useMemo(
@@ -214,7 +209,7 @@ export function GoalEditor({ id }: { id: string }) {
     if (!manifest) return;
     const result = await saveGoalFields(client, id, manifest.metadata.name, {
       level, parent: newParentId, objective, whyItMatters, evidence, keyResults,
-    }, "edited on the tree");
+    }, "edited on the tree", manifest.metadata);
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-manifest", id] });
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
@@ -244,7 +239,7 @@ export function GoalEditor({ id }: { id: string }) {
       contributesTo: links,
       owner,
       ...(horizonStart && horizonEnd ? { horizon: { start: horizonStart, end: horizonEnd } } : {}),
-    }, reason);
+    }, reason, manifest.metadata);
     setSaving(false);
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-manifest", id] });
@@ -354,17 +349,17 @@ export function GoalEditor({ id }: { id: string }) {
             <>
               {level === "objective" || level === "outcome" ? (
                 <div id="goal-section-parent" className="flex flex-col gap-2">
-                  <Label>{ec.moveTo.label}</Label>
-                  <div className="rounded-lg border border-dashed p-3">
-                    <DirectorySelect
-                      data-cartograph-field="/spec/parent"
-                      kind="Goal"
-                      value={parent}
-                      onValueChange={handleMoveTo}
-                      options={parentRefOptions}
-                      placeholder={ec.moveTo.placeholder}
-                    />
-                  </div>
+                  <Label id="goal-move-to">{ec.moveTo.label}</Label>
+                  {/* Picked on the tree, beside what is already there. */}
+                  <GoalTreePicker
+                    tree={treeQuery.data}
+                    level={level}
+                    value={parent}
+                    onChange={handleMoveTo}
+                    name={manifest?.metadata.name}
+                    exclude={id}
+                    labelledBy="goal-move-to"
+                  />
                   <FieldError message={fieldErrors.parent} />
                 </div>
               ) : (

@@ -71,11 +71,12 @@ async function putGoal(
   spec: GoalSpec,
   reason: string,
   pending?: GoalManifest["metadata"]["pending"],
+  alias?: string,
 ): Promise<GoalMutationResult> {
   const body: GoalManifest = {
     apiVersion: "cartograph/v1",
     kind: "Goal",
-    metadata: { id, name: metadataName, ...(pending?.length ? { pending } : {}) },
+    metadata: { id, name: metadataName, ...(alias ? { alias } : {}), ...(pending?.length ? { pending } : {}) },
     spec: {
       level: spec.level,
       ...(spec.parent ? { parent: spec.parent } : {}),
@@ -172,8 +173,12 @@ export function saveGoalFields(
   name: string,
   spec: GoalSpec,
   reason: string,
+  /** The metadata as read: its alias and placeholders are kept, but for
+   * the parent's placeholder once a parent is set (TAXONOMY.md D35). */
+  read?: GoalManifest["metadata"],
 ): Promise<GoalMutationResult> {
-  return putGoal(client, id, name, spec, reason);
+  const pending = (read?.pending ?? []).filter((p) => !(spec.parent && p.path === "/spec/parent"));
+  return putGoal(client, id, name, spec, reason, pending, read?.alias);
 }
 
 export interface DeleteGoalResult {
