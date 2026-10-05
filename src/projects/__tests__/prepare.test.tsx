@@ -75,7 +75,7 @@ describe("before a project's walk", () => {
     fireEvent.change(screen.getByLabelText(pc.ideaLabel), { target: { value: "Train depot staff on one checklist. Then roll it out." } });
     fireEvent.click(screen.getAllByRole("button", { name: new RegExp(pc.start(pc.what.Project)) })[0]);
     expect(navigate).toHaveBeenCalledWith({
-      to: "/projects/new",
+      to: "/projects/start",
       search: { about: "Train depot staff on one checklist.", idea: "Train depot staff on one checklist. Then roll it out." },
     });
   });

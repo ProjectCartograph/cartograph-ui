@@ -21,7 +21,7 @@ function Page() {
         route="/projects/$id"
         action={
           <Button asChild aria-label={copy.projects.list.newProject}>
-            <Link to="/projects/new">
+            <Link to="/projects/start">
               <Plus />
               {plusNoun(copy.projects.list.newProject)}
             </Link>

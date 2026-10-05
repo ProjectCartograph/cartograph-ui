@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { StartProject } from "@/projects/start/StartProject";
+import { startSearch } from "@/projects/start/search";
+import { StartProjectRoute } from "@/projects/start/StartProjectRoute";
 
-export const Route = createFileRoute("/projects/start")({ component: StartProject });
+// Every project starts here, one question at a time, wherever it was
+// begun (Home, New, Prepare, a planned service); ?from= walks a draft
+// again.
+export const Route = createFileRoute("/projects/start")({ component: StartProjectRoute, validateSearch: startSearch });

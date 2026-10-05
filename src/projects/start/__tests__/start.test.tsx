@@ -161,6 +161,54 @@ describe("finishing what was named in passing", () => {
     expect(m.spec).toMatchObject({ level: "outcome", parent: "cut-loss" });
   });
 
+  // Walked again from its draft: every answer is filled in from it, and
+  // leaving for the full page saves into the same draft, keeping all the
+  // rest of it.
+  it("walks a project again from its draft, and keeps the rest of it", async () => {
+    const saveWorking = vi.fn(async () => {});
+    const draft = {
+      apiVersion: "cartograph/v1",
+      kind: "Project",
+      metadata: { id: "depot-checks", name: "Depot checks", alias: "depot-checks" },
+      spec: {
+        team: "quality",
+        summary: { about: "One checklist in every depot.", beneficiaries: [{ group: "depot-staff", note: "kept" }], problems: [{ problem: { situation: "kept" }, change: {}, gaps: [{ gap: "checks-differ" }] }] },
+        alignment: { goals: ["faults"] },
+        timeline: { start: "2027-01" },
+      },
+    };
+    const client = fakeClient({
+      list: async () => [] as never,
+      goalTree: async () => tree as never,
+      relevant: async () => ({ available: false, matches: [] }),
+      saveWorking,
+      get: async () => ({ version: { number: 1 }, manifest: draft }) as never,
+    });
+    render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <StartProject from="depot-checks" />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    expect(await screen.findByText(sc.again)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText(sc.aboutQuestion)).toHaveValue("One checklist in every depot."));
+    fireEvent.change(screen.getByLabelText(sc.aboutQuestion), { target: { value: "One checklist, checked alike in every depot." } });
+    fireEvent.click(screen.getByRole("button", { name: sc.toPage }));
+    await waitFor(() => expect(saveWorking).toHaveBeenCalledTimes(1));
+    const [kind, id, text] = saveWorking.mock.calls[0] as unknown as [string, string, string];
+    expect([kind, id]).toEqual(["Project", "depot-checks"]);
+    const saved = parse(text);
+    expect(saved.metadata.name).toBe("Depot checks");
+    expect(saved.spec.summary.about).toBe("One checklist, checked alike in every depot.");
+    expect(saved.spec.summary.beneficiaries).toEqual([{ group: "depot-staff", note: "kept" }]);
+    expect(saved.spec.summary.problems[0].problem).toEqual({ situation: "kept" });
+    expect(saved.spec.summary.problems[0].gaps).toEqual([{ gap: "checks-differ" }]);
+    expect(saved.spec.alignment.goals).toEqual(["faults"]);
+    expect(saved.spec.timeline).toEqual({ start: "2027-01" });
+    expect(navigate).toHaveBeenCalledWith({ to: "/projects/$id/initiation/goals", params: { id: "depot-checks" } });
+  });
+
   it("asks only of the records still lacking what defines them", async () => {
     const client = fakeClient({
       get: async (_kind: string, id: string) =>

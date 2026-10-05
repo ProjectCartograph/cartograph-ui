@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { useQueries, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { stringify as stringifyYAML } from "yaml";
 import { ArrowLeft, ArrowRight, Check, PencilLine, Plus, Sparkles } from "lucide-react";
@@ -19,6 +19,8 @@ import { WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker"
 import { slugify } from "@/surfaces/sheet/schema";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { ProjectManifest } from "../types";
+import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
+import type { StartSearch } from "./search";
 
 const sc = copy.start;
 
@@ -64,16 +66,40 @@ function nameFrom(about: string): string {
  * skipped. The graph stays a DAG: the project names its gaps, outcomes and
  * groups, and nothing named here names the project.
  */
-export function StartProject() {
+export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arrivedName, partOf: isComponent, operation, from }: StartSearch = {}) {
   const navigate = useNavigate();
   const client = useClient();
   const [step, setStep] = useState<Step>("about");
   const [forward, setForward] = useState(true);
-  const [about, setAbout] = useState("");
+  const [about, setAbout] = useState(arrivedIdea ?? arrivedAbout ?? "");
   const [gaps, setGaps] = useState<string[]>([]);
   const [goals, setGoals] = useState<string[]>([]);
   const [groups, setGroups] = useState<string[]>([]);
   const [team, setTeam] = useState("");
+  const [name, setName] = useState(arrivedName ?? "");
+  // The bigger project, for a component (TAXONOMY.md D14, D15).
+  const [parent, setParent] = useState<string | undefined>(undefined);
+
+  // Walked again from a draft: what it already says fills every answer,
+  // once, to change or keep (projects/start ?from=).
+  const draft = useQuery({
+    queryKey: ["start-from", from],
+    queryFn: async () => (await client.get("Project", from as string)).manifest as unknown as ProjectManifest,
+    enabled: !!from,
+    retry: false,
+  });
+  const [seeded, setSeeded] = useState(false);
+  if (from && !seeded && draft.data) {
+    const d = draft.data;
+    setSeeded(true);
+    setAbout(d.spec.summary?.idea || d.spec.summary?.about || "");
+    setGaps([...new Set((d.spec.summary?.problems ?? []).flatMap((p: { gaps?: { gap: string }[] }) => (p.gaps ?? []).map((g) => g.gap)))]);
+    setGoals(d.spec.alignment?.goals ?? []);
+    setGroups((d.spec.summary?.beneficiaries ?? []).map((b: { group?: string }) => b.group).filter(Boolean) as string[]);
+    setTeam(d.spec.team ?? "");
+    setParent(d.spec.alignment?.partOf);
+    setName(d.metadata.name ?? "");
+  }
   // What was named in passing here, to fill in once the project is saved.
   const [created, setCreated] = useState<Created[]>([]);
   // What has been filled in, so going back and forth asks it once.
@@ -92,7 +118,6 @@ export function StartProject() {
     markNew(c.id);
   };
   const marks = { newIds, fresh };
-  const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -110,27 +135,50 @@ export function StartProject() {
   // field as a cue, never put in it.
   const projectName = name;
 
-  async function start() {
+  /** Saves the project's draft with what was answered, and opens it:
+   * a new one under a free id, or the one walked again, every other
+   * field of its draft kept as it was. */
+  async function start(named = projectName) {
     setSaving(true);
     setFailed(false);
     try {
-      const existing = new Set(((await client.list("Project")) as { id: string }[]).map((p) => p.id));
-      const id = freeId(projectName, existing);
-      const body: ProjectManifest = {
-        apiVersion: "cartograph/v1",
-        kind: "Project",
-        metadata: { id, name: projectName.trim(), alias: aliasFor(projectName) },
-        spec: {
-          team,
-          summary: {
-            about: about.trim().slice(0, 300),
-            idea: about.trim().slice(0, 1000),
-            beneficiaries: groups.map((group) => ({ group })),
-            problems: [{ problem: {}, change: {}, ...(gaps.length ? { gaps: gaps.map((gap) => ({ gap })) } : {}) }],
+      const summary = { about: about.trim().slice(0, 300) || undefined, idea: about.trim().slice(0, 1000) || undefined };
+      let body: ProjectManifest;
+      if (from && draft.data) {
+        const d = JSON.parse(JSON.stringify(draft.data)) as ProjectManifest;
+        const kept = d.spec.summary?.beneficiaries ?? [];
+        const problems = d.spec.summary?.problems?.length ? d.spec.summary.problems : [{ problem: {}, change: {} }];
+        const others = new Set(problems.slice(1).flatMap((p) => (p.gaps ?? []).map((g) => g.gap)));
+        problems[0] = { ...problems[0], gaps: gaps.filter((g) => !others.has(g)).map((gap) => problems[0].gaps?.find((g) => g.gap === gap) ?? { gap }) };
+        if (!problems[0].gaps?.length) delete problems[0].gaps;
+        d.metadata = { ...d.metadata, name: named.trim() || d.metadata.name };
+        d.spec = {
+          ...d.spec,
+          team: team || d.spec.team,
+          summary: { ...d.spec.summary, ...summary, beneficiaries: groups.map((group) => kept.find((b) => b.group === group) ?? { group }), problems },
+          alignment: { ...d.spec.alignment, goals, partOf: parent },
+        };
+        body = d;
+      } else {
+        const existing = new Set(((await client.list("Project")) as { id: string }[]).map((p) => p.id));
+        const id = freeId(named, existing);
+        body = {
+          apiVersion: "cartograph/v1",
+          kind: "Project",
+          metadata: { id, name: named.trim(), alias: aliasFor(named) },
+          spec: {
+            team,
+            summary: {
+              ...summary,
+              beneficiaries: groups.map((group) => ({ group })),
+              problems: [{ problem: {}, change: {}, ...(gaps.length ? { gaps: gaps.map((gap) => ({ gap })) } : {}) }],
+            },
+            ...(goals.length || parent ? { alignment: { ...(goals.length ? { goals } : {}), ...(parent ? { partOf: parent } : {}) } } : {}),
+            ...(operation ? { operation } : {}),
           },
-          ...(goals.length ? { alignment: { goals } } : {}),
-        },
-      };
+        } as ProjectManifest;
+      }
+      const id = body.metadata.id;
       await client.saveWorking("Project", id, stringifyYAML(body));
       void navigate({ to: "/projects/$id/initiation/goals", params: { id } });
     } catch {
@@ -151,7 +199,7 @@ export function StartProject() {
 
         <WalkerStep key={step} step={step} forward={forward}>
           {step === "about" ? (
-            <WalkerQuestion title={sc.aboutQuestion} hint={sc.aboutHint} lead={sc.lead}>
+            <WalkerQuestion title={sc.aboutQuestion} hint={sc.aboutHint} lead={from ? sc.again : sc.lead}>
               <Textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value.slice(0, 1000))}
@@ -161,6 +209,21 @@ export function StartProject() {
                 data-cartograph-field="/spec/summary/about"
                 className="text-base"
               />
+              {/* A component of a bigger project says which, before
+                  anything else: it serves that project's aims. */}
+              {isComponent || parent ? (
+                <div className="flex flex-col gap-2" data-slot="part-of">
+                  <span className="text-sm font-medium">{copy.projects.goals.parentLabel}</span>
+                  <ReferencePicker
+                    data-cartograph-field="/spec/alignment/partOf"
+                    refKind="Project"
+                    value={parent}
+                    onChange={setParent}
+                    placeholder={copy.projects.goals.parentPlaceholder}
+                    label={copy.projects.goals.parentLabel}
+                  />
+                </div>
+              ) : null}
             </WalkerQuestion>
           ) : step === "gaps" ? (
             <WalkerQuestion title={sc.gapsQuestion} hint={sc.gapsHint}>
@@ -212,9 +275,24 @@ export function StartProject() {
             <ArrowLeft />
             {sc.back}
           </Button>
+          {/* The full page is always a step away: what has been answered
+              is saved, and the rest is asked there. */}
+          {step !== "ready" ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              className="ml-auto"
+              onClick={() => void start(projectName.trim() || nameFrom(about) || sc.untitled)}
+              disabled={saving || (!from && !about.trim())}
+              data-slot="skip-to-page"
+            >
+              {sc.toPage}
+            </Button>
+          ) : null}
           {step === "ready" ? (
             <Button type="button" size="lg" onClick={() => void start()} disabled={saving || !projectName.trim()}>
-              {sc.start}
+              {from ? sc.saveAgain : sc.start}
               <ArrowRight />
             </Button>
           ) : step === "details" ? null : (

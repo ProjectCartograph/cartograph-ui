@@ -113,6 +113,8 @@ export const copy = {
   // what happens when two people set one field at once.
   collab: {
     offline: "Offline: changes are kept on this device and sync when the connection returns",
+    // Someone walking a flow of their own (collab/walkers).
+    walking: (name: string, walk: "workspace" | "project") => `${name} is ${walk === "workspace" ? "opening the workspace" : "starting a project"}`,
     onSection: (names: string[]) => `${names.join(", ")} ${names.length === 1 ? "is" : "are"} here`,
     peopleHere: "People on this screen",
     someone: "Someone",
@@ -1655,6 +1657,11 @@ export const copy = {
   start: {
     steps: { about: "About", gaps: "Gaps", goals: "Outcomes", groups: "People", team: "Team", details: "Details", ready: "Ready" } as Record<string, string>,
     teamQuestion: "Which team owns it?",
+    // Walked again from a draft, and the way out to the full page.
+    again: "Walking it again: every answer is filled in from the draft, to change or keep.",
+    toPage: "Skip to the full page",
+    saveAgain: "Save and open",
+    untitled: "New project",
     teamHint: "The team the project belongs to, and who changes it.",
     // What a project is, in a line, under the first question.
     lead: "A project is time-bound work that brings unique value to the people it serves, and closes the gaps they face.",
@@ -2218,6 +2225,14 @@ export const copy = {
       // component it is (TAXONOMY.md D15).
       partOfProgrammes: "Programmes",
       partOfProject: "A bigger project",
+      // Where the project sits, asked in turn (projects/sections/GoalsSection).
+      askProject: "Is it part of a bigger project?",
+      askProgramme: "Is it part of a programme?",
+      askPortfolio: "Does a portfolio hold it?",
+      yes: "Yes",
+      no: "No",
+      walkAgain: "Walk it again",
+      aboutCount: (n: number, max: number) => `${n} of ${max}`,
       parentLabel: "Parent project",
       parentHint: "Choose this only if it shares that project's sponsor and budget.",
       parentPlaceholder: "Choose a project",

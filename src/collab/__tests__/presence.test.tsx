@@ -247,6 +247,50 @@ describe("only what is in front of this person", () => {
   });
 });
 
+// A walk is each person's own: inside one, nothing of where they are or
+// what they point at is sent, nobody is drawn over it, and to everyone
+// else they show as walking (collab/walkers).
+describe("a walk", () => {
+  it("sends only the route from inside it, and draws nobody over it", async () => {
+    const sent: PresenceState[] = [];
+    const channel = {
+      publish: (s: PresenceState) => sent.push(s),
+      subscribe: (l: (peers: Peer[]) => void) => {
+        l([peer({ session: "s-bo-00001", actor: "bo", route: "/projects/start", pointer: { target: "/spec/aim", x: 0.5, y: 0.5 } })]);
+        return () => {};
+      },
+      close: () => {},
+    };
+    const client = fakeClient({ joinPresence: async () => channel, getWorking: async () => undefined } as never);
+    render(
+      <ClientProvider client={client}>
+        <TooltipProvider>
+          <PresenceProvider screen={null} route="/projects/start">
+            <PresenceTracker />
+            <Page />
+            <PresenceOverlay />
+          </PresenceProvider>
+        </TooltipProvider>
+      </ClientProvider>,
+    );
+    await waitFor(() => expect(sent).toContainEqual({ route: "/projects/start" }));
+    const aim = document.querySelector('[data-cartograph-field="/spec/aim"]')!;
+    placeAt(aim, { left: 100, top: 200, width: 400, height: 40 });
+    fireEvent.focus(aim);
+    fireEvent.pointerMove(aim, { clientX: 150, clientY: 210 });
+    expect(sent.some((s) => s.pointer || s.focus || s.caret)).toBe(false);
+    expect(overlay()).toBeNull();
+  });
+
+  it("shows someone walking as walking, and draws nothing of them", () => {
+    const bo = peer({ session: "s-bo-00001", actor: "bo", name: "Bo Chen", route: "/projects/start", pointer: { target: "/spec/aim", x: 0.5, y: 0.5 } });
+    drawn({ peers: [], here: [], walking: [bo] });
+    expect(screen.getByRole("img", { name: copy.collab.walking("Bo Chen", "project") })).toBeInTheDocument();
+    expect(document.querySelector('[data-slot="walking"]')).not.toBeNull();
+    expect(document.querySelector('[data-slot="presence-pointer"]')).toBeNull();
+  });
+});
+
 describe("presence between two sessions", () => {
   let close: (() => Promise<void>) | undefined;
   afterEach(async () => {

@@ -406,9 +406,15 @@ function RootLayout() {
     return (
       <VaultExamplesProvider>
         <TooltipProvider>
-          <main className="min-h-svh min-w-0 bg-background p-6" data-cartograph-region="main">
-            <Outlet />
-          </main>
+          {/* Joined, so others see this person opening the workspace;
+              nothing of the walk itself is shared (collab/walkers). */}
+          <FollowProvider>
+            <PresenceProvider screen={null} route={route}>
+              <main className="min-h-svh min-w-0 bg-background p-6" data-cartograph-region="main">
+                <Outlet />
+              </main>
+            </PresenceProvider>
+          </FollowProvider>
         </TooltipProvider>
       </VaultExamplesProvider>
     );

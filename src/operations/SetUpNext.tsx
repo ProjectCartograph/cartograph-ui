@@ -57,7 +57,7 @@ export function SetUpNext() {
           <p className="text-sm text-muted-foreground">{sc.question}</p>
           <div className="flex flex-wrap items-center gap-2">
             <Button asChild>
-              <Link to="/projects/new" search={{ operation: store.id }}>
+              <Link to="/projects/start" search={{ operation: store.id }}>
                 {sc.now}
                 <ArrowRight />
               </Link>

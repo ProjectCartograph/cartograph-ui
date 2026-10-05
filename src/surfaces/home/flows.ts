@@ -21,8 +21,11 @@ export function flowLink(key: string, name: string): { to: string; search?: Reco
     case "portfolio":
     case "programme":
     case "operation":
-    case "project":
       return { to: `/${key}s/new`, search: named };
+    // A project starts in the walker, what was typed being what it is
+    // about, not its name: naming it comes last (projects/start).
+    case "project":
+      return { to: "/projects/start", search: name ? { about: name.slice(0, 300) } : {} };
     default:
       return { to: "/new" };
   }

@@ -9,6 +9,9 @@ export interface PresenceApi {
   /** Those on the very view in front of this person, the only ones whose
    * pointer, caret and focus are drawn. Undefined means all of peers. */
   here?: Peer[];
+  /** Those walking a flow of their own (collab/walkers), shown as walking
+   * and never drawn over a screen. */
+  walking?: Peer[];
   /** The screen's draft, when it has one: carets are cursors into it. */
   draft?: SharedDraft;
   publish: (state: PresenceState) => void;

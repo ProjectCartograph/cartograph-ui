@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { Boxes, FolderKanban, Plus, TriangleAlert, X } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Footprints, Plus, TriangleAlert, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { FinishDetails } from "@/projects/FinishDetails";
@@ -41,6 +42,40 @@ const gc = copy.projects.goals;
 // The stock toggle's "on" state is a muted fill, which reads as a hover
 // rather than a choice (the success dialog uses the same).
 const PICKED = "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary";
+
+/** What the project is about, in a sentence a newcomer would follow: the
+ * schema's limit, shown as it is reached. */
+const ABOUT_MAX = 300;
+
+/**
+ * One question of a chain, compact: the question and a yes or no beside
+ * it, and on yes, what it asks for beneath. Answered, the next appears.
+ */
+function Ask({ question, value, onAnswer, children }: { question: string; value: boolean | undefined; onAnswer: (yes: boolean) => void; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200 ease-enter" data-slot="ask">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm font-medium">{question}</span>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={value === undefined ? "" : value ? "yes" : "no"}
+          onValueChange={(v) => v && onAnswer(v === "yes")}
+          aria-label={question}
+        >
+          <ToggleGroupItem value="yes" className={PICKED}>
+            {gc.yes}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="no" className={PICKED}>
+            {gc.no}
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+      {value ? <div className="flex flex-col gap-2 pl-0 sm:pl-4">{children}</div> : null}
+    </div>
+  );
+}
 
 /**
  * Which goals each programme serves, by programme id.
@@ -141,18 +176,30 @@ export function AlignmentSection() {
   const goals = store.spec.alignment?.goals ?? [];
   const programmes = store.spec.alignment?.programmes ?? [];
   const parent = store.spec.alignment?.partOf;
-  // Which question is being answered: part of programmes, or a component of
-  // one bigger project. Held here so the second can be chosen before a
-  // project is picked.
-  const [partOf, setPartOf] = useState<"programmes" | "project">(parent ? "project" : "programmes");
   const parentName = parent ? (projectOptions?.names.get(parent) ?? parent) : "";
+  const portfolios = store.spec.alignment?.portfolios ?? [];
+  // Where the project sits, asked in turn: a bigger project, else a
+  // programme, then a portfolio. An answer of no is held here, as the
+  // manifest has nothing to say it with; a yes is what was picked.
+  // What the manifest already answers stands until the person answers.
+  const [answered, setSaid] = useState<{ project?: boolean; programme?: boolean; portfolio?: boolean }>({});
+  const said = {
+    project: answered.project ?? (parent ? true : programmes.length || portfolios.length ? false : undefined),
+    programme: answered.programme ?? (programmes.length ? true : portfolios.length ? false : undefined),
+    portfolio: answered.portfolio ?? (portfolios.length ? true : undefined),
+  };
+  const partOf = said.project ? "project" : "programmes";
 
-  function choosePartOf(next: string) {
-    if (next !== "programmes" && next !== "project") return;
-    setPartOf(next);
-    if (next === "programmes") {
-      store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, partOf: undefined } }));
-    }
+  function answer(q: "project" | "programme" | "portfolio", yes: boolean) {
+    setSaid((prev) => ({ ...prev, [q]: yes }));
+    if (yes) return;
+    store.updateSpec((s) => ({
+      ...s,
+      alignment: {
+        ...s.alignment,
+        ...(q === "project" ? { partOf: undefined } : q === "programme" ? { programmes: undefined } : { portfolios: undefined }),
+      },
+    }));
   }
 
   function chooseParent(id: string | undefined) {
@@ -232,129 +279,117 @@ export function AlignmentSection() {
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Asked first: everything suggested from here on is ranked against
-          it (engine docs/adr/0023). */}
-      <div className="flex flex-col gap-2" data-cartograph-region="about">
-        <FieldHeading label={copy.projects.align.aboutLabel} hint={copy.projects.align.aboutHint} htmlFor="project-about" />
-        <Textarea
-          id="project-about"
-          data-cartograph-field="/spec/summary/about"
-          value={store.spec.summary.about ?? ""}
-          onChange={(e) => store.updateSpec((s) => ({ ...s, summary: { ...s.summary, about: e.target.value.slice(0, 300) || undefined } }))}
-          rows={2}
-          className="sm:max-w-xl"
-        />
-      </div>
-      {store.spec.summary.idea !== undefined ? (
-        <div className="flex flex-col gap-2" data-cartograph-region="idea">
-          <FieldHeading label={copy.common.yourIdea} htmlFor="project-idea" />
+      {/* What it is about, and where it sits, kept compact: one sentence,
+          then a question at a time, each opening the next once answered.
+          Asked first: everything suggested below is ranked against them
+          (engine docs/adr/0023). */}
+      <section className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10" data-cartograph-region="about">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <FieldHeading label={copy.projects.align.aboutLabel} hint={copy.projects.align.aboutHint} htmlFor="project-about" />
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/projects/start" search={{ from: store.id }} data-slot="walk-again">
+                <Footprints aria-hidden="true" />
+                {gc.walkAgain}
+              </Link>
+            </Button>
+          </div>
           <Textarea
-            id="project-idea"
-            data-cartograph-field="/spec/summary/idea"
-            value={store.spec.summary.idea}
-            onChange={(e) => store.updateSpec((s) => ({ ...s, summary: { ...s.summary, idea: e.target.value.slice(0, 1000) } }))}
-            rows={3}
-            className="sm:max-w-xl"
+            id="project-about"
+            data-cartograph-field="/spec/summary/about"
+            value={store.spec.summary.about ?? ""}
+            onChange={(e) => store.updateSpec((s) => ({ ...s, summary: { ...s.summary, about: e.target.value.slice(0, ABOUT_MAX) || undefined } }))}
+            maxLength={ABOUT_MAX}
+            rows={2}
+            aria-describedby="project-about-count"
           />
+          <span id="project-about-count" className={`self-end text-xs tabular-nums ${(store.spec.summary.about ?? "").length >= ABOUT_MAX ? "text-warning" : "text-muted-foreground"}`}>
+            {gc.aboutCount((store.spec.summary.about ?? "").length, ABOUT_MAX)}
+          </span>
+          {store.spec.summary.idea ? (
+            <details className="text-sm" data-region-idea>
+              <summary className="cursor-pointer text-muted-foreground">{copy.common.yourIdea}</summary>
+              <Textarea
+                id="project-idea"
+                data-cartograph-field="/spec/summary/idea"
+                value={store.spec.summary.idea}
+                onChange={(e) => store.updateSpec((s) => ({ ...s, summary: { ...s.summary, idea: e.target.value.slice(0, 1000) } }))}
+                rows={3}
+                className="mt-2"
+                aria-label={copy.common.yourIdea}
+              />
+            </details>
+          ) : null}
         </div>
-      ) : null}
-      {/* What this is part of comes first: a programme carries goals with
-          it, so naming one turns the whole tree into a short list. */}
-      <div className="flex flex-col gap-3" data-cartograph-region="part-of">
-        <FieldHeading label={gc.programmesLabel} />
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          value={partOf}
-          onValueChange={choosePartOf}
-          aria-label={gc.programmesLabel}
-          data-slot="part-of"
-        >
-          <ToggleGroupItem value="programmes" className={PICKED}>
-            <FolderKanban aria-hidden="true" />
-            {gc.partOfProgrammes}
-          </ToggleGroupItem>
-          <ToggleGroupItem value="project" className={PICKED}>
-            <Boxes aria-hidden="true" />
-            {gc.partOfProject}
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
 
-      {partOf === "project" ? (
-        <div className="flex flex-col gap-2 sm:max-w-xl" data-slot="parent-project">
-          <FieldHeading label={gc.parentLabel} hint={gc.parentHint} />
-          <ReferencePicker
-            data-cartograph-field="/spec/alignment/partOf"
-            refKind="Project"
-            value={parent}
-            onChange={chooseParent}
-            placeholder={gc.parentPlaceholder}
-            label={gc.parentLabel}
-          />
-          {parent ? <p className="text-sm text-muted-foreground">{gc.inheritsGoals(parentName)}</p> : null}
+        <div className="flex flex-col gap-3 border-t pt-3" data-cartograph-region="part-of">
+          <Ask question={gc.askProject} value={said.project} onAnswer={(yes) => answer("project", yes)}>
+            <ReferencePicker
+              data-cartograph-field="/spec/alignment/partOf"
+              refKind="Project"
+              value={parent}
+              onChange={chooseParent}
+              placeholder={gc.parentPlaceholder}
+              label={gc.parentLabel}
+            />
+            {parent ? <p className="text-sm text-muted-foreground">{gc.inheritsGoals(parentName)}</p> : null}
+          </Ask>
+          {said.project === false ? (
+            <Ask question={gc.askProgramme} value={said.programme} onAnswer={(yes) => answer("programme", yes)}>
+              <Suggested
+                kind="Programme"
+                selected={programmes}
+                onPick={(id) =>
+                  store.updateSpec((s) => {
+                    const cur = s.alignment?.programmes ?? [];
+                    return { ...s, alignment: { ...s.alignment, programmes: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] } };
+                  })
+                }
+              />
+              <ComboboxMultiple
+                options={programmeOptions?.options ?? []}
+                value={programmes}
+                onValueChange={(next) => store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, programmes: next } }))}
+                placeholder={gc.programmesPlaceholder}
+                emptyText={copy.sheets.dialog.noMatches}
+                removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+                aria-label={gc.programmesLabel}
+                data-cartograph-field="/spec/alignment/programmes"
+              />
+              {unproven.length > 0 ? (
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-slot="unproven-programmes">
+                  <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
+                  {gc.unprovenProgramme(unproven.map((id) => programmeOptions?.names.get(id) ?? id).join(", "))}
+                </p>
+              ) : null}
+            </Ask>
+          ) : null}
+          {said.project === false && said.programme !== undefined ? (
+            <Ask question={gc.askPortfolio} value={said.portfolio} onAnswer={(yes) => answer("portfolio", yes)}>
+              <Suggested
+                kind="Portfolio"
+                selected={portfolios}
+                onPick={(id) =>
+                  store.updateSpec((s) => {
+                    const cur = s.alignment?.portfolios ?? [];
+                    const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+                    return { ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } };
+                  })
+                }
+              />
+              <ComboboxMultiple
+                options={portfolioOptions?.options ?? []}
+                value={portfolios}
+                onValueChange={(next) => store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } }))}
+                emptyText={copy.sheets.dialog.noMatches}
+                removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+                aria-label={gc.portfoliosLabel}
+                data-cartograph-field="/spec/alignment/portfolios"
+              />
+            </Ask>
+          ) : null}
         </div>
-      ) : (
-      <div className="flex flex-col gap-2">
-        <Suggested
-          kind="Programme"
-          selected={programmes}
-          onPick={(id) =>
-            store.updateSpec((s) => {
-              const cur = s.alignment?.programmes ?? [];
-              return { ...s, alignment: { ...s.alignment, programmes: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] } };
-            })
-          }
-        />
-        <ComboboxMultiple
-          options={programmeOptions?.options ?? []}
-          value={programmes}
-          onValueChange={(next) =>
-            store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, programmes: next } }))
-          }
-          placeholder={gc.programmesPlaceholder}
-          emptyText={copy.sheets.dialog.noMatches}
-          removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
-          aria-label={gc.programmesLabel}
-          data-cartograph-field="/spec/alignment/programmes"
-          className="sm:max-w-xl"
-        />
-        {unproven.length > 0 ? (
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-slot="unproven-programmes">
-            <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
-            {gc.unprovenProgramme(
-              unproven.map((id) => programmeOptions?.names.get(id) ?? id).join(", "),
-            )}
-          </p>
-        ) : null}
-        <div className="mt-2 flex flex-col gap-2" data-slot="portfolios">
-          <FieldHeading label={gc.portfoliosLabel} hint={gc.portfoliosHint} />
-          <Suggested
-            kind="Portfolio"
-            selected={store.spec.alignment?.portfolios ?? []}
-            onPick={(id) =>
-              store.updateSpec((s) => {
-                const cur = s.alignment?.portfolios ?? [];
-                const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
-                return { ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } };
-              })
-            }
-          />
-          <ComboboxMultiple
-            options={portfolioOptions?.options ?? []}
-            value={store.spec.alignment?.portfolios ?? []}
-            onValueChange={(next) =>
-              store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } }))
-            }
-            emptyText={copy.sheets.dialog.noMatches}
-            removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
-            aria-label={gc.portfoliosLabel}
-            data-cartograph-field="/spec/alignment/portfolios"
-            className="sm:max-w-xl"
-          />
-        </div>
-      </div>
-      )}
+      </section>
 
       {partOf === "project" && parent ? null : <Separator />}
 

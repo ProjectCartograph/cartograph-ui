@@ -10,6 +10,7 @@ import type { Peer, PresenceChannel, PresenceScreen, SharedDraft } from "@/clien
 import { openDraft } from "./draft";
 import { useFollow } from "./follow";
 import { PresenceContext, type PresenceApi } from "./presenceContext";
+import { walkerOf } from "./walkers";
 
 export type { PresenceApi };
 
@@ -90,15 +91,30 @@ export function PresenceProvider({ screen, route, children }: { screen: Presence
   // one document, so someone on another list is not here at all. An agent
   // has no view, only the field it works on, which is drawn wherever that
   // field is in front of someone.
-  const here = shown.filter((p) => p.agent || sameView(p.route, route));
+  // A walk is each person's own (collab/walkers): inside one, nobody is
+  // drawn; those walking are shown as walking, wherever the others are.
+  const walking = shown.filter((p) => !p.agent && walkerOf(p.route) !== undefined);
+  const here = walkerOf(route) ? [] : shown.filter((p) => p.agent || (sameView(p.route, route) && !walkerOf(p.route)));
   const hereRef = useRef(here);
   hereRef.current = here;
   const pointerSent = useRef(false);
   const value: PresenceApi = {
-    peers: screen ? shown : here,
+    peers: screen ? shown.filter((p) => !walking.includes(p)) : here,
     here,
+    walking,
     draft,
     publish: (state) => {
+      // Inside a walk, where the person is and what they point at is
+      // theirs alone: only the route is sent, so others see them walking.
+      if (walkerOf(routeRef.current)) {
+        const { pointer, focus, caret, ...rest } = state as Record<string, unknown>;
+        if (pointer !== undefined || focus !== undefined || caret !== undefined) {
+          if (pointerSent.current) channel.current?.publish({ pointer: null, focus: null, caret: null });
+          pointerSent.current = false;
+        }
+        if (Object.keys(rest).length) channel.current?.publish(rest as typeof state);
+        return;
+      }
       // A pointer streams many times a second; nobody on this view, nobody
       // to stream it to. One clearing message, then nothing until someone
       // arrives (engine docs/MULTIPLAYER.md).

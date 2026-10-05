@@ -40,7 +40,7 @@ describe("the end of a planned service's walk", () => {
   it("asks to start the project now or later, once the service is saved", async () => {
     mount([]);
     const now = await screen.findByRole("link", { name: new RegExp(sc.now) });
-    expect(now.getAttribute("href")).toBe("/projects/new?operation=checks");
+    expect(now.getAttribute("href")).toBe("/projects/start?operation=checks");
     expect(screen.getByRole("link", { name: sc.later }).getAttribute("href")).toBe("/operations");
   });
 
