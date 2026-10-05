@@ -22,7 +22,9 @@ export const Route = createFileRoute("/projects/new")({
   // project (TAXONOMY.md D14, D15).
   // Arriving from a planned service, the project that sets it up lands in
   // it (TAXONOMY.md D30).
-  validateSearch: (search: Record<string, unknown>): { partOf?: boolean; operation?: string; name?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { partOf?: boolean; operation?: string; name?: string; about?: string } => ({
+    // The idea, from preparing (TAXONOMY.md D34): what it is about.
+    ...(typeof search.about === "string" && search.about ? { about: search.about.slice(0, 300) } : {}),
     ...(typeof search.name === "string" && search.name ? { name: search.name } : {}),
     ...(search.partOf === true || search.partOf === "true" ? { partOf: true } : {}),
     ...(typeof search.operation === "string" && search.operation ? { operation: search.operation } : {}),
@@ -50,7 +52,7 @@ function slugify(name: string): string {
 function NewProjectPage() {
   const navigate = useNavigate();
   const client = useClient();
-  const { partOf: isComponent, operation, name: typed } = Route.useSearch();
+  const { partOf: isComponent, operation, name: typed, about } = Route.useSearch();
   const { data: teams, isLoading: teamsLoading } = useReferenceOptions("Team");
   const [parent, setParent] = useState<string | undefined>(undefined);
 
@@ -72,7 +74,7 @@ function NewProjectPage() {
       // own slug and is theirs to change on the record afterwards.
       metadata: { id, name: name.trim(), alias: aliasFor(name) },
       spec: {
-        summary: { problems: [{ problem: {}, change: {} }] },
+        summary: { ...(about ? { about } : {}), problems: [{ problem: {}, change: {} }] },
         team,
         ...(isComponent && parent ? { alignment: { partOf: parent } } : {}),
         ...(operation ? { operation } : {}),

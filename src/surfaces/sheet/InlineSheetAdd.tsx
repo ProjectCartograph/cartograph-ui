@@ -19,11 +19,16 @@ export function SheetAddDialog({
   open,
   onOpenChange,
   onAdded,
+  minimal,
+  preset,
 }: {
-  kind: SheetKind;
+  kind: SheetKind | string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdded?: (id: string, name: string) => void;
+  /** Only what the record requires (TAXONOMY.md D34). */
+  minimal?: { reason: string };
+  preset?: Record<string, unknown>;
 }) {
   const client = useClient();
   const schemaQuery = useQuery({
@@ -41,6 +46,8 @@ export function SheetAddDialog({
       open={open}
       onOpenChange={onOpenChange}
       onSaved={onAdded}
+      minimal={minimal}
+      preset={preset}
     />
   );
 }

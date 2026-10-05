@@ -38,6 +38,7 @@ import { Route as ProgrammesNewRouteImport } from './routes/programmes/new'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as ProjectsIdRouteImport } from './routes/projects/$id'
 import { Route as ProjectsNewRouteImport } from './routes/projects/new'
+import { Route as ProjectsPrepareRouteImport } from './routes/projects/prepare'
 import { Route as ProposalsIndexRouteImport } from './routes/proposals/index'
 import { Route as ProposalsIdRouteImport } from './routes/proposals/$id'
 import { Route as SheetsIndexRouteImport } from './routes/sheets/index'
@@ -234,6 +235,11 @@ const ProjectsIdRoute = ProjectsIdRouteImport.update({
 const ProjectsNewRoute = ProjectsNewRouteImport.update({
   id: '/projects/new',
   path: '/projects/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsPrepareRoute = ProjectsPrepareRouteImport.update({
+  id: '/projects/prepare',
+  path: '/projects/prepare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProposalsIndexRoute = ProposalsIndexRouteImport.update({
@@ -532,6 +538,7 @@ export interface FileRoutesByFullPath {
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
+  '/projects/prepare': typeof ProjectsPrepareRoute
   '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
   '/changesets/': typeof ChangesetsIndexRoute
@@ -609,6 +616,7 @@ export interface FileRoutesByTo {
   '/portfolios/new': typeof PortfoliosNewRoute
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/new': typeof ProjectsNewRoute
+  '/projects/prepare': typeof ProjectsPrepareRoute
   '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
   '/changesets': typeof ChangesetsIndexRoute
@@ -693,6 +701,7 @@ export interface FileRoutesById {
   '/programmes/new': typeof ProgrammesNewRoute
   '/projects/$id': typeof ProjectsIdRouteWithChildren
   '/projects/new': typeof ProjectsNewRoute
+  '/projects/prepare': typeof ProjectsPrepareRoute
   '/proposals/$id': typeof ProposalsIdRoute
   '/sheets/$kind': typeof SheetsKindRoute
   '/changesets/': typeof ChangesetsIndexRoute
@@ -778,6 +787,7 @@ export interface FileRouteTypes {
     | '/programmes/new'
     | '/projects/$id'
     | '/projects/new'
+    | '/projects/prepare'
     | '/proposals/$id'
     | '/sheets/$kind'
     | '/changesets/'
@@ -855,6 +865,7 @@ export interface FileRouteTypes {
     | '/portfolios/new'
     | '/programmes/new'
     | '/projects/new'
+    | '/projects/prepare'
     | '/proposals/$id'
     | '/sheets/$kind'
     | '/changesets'
@@ -938,6 +949,7 @@ export interface FileRouteTypes {
     | '/programmes/new'
     | '/projects/$id'
     | '/projects/new'
+    | '/projects/prepare'
     | '/proposals/$id'
     | '/sheets/$kind'
     | '/changesets/'
@@ -1022,6 +1034,7 @@ export interface RootRouteChildren {
   ProgrammesNewRoute: typeof ProgrammesNewRoute
   ProjectsIdRoute: typeof ProjectsIdRouteWithChildren
   ProjectsNewRoute: typeof ProjectsNewRoute
+  ProjectsPrepareRoute: typeof ProjectsPrepareRoute
   ProposalsIdRoute: typeof ProposalsIdRoute
   SheetsKindRoute: typeof SheetsKindRoute
   ChangesetsIndexRoute: typeof ChangesetsIndexRoute
@@ -1240,6 +1253,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/new'
       fullPath: '/projects/new'
       preLoaderRoute: typeof ProjectsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects/prepare': {
+      id: '/projects/prepare'
+      path: '/projects/prepare'
+      fullPath: '/projects/prepare'
+      preLoaderRoute: typeof ProjectsPrepareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/proposals/': {
@@ -1784,6 +1804,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProgrammesNewRoute: ProgrammesNewRoute,
   ProjectsIdRoute: ProjectsIdRouteWithChildren,
   ProjectsNewRoute: ProjectsNewRoute,
+  ProjectsPrepareRoute: ProjectsPrepareRoute,
   ProposalsIdRoute: ProposalsIdRoute,
   SheetsKindRoute: SheetsKindRoute,
   ChangesetsIndexRoute: ChangesetsIndexRoute,

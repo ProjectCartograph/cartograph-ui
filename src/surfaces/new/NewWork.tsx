@@ -192,8 +192,10 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
     else if (kind === "programme") void navigate({ to: "/programmes/new" });
     else if (kind === "portfolio") void navigate({ to: "/portfolios/new" });
     else if (kind === "collection") void navigate({ to: "/projects" });
-    else if (kind === "component") void navigate({ to: "/projects/new", search: { partOf: true } });
-    else if (kind === "project") void navigate({ to: "/projects/new", search: {} });
+    // A project starts by preparing what its walk picks from
+    // (TAXONOMY.md D34); it can be started from there at any point.
+    else if (kind === "component") void navigate({ to: "/projects/prepare", search: { partOf: true } });
+    else if (kind === "project") void navigate({ to: "/projects/prepare", search: {} });
   }
   function pickEnds(next: Ends) {
     setEnds(next);

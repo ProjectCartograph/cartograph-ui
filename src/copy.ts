@@ -539,6 +539,8 @@ export const copy = {
     } as Record<string, string>,
     // Singular, used in the Add dialog title ("Add Resource") and in prose.
     kindsSingular: {
+      Operation: "Service",
+      Portfolio: "Portfolio",
       Team: "Team",
       BeneficiaryGroup: "Beneficiary group",
       Resource: "Resource",
@@ -552,6 +554,17 @@ export const copy = {
     } as Record<string, string>,
     // Column and field labels, per kind, per spec property name.
     fields: {
+      // Added in passing while preparing a project (TAXONOMY.md D34).
+      Operation: {
+        name: "Name",
+        purpose: "What it does, and for whom",
+        team: "Team that runs it",
+      },
+      Portfolio: {
+        name: "Name",
+        aim: "What it invests in, and to what end",
+        leadTeam: "Governed by",
+      },
       Team: {
         name: "Name",
         parent: "Parent team",
@@ -1555,6 +1568,27 @@ export const copy = {
       operation: "Record the service",
       service: "Record the planned service",
     } as Record<string, string>,
+  },
+  // Before a project's walk: what it will pick from, added first, so the
+  // walk is a matter of choosing (engine TAXONOMY.md D34).
+  prepare: {
+    title: "Before you start",
+    subtitle: "Get what the project will pick from ready, in order. Skip anything; start whenever you like.",
+    ideaLabel: "Roughly, what is your idea?",
+    ideaHint: "A sentence or two in your own words. It is kept, and Cartograph uses it to show what is already relevant.",
+    needed: "A hand-over needs one",
+    ready: (n: number) => (n === 0 ? "None yet" : n === 1 ? "1 ready" : `${n} ready`),
+    relevant: "Relevant to your idea",
+    add: "Add one",
+    define: "Define one",
+    plannedService: "Add a planned service",
+    haveWhatINeed: "Ready",
+    skip: "Skip for now",
+    reopen: "Open",
+    start: "Start the project",
+    progress: (done: number, all: number) => `${done} of ${all} looked at`,
+    reason: "Prepared for a new project",
+    names: { Resource: "Roles" } as Record<string, string>,
   },
   // A strategic investment and prioritisation construct (engine
   // TAXONOMY.md D32): what it holds names it, and its decisions are a file

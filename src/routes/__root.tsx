@@ -172,6 +172,9 @@ function useBreadcrumbCrumbs(): Crumb[] {
 
   if (routeId === "/access") return [{ label: copy.rail.access }];
 
+  if (routeId === "/projects/prepare") {
+    return [{ label: copy.rail.projects, to: "/projects" }, { label: copy.prepare.title }];
+  }
   if (routeId?.startsWith("/projects/$id")) {
     const crumbs: Crumb[] = [
       { label: copy.rail.projects, to: "/projects" },

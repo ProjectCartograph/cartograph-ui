@@ -94,10 +94,18 @@ export function SheetForm({
   existing,
   onSaved,
   initialName,
+  minimal,
+  preset,
 }: {
+  /** Only what the record requires: the name and the required fields, the
+   * id taken from the name and the reason given, so adding one in passing
+   * is a sentence and a choice or two (TAXONOMY.md D34). */
+  minimal?: { reason: string };
+  /** Values set on a new entry and not asked, such as a service's status. */
+  preset?: Record<string, unknown>;
   /** A name to start a new entry from, as typed on the home page. */
   initialName?: string;
-  kind: SheetKind;
+  kind: SheetKind | string;
   kindLabel: string;
   fields: FieldDef[];
   open: boolean;
@@ -120,7 +128,7 @@ export function SheetForm({
     const base: FormValues = {
       _name: existing?.name ?? initialName ?? "",
       _id: existing?.id ?? "",
-      _reason: "",
+      _reason: minimal?.reason ?? "",
     };
     for (const f of fields) {
       const v = existing?.spec[f.name];
@@ -155,7 +163,7 @@ export function SheetForm({
     setConflict(false);
 
     // The name is metadata.name alone (engine 2.6.0); spec carries none.
-    const spec: Record<string, unknown> = {};
+    const spec: Record<string, unknown> = { ...(isEdit ? {} : preset) };
     for (const f of fields) {
       const raw = values[f.name];
       const empty = raw === undefined || raw === "" || (Array.isArray(raw) && raw.length === 0);
@@ -252,6 +260,7 @@ export function SheetForm({
               )}
             />
 
+            {minimal ? null : (
             <FormField
               control={form.control}
               name="_id"
@@ -279,10 +288,13 @@ export function SheetForm({
               )}
             />
 
-            {fields.map((f) => (
+            )}
+
+            {(minimal ? fields.filter((f) => f.required && !(preset && f.name in preset)) : fields).map((f) => (
               <SheetFormField key={f.name} kind={kind} field={f} control={form.control} />
             ))}
 
+            {minimal ? null : (
             <FormField
               control={form.control}
               name="_reason"
@@ -303,6 +315,7 @@ export function SheetForm({
                 </FormItem>
               )}
             />
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -324,7 +337,7 @@ function SheetFormField({
   field,
   control,
 }: {
-  kind: SheetKind;
+  kind: SheetKind | string;
   field: FieldDef;
   control: Control<FormValues>;
 }) {
