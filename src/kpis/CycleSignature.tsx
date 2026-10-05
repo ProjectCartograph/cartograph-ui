@@ -1,5 +1,6 @@
 import { CalendarSync } from "lucide-react";
 
+import { monthNames } from "@/components/locale";
 import { copy } from "@/copy";
 import { useCycle } from "./api";
 import { periodsBetween } from "./periods";
@@ -37,10 +38,8 @@ export function CycleSignature({ id }: { id: string | undefined }) {
   );
 }
 
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
+// In the reader's language (components/locale).
+const MONTHS = monthNames("long");
 
 function monthName(n: number): string {
   return MONTHS[Math.min(Math.max(n, 1), 12) - 1];

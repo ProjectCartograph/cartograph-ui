@@ -23,7 +23,6 @@ import { useClient } from "@/client/context";
 import { orUndefined } from "@/client/port";
 import { copy, plusNoun } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
-import { useGuide, vocabulary } from "@/components/guide";
 
 import { ObjectiveEditor } from "../ObjectiveEditor";
 import { KeyResultCard } from "@/surfaces/goals/KeyResultCard";
@@ -462,8 +461,6 @@ export function MeasuresSection() {
     updateObjective({ keyResults: keyResults.filter((x) => x.id !== krId) });
   }
 
-  // The words the engine's guide offers for writing the objective.
-  const guide = useGuide("Project");
   const kpiNames = new Map((kpis ?? []).map((k) => [k.id, k.name]));
   const namedKpis = store.spec.kpis ?? [];
 
@@ -477,8 +474,6 @@ export function MeasuresSection() {
         <ObjectiveEditor
           data-cartograph-field={`/spec/objectives/${seg(store.spec.objectives?.[0], 0)}/objective`}
           objective={objective.objective}
-          verbs={vocabulary(guide.data, "objectiveVerbs")}
-          meansWord={vocabulary(guide.data, "meansWord")[0] ?? ""}
           alignedGoals={parent ? 1 : goals.length}
           onChange={(next) => updateObjective({ objective: next })}
         />

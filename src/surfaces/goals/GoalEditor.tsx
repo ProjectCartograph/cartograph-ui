@@ -30,7 +30,7 @@ import { InlineTitle } from "./InlineTitle";
 import { KeyResultCard } from "./KeyResultCard";
 import { KeyResultDialog } from "./KeyResultDialog";
 import { SmartMarks } from "./SmartMarks";
-import { fieldGuide, useGuide, vocabulary } from "@/components/guide";
+import { fieldGuide, useGuide } from "@/components/guide";
 
 import { AimEditor } from "./AimEditor";
 import { HorizonPicker } from "./HorizonPicker";
@@ -141,7 +141,6 @@ export function GoalEditor({ id }: { id: string }) {
   // right and wrong examples, and the opening words offered for an aim.
   const guide = useGuide("Goal", level);
   const statementGuide = fieldGuide(guide.data, "/spec/objective");
-  const aimVerbs = vocabulary(guide.data, "aimVerbs");
 
   const pillarOptions = useMemo(
     () => flattenPillars(treeQuery.data?.nodes ?? []).filter((n) => n.id !== id),
@@ -387,7 +386,6 @@ export function GoalEditor({ id }: { id: string }) {
                 <AimEditor
                   data-cartograph-field="/spec/objective"
                   level={level}
-                  verbs={aimVerbs}
                   value={objective}
                   onChange={(v) => setObjective(v.slice(0, ec.objective.maxLength))}
                   maxLength={ec.objective.maxLength}

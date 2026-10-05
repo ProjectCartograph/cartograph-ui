@@ -980,8 +980,6 @@ export const copy = {
         smartNote: "Filled letters are passed. The checks list what is left.",
       },
       aim: {
-        verbLabel: "Action",
-        verbPlaceholder: "Choose",
         restLabel: "What changes",
         stateLabel: "What will be true",
         marksTitle: "Shape",
@@ -2163,10 +2161,7 @@ export const copy = {
       programmePlaceholder: "Choose a programme",
       objectiveTitle: "Objective",
       objectiveStepOutcome: "Objective",
-      objectiveStepOutcomeHint: "Pick a verb, then say what it changes. Leave numbers to the key results.",
-      objectiveVerbLabel: "Verb",
-      objectiveVerbPlaceholder: "Choose a verb",
-      objectiveStepMeans: "Approach",
+      objectiveStepOutcomeHint: "What the project changes, and how, in a sentence. Leave numbers to the key results.",
       objectiveBy: "by",
       objectiveExamples: [
         "Improve customer retention by adapting services to changing workplace needs.",

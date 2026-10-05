@@ -2,6 +2,7 @@ import * as React from "react";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "cn";
 
+import { monthNames, weekdayNames } from "@/components/locale";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -12,23 +13,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 // Both accept and keep a typed value that is not yet a valid date, so a
 // person can still type; the popover only ever writes a valid one.
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-const MONTHS_SHORT = MONTHS.map((m) => m.slice(0, 3));
-const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+// In the reader's language (components/locale).
+const MONTHS = monthNames("long");
+const MONTHS_SHORT = monthNames("short");
+const WEEKDAYS = weekdayNames();
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");

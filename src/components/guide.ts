@@ -29,10 +29,5 @@ export function fieldGuide(guide: Guide | undefined, path: string): GuideField |
   return undefined;
 }
 
-/** Words the guide offers for writing a field, or none. */
-export function vocabulary(guide: Guide | undefined, name: string): string[] {
-  return guide?.vocabulary?.[name] ?? [];
-}
-
 /** Whether text holds a digit, in any script. */
 export const hasDigit = (s: string) => /\p{Nd}/u.test(s);

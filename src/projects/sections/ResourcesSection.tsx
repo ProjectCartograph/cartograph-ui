@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { FieldHeading, Help } from "@/components/guidance";
 import { copy, plusNoun } from "@/copy";
 import { CURRENCIES } from "../currencies";
+import { currencyName } from "@/components/locale";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { FundingLine, ProjectRole, ProjectRoleKind } from "../types";
@@ -26,7 +27,11 @@ const pc = copy.projects.resources;
 
 // Built once: 170 options rebuilt on every keystroke is 170 objects a
 // render, and the list never changes.
-const CURRENCY_OPTIONS = CURRENCIES.map((c) => ({ value: c, label: c }));
+// The code and its name in the reader's language: found by either.
+const CURRENCY_OPTIONS = CURRENCIES.map((c) => {
+  const name = currencyName(c);
+  return { value: c, label: name === c ? c : `${c} · ${name}` };
+});
 
 // Every role a project names here. Stakeholders are named further down the
 // same page, in their own block: a stakeholder is not a resource the
