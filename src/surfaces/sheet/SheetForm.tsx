@@ -410,7 +410,12 @@ function SheetFormField({
               <SelectContent>
                 {(field.enumValues ?? []).map((v) => (
                   <SelectItem key={String(v)} value={v}>
-                    {vocab ? <VocabOption vocab={vocab} value={v as string | number} /> : String(v)}
+                    {vocab ? (
+                      <VocabOption vocab={vocab} value={v as string | number} />
+                    ) : (
+                      // A choice with no mark still reads in words.
+                      (copy.sheets.fieldValues[kind]?.[field.name]?.[String(v)] ?? String(v))
+                    )}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -759,6 +759,22 @@ export const copy = {
           "notDecided": "Not decided yet",
         },
       },
+      Unit: {
+        dimension: {
+          percent: "Percentage",
+          count: "Count",
+          money: "Money",
+          ratio: "Ratio",
+          duration: "Length of time",
+        },
+      },
+      Assumption: {
+        confidence: {
+          high: "Sure of it",
+          medium: "Fairly sure",
+          low: "Unsure",
+        },
+      },
       ReportingCycle: {
         periodMonths: {
           "1": "Monthly",

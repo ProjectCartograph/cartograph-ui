@@ -42,3 +42,20 @@ describe("marks and words stay together", () => {
     expect(missing).toEqual([]);
   });
 });
+
+// A fixed choice in a sheet reads in words, whether or not it has a mark:
+// "byHand" reached a dropdown because only marked choices were worded.
+describe("every fixed choice in a sheet has words", () => {
+  it.each(SHEET_KINDS)("%s", async (kind) => {
+    const { copy } = await import("@/copy");
+    const doc = JSON.parse(readFileSync(path.join(schemaDir, `${kind.toLowerCase()}.schema.json`), "utf8"));
+    const missing: string[] = [];
+    for (const [property, prop] of Object.entries(doc.properties.spec.properties ?? {}) as [string, { enum?: unknown[] }][]) {
+      if (!Array.isArray(prop.enum) || fieldVocab(kind, property)) continue;
+      for (const value of prop.enum) {
+        if (!copy.sheets.fieldValues[kind]?.[property]?.[String(value)]) missing.push(`${property}=${String(value)}`);
+      }
+    }
+    expect(missing).toEqual([]);
+  });
+});
