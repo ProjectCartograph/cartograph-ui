@@ -14,6 +14,19 @@ export const copy = {
   // The home page: one question, read against the taxonomy and the record
   // (engine docs/adr/0023).
   home: {
+    // What was started and not finished (surfaces/home/leftToDo).
+    left: {
+      title: "Pick up where you left off",
+      hint: "Started, not finished yet. Each opens where it is finished.",
+      purpose: "Purpose",
+      noVision: "No vision yet",
+      noMission: "No mission yet",
+      noAim: (level: string) => `This ${level.toLowerCase()} says no aim yet`,
+      nothingUnder: (level: string) => `No ${level.toLowerCase()}s under it yet`,
+      unplaced: "Not placed in the tree yet",
+      more: (n: number) => `and ${n} more`,
+      rail: "Something started is not finished",
+    },
     title: "What are you working on?",
     placeholder: "Describe it in your own words",
     ask: "Look for it",

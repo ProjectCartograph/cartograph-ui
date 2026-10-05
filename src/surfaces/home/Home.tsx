@@ -12,6 +12,7 @@ import { copy } from "@/copy";
 import { manifestLink } from "@/proposals/links";
 import { FLOW_KEYS, flowLink, nameFrom } from "./flows";
 import { onboarded, useNewWorkspace } from "@/onboarding/firstRun";
+import { LeftToDo } from "./LeftToDo";
 
 const hc = copy.home;
 
@@ -100,6 +101,8 @@ export function Home() {
           <ArrowRight className="size-4" aria-hidden="true" />
         </Link>
       ) : null}
+      {/* What was started and not finished, while nothing is being asked. */}
+      {read.data || read.isPending ? null : <LeftToDo />}
     </div>
   );
 }

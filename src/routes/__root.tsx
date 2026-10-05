@@ -51,6 +51,7 @@ import { useClient } from "@/client/context";
 import { useQuery } from "@tanstack/react-query";
 import { NotListed } from "@/access/NotListed";
 import { useSettings } from "@/surfaces/goals/api";
+import { useLeftToDo } from "@/surfaces/home/leftToDo";
 
 const defineItems = [
   {
@@ -398,6 +399,7 @@ function RootLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarOpenCookie);
   const { screen, route } = usePresenceScreen();
   const organisation = useSettings().data?.purpose?.organisation ?? "";
+  const leftCount = useLeftToDo().length;
   // Opening a new workspace is a page of its own, with no rail and no
   // header: nothing to wander off to before there is anything to see.
   const bare = route === "/welcome";
@@ -469,7 +471,14 @@ function RootLayout() {
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild tooltip={item.title}>
                         <Link to={item.to} params={item.params}>
-                          <item.icon />
+                          {/* Something in the strategy started and not
+                              finished: a quiet dot, never a count. */}
+                          <span className="relative flex">
+                            <item.icon />
+                            {item.to === "/strategy" && leftCount > 0 ? (
+                              <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-warning ring-2 ring-sidebar" role="img" aria-label={copy.home.left.rail} data-slot="left-to-do" />
+                            ) : null}
+                          </span>
                           <span>{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
