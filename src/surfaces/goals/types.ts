@@ -75,7 +75,13 @@ export interface GoalLink {
 export interface GoalManifest {
   apiVersion: "cartograph/v1";
   kind: "Goal";
-  metadata: { id: string; name: string };
+  metadata: {
+    id: string;
+    name: string;
+    /** References not made yet (TAXONOMY.md D31): an unplaced goal's
+     * parent (D35). */
+    pending?: { path: string; kind: string; name: string; note?: string }[];
+  };
   spec: GoalSpec;
 }
 

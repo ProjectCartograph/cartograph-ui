@@ -39,6 +39,7 @@ import { LevelMarkTag, levelName, levelStyle } from "./levels";
 import { SmartMarks } from "./SmartMarks";
 import { type GoalNode } from "./tree-types";
 import type { GoalLevel } from "./types";
+import { Unplaced } from "./Unplaced";
 import { slugify } from "@/surfaces/sheet/schema";
 
 const hc = copy.goals.home;
@@ -1167,6 +1168,7 @@ export function GoalsHome() {
         </div>
       ) : null}
 
+      <Unplaced tree={treeQuery.data} />
       {nodes.length > 0 ? <UnalignedTray /> : null}
 
       <AlertDialog open={addError !== null} onOpenChange={(open) => !open && setAddError(null)}>

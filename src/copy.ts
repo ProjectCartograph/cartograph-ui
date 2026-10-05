@@ -855,6 +855,13 @@ export const copy = {
       emptyTitle: "No goals yet.",
       emptySubtitle: "Start with a pillar.",
       newLevel: (level: string) => `New ${level.toLowerCase()}`,
+      // Defined before what they sit under (engine TAXONOMY.md D35).
+      unplaced: {
+        title: "Unplaced",
+        hint: "Defined before what they sit under. Place each once its parent exists.",
+        place: (above: string) => `Place it under ${/^[aeiou]/i.test(above) ? "an" : "a"} ${above.toLowerCase()}`,
+        noneYet: (above: string) => `No ${above.toLowerCase()} to place it under yet`,
+      },
       // Arriving from the home page with a name and a level (engine
       // docs/adr/0023): where the new goal sits.
       place: {
@@ -868,6 +875,11 @@ export const copy = {
         first: (parentLevel: string) => `Add ${an(parentLevel)} ${parentLevel.toLowerCase()} first`,
         then: (name: string, parentLevel: string) => `Then "${name}" goes under this ${parentLevel.toLowerCase()}.`,
         taken: "One with this name already exists. Choose another name.",
+        // Defined now, placed later (engine TAXONOMY.md D35).
+        leaveUnplaced: "It does not fit anywhere yet: leave it unplaced",
+        unplacedUnder: (parentLevel: string) => `What ${parentLevel.toLowerCase()} would it sit under? (optional)`,
+        unplacedNote: (parentLevel: string) => `It is listed as unplaced in the tree. Place it once its ${parentLevel.toLowerCase()} exists.`,
+        placeInstead: "Choose where it goes instead",
         add: "Add",
         cancel: "Cancel",
       },

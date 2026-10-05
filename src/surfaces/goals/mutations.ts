@@ -70,11 +70,12 @@ async function putGoal(
   metadataName: string,
   spec: GoalSpec,
   reason: string,
+  pending?: GoalManifest["metadata"]["pending"],
 ): Promise<GoalMutationResult> {
   const body: GoalManifest = {
     apiVersion: "cartograph/v1",
     kind: "Goal",
-    metadata: { id, name: metadataName },
+    metadata: { id, name: metadataName, ...(pending?.length ? { pending } : {}) },
     spec: {
       level: spec.level,
       ...(spec.parent ? { parent: spec.parent } : {}),
@@ -110,8 +111,19 @@ export function createGoal(
   name: string,
   level: GoalLevel,
   parentId?: string,
+  /** Left unplaced (TAXONOMY.md D35): what it would sit under, as far as
+   * the person can say, held by a placeholder until it is placed. */
+  unplacedUnder?: string,
 ): Promise<GoalMutationResult> {
-  return putGoal(client, id, name, { level, ...((level === "objective" || level === "outcome") && parentId ? { parent: parentId } : {}) }, TREE_EDIT_REASON);
+  const unplaced = level !== "goal" && !parentId && unplacedUnder !== undefined;
+  return putGoal(
+    client,
+    id,
+    name,
+    { level, ...((level === "objective" || level === "outcome") && parentId ? { parent: parentId } : {}) },
+    TREE_EDIT_REASON,
+    unplaced ? [{ path: "/spec/parent", kind: "Goal", name: unplacedUnder || "Not placed yet" }] : undefined,
+  );
 }
 
 /** Renames a goal in place: the id (slug) never changes, only
@@ -140,6 +152,10 @@ export async function moveGoal(client: Client, id: string, newParentId: string):
   if (!current) return { ok: false, problems: [{ path: "manifest", message: "Goal not found" }] };
   const updated = JSON.parse(JSON.stringify(current)) as GoalManifest;
   updated.spec.parent = newParentId;
+  // Placed: the placeholder that held its parent's place ends (D35).
+  const kept = (updated.metadata.pending ?? []).filter((p) => p.path !== "/spec/parent");
+  if (kept.length) updated.metadata.pending = kept;
+  else delete updated.metadata.pending;
   try {
     await client.saveVersion("Goal", id, updated, TREE_EDIT_REASON);
     return { ok: true, problems: [] };

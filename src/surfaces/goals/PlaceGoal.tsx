@@ -49,6 +49,9 @@ export function PlaceGoal({ level, name, tree, onDone }: { level: GoalLevel; nam
   const [waiting, setWaiting] = useState<{ level: GoalLevel; name: string } | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  // Left unplaced (TAXONOMY.md D35): null when it is being placed; else
+  // what it would sit under, as far as the person can say.
+  const [unplaced, setUnplaced] = useState<string | null>(null);
 
   const levels = tree?.levels;
   const word = (l: GoalLevel) => levelName(l, levels);
@@ -63,7 +66,7 @@ export function PlaceGoal({ level, name, tree, onDone }: { level: GoalLevel; nam
     const id = slugify(trimmed);
     if (!id) return;
     setSaving(true);
-    const result = await createGoal(client, id, trimmed, now.level, parent || undefined);
+    const result = await createGoal(client, id, trimmed, now.level, unplaced === null ? parent || undefined : undefined, unplaced ?? undefined);
     setSaving(false);
     if (!result.ok) {
       setProblems(result.conflict ? [pc.taken] : result.problems.map((p) => p.message));
@@ -120,7 +123,17 @@ export function PlaceGoal({ level, name, tree, onDone }: { level: GoalLevel; nam
           {parentLevel && now.parentName ? (
             <p className="text-sm text-muted-foreground">{pc.under(word(parentLevel), now.parentName)}</p>
           ) : null}
-          {parentLevel && !orphan && !now.parentName ? (
+          {parentLevel && unplaced !== null ? (
+            <div className="flex flex-col gap-2 rounded-lg bg-muted/50 p-3 text-sm" data-slot="unplaced">
+              <Label htmlFor="place-goal-under">{pc.unplacedUnder(word(parentLevel))}</Label>
+              <Input id="place-goal-under" value={unplaced} onChange={(e) => setUnplaced(e.target.value.slice(0, 120))} />
+              <p className="text-muted-foreground">{pc.unplacedNote(word(parentLevel))}</p>
+              <Button type="button" variant="link" size="sm" className="self-start px-0" onClick={() => setUnplaced(null)}>
+                {pc.placeInstead}
+              </Button>
+            </div>
+          ) : null}
+          {parentLevel && unplaced === null && !orphan && !now.parentName ? (
             <div className="flex flex-col gap-1.5">
               <Label id="place-goal-parent">{pc.parent(word(parentLevel))}</Label>
               <Select value={parent} onValueChange={(parent) => setNow({ ...now, parent })}>
@@ -137,13 +150,21 @@ export function PlaceGoal({ level, name, tree, onDone }: { level: GoalLevel; nam
               </Select>
             </div>
           ) : null}
-          {orphan && parentLevel ? (
+          {orphan && parentLevel && unplaced === null ? (
             <div className="flex flex-col items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm">
               <p>{pc.none(word(now.level), word(parentLevel))}</p>
               <Button type="button" variant="outline" size="sm" onClick={parentFirst}>
                 {pc.first(word(parentLevel))}
               </Button>
             </div>
+          ) : null}
+          {/* Defined now, placed later: it does not have to fit anywhere
+              yet (TAXONOMY.md D35). Not offered for the parent being added
+              for one waiting. */}
+          {parentLevel && unplaced === null && !now.parentName && !waiting ? (
+            <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => setUnplaced("")} data-slot="leave-unplaced">
+              {pc.leaveUnplaced}
+            </Button>
           ) : null}
           {problems.length ? (
             <ul className="text-sm text-destructive" role="alert">
@@ -157,7 +178,11 @@ export function PlaceGoal({ level, name, tree, onDone }: { level: GoalLevel; nam
           <Button type="button" variant="ghost" onClick={() => onDone()}>
             {pc.cancel}
           </Button>
-          <Button type="button" onClick={() => void add()} disabled={saving || orphan || !now.name.trim() || (!!parentLevel && !parent)}>
+          <Button
+            type="button"
+            onClick={() => void add()}
+            disabled={saving || !now.name.trim() || (unplaced === null && (orphan || (!!parentLevel && !parent)))}
+          >
             {pc.add}
           </Button>
         </DialogFooter>

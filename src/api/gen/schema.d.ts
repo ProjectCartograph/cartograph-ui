@@ -1899,6 +1899,8 @@ export interface components {
         GoalTree: {
             levels: string[];
             nodes: components["schemas"]["GoalNode"][];
+            /** @description Objectives and outcomes with no parent yet, held by a placeholder (TAXONOMY.md D35), each with what sits under it. */
+            unplaced?: components["schemas"]["GoalNode"][];
         };
         GoalCheckFix: {
             section: string;

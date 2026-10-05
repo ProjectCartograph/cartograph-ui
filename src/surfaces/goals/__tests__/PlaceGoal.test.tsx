@@ -82,4 +82,15 @@ describe("placing a goal from the home page", () => {
     await waitFor(() => expect(onDone).toHaveBeenCalledWith("raise-produce-quality"));
     expect(saved(saveVersion.mock.calls[0]).parent).toBeUndefined();
   });
+
+  it("leaves an outcome unplaced, its parent's place held, when nothing fits yet", async () => {
+    const { saveVersion, onDone } = mount("outcome", "Produce is kept cool", { levels: ["Goal", "Objective", "Outcome"], nodes: [] });
+    fireEvent.click(screen.getByRole("button", { name: pc.leaveUnplaced }));
+    fireEvent.change(screen.getByLabelText(pc.unplacedUnder("Objective")), { target: { value: "Cut loss after picking" } });
+    fireEvent.click(screen.getByRole("button", { name: pc.add }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith("produce-is-kept-cool"));
+    const m = saveVersion.mock.calls[0][2] as { metadata: { pending?: unknown[] }; spec: { parent?: string } };
+    expect(m.spec.parent).toBeUndefined();
+    expect(m.metadata.pending).toEqual([{ path: "/spec/parent", kind: "Goal", name: "Cut loss after picking" }]);
+  });
 });
