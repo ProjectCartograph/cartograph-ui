@@ -240,6 +240,48 @@
 .cartograph-burst {
   animation: cartograph-burst 0.9s ease-out both;
 }
+/* Motion that answers (DESIGN_RULES "The interface answers"): a pick
+   settles into place as it turns on, a met check's tick draws itself,
+   and what arrives (a suggestion, a check, a prompt) rises into place.
+   Each plays once, when its state begins, never on its own. */
+@keyframes cartograph-pick {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+:root.cartograph-touched :is(.cartograph-pick[aria-pressed="true"], .cartograph-pick[aria-checked="true"], .cartograph-pick[data-state="on"]) {
+  animation: cartograph-pick 160ms var(--ease-standard);
+}
+@keyframes cartograph-tick {
+  from { stroke-dashoffset: 12; }
+  to { stroke-dashoffset: 0; }
+}
+.cartograph-tick path {
+  stroke-dasharray: 12;
+  animation: cartograph-tick 0.4s var(--ease-enter) both;
+}
+@keyframes cartograph-arrive {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.cartograph-arrive {
+  animation: cartograph-arrive 200ms var(--ease-enter) both;
+}
+@keyframes cartograph-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.cartograph-pick[aria-pressed="true"], .cartograph-pick[aria-checked="true"], .cartograph-pick[data-state="on"]),
+  .cartograph-tick path {
+    animation: none !important;
+  }
+  /* Less motion is a fade, not nothing (rule 10). */
+  .cartograph-arrive {
+    animation: cartograph-fade 150ms linear both;
+  }
+}
+
 /* Something named in passing (a gap added while starting a project) is
    new, not finished, so it gets no confetti: a sparkle when it appears,
    and for as long as the flow that named it lasts, a ring that breathes,

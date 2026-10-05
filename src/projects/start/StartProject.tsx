@@ -239,7 +239,12 @@ function Progress({ steps, at, onGo }: { steps: Step[]; at: number; onGo: (s: St
             aria-current={i === at ? "step" : undefined}
             className="flex flex-col gap-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           >
-            <span className={`h-1 rounded-full transition-colors duration-300 ease-standard ${i <= at ? "bg-primary" : "bg-muted"}`} />
+            <span className="relative h-1 overflow-hidden rounded-full bg-muted">
+              {/* Filled by scaling, never by width (rule 11). */}
+              <span
+                className={`absolute inset-0 origin-left rounded-full bg-primary transition-transform duration-300 ease-standard motion-reduce:transition-none ${i <= at ? "scale-x-100" : "scale-x-0"}`}
+              />
+            </span>
             <span className={`text-xs ${i === at ? "font-medium text-foreground" : "text-muted-foreground"}`}>{sc.steps[s]}</span>
           </button>
         </li>

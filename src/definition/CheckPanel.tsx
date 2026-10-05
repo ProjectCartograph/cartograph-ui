@@ -57,9 +57,9 @@ export function DefinitionCheckPanel({
 
   function Line({ item }: { item: AdvisoryCheck }) {
     return (
-      <li className="flex items-start gap-2 text-sm">
+      <li className="cartograph-arrive flex items-start gap-2 text-sm">
         {item.state === "ok" ? (
-          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success/70" />
+          <CheckCircle2 className="cartograph-tick mt-0.5 size-4 shrink-0 text-success/70" />
         ) : (
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
         )}

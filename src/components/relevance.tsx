@@ -51,16 +51,16 @@ export function Suggested({
         {byModel ? copy.common.suggested : copy.common.suggestedByWords}
       </p>
       <ul className="flex flex-wrap gap-1.5">
-        {shown.map((m) => {
+        {shown.map((m, n) => {
           const on = selected.includes(m.id);
           return (
-            <li key={m.id}>
+            <li key={m.id} className="cartograph-arrive" style={{ animationDelay: `${n * 40}ms` }}>
               <button
                 type="button"
                 onClick={() => onPick(m.id)}
                 aria-pressed={on}
                 data-suggestion={m.id}
-                className={`inline-flex max-w-full items-center gap-1 rounded-full px-3 py-1 text-sm ring-1 transition-colors duration-150 ease-standard active:scale-[0.98] ${
+                className={`cartograph-pick inline-flex max-w-full items-center gap-1 rounded-full px-3 py-1 text-sm ring-1 transition-colors duration-150 ease-standard active:scale-[0.98] ${
                   on ? "bg-primary/10 font-medium text-primary ring-primary/30" : "bg-background ring-foreground/15 hover:bg-muted"
                 }`}
               >

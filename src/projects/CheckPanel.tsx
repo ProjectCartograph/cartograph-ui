@@ -12,7 +12,7 @@ import { ALL_SECTIONS } from "./types";
 const cc = copy.projects.checks;
 
 function iconFor(state: string) {
-  if (state === "ok") return <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success/70" />;
+  if (state === "ok") return <CheckCircle2 className="cartograph-tick mt-0.5 size-4 shrink-0 text-success/70" />;
   if (state === "block") return <OctagonAlert className="mt-0.5 size-4 shrink-0 text-destructive" />;
   return <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />;
 }
@@ -68,7 +68,7 @@ export function CheckPanel({
 
   function Line({ item }: { item: (typeof items)[number] }) {
     return (
-      <li className="flex items-start gap-2 text-sm">
+      <li className="cartograph-arrive flex items-start gap-2 text-sm">
         {iconFor(item.state)}
         <span className="flex-1">
           {item.message}

@@ -44,8 +44,8 @@ export function FinishDetails({ kind, ids }: { kind: Kind; ids: string[] }) {
     <div className="flex flex-col gap-1.5" data-slot="finish-details" data-kind={kind}>
       <p className="text-xs text-muted-foreground">{copy.start.finishHint}</p>
       <ul className="flex flex-wrap gap-1.5">
-        {todo.map((t) => (
-          <li key={t.id}>
+        {todo.map((t, n) => (
+          <li key={t.id} className="cartograph-arrive" style={{ animationDelay: `${n * 40}ms` }}>
             {kind === "BeneficiaryGroup" ? (
               <button type="button" className={amber} onClick={() => setEditing(t.id)} data-finish={t.id}>
                 <PencilLine className="size-3.5 shrink-0" aria-hidden="true" />

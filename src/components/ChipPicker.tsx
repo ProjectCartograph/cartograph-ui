@@ -124,7 +124,7 @@ export function ChipPicker({
         aria-pressed={isPicked}
         title={c.title ?? c.tag}
         onClick={() => onToggle(c.id)}
-        className={`relative inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors ${
+        className={`cartograph-pick relative inline-flex max-w-full items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors ${
           isPicked ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-accent"
         } ${c.isNew ? "cartograph-new" : ""}`}
         data-new={c.isNew ? "" : undefined}
@@ -161,7 +161,7 @@ export function ChipPicker({
         aria-pressed={isPicked}
         title={c.title}
         onClick={() => onToggle(c.id)}
-        className={`relative flex w-full items-center gap-3 border px-3 py-2.5 text-left transition-colors ${rounded} ${
+        className={`cartograph-pick relative flex w-full items-center gap-3 border px-3 py-2.5 text-left transition-colors ${rounded} ${
           position === "middle" || position === "last" ? "-mt-px" : ""
         } ${isPicked ? "z-10 border-primary bg-accent" : "hover:bg-accent/50"} ${c.isNew ? "cartograph-new z-20" : ""}`}
         data-new={c.isNew ? "" : undefined}

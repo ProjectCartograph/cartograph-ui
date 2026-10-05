@@ -24,7 +24,7 @@ export function ChoiceCard({
       aria-checked={picked}
       disabled={disabled}
       onClick={onPick}
-      className={`flex items-start gap-3 rounded-xl p-4 text-left ring-1 transition-[transform,background-color,box-shadow] duration-100 ease-standard hover:ring-primary/50 active:bg-muted/60 motion-safe:active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:pointer-events-none motion-reduce:transition-none ${
+      className={`cartograph-pick flex items-start gap-3 rounded-xl p-4 text-left ring-1 transition-[transform,background-color,box-shadow] duration-100 ease-standard hover:ring-primary/50 active:bg-muted/60 motion-safe:active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none disabled:pointer-events-none motion-reduce:transition-none ${
         picked ? "bg-primary/5 ring-2 ring-primary" : "ring-foreground/10"
       }`}
     >
