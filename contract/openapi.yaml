@@ -33,6 +33,8 @@ paths:
     get:
       operationId: getGoalTree
       summary: The goal tree, computed from every Goal manifest and the reference index
+      parameters:
+        - $ref: "#/components/parameters/PreviewParam"
       responses:
         "401":
           $ref: "#/components/responses/Unauthenticated"
@@ -61,6 +63,7 @@ paths:
         graph alike; with focus, each node also says how many edges it is
         from that one.
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - name: focus
           in: query
           required: false
@@ -84,6 +87,7 @@ paths:
       operationId: getGoalChecks
       summary: Whether a goal can be assessed. Checks never block a save.
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - $ref: "#/components/parameters/IdParam"
       responses:
         "401":
@@ -109,6 +113,7 @@ paths:
         only, like a programme's: every one of these reads a manifest other
         than the gap.
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - $ref: "#/components/parameters/IdParam"
       responses:
         "401":
@@ -203,6 +208,7 @@ paths:
         Whether an operation is described well enough to be run and
         measured, step by step. Advisory only.
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - $ref: "#/components/parameters/IdParam"
       responses:
         "401":
@@ -228,6 +234,7 @@ paths:
         Advisory only: none of these has a state that stops anything, because
         most of them can change when somebody edits a different manifest.
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - $ref: "#/components/parameters/IdParam"
       responses:
         "401":
@@ -254,6 +261,7 @@ paths:
         those has a decision (TAXONOMY.md D32). Advisory only, in the
         programme's shape, because each is read from other manifests.
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - $ref: "#/components/parameters/IdParam"
       responses:
         "401":
@@ -315,6 +323,7 @@ paths:
         deliverables, beneficiaries, timeline, data, risks, closing,
         landing). Checks never block a save; state block stops submission.
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - $ref: "#/components/parameters/IdParam"
       responses:
         "401":
@@ -604,6 +613,8 @@ paths:
         next is the first stage a plan needs that has no record. An empty
         workspace starts at its purpose. The registers are the roots any
         stage may name, added when a field asks for one.
+      parameters:
+        - $ref: "#/components/parameters/PreviewParam"
       responses:
         "401":
           $ref: "#/components/responses/Unauthenticated"
@@ -948,6 +959,7 @@ paths:
       operationId: listManifests
       summary: Summaries of every manifest of a kind
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - $ref: "#/components/parameters/KindParam"
         - name: q
           in: query
@@ -1464,6 +1476,88 @@ paths:
               schema:
                 $ref: "#/components/schemas/ChangeSet"
 
+  /changesets/{set}/items/{kind}/{id}/document:
+    get:
+      operationId: getChangeSetDocument
+      summary: A change set's live draft of a manifest, as an Automerge document id
+      description: >-
+        A change set's draft of a manifest is a shared document of its own
+        (docs/adr/0024), made on first use from the change set's item,
+        else from the record, which then starts the item. Everyone who may
+        work in the change set edits it together over the sync socket, and
+        each edit lands in the change set, never the working copy.
+      parameters:
+        - $ref: "#/components/parameters/ChangeSetParam"
+        - $ref: "#/components/parameters/KindParam"
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedDocument"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /changesets/{set}/items/{kind}/{id}/removal:
+    put:
+      operationId: removeInChangeSet
+      summary: >-
+        Make the change set delete this record when it is rolled in
+        (docs/adr/0024). The item starts from the record as it stands;
+        rolling in deletes it after the change set's saves, refused then
+        if something still references it. Dropping the item takes the
+        delete back.
+      parameters:
+        - $ref: "#/components/parameters/ChangeSetParam"
+        - $ref: "#/components/parameters/KindParam"
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "204":
+          description: The item now deletes the record.
+
+  /changesets/{set}/items/Project/{id}/state:
+    put:
+      operationId: moveInChangeSet
+      summary: >-
+        Make the change set move this project to another state when it is
+        rolled in (docs/adr/0024): after its saves and deletes, checked as
+        a direct state change is. A hand-off renders the charter then.
+      parameters:
+        - $ref: "#/components/parameters/ChangeSetParam"
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state]
+              properties:
+                state:
+                  type: string
+                  description: The state to move to, as ProjectState names them.
+      responses:
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "204":
+          description: The item now moves the project.
+
   /changesets/{set}/items/{kind}/{id}:
     get:
       operationId: getChangeSetItem
@@ -1906,6 +2000,7 @@ paths:
       operationId: getManifest
       summary: The current version of one manifest
       parameters:
+        - $ref: "#/components/parameters/PreviewParam"
         - $ref: "#/components/parameters/KindParam"
         - $ref: "#/components/parameters/IdParam"
       responses:
@@ -2302,6 +2397,17 @@ components:
       required: true
       schema:
         type: string
+    PreviewParam:
+      name: changeSet
+      in: query
+      required: false
+      schema:
+        type: string
+      description: >-
+        Read as if this change set were accepted (docs/adr/0024): its drafts
+        stand in for the records they change, and the records it creates
+        are there too, each marked proposed. For reviewing a change set in
+        the ordinary screens.
     ChangeSetParam:
       name: set
       in: path
@@ -2591,6 +2697,8 @@ components:
           description: >-
             The project's current state (see ProjectState). Present only
             when kind is Project.
+        proposed:
+          $ref: "#/components/schemas/Proposed"
         draft:
           type: boolean
           description: >-
@@ -2836,6 +2944,15 @@ components:
           $ref: "#/components/schemas/Manifest"
         yaml:
           type: string
+        proposed:
+          $ref: "#/components/schemas/Proposed"
+
+    Proposed:
+      type: string
+      enum: [new, changed]
+      description: >-
+        Present when read with changeSet and the change set creates this
+        record (new) or changes it (changed); absent otherwise.
 
     Ref:
       type: object
@@ -3602,6 +3719,17 @@ components:
         stale:
           type: integer
           description: The version saved since it started, when one was; accepting is refused until it is reviewed again.
+        op:
+          type: string
+          enum: [save, delete, state]
+          description: >-
+            What rolling it in does to the record: saves the draft as the
+            next version, deletes the record, or moves a project to state.
+        state:
+          type: string
+          description: The state a project moves to, when op is state.
+        proposed:
+          $ref: "#/components/schemas/Proposed"
     ChangeSetReview:
       type: object
       required: [changeSet, items]
@@ -3748,6 +3876,8 @@ components:
       type: object
       required: [id, name, level, keyResults, aligned, children, smart]
       properties:
+        proposed:
+          $ref: "#/components/schemas/Proposed"
         smart:
           type: object
           description: Which SMART criteria it meets, read from what it holds (TAXONOMY.md D25).
@@ -3834,6 +3964,8 @@ components:
       type: object
       required: [kind, id, name, x, y]
       properties:
+        proposed:
+          $ref: "#/components/schemas/Proposed"
         x:
           type: number
           format: double

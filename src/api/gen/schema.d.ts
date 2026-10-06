@@ -808,6 +808,60 @@ export interface paths {
         patch: operations["retitleChangeSet"];
         trace?: never;
     };
+    "/changesets/{set}/items/{kind}/{id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A change set's live draft of a manifest, as an Automerge document id
+         * @description A change set's draft of a manifest is a shared document of its own (docs/adr/0024), made on first use from the change set's item, else from the record, which then starts the item. Everyone who may work in the change set edits it together over the sync socket, and each edit lands in the change set, never the working copy.
+         */
+        get: operations["getChangeSetDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/changesets/{set}/items/{kind}/{id}/removal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Make the change set delete this record when it is rolled in (docs/adr/0024). The item starts from the record as it stands; rolling in deletes it after the change set's saves, refused then if something still references it. Dropping the item takes the delete back. */
+        put: operations["removeInChangeSet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/changesets/{set}/items/Project/{id}/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Make the change set move this project to another state when it is rolled in (docs/adr/0024): after its saves and deletes, checked as a direct state change is. A hand-off renders the charter then. */
+        put: operations["moveInChangeSet"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/changesets/{set}/items/{kind}/{id}": {
         parameters: {
             query?: never;
@@ -1321,6 +1375,7 @@ export interface components {
             };
             /** @description The project's current state (see ProjectState). Present only when kind is Project. */
             state?: string;
+            proposed?: components["schemas"]["Proposed"];
             /** @description true when this Summary represents a project that has only ever been saved as a draft, never committed (version is then 0). Present only when kind is Project and includeDrafts=true surfaced it; omitted (never false) for every ordinary, committed Summary. */
             draft?: boolean;
             /** @description The manifest's spec, present only when expand=spec was given. */
@@ -1445,7 +1500,13 @@ export interface components {
             version: components["schemas"]["Version"];
             manifest: components["schemas"]["Manifest"];
             yaml: string;
+            proposed?: components["schemas"]["Proposed"];
         };
+        /**
+         * @description Present when read with changeSet and the change set creates this record (new) or changes it (changed); absent otherwise.
+         * @enum {string}
+         */
+        Proposed: "new" | "changed";
         Ref: {
             kind: string;
             id: string;
@@ -1817,6 +1878,14 @@ export interface components {
             checks: components["schemas"]["ManifestCheck"][];
             /** @description The version saved since it started, when one was; accepting is refused until it is reviewed again. */
             stale?: number;
+            /**
+             * @description What rolling it in does to the record: saves the draft as the next version, deletes the record, or moves a project to state.
+             * @enum {string}
+             */
+            op?: "save" | "delete" | "state";
+            /** @description The state a project moves to, when op is state. */
+            state?: string;
+            proposed?: components["schemas"]["Proposed"];
         };
         ChangeSetReview: {
             changeSet: components["schemas"]["ChangeSet"];
@@ -1894,6 +1963,7 @@ export interface components {
             kpis: number;
         };
         GoalNode: {
+            proposed?: components["schemas"]["Proposed"];
             /** @description Which SMART criteria it meets, read from what it holds (TAXONOMY.md D25). */
             smart: {
                 specific: boolean;
@@ -1939,6 +2009,7 @@ export interface components {
             edges: components["schemas"]["GraphEdge"][];
         };
         GraphNode: {
+            proposed?: components["schemas"]["Proposed"];
             /**
              * Format: double
              * @description Where the engine's layout placed it, in units an interface scales to its screen.
@@ -2150,6 +2221,8 @@ export interface components {
         KindParam: string;
         IdParam: string;
         GrantParam: string;
+        /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+        PreviewParam: string;
         /** @description A change set's id. */
         ChangeSetParam: string;
         ProposalParam: string;
@@ -2184,7 +2257,10 @@ export interface operations {
     };
     getGoalTree: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2207,6 +2283,8 @@ export interface operations {
     getGraph: {
         parameters: {
             query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
                 /** @description A manifest as Kind/id, to measure every node's distance from. */
                 focus?: string;
             };
@@ -2231,7 +2309,10 @@ export interface operations {
     };
     getGoalChecks: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 id: components["parameters"]["IdParam"];
@@ -2256,7 +2337,10 @@ export interface operations {
     };
     getGapChecks: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 id: components["parameters"]["IdParam"];
@@ -2337,7 +2421,10 @@ export interface operations {
     };
     getOperationChecks: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 id: components["parameters"]["IdParam"];
@@ -2362,7 +2449,10 @@ export interface operations {
     };
     getProgrammeChecks: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 id: components["parameters"]["IdParam"];
@@ -2387,7 +2477,10 @@ export interface operations {
     };
     getPortfolioChecks: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 id: components["parameters"]["IdParam"];
@@ -2449,7 +2542,10 @@ export interface operations {
     };
     getProjectChecks: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 id: components["parameters"]["IdParam"];
@@ -2756,7 +2852,10 @@ export interface operations {
     };
     getOrder: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3074,6 +3173,8 @@ export interface operations {
     listManifests: {
         parameters: {
             query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
                 /** @description Case-insensitive substring filter over id and name. */
                 q?: string;
                 /** @description Repeatable. Each value is "Kind/id"; a manifest must have an outgoing reference matching every one given (logical AND). For example ref=Goal/reading-outcomes lists only manifests that reference that goal. */
@@ -3536,6 +3637,94 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemList"];
                 };
             };
+        };
+    };
+    getChangeSetDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedDocument"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    removeInChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The item now deletes the record. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    moveInChangeSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description The state to move to, as ProjectState names them. */
+                    state: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The item now moves the project. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     getChangeSetItem: {
@@ -4048,7 +4237,10 @@ export interface operations {
     };
     getManifest: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 /** @description A registered kind name, for example Project or Goal. */
