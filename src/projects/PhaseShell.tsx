@@ -1,4 +1,5 @@
 import { AssemblyStrip } from "./Assembly";
+import { RequiredMarks } from "@/components/RequiredMarks";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 
@@ -47,6 +48,7 @@ export function PhaseShell({
         <StageStepper id={id} current={stage} />
       </div>
       <AssemblyStrip id={id} />
+      <RequiredMarks kind="Project" />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_18rem]">
         <div className="min-w-0 flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
           {store.loadError ? (

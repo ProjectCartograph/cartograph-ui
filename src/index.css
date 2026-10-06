@@ -568,3 +568,10 @@
 @keyframes cartograph-graph-flow { from { stroke-dashoffset: 22; } to { stroke-dashoffset: 0; } }
 @keyframes cartograph-graph-breathe { 0%, 100% { transform: scale(1); opacity: 0.18; } 50% { transform: scale(1.25); opacity: 0.08; } }
 @keyframes cartograph-graph-in { from { opacity: 0; } }
+
+/* What a definition cannot leave out (components/RequiredMarks): a bar at
+   the leading edge of the control, in the advising tone, the same in every
+   flow. */
+[data-required] {
+    box-shadow: inset 3px 0 0 var(--color-warning);
+}

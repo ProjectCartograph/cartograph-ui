@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RequiredMarks } from "@/components/RequiredMarks";
 import { AlreadyThere } from "@/components/AlreadyThere";
 import { DidYouMean } from "@/components/DidYouMean";
 import { FlowBack, FlowNav, FlowNext, WalkerQuestion } from "@/components/walker";
@@ -120,6 +121,7 @@ export function NewDefinition({
     // large, then what it needs, then Back and the way forward.
     <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 pt-[6vh] pb-12" data-cartograph-region="new-definition">
       <WalkerQuestion title={title} hint={subtitle} />
+      <RequiredMarks kind={kind} />
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

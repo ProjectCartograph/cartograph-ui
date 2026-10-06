@@ -1,4 +1,5 @@
 import { ProposalNotice } from "@/proposals/ProposalNotice";
+import { RequiredMarks } from "@/components/RequiredMarks";
 import type { ComponentType, ReactNode } from "react";
 import { Link, useNavigate, type LinkProps } from "@tanstack/react-router";
 import { AlertTriangle, CheckCircle2, FileText, Table2 } from "lucide-react";
@@ -228,6 +229,7 @@ export function DefinitionShell({
       </div>
 
       {outline ? <OutlineStrip id={store.id} parts={outline} loaded={store.loaded} /> : null}
+      <RequiredMarks kind={store.kind} />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr]">
         {/* Beside the page on a wide screen; behind one small button on a

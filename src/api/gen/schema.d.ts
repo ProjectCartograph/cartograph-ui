@@ -1721,6 +1721,8 @@ export interface components {
             checks?: string[];
             /** @description The kind the field references. */
             references?: string;
+            /** @description The field must be filled: the schema requires it where it sits, or one of its checks blocks a handoff while it is empty. Absent when it may be left out. */
+            required?: boolean;
             candidates?: components["schemas"]["GuideCandidate"][];
         };
         GuidePoor: {

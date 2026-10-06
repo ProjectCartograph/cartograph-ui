@@ -1,4 +1,5 @@
 import { AssemblyStrip } from "./Assembly";
+import { RequiredMarks } from "@/components/RequiredMarks";
 import { createElement, useEffect } from "react";
 import { FromIdeaProvider } from "@/components/FromIdea";
 import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
@@ -185,6 +186,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
         <StageStepper id={id} current={stage} />
       </div>
       <AssemblyStrip id={id} />
+      <RequiredMarks kind="Project" />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr_18rem]">
         {/* Beside the page on a wide screen; behind one small button on a
             narrow one, where the stages across the top show the way. */}

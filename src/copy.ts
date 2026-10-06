@@ -1707,6 +1707,10 @@ export const copy = {
     },
     tutorial: "Tutorial: this fills itself in, and does not affect your workspace.",
   },
+  // What a definition cannot leave out (components/RequiredMarks).
+  required: {
+    legend: "A bar marks what is required.",
+  },
   // The progress bar every flow shows (components/walker).
   flow: {
     done: "Done",

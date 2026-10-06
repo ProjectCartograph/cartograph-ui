@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { RequiredMarks } from "@/components/RequiredMarks";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CalendarRange, CheckCircle2, ClipboardCheck, CornerDownRight, Gauge, MessageSquare, Plus, Target, UserRound, X } from "lucide-react";
 
@@ -343,6 +344,7 @@ export function GoalEditor({ id }: { id: string }) {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="flex flex-col gap-6 xl:col-span-2">
           <GoalSteps steps={steps} current={step} onPick={setStep} />
+          <RequiredMarks kind="Goal" level={level} />
           <ConflictNotes conflicts={shared.conflicts} onResolve={shared.resolve} />
 
           {step === "aim" ? (
