@@ -109,6 +109,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/ReportingCycle/{id}/periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A reporting cycle's periods that overlap two months, derived from the cycle and never stored (TAXONOMY.md D8, D40): equal periods from its start month, or its named periods (terms each year, survey waves once). Each is keyed by the month it ends, which is what a reading is filed under, with its label and the day its reading is due. Derived in one place so every interface lays out a KPI's readings the same way. */
+        get: operations["getCyclePeriods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/Operation/{id}/checks": {
         parameters: {
             query?: never;
@@ -1438,6 +1455,20 @@ export interface components {
         References: {
             outgoing: components["schemas"]["Ref"][];
             incoming: components["schemas"]["Summary"][];
+            /** @description Every incoming reference with where it sits in the manifest that makes it, and what that place means for this one: a governance body or a role confirms a success criterion, receives an escalation or decided a mandate (TAXONOMY.md D43). */
+            uses?: components["schemas"]["Use"][];
+        };
+        Use: {
+            kind: string;
+            id: string;
+            name: string;
+            /** @description Where the reference sits in the manifest that makes it. */
+            path: string;
+            /**
+             * @description What the place means for the target; absent for any other place.
+             * @enum {string}
+             */
+            as?: "confirms" | "receives" | "decided";
         };
         SharedDocument: {
             /** @description The automerge-repo document id (base58check). */
@@ -1929,6 +1960,22 @@ export interface components {
             name: string;
             addressedBy?: components["schemas"]["GapClaim"][];
         };
+        /** @description One period of a reporting cycle. */
+        CyclePeriod: {
+            /** @description The month the period ends, YYYY-MM; the key its reading is filed under. */
+            end: string;
+            /** @description The month it starts, YYYY-MM. */
+            start: string;
+            /** @description The period's name, where the cycle names its periods. */
+            name?: string;
+            /** @description What a person reads, where the cycle names its periods: the name with its year for a yearly period (Term I 2026/27), the name alone for a dated one. Absent for equal periods, which are named by month. */
+            label?: string;
+            /**
+             * Format: date
+             * @description The day the period's reading is due.
+             */
+            due: string;
+        };
         GapCoverage: {
             gap: string;
             segments: components["schemas"]["GapSegmentCoverage"][];
@@ -2221,6 +2268,37 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getCyclePeriods: {
+        parameters: {
+            query: {
+                /** @description The first month, YYYY-MM. */
+                from: string;
+                /** @description The last month, YYYY-MM; at most 1,200 months after from. */
+                to: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CyclePeriod"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
         };
     };
     getOperationChecks: {

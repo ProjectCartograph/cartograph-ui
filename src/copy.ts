@@ -651,6 +651,7 @@ export const copy = {
         name: "Name",
         periodMonths: "Period",
         startMonth: "Start month",
+        periods: "Named periods",
         dueOffsetDays: "Due offset",
       },
     } as Record<string, Record<string, string>>,
@@ -662,7 +663,7 @@ export const copy = {
       BeneficiaryGroup:
         "A group of people work is for, named once here so every project means the same people by it. Described, never counted.",
       Resource:
-        "A kind of resource a project can need: a role somebody fills, a unit, an external party, a system, a facility. Never a named person.",
+        "A kind of resource a project can need: a role somebody fills, a unit, an external party, a system, a facility, or a committee or board that decides. Never a named person.",
       DataSource:
         "Somewhere a number actually comes from. A key result or an indicator is only as good as the source that settles it, so a source says who keeps it, how often it changes, and what is wrong with it today.",
       ReportingCycle: "How often something is reported, and when each round is due.",
@@ -726,6 +727,7 @@ export const copy = {
       ReportingCycle: {
         periodMonths: "How many months one round covers.",
         startMonth: "The month of the year the first round opens.",
+        periods: "Instead of equal rounds: terms that repeat each year, or survey waves dated once, each by the month it ends.",
         dueOffsetDays: "How many days after a round closes the report is due.",
       },
     } as Record<string, Record<string, string>>,
@@ -760,6 +762,7 @@ export const copy = {
           "externalParty": "External party",
           system: "System",
           facility: "Facility",
+          governanceBody: "Governance body",
           other: "Other",
         },
       },
@@ -1188,6 +1191,7 @@ export const copy = {
       "externalParty": "An external party",
       system: "A system",
       facility: "A facility",
+      governanceBody: "A governance body",
       other: "Other",
     } as Record<string, string>,
   },

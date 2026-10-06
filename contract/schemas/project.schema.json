@@ -506,6 +506,39 @@
                     }
                   }
                 }
+              },
+              "tasks": {
+                "type": "array",
+                "description": "The work that produces this deliverable, loosely: names only, unordered, with no dates, durations or dependencies. The level of the work breakdown between a deliverable and a schedule; the planning tool sequences and schedules it. Every task produces part of a deliverable, which keeps scope traceable without a check. See TAXONOMY.md D38.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "properties": {
+                    "id": {
+                      "$ref": "common.schema.json#/$defs/Slug",
+                      "description": "Stable identity for this task."
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120,
+                      "description": "The work, as a short verb phrase. Not a date or a milestone."
+                    },
+                    "role": {
+                      "$ref": "common.schema.json#/$defs/Ref",
+                      "description": "The role that does this work, where it is known, as a reference. Never a person. Optional: it helps whoever plans the work later."
+                    },
+                    "note": {
+                      "type": "string",
+                      "maxLength": 240,
+                      "description": "Anything the planner should know about this task."
+                    }
+                  }
+                }
               }
             }
           }
@@ -603,7 +636,7 @@
               },
               "confirmedBy": {
                 "$ref": "common.schema.json#/$defs/Ref",
-                "description": "The role or governance body that confirms success, as a reference. Not a copy of a role title; a governance body Cartograph does not hold takes the external form."
+                "description": "The role or governance body that confirms success, as a reference. Not a copy of a role title. A governance body in the workspace is a Resource of category governanceBody (TAXONOMY.md D43); one outside it takes the external form."
               },
               "when": {
                 "type": "string",
@@ -714,6 +747,10 @@
               "mitigation": {
                 "type": "string",
                 "maxLength": 160
+              },
+              "owner": {
+                "$ref": "common.schema.json#/$defs/Ref",
+                "description": "The role that manages this risk day to day, as a reference: the role best placed to manage it (PRINCE2's risk owner). Never a person. Not who it escalates to, which is escalate.to, and not who carries out a mitigation action, which is planning. Unowned, the manager answers for it. See TAXONOMY.md D41."
               },
               "escalate": {
                 "type": "object",

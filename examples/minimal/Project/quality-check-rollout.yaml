@@ -93,6 +93,17 @@ spec:
           outcome: signs off the pack as ready to run
         - by: {local: resources, id: quality-reviewer}
           outcome: confirms the practice materials match the published standard
+      # The work that produces the pack, loosely: no order and no dates,
+      # which the planning tool adds.
+      tasks:
+        - id: tk-draft-slides
+          name: Draft the slides and the facilitator guide
+          role: {local: resources, id: training-facilitator}
+        - id: tk-practice-materials
+          name: Prepare the practice materials
+        - id: tk-review-pack
+          name: Review the pack against the published standard
+          role: {local: resources, id: quality-reviewer}
     - id: dv-reporting-view
       name: Quality results view
       description: A shared view of quality check results by depot, refreshed each season.
@@ -200,6 +211,8 @@ spec:
         needBy: pilot-at-two-depots
       impact: high
       likelihood: low
+      # The role that manages it day to day, not who it escalates to.
+      owner: {local: resources, id: analytics}
     - id: board-approval
       description: The board must approve extending the check beyond the two pilot depots.
       type: dependency
@@ -210,6 +223,7 @@ spec:
       impact: high
       likelihood: low
       mitigation: Put the pilot's results to the board one month before rollout starts.
+      owner: {local: resources, id: lead}
   compliance:
     - item: Data protection review of member delivery records
       status: inProgress

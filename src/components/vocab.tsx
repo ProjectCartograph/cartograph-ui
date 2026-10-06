@@ -18,6 +18,7 @@ import {
   Handshake,
   Hash,
   Keyboard,
+  Landmark,
   Link2,
   Lock,
   Minus,
@@ -72,6 +73,7 @@ const ICONS = {
     "externalParty": Handshake,
     system: Cog,
     facility: Warehouse,
+    governanceBody: Landmark,
     other: Shapes,
   },
   dataSourceCategory: {

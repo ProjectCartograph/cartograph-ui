@@ -172,8 +172,21 @@
         "POL-QUALITY-02"
       ]
     },
+    "/spec/mandate/-/issuer": {
+      "guide": "The governance body or role that issued it, picked from the Resource catalogue, so the body's page lists what it decided. When the body is not there yet, add it as a governance body first.",
+      "good": [
+        "steering-committee",
+        "sponsor"
+      ],
+      "poor": [
+        {
+          "text": "Steering Committee, typed as text",
+          "why": "A body the workspace holds is named once and referenced. Typed text gives it a second spelling no check can read."
+        }
+      ]
+    },
     "/spec/mandate/-/issuedBy": {
-      "guide": "The body that issued it, as written.",
+      "guide": "The body that issued it, as written, only when it is outside the workspace: a government, a regulator, a funder. A body the workspace holds goes in the issuer instead.",
       "good": [
         "Cooperative Board"
       ]
@@ -315,7 +328,13 @@
       ]
     },
     "/spec/funding": {
-      "guide": "The money the project draws on, one line per currency: the amount, the currency, the budget it comes from and whether it is approved, requested or unfunded. A component is funded through its parent."
+      "guide": "The money the project draws on, one line per currency: the amount, the currency, the budget it comes from and whether it is approved, requested or unfunded. A component is funded through its parent. A need nobody has costed yet is not a line: record it as an issue in Risks, escalated to whoever decides funding, and add the line once it is costed. Until then the funding check keeps saying no line is named, which is true.",
+      "poor": [
+        {
+          "text": "A line with no amount, for field costs still being worked out",
+          "why": "A funding line states money; even unfunded means the amount is known. An uncosted need is an issue: record it in Risks and escalate it to whoever decides funding."
+        }
+      ]
     },
     "/spec/funding/-/amount": {
       "guide": "The amount on this line, in the line's currency. Write the figure as approved or requested; nothing else about money is held anywhere else."
@@ -380,6 +399,32 @@
         }
       ]
     },
+    "/spec/deliverables/-/tasks": {
+      "guide": "The work that produces this deliverable, as a loose list: names only, in any order. Dates, durations and what waits on what belong to the planning tool, which takes this list as its starting point. Optional."
+    },
+    "/spec/deliverables/-/tasks/-/name": {
+      "guide": "The work, as a short verb phrase that produces part of this deliverable.",
+      "good": [
+        "Prepare the facilitator guide",
+        "Record attendance and questions"
+      ],
+      "poor": [
+        {
+          "text": "Training delivered by 2 September",
+          "why": "A date or a milestone, not work. Dates belong to the planning tool."
+        },
+        {
+          "text": "Agree the budget",
+          "why": "Produces no part of this deliverable. Work that serves no deliverable is out of scope, or a sign of a missing deliverable."
+        }
+      ]
+    },
+    "/spec/deliverables/-/tasks/-/role": {
+      "guide": "The role that does this work, if it is known, picked from the roles in Resources. Never a person. Leave it empty when nobody knows yet."
+    },
+    "/spec/deliverables/-/tasks/-/note": {
+      "guide": "Anything the planner should know, in one sentence. Optional."
+    },
     "/spec/successCriteria": {
       "guide": "What has to be true for the project to have succeeded, not merely to have finished. Each criterion names the state, its dimension and the bar it clears, where that is read from and how often, the role that tracks it, the role that signs it off, and when it falls due: at closure, at handover or after handover. A criterion is the floor the project must clear; a key result is the stretch it reaches for."
     },
@@ -398,6 +443,10 @@
         {
           "text": "The training pack is produced.",
           "why": "That is a deliverable's acceptance, not success. Say what is true once the pack is in use."
+        },
+        {
+          "text": "Depot staff training delivered on 2 September with attendance recorded.",
+          "why": "An output delivered on a date: that is the training deliverable's acceptance, where it needs no cycle. A criterion is the state the outputs are for, such as staff running the check unaided."
         }
       ]
     },
@@ -421,7 +470,7 @@
       "guide": "The data source the measurement is read from, named once in the register. A compliance criterion takes none."
     },
     "/spec/successCriteria/-/cycle": {
-      "guide": "How often it is read, a reporting cycle from the register. A compliance criterion takes none.",
+      "guide": "How often it is read, a reporting cycle from the register. Needed only for a criterion judged after handover, which is read again and again; one read once, at closure or at handover, takes none. A compliance criterion takes none.",
       "good": [
         "seasonal-cycle"
       ]
@@ -528,6 +577,23 @@
         }
       ]
     },
+    "/spec/risks/-/owner": {
+      "guide": "The role that manages this risk day to day: the role best placed to watch it and act on it, picked from the roles already named here. Never a person. Not who it escalates to, which is the escalation's role. Name one for every high-impact risk; a lower one left unowned is the manager's.",
+      "good": [
+        "delivery-lead",
+        "quality-reviewer"
+      ],
+      "poor": [
+        {
+          "text": "Ada Okafor",
+          "why": "A person, not a role: Cartograph names roles, and people hold them."
+        },
+        {
+          "text": "The sponsor, for every risk",
+          "why": "The sponsor is who a risk escalates to beyond tolerance. The owner is whoever manages it day to day."
+        }
+      ]
+    },
     "/spec/risks/-/depends/direction": {
       "guide": "Whether this project waits on the other end, or the other end waits on it. Declared at one end only."
     },
@@ -613,15 +679,17 @@
     "data-capture-decided": "Decide how records get into each data source a target is read from, on the data source.",
     "data-capture-turnaround": "Read a turnaround target from a source whose records get in fast enough, or have this project change how they get in.",
     "risks-mitigation": "Give every risk a mitigation.",
+    "risks-owned": "Name the role that owns every high-impact risk.",
     "risks-escalated": "Flag a risk for escalation when it needs a decision above the project, and name whose.",
     "risks-dependency-edges": "Give every dependency its direction and the other end.",
     "risks-dependency-cycle": "Break the loop: one end of it must not wait on the other.",
     "risks-dependency-schedule": "Move the needed-by phase, or agree an earlier finish with the other end.",
     "success-criteria": "Add at least one success criterion.",
-    "success-measured": "Give every measured criterion a target, a data source and a reporting cycle.",
+    "success-measured": "Give every measured criterion its standard and data source, and a reporting cycle when it is judged after handover.",
     "success-owner": "Name the role that tracks every criterion.",
     "closing-criteria": "Give every deliverable a test it is accepted against.",
     "landing-operation": "Name the operation the result is handed over to, or a new one.",
+    "landing-service-funding": "Name on the planned service the budget that pays to run it, with the amount per month or year.",
     "landing-criteria": "Add a success criterion that falls due at handover or after it.",
     "landing-owner": "Name a service owner in Resources to accept the handover.",
     "measures-kpis-once": "Name each KPI once, with one reason; merge the reasons if it was named twice.",
