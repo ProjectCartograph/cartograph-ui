@@ -2436,6 +2436,16 @@ export const copy = {
       verifierNewRole: "Added to Resources",
       add: "Add a deliverable",
       empty: "No deliverables yet.",
+      tasksLabel: "Tasks",
+      tasksHint: "The work that produces it, in any order. No dates: the planning tool sequences and schedules them.",
+      tasksExamples: [
+        "Prepare the facilitator guide",
+        "Record attendance and questions",
+      ],
+      taskNameLabel: "Task",
+      taskRoleLabel: "Done by",
+      addTask: "Add a task",
+      addTaskShort: "Add task",
     },
     timeline: {
       heading: "Schedule",

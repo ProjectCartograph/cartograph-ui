@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Help, FieldHeading } from "@/components/guidance";
 import { copy, plusNoun } from "@/copy";
 import { AcceptanceEditor } from "../AcceptanceEditor";
+import { TaskEditor } from "../TaskEditor";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { Deliverable } from "../types";
 import { seg } from "../field";
@@ -104,6 +105,14 @@ export function DeliverablesSection() {
               <Help label={dc.acceptanceLabel} hint={dc.acceptanceHint} examples={dc.acceptanceExamples} />
             </div>
             <AcceptanceEditor index={idx} />
+          </div>
+
+          <div className="flex flex-col gap-2 pl-9">
+            <div className="flex items-center gap-1">
+              <Label>{dc.tasksLabel}</Label>
+              <Help label={dc.tasksLabel} hint={dc.tasksHint} examples={dc.tasksExamples} />
+            </div>
+            <TaskEditor index={idx} />
           </div>
 
           <div className="flex flex-col gap-2 pl-9">

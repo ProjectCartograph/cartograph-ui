@@ -126,11 +126,22 @@ export interface AcceptanceCriterion {
   outcome: string;
 }
 
+/** Work that produces part of a deliverable: a name, and the role that
+ * does it where one is known. No order and no dates; those are the
+ * planning tool's (TAXONOMY.md D38). */
+export interface Task {
+  id: string;
+  name: string;
+  role?: Ref;
+  note?: string;
+}
+
 export interface Deliverable {
   id: string;
   name: string;
   description?: string;
   acceptance?: AcceptanceCriterion[];
+  tasks?: Task[];
 }
 
 /** Which dimension of success a criterion measures. Six metric types
