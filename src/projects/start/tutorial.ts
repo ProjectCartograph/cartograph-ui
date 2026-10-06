@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { useClient } from "@/client/context";
 import { copy } from "@/copy";
+import { useTour } from "@/tour/tourContext";
 import { useGoalTree } from "@/surfaces/goals/api";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 
@@ -15,9 +16,10 @@ type Step = "about" | "gaps" | "goals" | "groups" | "team" | "details" | "ready"
 /**
  * Starting a project as a tutorial: the walker fills itself in, typing
  * what it is about and its name a character at a time and choosing from
- * what the workspace already has, a question at a time with a pause to
- * read each, and saves nothing: no project, and nothing named along the
- * way. At the end it opens a project the workspace already has, so the
+ * what the workspace already has, and saves nothing: no project, and
+ * nothing named along the way. It moves to the next question only when
+ * the person presses the guide's Next, so they read each at their own
+ * pace. At the end it opens a project the workspace already has, so the
  * tour can show what a project's page holds.
  */
 export function useTutorial(
@@ -35,6 +37,8 @@ export function useTutorial(
 ) {
   const client = useClient();
   const navigate = useNavigate();
+  // Stable for the tour's life, so the script is not restarted by it.
+  const { takeNext } = useTour();
   const gaps = useReferenceOptions("Gap");
   const groups = useReferenceOptions("BeneficiaryGroup");
   const teams = useReferenceOptions("Team");
@@ -51,6 +55,20 @@ export function useTutorial(
     ran.current = true;
     let live = true;
     const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    // The guide's Next, taken while the tutorial has questions left: each
+    // press lets the next question show. A press before the filling-in is
+    // done is held, so it is never lost.
+    let pressed = 0;
+    let wake: (() => void) | null = null;
+    const release = takeNext(() => {
+      pressed++;
+      wake?.();
+      return true;
+    });
+    const nextPressed = async () => {
+      while (live && pressed === 0) await new Promise<void>((r) => (wake = r));
+      pressed = Math.max(0, pressed - 1);
+    };
     const type = async (text: string, set: (v: string) => void) => {
       for (let i = 1; i <= text.length && live; i++) {
         set(text.slice(0, i));
@@ -66,36 +84,39 @@ export function useTutorial(
       await wait(pace.beat / 2);
       const gap = held.current.gaps.data?.options[0];
       if (live && !w().about.trim()) await type(copy.tour.sample.about(gap?.label), w().setAbout);
-      await wait(pace.beat);
+      await nextPressed();
       if (!live) return;
       w().show("gaps");
       await wait(pace.beat / 2);
       if (gap) w().setGaps([gap.value]);
-      await wait(pace.beat);
+      await nextPressed();
       if (!live) return;
       w().show("goals");
       await wait(pace.beat / 2);
       const outcome = firstOutcome();
       if (outcome) w().setGoals([outcome]);
-      await wait(pace.beat);
+      await nextPressed();
       if (!live) return;
       w().show("groups");
       await wait(pace.beat / 2);
       const group = held.current.groups.data?.options[0];
       if (group) w().setGroups([group.value]);
-      await wait(pace.beat);
+      await nextPressed();
       if (!live) return;
       w().show("team");
       await wait(pace.beat / 2);
       const team = held.current.teams.data?.options[0];
       if (team) w().setTeam(team.value);
-      await wait(pace.beat);
+      await nextPressed();
       if (!live) return;
       w().show("ready");
       await wait(pace.beat / 2);
       if (live) await type(copy.tour.sample.name, w().setName);
-      await wait(pace.beat * 1.5);
+      await nextPressed();
       if (!live) return;
+      // The last Next leaves the walker: the tour moves on when the
+      // project's page opens.
+      release();
       // Nothing is saved: a project already here is opened instead.
       const projects = await client.list("Project").catch(() => []);
       if (!live) return;
@@ -105,6 +126,8 @@ export function useTutorial(
     })();
     return () => {
       live = false;
+      wake?.();
+      release();
     };
-  }, [active, client, navigate]);
+  }, [active, client, navigate, takeNext]);
 }

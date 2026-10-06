@@ -51,10 +51,10 @@ beforeEach(() => {
 // The tour rests a pixie on what it explains and lets the person do each
 // thing: it moves on by itself once a step is done, walks the rail a stop
 // at a time, offers to go where a step happens, and ends with a project of
-// their own started, in eight steps.
+// their own started, in seven steps.
 describe("the guided tour", () => {
-  it("is eight steps, and opens with the pixie on the home question", async () => {
-    expect(STEPS).toHaveLength(8);
+  it("is seven steps, and opens with the pixie on the home question", async () => {
+    expect(STEPS).toHaveLength(7);
     mount(
       <div data-cartograph-region="home">
         <textarea aria-label="What are you working on?" />
@@ -71,34 +71,55 @@ describe("the guided tour", () => {
     const order = ["strategy", "gaps", "indicators", "projects", "portfolios", "programmes", "operations"] as const;
     for (const key of order) {
       expect(await screen.findByRole("heading", { name: tc.stops[key].title })).toBeInTheDocument();
-      expect(screen.getByText(tc.count(indexOf("rail") + 1, 8))).toBeInTheDocument();
+      expect(screen.getByText(tc.count(indexOf("rail") + 1, 7))).toBeInTheDocument();
       fireEvent.click(screen.getByRole("button", { name: tc.next }));
     }
-    expect(await screen.findByRole("heading", { name: tc.steps.start.title })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: tc.steps.walker.title })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: tc.back }));
     expect(await screen.findByRole("heading", { name: tc.stops.operations.title })).toBeInTheDocument();
   });
 
-  it("moves on by itself when the person does the step", async () => {
-    const { rerender } = mount(<a href="/projects/start">Start a project</a>, indexOf("start"));
-    expect(await screen.findByRole("heading", { name: tc.steps.start.title })).toBeInTheDocument();
-    path = "/projects/start";
-    window.history.pushState({}, "", "/projects/start");
-    rerender(
-      <TourProvider>
-        <div data-step="about" />
-        <Start />
-      </TourProvider>,
-    );
-    expect(await screen.findByRole("heading", { name: tc.steps.walker.title })).toBeInTheDocument();
-    window.history.pushState({}, "", "/");
-  });
-
-  it("offers to go where a step happens", async () => {
+  // The project walker is a tutorial the tour leads into itself, saying
+  // that it does not affect the workspace.
+  it("takes the person to the project walker by itself", async () => {
     path = "/glossary";
     mount(<div />, indexOf("walker"));
-    fireEvent.click(await screen.findByRole("button", { name: tc.goThere }));
-    expect(navigate).toHaveBeenCalledWith({ to: "/projects/start" });
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/projects/start" }));
+    expect(document.querySelector('[data-slot="tour-box"]')?.textContent).toMatch(/affects your workspace/);
+  });
+
+  // While the walker has questions left it takes the guide's Next, so it
+  // moves only when the person asks; then Next is the tour's again.
+  it("lets the walker take Next while it has questions left", async () => {
+    path = "/projects/start";
+    window.history.pushState({}, "", "/projects/start");
+    let presses = 0;
+    let release = () => {};
+    function Walker() {
+      const tour = useTour();
+      return (
+        <button type="button" onClick={() => (release = tour.takeNext(() => (++presses, true)))}>
+          take
+        </button>
+      );
+    }
+    render(
+      <TourProvider>
+        <div data-step="about" />
+        <Walker />
+        <Start at={indexOf("walker")} />
+      </TourProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "begin" }));
+    fireEvent.click(screen.getByRole("button", { name: "take" }));
+    fireEvent.click(await screen.findByRole("button", { name: tc.next }));
+    expect(presses).toBe(1);
+    expect(await screen.findByRole("heading", { name: tc.stops.walkAbout.title })).toBeInTheDocument();
+    act(() => release());
+    fireEvent.click(screen.getByRole("button", { name: tc.next }));
+    expect(presses).toBe(1);
+    expect(await screen.findByRole("heading", { name: tc.steps.placement.title })).toBeInTheDocument();
+    window.history.pushState({}, "", "/");
   });
 
   it("shows an example teammate to this person only, while explaining working together", async () => {

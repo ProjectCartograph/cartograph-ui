@@ -6,9 +6,14 @@ export interface TourApi {
   start: () => void;
   go: (to: number) => void;
   end: () => void;
+  /** Lets a screen the tour is driving take the guide's Next: while a
+   * handler is set, Next calls it first, and the tour moves on only when
+   * it returns false. The tutorial walker uses it so its questions move
+   * only when the person asks. Returns the way to let go. */
+  takeNext: (handler: () => boolean) => () => void;
 }
 
-export const TourContext = createContext<TourApi>({ at: null, start: () => {}, go: () => {}, end: () => {} });
+export const TourContext = createContext<TourApi>({ at: null, start: () => {}, go: () => {}, end: () => {}, takeNext: () => () => {} });
 
 export function useTour(): TourApi {
   return useContext(TourContext);

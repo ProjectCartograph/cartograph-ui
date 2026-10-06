@@ -61,11 +61,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
     markToured();
   }, [put]);
   const start = useCallback(() => go(0), [go]);
-  const api = useMemo<TourApi>(() => ({ at: place?.at ?? null, start, go, end }), [place, start, go, end]);
+  // A screen the tour drives may take Next (the tutorial walker).
+  const taken = useRef<(() => boolean) | null>(null);
+  const takeNext = useCallback((handler: () => boolean) => {
+    taken.current = handler;
+    return () => {
+      if (taken.current === handler) taken.current = null;
+    };
+  }, []);
+  const api = useMemo<TourApi>(() => ({ at: place?.at ?? null, start, go, end, takeNext }), [place, start, go, end, takeNext]);
   return (
     <TourContext.Provider value={api}>
       {children}
-      {place ? <TourLayer place={place} put={put} end={end} /> : null}
+      {place ? <TourLayer place={place} put={put} end={end} taken={taken} /> : null}
     </TourContext.Provider>
   );
 }
@@ -83,7 +91,17 @@ function find(selectors: string[] | undefined): Element | null {
   return null;
 }
 
-function TourLayer({ place, put, end }: { place: Place; put: (p: Place | null) => void; end: () => void }) {
+function TourLayer({
+  place,
+  put,
+  end,
+  taken,
+}: {
+  place: Place;
+  put: (p: Place | null) => void;
+  end: () => void;
+  taken: { current: (() => boolean) | null };
+}) {
   const { at, stop } = place;
   const step = STEPS[at];
   const here = step.stops?.[stop];
@@ -104,11 +122,19 @@ function TourLayer({ place, put, end }: { place: Place; put: (p: Place | null) =
   useEffect(() => {
     startedOn.current = window.location.pathname;
   }, [at]);
+  // A step that takes the person to its screen itself: the project walker,
+  // which the tutorial fills in.
+  useEffect(() => {
+    if (step.auto && step.go && !onScreen) void navigate({ to: step.go });
+  }, [at, step, onScreen, navigate]);
 
   const next = useCallback(() => {
+    // The screen the tour is driving moves first, while it has more to
+    // show: the tutorial walker's next question.
+    if (taken.current?.()) return;
     if (step.stops && stop < step.stops.length - 1) put({ at, stop: stop + 1 });
     else put({ at: Math.min(at + 1, STEPS.length - 1), stop: 0 });
-  }, [at, stop, step, put]);
+  }, [at, stop, step, put, taken]);
   const back = useCallback(() => {
     if (stop > 0) put({ at, stop: stop - 1 });
     else if (at > 0) put({ at: at - 1, stop: Math.max(0, (STEPS[at - 1].stops?.length ?? 1) - 1) });
@@ -363,7 +389,7 @@ function Bubble({
             {tc.done}
           </Button>
         ) : (
-          <Button type="button" size="sm" variant={step.until ? "outline" : "default"} onClick={next}>
+          <Button type="button" size="sm" variant={step.until && !step.auto ? "outline" : "default"} onClick={next}>
             {tc.next}
             <ArrowRight />
           </Button>

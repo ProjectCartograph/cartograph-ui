@@ -26,6 +26,8 @@ export interface TourStep {
   on?: RegExp;
   /** Where "Take me there" goes. */
   go?: string;
+  /** Goes to `go` by itself when the step begins, rather than asking. */
+  auto?: boolean;
   /** Moves on by itself once this is true: a screen reached, or a thing on
    * screen. */
   until?: { path?: RegExp; shown?: string };
@@ -62,13 +64,13 @@ export const STEPS: TourStep[] = [
       { key: "operations", target: [rail("/operations")] },
     ],
   },
-  { key: "start", target: ['a[href="/projects/start"]', rail("/projects")], until: { path: /^\/projects\/start/ } },
   {
     key: "walker",
     target: ["[data-step]"],
     on: /^\/projects\/start/,
     enter: /^\/projects\/start/,
     go: "/projects/start",
+    auto: true,
     until: { path: PROJECT },
     follow: { about: "walkAbout", gaps: "walkGaps", goals: "walkOutcomes", groups: "walkPeople", team: "walkTeam", details: "walkDetails", ready: "walkReady" },
   },

@@ -1661,13 +1661,9 @@ export const copy = {
         body: "Type what you are working on here in plain words. Cartograph tries to match your work to existing context in the workspace, to help you get started faster.",
       },
       rail: { title: "What is here", body: "" },
-      start: {
-        title: "Your first project",
-        body: "Run the tutorial for creating a project from start to end.",
-      },
       walker: {
-        title: "Define your project",
-        body: "Answer each question in turn. Anything you skip, you can come back to.",
+        title: "Your first project",
+        body: "This is a tutorial of defining a project, from start to end. It fills each question in for you, and nothing it does affects your workspace. Press Next to move to each question.",
       },
       placement: {
         title: "Where it sits",
@@ -1708,7 +1704,7 @@ export const copy = {
       about: (gap?: string) => (gap ? `A project to close the gap: ${gap}.` : "A project that shows how work is defined, from the gaps it closes to the team that runs it."),
       name: "My first project",
     },
-    tutorial: "Tutorial: this fills itself in, and nothing is saved.",
+    tutorial: "Tutorial: this fills itself in, and does not affect your workspace.",
   },
   // A record already there under another spelling (components/DidYouMean).
   didYouMean: {
