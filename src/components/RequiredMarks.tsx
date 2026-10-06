@@ -17,38 +17,56 @@ import { pointerMatches } from "./pointer";
  */
 export function RequiredMarks({ kind, level }: { kind: string; level?: string }) {
   const { data: guide } = useGuide(kind, level);
+  // Why each is required, said the same way for every field: a field
+  // the schema requires stops the merge; one a check needs stops the
+  // hand-off (the guide marks both required).
   const reasons = useMemo(() => {
     const out = new Map<string, string>();
     for (const st of guide?.steps ?? []) {
       for (const f of st.fields) {
-        if (!f.required) continue;
-        const check = (f.checks ?? []).find((id) => guide?.checks?.[id]);
-        out.set(f.path, (check && guide?.checks?.[check]) || copy.required.because);
+        if (f.required) out.set(f.path, (f.checks ?? []).length > 0 ? copy.required.handoff : copy.required.because);
       }
     }
     return out;
   }, [guide]);
   useEffect(() => {
     if (reasons.size === 0) return;
+    const reasonOf = (el: HTMLElement) => {
+      const pointer = el.getAttribute("data-cartograph-field") ?? "";
+      return [...reasons].find(([p]) => pointerMatches(pointer, p))?.[1];
+    };
     const mark = () => {
       for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-cartograph-field]"))) {
-        if (el.hasAttribute("data-required")) continue;
-        const pointer = el.getAttribute("data-cartograph-field") ?? "";
-        const reason = [...reasons].find(([p]) => pointerMatches(pointer, p))?.[1];
-        if (!reason) continue;
+        if (el.hasAttribute("data-required") || !reasonOf(el)) continue;
         el.setAttribute("data-required", "");
         el.setAttribute("aria-required", "true");
-        // Said once the person has been in the field and left it empty,
-        // never before they reach it.
-        el.addEventListener("focusout", () => explain(el, reason));
-        el.addEventListener("input", () => explain(el, reason, true));
       }
+    };
+    // The marked field an event happened in, whether on the control or
+    // inside it.
+    const fieldOf = (t: EventTarget | null) => (t instanceof HTMLElement ? t.closest<HTMLElement>("[data-required]") : null);
+    // Emptied, or left empty: say why it is needed. Filled: clear it.
+    const onInput = (e: Event) => {
+      const el = fieldOf(e.target);
+      const reason = el && reasonOf(el);
+      if (el && reason) explain(el, reason, valueOf(el)?.trim() !== "");
+    };
+    const onLeave = (e: Event) => {
+      const el = fieldOf(e.target);
+      const reason = el && reasonOf(el);
+      if (el && reason) explain(el, reason);
     };
     mark();
     // Steps and list items come and go: marked as they appear.
     const watch = new MutationObserver(mark);
     watch.observe(document.body, { childList: true, subtree: true });
-    return () => watch.disconnect();
+    document.addEventListener("input", onInput, true);
+    document.addEventListener("focusout", onLeave, true);
+    return () => {
+      watch.disconnect();
+      document.removeEventListener("input", onInput, true);
+      document.removeEventListener("focusout", onLeave, true);
+    };
   }, [reasons]);
   return null;
 }

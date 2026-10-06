@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Circle, FileCode2, Hash, Network, Send } from "lucide-react";
+import { ProjectScrubber } from "@/projects/InitiationShell";
+import { FileCode2, Hash, Network, Send } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,8 +21,8 @@ import { useProjectChecks, useProjectManifest, useProjectState, useProjectVersio
 import { CheckPanel } from "@/projects/CheckPanel";
 import { ProjectHeaderBar } from "@/projects/Chrome";
 import { useProjectStore, type Problem } from "@/projects/store";
-import { ALL_SECTIONS, STAGES, stepsOfStage, deriveTimelineEnd, NEW_OPERATION_ID } from "@/projects/types";
-import { STAGE_ICON, stepIcon } from "@/projects/steps";
+import { ALL_SECTIONS, deriveTimelineEnd, NEW_OPERATION_ID } from "@/projects/types";
+import { stepIcon } from "@/projects/steps";
 
 export const Route = createFileRoute("/projects/$id/")({ component: ProjectRecordPage });
 
@@ -214,30 +215,11 @@ function ProjectRecordPage() {
       </div>
       {blocking > 0 ? <p className="text-sm text-muted-foreground">{pc.header.blockingHint(blocking)}</p> : null}
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[16rem_1fr_18rem]">
-        {/* The definition, by stage: Align, Quality, Refine, Polish. The
-            marks carry the grouping so each row is one word and its own
-            state, rather than a phase heading repeated down the column. */}
-        <div className="flex flex-col gap-1" data-cartograph-region="section-rail">
-          {STAGES.map((stage) => {
-            const StageIcon = STAGE_ICON[stage];
-            return (
-              <div key={stage} className="flex flex-col gap-1 pt-2 first:pt-0">
-                <p
-                  className="flex items-center gap-1.5 px-2 text-xs font-medium text-muted-foreground uppercase"
-                  title={pc.stageQuestion[stage]}
-                >
-                  <StageIcon className="size-3.5 shrink-0" aria-hidden="true" />
-                  {pc.stages[stage]}
-                </p>
-                {stepsOfStage(stage).map((step) => (
-                  <SectionRow key={step.section} id={id} section={step.section} path={step.path} />
-                ))}
-              </div>
-            );
-          })}
-        </div>
+      {/* The same walker the steps show: where the definition stands, and
+          the way into any step. */}
+      <ProjectScrubber id={id} />
 
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_18rem]">
         <div className="flex flex-col gap-3" data-cartograph-region="sections">
           {ALL_SECTIONS.map((s) => {
             const Icon = stepIcon(s.section);
@@ -322,32 +304,3 @@ function ProjectRecordPage() {
   );
 }
 
-function SectionRow({ id, section, path }: { id: string; section: string; path: string }) {
-  const checksQuery = useProjectChecks(id, true);
-  const items = (checksQuery.data?.items ?? []).filter((i) => i.section === section);
-  const rank = (s: string) => (s === "block" ? 2 : s === "warn" ? 1 : 0);
-  const worst = items.reduce<string | undefined>((acc, i) => (!acc || rank(i.state) > rank(acc) ? i.state : acc), undefined);
-  const label = copy.projects.sections[section] ?? copy.projects.stepper[section as "closing" | "landing"];
-
-  return (
-    <Link
-      // Assembled generically from a fixed, known set of registered routes;
-      // the router's own literal-union route typing cannot express that
-      // statically (see CheckPanel.tsx's goToFix for the same shape).
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      {...({ to: `/projects/$id${path}`, params: { id } } as any)}
-      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
-    >
-      {worst === "block" ? (
-        <Circle className="size-2 shrink-0 fill-destructive text-destructive" />
-      ) : worst === "warn" ? (
-        <Circle className="size-2 shrink-0 fill-muted-foreground text-muted-foreground" />
-      ) : worst === "ok" ? (
-        <CheckCircle2 className="size-3.5 shrink-0 text-muted-foreground" />
-      ) : (
-        <Circle className="size-2 shrink-0 fill-border text-border" />
-      )}
-      <span className="truncate">{label}</span>
-    </Link>
-  );
-}

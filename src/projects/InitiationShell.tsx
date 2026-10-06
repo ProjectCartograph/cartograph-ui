@@ -31,7 +31,7 @@ const pc = copy.projects;
  * a step ringed in their colour. It is the only navigation in the flow:
  * no rail beside it, no stepper or outline under it.
  */
-function ProjectScrubber({ id, section }: { id: string; section: InitiationSection }) {
+export function ProjectScrubber({ id, section }: { id: string; section?: InitiationSection }) {
   const navigate = useNavigate();
   const checksQuery = useProjectChecks(id, true);
   const { peers } = usePresence();
@@ -55,8 +55,8 @@ function ProjectScrubber({ id, section }: { id: string; section: InitiationSecti
   return (
     <Scrubber
       stages={stages}
-      stage={stageOfSection(section)}
-      step={section}
+      stage={section ? stageOfSection(section) : ""}
+      step={section ?? ""}
       label={pc.stepper.label}
       onGo={(_, step) => void navigate({ to: `/projects/$id${pathOf.get(step as InitiationSection) ?? ""}`, params: { id } })}
     />

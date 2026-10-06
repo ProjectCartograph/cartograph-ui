@@ -367,6 +367,12 @@ export const copy = {
     summary: "What it holds",
     nothingIncluded: "Nothing is included. Include at least one record to accept.",
   },
+  // An address that is not a page (routes/__root).
+  notFound: {
+    title: "Page not found",
+    body: "Nothing is at this address. It may have moved, or the link may be wrong.",
+    home: "Go to Home",
+  },
   // The bar every screen shows while a change set holds edits
   // (changesets/MergeBar).
   mergeBar: {
@@ -382,6 +388,9 @@ export const copy = {
     confirmReady: "Everything is complete. Merging puts these changes into the workspace.",
     confirmOpen: "These are not finished yet. Open one to finish it, or merge now and finish later.",
     whyLabel: "Why merge before these are finished?",
+    tierRequired: (n: number) => (n === 1 ? "Fill in before merging" : `Fill in before merging (${n})`),
+    tierHandoff: (n: number) => (n === 1 ? "Needed before hand-off" : `Needed before hand-off (${n})`),
+    tierAdvice: (n: number) => (n === 1 ? "Suggestion" : `Suggestions (${n})`),
     finishFirst: "Fill these in first. Merge saves each record, and a record cannot be saved without them.",
     needed: (n: number) => (n === 1 ? "1 field to fill before merging" : `${n} fields to fill before merging`),
     required: (field: string) => `Fill in ${field}`,
@@ -394,6 +403,7 @@ export const copy = {
     } as Record<string, string>,
     cancel: "Cancel",
     merged: "Merged into the workspace.",
+    namedAfter: (name: string) => `Changes to ${name}`,
     stale: "Someone changed one of these records first. Review the change set, then merge again.",
     failed: "This did not merge. Try again.",
   },
@@ -612,6 +622,7 @@ export const copy = {
     } as Record<string, string>,
     // Singular, used in the Add dialog title ("Add Resource") and in prose.
     kindsSingular: {
+      KPI: "Indicator",
       Operation: "Service",
       Portfolio: "Portfolio",
       Team: "Team",
@@ -1082,7 +1093,7 @@ export const copy = {
         measures: "Measures",
         timing: "Owner and horizon",
         why: "Rationale",
-        links: "Also leads to",
+        links: "Gaps and links",
         review: "Review",
         back: "Back",
         next: (label: string) => `Next: ${label.toLowerCase()}`,
@@ -1470,8 +1481,8 @@ export const copy = {
     empty: "No indicators yet.",
     nameLabel: "Name",
     namePlaceholder: "",
-    addTitle: "New measure",
-    addSave: "Add measure",
+    addTitle: "New indicator",
+    addSave: "Add indicator",
     addCancel: "Cancel",
     addReason: "Added from a definition flow",
     addFailed: "That could not be saved. A measure with the same name may already exist.",
@@ -1797,7 +1808,8 @@ export const copy = {
   },
   // What a definition cannot leave out (components/RequiredMarks).
   required: {
-    because: "Needed before this can be rolled in.",
+    because: "Required. Fill this in before merging.",
+    handoff: "Required. Fill this in before handing off.",
   },
   // The progress bar every flow shows (components/walker).
   flow: {

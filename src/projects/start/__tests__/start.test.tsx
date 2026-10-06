@@ -97,12 +97,12 @@ describe("starting a project", () => {
     // in place is marked new, the outcome picked from the tree is not.
     expect(document.querySelector("[data-new]")?.textContent).toContain("depots-check-differently");
     expect(document.querySelectorAll("[data-new]")).toHaveLength(1);
-    // Not named for them: what it is about is the cue, not the value.
+    // The name is suggested from what it is about, written in as a value
+    // to change: a hint inside the box read as filled when it was not.
     const nameField = screen.getByLabelText(sc.nameLabel);
-    expect(nameField).toHaveValue("");
-    expect(nameField).toHaveAttribute("placeholder", "Train depot staff on one checklist");
-    expect(screen.getByRole("button", { name: new RegExp(sc.start) })).toBeDisabled();
-    fireEvent.change(nameField, { target: { value: "Train depot staff on one checklist" } });
+    expect(nameField).toHaveValue("Train depot staff on one checklist");
+    expect(nameField).not.toHaveAttribute("placeholder");
+    expect(screen.getByRole("button", { name: new RegExp(sc.start) })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: new RegExp(sc.start) }));
     await waitFor(() => expect(saveWorking).toHaveBeenCalledTimes(1));
     const [kind, id, yaml] = saveWorking.mock.calls[0] as unknown as [string, string, string];

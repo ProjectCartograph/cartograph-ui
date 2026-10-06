@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -220,6 +221,7 @@ export function KPIAddDialog({
             {kc.addCancel}
           </Button>
           <Button type="button" onClick={save}>
+            <Plus />
             {kc.addSave}
           </Button>
         </DialogFooter>

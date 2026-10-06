@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { startedStandalone } from "../standalone";
 import { Footprints, Plus, TriangleAlert, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -184,7 +185,7 @@ export function AlignmentSection() {
   // What the manifest already answers stands until the person answers.
   const [answered, setSaid] = useState<{ project?: boolean; programme?: boolean; portfolio?: boolean }>({});
   const said = {
-    project: answered.project ?? (parent ? true : programmes.length || portfolios.length ? false : undefined),
+    project: answered.project ?? (parent ? true : programmes.length || portfolios.length || startedStandalone(store.id) ? false : undefined),
     programme: answered.programme ?? (programmes.length ? true : portfolios.length ? false : undefined),
     portfolio: answered.portfolio ?? (portfolios.length ? true : undefined),
   };

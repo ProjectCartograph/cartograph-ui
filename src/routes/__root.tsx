@@ -196,7 +196,9 @@ function useBreadcrumbCrumbs(): Crumb[] {
       { label: copy.rail.projects, to: "/projects" },
       { label: projectName ?? projectId ?? "", to: routeId === "/projects/$id/" ? undefined : `/projects/${projectId}` },
     ];
-    if (routeId !== "/projects/$id/") {
+    // The project's layout alone: the address below it is not a page.
+    if (routeId === "/projects/$id") crumbs.push({ label: copy.notFound.title });
+    else if (routeId !== "/projects/$id/") {
       const section = routeId?.split("/").pop() ?? "";
       // A step of the walk is shown as its stage, as its page is headed
       // (TAXONOMY.md D33).
@@ -620,4 +622,17 @@ function RootLayout() {
   );
 }
 
-export const Route = createRootRoute({ component: RootLayout });
+/** An address that is not a page: said plainly, with the way home. */
+function PageNotFound() {
+  return (
+    <div className="flex flex-col items-start gap-3" data-cartograph-region="not-found">
+      <h1 className="text-2xl font-semibold tracking-tight">{copy.notFound.title}</h1>
+      <p className="text-muted-foreground">{copy.notFound.body}</p>
+      <Link to="/" className="text-sm underline">
+        {copy.notFound.home}
+      </Link>
+    </div>
+  );
+}
+
+export const Route = createRootRoute({ component: RootLayout, notFoundComponent: PageNotFound });

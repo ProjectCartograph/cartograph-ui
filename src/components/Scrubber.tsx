@@ -97,7 +97,8 @@ export function Scrubber({
       </div>
       {here && hereStep ? (
         <p className="text-sm text-muted-foreground" aria-live="polite">
-          <span className="font-medium text-foreground">{here.label}</span> · {hereStep.label}
+          <span className="font-medium text-foreground">{here.label}</span>
+          {hereStep.label !== here.label ? <> · {hereStep.label}</> : null}
         </p>
       ) : null}
     </nav>

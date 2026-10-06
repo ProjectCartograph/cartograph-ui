@@ -14,6 +14,7 @@ import { Route as AccessRouteImport } from './routes/access'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as GraphRouteImport } from './routes/graph'
+import { Route as IndicatorsRouteImport } from './routes/indicators'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as WelcomeRouteImport } from './routes/welcome'
@@ -119,6 +120,11 @@ const GlossaryRoute = GlossaryRouteImport.update({
 const GraphRoute = GraphRouteImport.update({
   id: '/graph',
   path: '/graph',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndicatorsRoute = IndicatorsRouteImport.update({
+  id: '/indicators',
+  path: '/indicators',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewRoute = NewRouteImport.update({
@@ -546,6 +552,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AgentsRoute
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
+  '/indicators': typeof IndicatorsRoute
   '/new': typeof NewRoute
   '/strategy': typeof StrategyRoute
   '/welcome': typeof WelcomeRoute
@@ -634,6 +641,7 @@ export interface FileRoutesByTo {
   '/agents': typeof AgentsRoute
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
+  '/indicators': typeof IndicatorsRoute
   '/new': typeof NewRoute
   '/strategy': typeof StrategyRoute
   '/welcome': typeof WelcomeRoute
@@ -717,6 +725,7 @@ export interface FileRoutesById {
   '/agents': typeof AgentsRoute
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
+  '/indicators': typeof IndicatorsRoute
   '/new': typeof NewRoute
   '/strategy': typeof StrategyRoute
   '/welcome': typeof WelcomeRoute
@@ -807,6 +816,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/glossary'
     | '/graph'
+    | '/indicators'
     | '/new'
     | '/strategy'
     | '/welcome'
@@ -895,6 +905,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/glossary'
     | '/graph'
+    | '/indicators'
     | '/new'
     | '/strategy'
     | '/welcome'
@@ -977,6 +988,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/glossary'
     | '/graph'
+    | '/indicators'
     | '/new'
     | '/strategy'
     | '/welcome'
@@ -1066,6 +1078,7 @@ export interface RootRouteChildren {
   AgentsRoute: typeof AgentsRoute
   GlossaryRoute: typeof GlossaryRoute
   GraphRoute: typeof GraphRoute
+  IndicatorsRoute: typeof IndicatorsRoute
   NewRoute: typeof NewRoute
   StrategyRoute: typeof StrategyRoute
   WelcomeRoute: typeof WelcomeRoute
@@ -1137,6 +1150,13 @@ declare module '@tanstack/react-router' {
       path: '/graph'
       fullPath: '/graph'
       preLoaderRoute: typeof GraphRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/indicators': {
+      id: '/indicators'
+      path: '/indicators'
+      fullPath: '/indicators'
+      preLoaderRoute: typeof IndicatorsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new': {
@@ -1868,6 +1888,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentsRoute: AgentsRoute,
   GlossaryRoute: GlossaryRoute,
   GraphRoute: GraphRoute,
+  IndicatorsRoute: IndicatorsRoute,
   NewRoute: NewRoute,
   StrategyRoute: StrategyRoute,
   WelcomeRoute: WelcomeRoute,

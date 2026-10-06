@@ -29,7 +29,11 @@ function useReview(set: string | undefined) {
       clearTimeout(t);
       // The engine writes a live draft into the change set a moment
       // after it changes.
-      t = setTimeout(() => void queryClient.invalidateQueries({ queryKey: ["changeSet", set] }), 1500);
+      t = setTimeout(() => {
+        void queryClient.invalidateQueries({ queryKey: ["changeSet", set] });
+        // Every checks panel reads the drafts too, so it follows the edit.
+        void queryClient.invalidateQueries({ predicate: (q) => typeof q.queryKey[0] === "string" && q.queryKey[0].endsWith("-checks") });
+      }, 1500);
     });
     return () => {
       clearTimeout(t);
@@ -54,7 +58,20 @@ export function MergeBar() {
   const [confirming, setConfirming] = useState(false);
   const [merged, setMerged] = useState(false);
 
-  if (merged && !active) {
+  // Named after what it first changed, while it still has the name it
+  // started with, so the list of change sets can be told apart.
+  const client = useClient();
+  const queryClient = useQueryClient();
+  const firstName = review.data?.items[0]?.name || review.data?.items[0]?.id;
+  const title = review.data?.changeSet.title;
+  useEffect(() => {
+    if (!active || !firstName || title !== copy.workingIn.startTitle) return;
+    void client.retitleChangeSet(active, c.namedAfter(firstName)).then(() => queryClient.invalidateQueries({ queryKey: ["changeSet", active] }));
+  }, [active, firstName, title, client, queryClient]);
+
+  // Said for a moment after merging, whatever change set the screen
+  // opens next.
+  if (merged) {
     return (
       <div role="status" className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 rounded-lg border bg-background/95 px-4 py-3 text-sm backdrop-blur" data-cartograph-region="merge-bar">
         <CheckCircle2 className="size-4 text-success" aria-hidden="true" />
@@ -111,21 +128,35 @@ type ItemCheck = Item["checks"][number];
 
 const isRequired = (k: ItemCheck) => k.id.startsWith("required:");
 
-/** Where a record's field is filled in: a project's step for its fields,
- * else the record's editor at the check's section. */
+// The steps each kind's editor has a route for, by the section names its
+// checks use.
+const STEP_ROUTES: Record<string, { base: string; steps: string[] }> = {
+  Project: {
+    base: "/projects/$id/initiation",
+    steps: ["aim", "beneficiaries", "data", "deliverables", "goals", "landing", "measures", "resources", "risks", "scope", "stakeholders", "success", "timeline"],
+  },
+  Gap: { base: "/gaps/$id", steps: ["evidence", "scope", "shortfall"] },
+  Programme: { base: "/programmes/$id", steps: ["aim", "alignment", "components", "pathway", "problems", "risks", "stakeholders", "teams"] },
+  Operation: { base: "/operations/$id", steps: ["alignment", "measures", "service"] },
+  KPI: { base: "/kpis/$id", steps: ["definition", "readings"] },
+};
+
+/** Where an open item is fixed: the step of the record's editor that
+ * holds the field or the check, else the record. */
 function whereTo(item: Item, check: ItemCheck, stepOf: (path: string) => string | undefined) {
-  const step = check.path ? stepOf(check.path) : undefined;
-  if (item.kind === "Project" && step) return { to: `/projects/$id/initiation/${step}`, params: { id: item.id }, search: {} };
-  const link = manifestLink({ kind: item.kind, manifestId: item.id });
-  return { ...link, search: item.kind === "Goal" && check.section ? { fix: check.section } : {} };
+  if (item.kind === "Goal") return { to: "/goals/$id", params: { id: item.id }, search: check.section ? { fix: check.section } : {} };
+  if (item.kind === "Project" && check.section === "closing") return { to: "/projects/$id/closing", params: { id: item.id }, search: {} };
+  const routes = STEP_ROUTES[item.kind];
+  const step = [check.path ? stepOf(check.path) : undefined, check.section].find((s) => s && routes?.steps.includes(s));
+  if (routes && step) return { to: `${routes.base}/${step}`, params: { id: item.id }, search: {} };
+  return { ...manifestLink({ kind: item.kind, manifestId: item.id }), search: {} };
 }
 
 /** One record's open items in the merge dialog: what must be finished
  * first, then what may wait, each a link to where it is done. */
 function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
   const { data: guide } = useGuide(item.kind);
-  // What must be filled first, then what may wait.
-  const open = [...item.checks.filter(isRequired), ...item.checks.filter((k) => k.state !== "ok" && !isRequired(k))];
+  const open = item.checks.filter((k) => k.state !== "ok");
   // The guide's step holding a field: the longest field path the
   // pointer starts with, list positions read as "-".
   const stepOf = (path: string) => {
@@ -143,30 +174,44 @@ function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
     return guide?.steps.find((st) => st.key === key)?.title;
   };
   if (open.length === 0) return null;
+  // What stops the merge, then what stops a hand-off, then advice.
+  const tiers = [
+    { key: "required", label: c.tierRequired, checks: open.filter(isRequired) },
+    { key: "block", label: c.tierHandoff, checks: open.filter((k) => !isRequired(k) && k.state === "block") },
+    { key: "warn", label: c.tierAdvice, checks: open.filter((k) => !isRequired(k) && k.state === "warn") },
+  ].filter((t) => t.checks.length > 0);
   return (
-    <li className="flex flex-col gap-1.5" data-cartograph-item={`${item.kind}/${item.id}`}>
+    <li className="flex flex-col gap-2" data-cartograph-item={`${item.kind}/${item.id}`}>
       <p className="font-medium">{item.name ?? item.id}</p>
-      <ul className="flex flex-col gap-1">
-        {open.map((check) => {
-          const go = whereTo(item, check, stepOf);
-          const required = isRequired(check);
-          return (
-            <li key={check.id} className="flex items-start gap-2" data-cartograph-check={check.id}>
-              <CircleDashed className={`mt-0.5 size-4 shrink-0 ${required ? "text-destructive" : "text-warning"}`} aria-hidden="true" />
-              <Link
-                to={go.to as never}
-                params={go.params as never}
-                search={go.search as never}
-                className="min-w-0 flex-1 text-muted-foreground hover:text-foreground hover:underline"
-                onClick={onGo}
-              >
-                {required && check.path ? c.required(fieldName(check.path)) : check.message}
-                {required && check.path && titleOf(check.path) ? <span className="ml-1.5 text-xs text-muted-foreground/80">{titleOf(check.path)}</span> : null}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      {tiers.map((t) => (
+        <div key={t.key} className="flex flex-col gap-1" data-tier={t.key}>
+          <p className="text-xs font-medium text-muted-foreground">{t.label(t.checks.length)}</p>
+          <ul className="flex flex-col gap-1">
+            {t.checks.map((check) => {
+              const go = whereTo(item, check, stepOf);
+              const required = isRequired(check);
+              return (
+                <li key={check.id} className="flex items-start gap-2" data-cartograph-check={check.id}>
+                  <CircleDashed
+                    className={`mt-0.5 size-4 shrink-0 ${required ? "text-destructive" : check.state === "block" ? "text-warning" : "text-muted-foreground"}`}
+                    aria-hidden="true"
+                  />
+                  <Link
+                    to={go.to as never}
+                    params={go.params as never}
+                    search={go.search as never}
+                    className="min-w-0 flex-1 text-muted-foreground hover:text-foreground hover:underline"
+                    onClick={onGo}
+                  >
+                    {required && check.path ? c.required(fieldName(check.path)) : check.message}
+                    {required && check.path && titleOf(check.path) ? <span className="ml-1.5 text-xs text-muted-foreground/80">{titleOf(check.path)}</span> : null}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
     </li>
   );
 }

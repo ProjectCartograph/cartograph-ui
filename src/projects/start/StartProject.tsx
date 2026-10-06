@@ -1,8 +1,8 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode, useEffect, useRef } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { stringify as stringifyYAML } from "yaml";
-import { ArrowRight, Check, PencilLine, Plus, Sparkles } from "lucide-react";
+import { ArrowRight, Check, PencilLine, Plus, Rocket, Sparkles } from "lucide-react";
 
 import { aliasFor } from "@/alias";
 import { useClient } from "@/client/context";
@@ -25,6 +25,7 @@ import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { ProjectManifest } from "../types";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import type { StartSearch } from "./search";
+import { rememberStandalone } from "../standalone";
 
 const sc = copy.start;
 
@@ -81,6 +82,10 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
   const [groups, setGroups] = useState<string[]>([]);
   const [team, setTeam] = useState("");
   const [name, setName] = useState(arrivedName ?? "");
+  // The name suggested from what it is about is written in, as a value
+  // that can be changed: a hint inside the box read as filled when it
+  // was not, and Start stayed off.
+  const [suggested, setSuggested] = useState(false);
   // The bigger project, for a component (TAXONOMY.md D14, D15).
   const [parent, setParent] = useState<string | undefined>(undefined);
 
@@ -128,6 +133,11 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
   // What was named in passing and is still chosen is filled in before
   // the project is named: naming it is the commit, and comes last.
   const toFill = created.filter((c) => c.kind !== "Team" && (c.kind === "Gap" ? gaps : c.kind === "Goal" ? goals : groups).includes(c.id) && !filled.has(c.id));
+  useEffect(() => {
+    if (step !== "ready" || suggested) return;
+    setSuggested(true);
+    if (!name.trim()) setName(nameFrom(about));
+  }, [step, suggested, name, about]);
   const STEPS = ALL_STEPS.filter((s) => s !== "details" || toFill.length > 0 || step === "details");
   const at = STEPS.indexOf(step);
   const go = (to: Step) => {
@@ -201,6 +211,8 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
       }
       const id = body.metadata.id;
       await client.saveWorking("Project", id, stringifyYAML(body));
+      // Answered here, so the Context step does not ask it again.
+      if (!isComponent) rememberStandalone(id);
       void navigate({ to: "/projects/$id/initiation/goals", params: { id } });
     } catch {
       setFailed(true);
@@ -286,7 +298,6 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
                   data-cartograph-field="/metadata/name"
                   value={name}
                   onChange={(e) => setName(e.target.value.slice(0, 160))}
-                  placeholder={nameFrom(about)}
                   autoFocus
                 />
               </div>
@@ -314,7 +325,7 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
             </Button>
           ) : null}
           {step === "ready" ? (
-            <FlowNext label={from ? sc.saveAgain : sc.start} onClick={() => void start()} disabled={saving || tutorial || !projectName.trim()} />
+            <FlowNext label={from ? sc.saveAgain : sc.start} icon={Rocket} onClick={() => void start()} disabled={saving || tutorial || !projectName.trim()} />
           ) : step === "details" ? null : (
             <FlowNext
               label={step !== "about" && chosen[step as keyof typeof chosen].length === 0 ? sc.skip : sc.next}
@@ -419,6 +430,19 @@ function PickOutcomes({
     return out;
   }, [tree.data, marks]);
   const fromGaps = chips.filter((c) => named.has(c.id));
+  // The outcomes the chosen gaps close into are what the project serves,
+  // unless the person says otherwise: chosen once, as they arrive, and
+  // left alone after.
+  const offered = useRef(new Set<string>());
+  const namedKey = [...named].sort().join(",");
+  useEffect(() => {
+    const add = [...named].filter((id) => !offered.current.has(id));
+    if (add.length === 0) return;
+    for (const id of add) offered.current.add(id);
+    const next = [...new Set([...selected, ...add])];
+    if (next.length !== selected.length) onChange(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [namedKey]);
 
   return (
     <>

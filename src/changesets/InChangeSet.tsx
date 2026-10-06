@@ -17,7 +17,8 @@ function ensure(client: Client, me: string): Promise<void> {
   starting ??= client
     .changeSets({ status: "open" })
     .then(async (open) => {
-      const mine = open.filter((cs) => !cs.agent && cs.for === me).sort((a, b) => b.updated.localeCompare(a.updated))[0];
+      // Without sign-in a change set names nobody, and is everybody's.
+      const mine = open.filter((cs) => !cs.agent && (cs.for ?? "") === (cs.for ? me : "")).sort((a, b) => b.updated.localeCompare(a.updated))[0];
       const id = mine?.id ?? (await client.startChangeSet(copy.workingIn.startTitle)).id;
       if (!activeChangeSet.get()) activeChangeSet.set(id);
     })
