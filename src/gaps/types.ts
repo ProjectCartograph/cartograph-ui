@@ -12,6 +12,7 @@ export interface GapSpec {
   statement?: string;
   measure?: string;
   /** The outcome goals that would be true once this gap is closed (D24). */
+  affects?: string[];
   outcomes?: string[];
   segments?: string[];
   source?: string;

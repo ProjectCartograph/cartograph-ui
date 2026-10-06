@@ -52,6 +52,25 @@ export function AimSection() {
     });
   }
 
+  // A group the problem's gaps fall on, named on the problem and, where
+  // the project does not list it yet, among its beneficiaries.
+  function addGroup(idx: number, group: string) {
+    store.updateSpec((s) => {
+      const list = [...(s.summary.problems ?? [])];
+      if (!list[idx]) return s;
+      list[idx] = { ...list[idx], groups: [...new Set([...(list[idx].groups ?? []), group])] };
+      const beneficiaries = s.summary.beneficiaries ?? [];
+      return {
+        ...s,
+        summary: {
+          ...s.summary,
+          problems: list,
+          beneficiaries: beneficiaries.some((b) => b.group === group) ? beneficiaries : [...beneficiaries, { group }],
+        },
+      };
+    });
+  }
+
   // A sentence of the idea goes into the first problem that has none,
   // or a new one when every problem has.
   function fillFirst(part: "problem" | "change", sentence: string) {
@@ -101,6 +120,7 @@ export function AimSection() {
             onChange={(patch) => updateProblem(idx, patch)}
             onRemove={() => removeProblem(idx)}
             canRemove={problems.length > 1}
+            onAddGroup={(g) => addGroup(idx, g)}
           />
         ))}
         <Button type="button" variant="outline" className="self-start border-dashed" onClick={addProblem} aria-label={ac.addProblem}>

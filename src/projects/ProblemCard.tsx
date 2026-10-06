@@ -2,11 +2,11 @@ import { ChevronDown, ChevronRight, Users, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ComboboxMultiple } from "@/components/ui/combobox";
-import { FieldHeading } from "@/components/guidance";
+import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import type { RefOption } from "@/surfaces/sheet/useReferenceOptions";
 import { GapCitations } from "./GapCitations";
-import { ChangeEditor, ProblemEditor } from "./StatementEditor";
+import { ProblemMap } from "./ProblemMap";
 import { seg } from "./field";
 import type { ProblemLine } from "./types";
 
@@ -32,6 +32,7 @@ export function ProblemCard({
   onRemove,
   canRemove,
   list = "/spec/summary/problems",
+  onAddGroup,
 }: {
   line: ProblemLine;
   index: number;
@@ -47,6 +48,9 @@ export function ProblemCard({
   /** Where the list of problems sits in the manifest, by JSON pointer: a
    * project keeps it under its summary, a programme in its spec. */
   list?: string;
+  /** Names a group the problem's gaps affect: on a project, also among
+   * its beneficiaries. Left out, the group joins the problem alone. */
+  onAddGroup?: (group: string) => void;
 }) {
   const groups = line.groups ?? [];
   const groupNames = groups.map((g) => groupOptions.find((o) => o.value === g)?.label ?? g);
@@ -101,9 +105,37 @@ export function ProblemCard({
       </div>
 
       {open ? (
-        <div className="flex flex-col gap-6 border-t p-4">
-          <div className="flex flex-col gap-2">
-            <FieldHeading label={ac.problemGroupsLabel} />
+        <div className="flex flex-col gap-5 border-t p-4">
+          <Lead text={ac.statement.defined}>
+            <Textarea
+              data-cartograph-field={`${field}/problem/situation`}
+              aria-label={ac.problemLabel}
+              value={line.problem?.situation ?? ""}
+              maxLength={600}
+              rows={2}
+              className="field-sizing-content min-h-0"
+              onChange={(e) => onChange({ problem: { ...line.problem, situation: e.target.value } })}
+            />
+          </Lead>
+          <Lead text={ac.statement.cause}>
+            <Textarea
+              data-cartograph-field={`${field}/problem/cause`}
+              aria-label={ac.causeLabel}
+              value={line.problem?.cause ?? ""}
+              maxLength={600}
+              rows={1}
+              className="field-sizing-content min-h-0"
+              onChange={(e) => onChange({ problem: { ...line.problem, cause: e.target.value || undefined } as ProblemLine["problem"] })}
+            />
+          </Lead>
+          <Lead text={ac.statement.gaps}>
+            <GapCitations
+              data-cartograph-field={`${field}/gaps`}
+              value={line.gaps ?? []}
+              onChange={(next) => onChange({ gaps: next.length > 0 ? next : undefined })}
+            />
+          </Lead>
+          <Lead text={ac.statement.groups}>
             {groupOptions.length === 0 ? (
               <p className="text-sm text-muted-foreground">{ac.problemGroupsNone}</p>
             ) : (
@@ -118,43 +150,43 @@ export function ProblemCard({
                 data-cartograph-field={`${field}/groups`}
               />
             )}
-          </div>
-
-          {/* The gaps this problem answers. A citation, not a restatement:
-              a gap is what is wrong and how we know, written once in the
-              register; the problem says what that does to these groups,
-              here. Optional, because a problem nobody has traced to
-              evidence is still a problem. */}
-          <div className="flex flex-col gap-2">
-            <FieldHeading label={ac.problemGapsLabel} hint={ac.problemGapsHint} />
-            <GapCitations
-              data-cartograph-field={`${field}/gaps`}
-              value={line.gaps ?? []}
-              onChange={(next) => onChange({ gaps: next.length > 0 ? next : undefined })}
+          </Lead>
+          <Lead text={ac.statement.change}>
+            <Textarea
+              data-cartograph-field={`${field}/change/what`}
+              aria-label={ac.changeLabel}
+              value={line.change?.what ?? ""}
+              maxLength={600}
+              rows={2}
+              className="field-sizing-content min-h-0"
+              onChange={(e) => onChange({ change: { ...line.change, what: e.target.value } })}
             />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <FieldHeading label={ac.problemLabel} />
-            <ProblemEditor
-              data-cartograph-field={`${field}/problem`}
-              value={line.problem}
-              groups={groupNames}
-              onChange={(v) => onChange({ problem: v })}
+          </Lead>
+          <Lead text={ac.statement.gain}>
+            <Textarea
+              data-cartograph-field={`${field}/change/gain`}
+              aria-label={ac.changeGainLabel}
+              value={line.change?.gain ?? ""}
+              maxLength={600}
+              rows={1}
+              className="field-sizing-content min-h-0"
+              onChange={(e) => onChange({ change: { ...line.change, gain: e.target.value || undefined } as ProblemLine["change"] })}
             />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <FieldHeading label={ac.changeLabel} />
-            <ChangeEditor
-              data-cartograph-field={`${field}/change`}
-              value={line.change}
-              groups={groupNames}
-              onChange={(v) => onChange({ change: v })}
-            />
-          </div>
+          </Lead>
+          <ProblemMap line={line} groupNames={new Map(groupOptions.map((o) => [o.value, o.label]))} onAddGroup={(g) => (onAddGroup ? onAddGroup(g) : onChange({ groups: [...groups, g] }))} />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** One part of the statement: the words that lead into it, then the
+ * field that finishes it. */
+function Lead({ text, children }: { text: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-sm text-muted-foreground">{text}</p>
+      {children}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { copy } from "@/copy";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { PartText } from "@/projects/StatementEditor";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
+import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { GapSpec } from "../types";
 
 const gc = copy.gaps;
@@ -30,6 +31,7 @@ export function ShortfallSection() {
   const spec = store.spec;
   const kpi = useKPIStates(spec.measure);
   const outcomeOptions = useOutcomeOptions();
+  const { data: groupRefs } = useReferenceOptions("BeneficiaryGroup");
 
   return (
     <div data-cartograph-region="gap-shortfall" className="flex max-w-3xl flex-col gap-6">
@@ -77,6 +79,22 @@ export function ShortfallSection() {
             onChange={(v) => store.updateSpec((s) => ({ ...s, desired: v.slice(0, 200) || undefined }))}
           />
         </div>
+      </div>
+
+      {/* Who the shortfall falls on: a problem citing this gap names its
+          groups from these (engine TAXONOMY.md D45). */}
+      <div className="flex flex-col gap-2">
+        <FieldHeading label={gc.affectsLabel} hint={gc.affectsHint} />
+        <ComboboxMultiple
+          data-cartograph-field="/spec/affects"
+          options={groupRefs?.options ?? []}
+          value={spec.affects ?? []}
+          onValueChange={(next) => store.updateSpec((s) => ({ ...s, affects: next.length > 0 ? next : undefined }))}
+          placeholder={gc.affectsPlaceholder}
+          emptyText={copy.sheets.dialog.noMatches}
+          removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+          aria-label={gc.affectsLabel}
+        />
       </div>
 
       <div className="flex flex-col gap-2">
