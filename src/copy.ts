@@ -223,8 +223,6 @@ export const copy = {
     removed: "removed",
     checks: "Checks",
     checksMet: (n: number) => `${n} met`,
-    waived: "Left open by the agent",
-    waivedWhy: (reason: string) => `Why: ${reason}`,
     item: "What it records",
     moves: (to: string) => `Moves the project to ${to}.`,
     decided: (status: string, by: string) => `${status === "accepted" ? "Accepted" : "Declined"} by ${by}.`,
@@ -357,7 +355,6 @@ export const copy = {
     include: "Include in this acceptance",
     trimmed: "Trimmed: stays in the change set, as a draft, for later",
     openRecord: "Open the record",
-    waived: "Left open, with why",
     reason: "Why",
     accept: (n: number) => (n === 1 ? "Accept 1 record" : `Accept ${n} records`),
     askForChanges: "Ask for changes",
@@ -369,6 +366,11 @@ export const copy = {
     failed: "That did not work. Try again.",
     summary: "What it holds",
     nothingIncluded: "Nothing is included. Include at least one record to accept.",
+  },
+  leftOpen: {
+    heading: "Left for you to supply",
+    count: (facts: number, checks: number) =>
+      `${facts} thing${facts === 1 ? "" : "s"}, holding ${checks} check${checks === 1 ? "" : "s"} open`,
   },
   rail: {
     graph: "Graph",

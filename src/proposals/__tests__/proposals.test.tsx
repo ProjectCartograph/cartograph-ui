@@ -85,8 +85,8 @@ describe("proposals", () => {
     mount(fakeClient({ getProposal: async () => review, acceptProposal }), <ProposalReviewPage id="p2" />);
     expect(await screen.findByText(copy.proposals.changesNew)).toBeInTheDocument();
     expect(document.querySelector('[data-cartograph-change="/spec/objective"]')).toHaveTextContent("Fewer members dispute their grade.");
-    expect(screen.getByText(copy.proposals.waived)).toBeInTheDocument();
-    expect(screen.getByText(copy.proposals.waivedWhy("Ada has not decided who"))).toBeInTheDocument();
+    expect(screen.getByText(copy.leftOpen.heading)).toBeInTheDocument();
+    expect(screen.getByText("Ada has not decided who")).toBeInTheDocument();
     expect(document.querySelector('[data-cartograph-check="owner"]')).toHaveTextContent("No owner yet.");
     expect(screen.getByRole("link", { name: copy.proposals.openDraft })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: copy.proposals.accept }));

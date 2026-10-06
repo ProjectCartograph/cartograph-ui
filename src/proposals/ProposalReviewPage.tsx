@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, CircleDashed } from "lucide-react";
+import { ArrowLeft, Bot, CheckCircle2, CircleDashed } from "lucide-react";
 
 import { useClient } from "@/client/context";
 import { ClientError, type ManifestCheck, type ProposalPart, type ProposalReview } from "@/client/port";
+import { LeftOpen } from "@/components/LeftOpen";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/copy";
 
@@ -86,21 +87,7 @@ function Part({ part, titled }: { part: ProposalPart; titled: boolean }) {
   return (
     <section className="space-y-4" data-cartograph-part={`${p.kind}/${p.manifestId}`}>
       {titled ? <h2 className="border-b pb-1 text-lg font-medium">{proposalTitle(p)}</h2> : null}
-      {p.waivers && p.waivers.length > 0 ? (
-        <div className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-4" data-cartograph-region="waivers">
-          <h3 className="flex items-center gap-2 font-medium">
-            <AlertTriangle className="size-4 text-warning" />
-            {pc.waived}
-          </h3>
-          <ul className="space-y-1 text-sm">
-            {p.waivers.map((w) => (
-              <li key={w.check}>
-                <span className="font-medium">{w.message}</span> <span className="text-muted-foreground">{pc.waivedWhy(w.reason)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {p.waivers && p.waivers.length > 0 ? <LeftOpen left={p.waivers} heading="h3" /> : null}
 
       {p.op === "save" ? (
         <div className="space-y-2">

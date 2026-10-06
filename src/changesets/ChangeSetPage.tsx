@@ -9,6 +9,7 @@ import { ClientError, type ChangeSetItem, type ChangeSetReview } from "@/client/
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { LeftOpen } from "@/components/LeftOpen";
 import { kindIcon } from "@/components/vocab";
 import { copy } from "@/copy";
 import { manifestLink } from "@/proposals/links";
@@ -84,22 +85,7 @@ function Review({ review }: { review: ChangeSetReview }) {
         ) : null}
       </header>
 
-      {cs.waivers && cs.waivers.length > 0 ? (
-        <section className="space-y-2 rounded-lg border border-warning/40 bg-warning/10 p-4" data-cartograph-region="waivers">
-          <h2 className="flex items-center gap-2 font-medium">
-            <AlertTriangle className="size-4 text-warning" />
-            {cc.waived}
-          </h2>
-          <ul className="space-y-1 text-sm">
-            {cs.waivers.map((w) => (
-              <li key={`${w.on}-${w.check}`}>
-                {w.on ? <span className="text-muted-foreground">{w.on}: </span> : null}
-                <span className="font-medium">{w.message}</span> <span className="text-muted-foreground">{copy.proposals.waivedWhy(w.reason)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {cs.waivers && cs.waivers.length > 0 ? <LeftOpen left={cs.waivers} /> : null}
 
       <section aria-label={cc.summary} className="flex flex-wrap gap-2" data-cartograph-region="change-set-summary">
         {[...byKind.entries()].map(([kind, items]) => {
