@@ -1,17 +1,27 @@
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Help } from "@/components/guidance";
 import { copy } from "@/copy";
 import { X } from "lucide-react";
+import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { StakeholderEntry, StakeholderTier } from "./types";
+
+/** An entry's identity on the map: the resource or the group it scores,
+ * each scored once. A resource and a group may share an id. */
+function keyOf(e: StakeholderEntry): string {
+  return e.group ? `group:${e.group}` : `resource:${e.resource ?? ""}`;
+}
 
 const pc = copy.projects.resources;
 
@@ -52,12 +62,18 @@ const TIERS: StakeholderTier[] = ["primary", "secondary"];
  */
 export function StakeholderGrid({
   entries,
+  groups = [],
   onChange,
 }: {
   entries: StakeholderEntry[];
+  /** The work's own beneficiary groups, offered first: the people it is
+   * for are stakeholders too, and need not be recorded again as
+   * Resources (TAXONOMY.md D42). */
+  groups?: string[];
   onChange: (next: StakeholderEntry[]) => void;
 }) {
   const { data: resources } = useReferenceOptions("Resource");
+  const { data: groupOptions } = useReferenceOptions("BeneficiaryGroup");
 
   function setEntries(next: StakeholderEntry[]) {
     onChange(next);
@@ -66,12 +82,14 @@ export function StakeholderGrid({
     setEntries(entries.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
   }
 
-  /** Every Resource not already scored: one score per stakeholder is a
-   * kind rule, so an entry that exists is not offered again. */
-  const unscored = (resources?.options ?? []).filter(
-    (r) => !entries.some((e) => e.resource === r.value),
-  );
-  const nameOf = (id: string) => resources?.names.get(id) ?? id;
+  /** Every group and Resource not already scored: one score per
+   * stakeholder is a kind rule, so an entry that exists is not offered
+   * again. The work's own groups come first. */
+  const scored = new Set(entries.map(keyOf));
+  const ownGroups = groups.filter((g) => !scored.has(`group:${g}`));
+  const unscored = (resources?.options ?? []).filter((r) => !scored.has(`resource:${r.value}`));
+  const nameOf = (e: StakeholderEntry) =>
+    e.group ? (groupOptions?.names.get(e.group) ?? e.group) : (resources?.names.get(e.resource ?? "") ?? e.resource ?? "");
 
   return (
     <div className="flex flex-col gap-3" data-slot="stakeholder-grid" data-cartograph-region="stakeholder-grid">
@@ -82,8 +100,9 @@ export function StakeholderGrid({
 
       <div className="flex flex-col gap-2">
         {entries.map((e, idx) => (
-          <div key={e.resource} data-cartograph-region={`stakeholder-${idx}`} className="flex flex-wrap items-center gap-2 rounded-lg border p-2">
-            <span className="min-w-0 flex-1 truncate text-sm">{nameOf(e.resource)}</span>
+          <div key={keyOf(e)} data-cartograph-region={`stakeholder-${idx}`} className="flex flex-col gap-2 rounded-lg border p-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-sm">{nameOf(e)}</span>
 
             <ToggleGroup
               type="single"
@@ -91,7 +110,7 @@ export function StakeholderGrid({
               size="sm"
               value={e.tier ?? ""}
               onValueChange={(v) => updateAt(idx, { tier: (v || undefined) as StakeholderTier })}
-              aria-label={`${pc.tierLabel} ${nameOf(e.resource)}`}
+              aria-label={`${pc.tierLabel} ${nameOf(e)}`}
               data-cartograph-field={`/spec/entries/${idx}/tier`}
             >
               {TIERS.map((t) => (
@@ -118,22 +137,66 @@ export function StakeholderGrid({
               <X />
             </Button>
           </div>
+          {/* What this party cares about here, and who keeps the
+              relationship (TAXONOMY.md D42). The map holds no roles of its
+              own, so the owner is a catalogue entry, a governance body
+              among them. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              data-cartograph-field={`/spec/entries/${idx}/stake`}
+              value={e.stake ?? ""}
+              onChange={(ev) => updateAt(idx, { stake: ev.target.value.slice(0, 160) || undefined })}
+              aria-label={`${pc.stakeLabel} ${nameOf(e)}`}
+              placeholder={pc.stakeLabel}
+              maxLength={160}
+              className="min-w-48 flex-1"
+            />
+            <div className="w-56">
+              <ReferencePicker
+                data-cartograph-field={`/spec/entries/${idx}/owner`}
+                refKind="Resource"
+                value={e.owner?.kind === "Resource" ? e.owner.id : undefined}
+                onChange={(id) => updateAt(idx, { owner: id ? { kind: "Resource", id } : undefined })}
+                label={`${pc.relationshipOwnerLabel} ${nameOf(e)}`}
+                placeholder={pc.relationshipOwnerLabel}
+              />
+            </div>
+          </div>
+          </div>
         ))}
 
-        {unscored.length > 0 ? (
+        {ownGroups.length > 0 || unscored.length > 0 ? (
           <Select
             value=""
-            onValueChange={(v) => v && setEntries([...entries, { resource: v }])}
+            onValueChange={(v) => {
+              if (v.startsWith("group:")) setEntries([...entries, { group: v.slice(6) }]);
+              else if (v.startsWith("resource:")) setEntries([...entries, { resource: v.slice(9) }]);
+            }}
           >
             <SelectTrigger className="w-64" aria-label={pc.addToGrid} data-cartograph-field="/spec/entries/-">
               <SelectValue placeholder={pc.addToGrid} />
             </SelectTrigger>
             <SelectContent>
-              {unscored.map((r) => (
-                <SelectItem key={r.value} value={r.value}>
-                  {r.label}
-                </SelectItem>
-              ))}
+              {ownGroups.length > 0 ? (
+                <SelectGroup>
+                  <SelectLabel>{pc.ownGroups}</SelectLabel>
+                  {ownGroups.map((g) => (
+                    <SelectItem key={`group:${g}`} value={`group:${g}`}>
+                      {groupOptions?.names.get(g) ?? g}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ) : null}
+              {unscored.length > 0 ? (
+                <SelectGroup>
+                  <SelectLabel>{pc.catalogue}</SelectLabel>
+                  {unscored.map((r) => (
+                    <SelectItem key={`resource:${r.value}`} value={`resource:${r.value}`}>
+                      {r.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ) : null}
             </SelectContent>
           </Select>
         ) : null}
@@ -152,7 +215,7 @@ function Grid({
   onScore,
 }: {
   entries: StakeholderEntry[];
-  nameOf: (id: string) => string;
+  nameOf: (e: StakeholderEntry) => string;
   onScore: (idx: number, patch: Partial<StakeholderEntry>) => void;
 }) {
   const unplaced = entries
@@ -196,9 +259,9 @@ function Grid({
       </div>
 
       {unplaced.map(({ e, idx }) => (
-        <div key={e.resource} data-cartograph-region={`stakeholder-place-${idx}`} className="flex flex-wrap items-center gap-1.5">
+        <div key={keyOf(e)} data-cartograph-region={`stakeholder-place-${idx}`} className="flex flex-wrap items-center gap-1.5">
           <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-            {pc.placePrompt(nameOf(e.resource))}
+            {pc.placePrompt(nameOf(e))}
           </span>
           {GRID_ROWS.flatMap((influence) =>
             GRID_COLS.map((interest) => (
@@ -208,7 +271,7 @@ function Grid({
                 variant="outline"
                 size="sm"
                 className="h-6 px-1.5 text-[10px] tabular-nums"
-                aria-label={`${nameOf(e.resource)}, ${pc.influenceLabel} ${influence}, ${pc.interestLabel} ${interest}`}
+                aria-label={`${nameOf(e)}, ${pc.influenceLabel} ${influence}, ${pc.interestLabel} ${interest}`}
                 onClick={() => onScore(idx, { influence, interest })}
               >
                 {influence}/{interest}

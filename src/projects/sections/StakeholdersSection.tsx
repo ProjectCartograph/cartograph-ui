@@ -1,5 +1,6 @@
 import { StakeholderGrid } from "../StakeholderGrid";
 import { useProjectStore, useSectionAutosave } from "../store";
+import { groupsOf } from "../types";
 
 /**
  * Who holds power over this project, and how much.
@@ -20,6 +21,7 @@ export function StakeholdersSection() {
   return (
     <StakeholderGrid
       entries={store.mapSpec.entries ?? []}
+      groups={groupsOf(store.spec)}
       onChange={(next) => store.updateMap((m) => ({ ...m, entries: next }))}
     />
   );

@@ -2,7 +2,8 @@ import { useParams } from "@tanstack/react-router";
 
 import { DefinitionStoreProvider, useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { StakeholderGrid } from "@/projects/StakeholderGrid";
-import type { StakeholderEntry } from "@/projects/types";
+import { groupsOf, type StakeholderEntry } from "@/projects/types";
+import type { ProgrammeSpec } from "../types";
 import { UnappliedBar } from "@/surfaces/sheet/Unapplied";
 
 /** A programme's map lives under its own id, derived rather than stored,
@@ -30,18 +31,21 @@ interface MapSpec {
  */
 export function StakeholdersSection() {
   const { id } = useParams({ from: "/programmes/$id" });
+  // Read before the map's own store is nested inside: the programme's
+  // groups are offered first.
+  const groups = groupsOf(useDefinitionStore<ProgrammeSpec>().spec);
   return (
     <DefinitionStoreProvider
       kind="StakeholderMap"
       id={stakeholderMapID(id)}
       blank={() => ({ scope: { kind: "Programme", id } }) as MapSpec}
     >
-      <Grid programmeID={id} />
+      <Grid programmeID={id} groups={groups} />
     </DefinitionStoreProvider>
   );
 }
 
-function Grid({ programmeID }: { programmeID: string }) {
+function Grid({ programmeID, groups }: { programmeID: string; groups: string[] }) {
   useSectionAutosave();
   const store = useDefinitionStore<MapSpec>();
   return (
@@ -51,6 +55,7 @@ function Grid({ programmeID }: { programmeID: string }) {
       <UnappliedBar kind="StakeholderMap" />
       <StakeholderGrid
         entries={store.spec.entries ?? []}
+        groups={groups}
         onChange={(next) =>
           store.updateSpec((m) => ({
             ...m,

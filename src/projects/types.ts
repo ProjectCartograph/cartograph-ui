@@ -393,11 +393,28 @@ export type StakeholderTier = "primary" | "secondary";
  * power are separate acts, and an entry with no score is one somebody has
  * declared but not yet placed — a state worth holding rather than one that
  * loses the entry. */
+/** One stakeholder on a map: a Resource or a beneficiary group, exactly
+ * one (TAXONOMY.md D42), with what it cares about in this work and the
+ * role that owns the relationship. */
 export interface StakeholderEntry {
-  resource: string;
+  resource?: string;
+  group?: string;
+  stake?: string;
+  owner?: Ref;
   influence?: number;
   interest?: number;
   tier?: StakeholderTier;
+}
+
+/** The work's own beneficiary groups, named on its problems and its
+ * beneficiaries: the people it is for, offered first as stakeholders. */
+export function groupsOf(spec: { problems?: ProblemLine[]; summary?: { problems?: ProblemLine[]; beneficiaries?: BeneficiaryLine[] } }): string[] {
+  const out = new Set<string>();
+  for (const b of spec.summary?.beneficiaries ?? []) if (b.group) out.add(b.group);
+  for (const p of [...(spec.summary?.problems ?? []), ...(spec.problems ?? [])]) {
+    for (const g of p.groups ?? []) out.add(g);
+  }
+  return [...out];
 }
 
 export interface StakeholderMapSpec {
