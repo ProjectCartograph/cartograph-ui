@@ -336,7 +336,7 @@ export const copy = {
   changeSets: {
     title: "Change sets",
     rail: "Change sets",
-    intro: "Each piece of work an agent does is a change set of its own, kept apart from the record and from every other agent's work until you accept it, as a pull request is merged.",
+    intro: "A change set holds edits until you review them and roll them in. Each agent works in its own change set.",
     waiting: "Waiting for you",
     working: "In progress",
     done: "Done",
@@ -370,11 +370,11 @@ export const copy = {
   workingIn: {
     label: "Working in",
     none: "No change set yet: your next edit starts one",
-    untitled: (kind: string, id: string) => `Changes to ${kind.toLowerCase()} ${id}`,
+    untitled: (_kind: string, _id: string) => "New change set",
     items: (n: number) => `${n} change${n === 1 ? "" : "s"}`,
     review: "Review and roll in",
     rename: "Rename",
-    renameLabel: "What this piece of work is",
+    renameLabel: "Change set name",
     save: "Save",
     leave: "Stop working in it",
     leaveHint: "Your changes stay in the change set; the workspace shows the record as it is.",
@@ -1716,7 +1716,7 @@ export const copy = {
       },
     },
     stops: {
-      projects: { title: "Projects", body: "A project is a time-bound piece of work that delivers unique value to beneficiaries and closes gaps." },
+      projects: { title: "Projects", body: "A project has a start and an end. It delivers something to the people it serves and closes gaps." },
       gaps: { title: "Gaps", body: "Related to your strategy are gaps: an area in which you identify a disparity between a desired state (your outcomes) and the current state. They are areas which your work will target." },
       indicators: { title: "Indicators", body: "Indicators are the *measures* of your gaps. They are key to ensuring your work in filling gaps can be tracked." },
       strategy: { title: "Strategy", body: "Strategy is where you define your Organization's goals, objectives and outcomes. They act as guides for you when defining work, always ensuring it stays aligned with the Organization's direction. It is always a good idea to review your strategy and keep it up-to-date." },
