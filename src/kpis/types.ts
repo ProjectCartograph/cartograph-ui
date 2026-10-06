@@ -37,6 +37,8 @@ export interface KPIDefinitionSpec {
   source?: string;
   sources?: string[];
   cycle?: string;
+  /** The role that answers for the indicator (TAXONOMY.md D44). */
+  owner?: { kind?: string; id?: string; external?: string };
   goals?: string[];
   resultLevel?: string;
   disaggregations?: string[];

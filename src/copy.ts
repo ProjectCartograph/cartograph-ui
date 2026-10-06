@@ -641,6 +641,7 @@ export const copy = {
         category: "Category",
         provenance: "Provenance",
         team: "Team",
+        keptBy: "Kept by",
         access: "Access",
         refresh: "Refresh",
         capture: "How records get in",
@@ -716,7 +717,8 @@ export const copy = {
       DataSource: {
         category: "What kind of source it is.",
         provenance: "Whether we run it or a third party does.",
-        team: "The team that keeps it.",
+        team: "Your own team that reads it and answers for its use.",
+        keptBy: "Who keeps it, where that is outside the organisation: another public body, an agency, a partner. Left out, your team keeps it.",
         access: "How someone gets access, and what they need first.",
         refresh: "How often the numbers in it change.",
         capture: "If records start on paper, say how the paper becomes data.",
@@ -738,6 +740,13 @@ export const copy = {
       confirms: "Confirms the success of",
       receives: "Receives escalations from",
       decided: "Issued the mandate for",
+    },
+    // A field naming someone by reference (surfaces/sheet/RefObjectField).
+    refObject: {
+      formLabel: "Where it is named from",
+      catalogue: "From the catalogue",
+      outside: "Outside the workspace",
+      outsideName: "Its name",
     },
     // A reporting cycle's named periods (TAXONOMY.md D40).
     periods: {
@@ -1436,6 +1445,8 @@ export const copy = {
       cycleLabel: "Read each",
       cycleHint: "How often it is read. This sets the periods on the Actuals step.",
       cyclePlaceholder: "Choose a cycle",
+      ownerLabel: "Owned by",
+      ownerHint: "The role that answers for this indicator: it keeps the readings coming and says what they mean. Never a person.",
       goalsLabel: "Outcomes",
       goalsHint: "The outcomes this indicator tells you about.",
       goalsPlaceholder: "Choose outcomes",
@@ -1706,6 +1717,13 @@ export const copy = {
       name: "My first project",
     },
     tutorial: "Tutorial: this fills itself in, and does not affect your workspace.",
+  },
+  // Where a matter goes when it cannot be settled here (components/EscalationRoute).
+  escalationRoute: {
+    label: "Escalation route",
+    hint: "The bodies and roles a matter goes up through when it cannot be settled at this level, nearest first. A body that only receives reports is not on it.",
+    empty: "No route named yet.",
+    add: "Add the next step up",
   },
   // What a definition cannot leave out (components/RequiredMarks).
   required: {
@@ -2669,6 +2687,7 @@ export const copy = {
         weekly: "Weekly",
         monthly: "Monthly",
         quarterly: "Quarterly",
+        termly: "Each term",
         annual: "Annual",
         "irregular": "Irregular",
       } as Record<string, string>,

@@ -3,6 +3,7 @@ import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
+import { EscalationRoute } from "@/components/EscalationRoute";
 import { FieldHeading } from "@/components/guidance";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { copy, plusNoun } from "@/copy";
@@ -120,6 +121,12 @@ export function MandateSection() {
           <Plus />
           {plusNoun(ac.addMandate)}
         </Button>
+      </div>
+      <div className="pt-4">
+        <EscalationRoute
+          value={store.spec.escalationRoute ?? []}
+          onChange={(escalationRoute) => store.updateSpec((s) => ({ ...s, escalationRoute }))}
+        />
       </div>
     </div>
   );

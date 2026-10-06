@@ -452,6 +452,9 @@ export interface ProjectSpec {
   summary: ProjectSummary;
   team: string;
   mandate?: Mandate[];
+  /** Where a matter goes up when it cannot be settled here, nearest first
+   * (TAXONOMY.md D44). */
+  escalationRoute?: { kind?: string; id?: string; external?: string }[];
   funding?: FundingLine[];
   alignment?: ProjectAlignment;
   objectives?: ProjectObjective[];

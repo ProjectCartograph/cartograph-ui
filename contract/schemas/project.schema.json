@@ -96,7 +96,7 @@
                             "$ref": "common.schema.json#/$defs/Slug",
                             "x-cartograph-ref": "Segment"
                           },
-                          "description": "Which of the gap's own segments this work reaches. Absent means all of them, so a gap that names no segments needs no ceremony. A kind rule refuses a segment the gap does not have: claiming to address a gap somewhere it was never observed is a different claim, not a narrower one."
+                          "description": "Which of the gap's own segments this work reaches. Left out, the citation claims the whole gap: right for a gap that names no segments, which needs no ceremony. For a gap that names segments, name each one the work reaches, all of them when it reaches every one, since a claim on the whole can hide a segment nobody works on (gap-covered says so). A kind rule refuses a segment the gap does not have: claiming to address a gap somewhere it was never observed is a different claim, not a narrower one."
                         }
                       }
                     }
@@ -188,6 +188,13 @@
           "items": {
             "$ref": "common.schema.json#/$defs/Mandate"
           }
+        },
+        "escalationRoute": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/Ref"
+          },
+          "description": "The bodies and roles a matter goes up through when it cannot be settled at this level, in order, the nearest first: a project board, then a steering committee, then a government above them. Governance bodies and roles inside the workspace by reference, a body outside it as external. A risk's escalate.to names where one particular matter goes; this is the route every matter follows. See TAXONOMY.md D44."
         },
         "funding": {
           "type": "array",

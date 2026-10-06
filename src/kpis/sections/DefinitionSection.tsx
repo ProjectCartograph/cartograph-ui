@@ -1,4 +1,5 @@
 import { KindExamples } from "@/components/KindExamples";
+import { RefObjectField } from "@/surfaces/sheet/RefObjectField";
 import { FieldHeading } from "@/components/guidance";
 import { LabelsEditor } from "@/components/LabelsEditor";
 import { ComboboxMultiple } from "@/components/ui/combobox";
@@ -268,6 +269,11 @@ export function DefinitionSection() {
           label={kc.cycleLabel}
         />
         <CycleSignature id={spec.cycle} />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <FieldHeading label={kc.ownerLabel} hint={kc.ownerHint} />
+        <RefObjectField pointer="/spec/owner" value={spec.owner} onChange={(owner) => set({ owner })} />
       </div>
 
       <div className="flex flex-col gap-2">

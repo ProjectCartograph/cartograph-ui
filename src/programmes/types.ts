@@ -47,6 +47,9 @@ export interface ProgrammeSpec {
   risks?: Risk[];
   pathway?: PathwayStep[];
   mandate?: Mandate[];
+  /** Where a matter goes up when it cannot be settled here, nearest first
+   * (TAXONOMY.md D44). */
+  escalationRoute?: { kind?: string; id?: string; external?: string }[];
   /** A note per step of the walk, keyed by the step's own name. */
   notes?: Record<string, string>;
 }

@@ -1,4 +1,5 @@
 import { ComboboxMultiple } from "@/components/ui/combobox";
+import { EscalationRoute } from "@/components/EscalationRoute";
 import { FieldHeading } from "@/components/guidance";
 import { copy } from "@/copy";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
@@ -72,6 +73,10 @@ export function TeamsSection() {
           aria-label={pc.supportingTeamsLabel}
         />
       </div>
+      <EscalationRoute
+        value={spec.escalationRoute ?? []}
+        onChange={(escalationRoute) => store.updateSpec((s) => ({ ...s, escalationRoute }))}
+      />
     </div>
   );
 }

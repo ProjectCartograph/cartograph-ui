@@ -1721,6 +1721,14 @@ export interface components {
             checks?: string[];
             /** @description The kind the field references. */
             references?: string;
+            /** @description The longest the value may be, in characters, where the schema limits it. */
+            maxLength?: number;
+            /** @description The values the field may take, where the schema lists them. */
+            values?: unknown[];
+            /** @description How a dated value is written, such as YYYY-MM. */
+            format?: string;
+            /** @description For a reference, a period, an object or a list: a compact example of the JSON it is written as, alternatives joined by " | ", an optional property marked with "?". */
+            shape?: string;
             /** @description The field must be filled: the schema requires it where it sits, or one of its checks blocks a handoff while it is empty. Absent when it may be left out. */
             required?: boolean;
             candidates?: components["schemas"]["GuideCandidate"][];

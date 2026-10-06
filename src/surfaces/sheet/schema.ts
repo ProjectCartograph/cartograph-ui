@@ -16,6 +16,7 @@ export type FieldKind =
   | "ref-array"
   | "string-array"
   | "object-array"
+  | "ref-object"
   | "unknown";
 
 export interface FieldDef {
@@ -93,6 +94,11 @@ function classify(prop: JSONSchemaDoc): Omit<FieldDef, "name" | "required"> {
   }
   if (typeof prop["x-cartograph-ref"] === "string") {
     return { kind: "ref", refKind: prop["x-cartograph-ref"] };
+  }
+  // A reference in Cartograph's one shape (kind and id, or an outside
+  // party), picked as a Resource or named as text.
+  if (typeof prop.$ref === "string" && prop.$ref.endsWith("/Ref")) {
+    return { kind: "ref-object", refKind: "Resource" };
   }
   // An enum reached through a $ref into common.schema.json carries the
   // same values beside it as x-cartograph-enum, the way a reference carries

@@ -37,6 +37,7 @@ import { copy } from "@/copy";
 import { ReferenceField } from "./ReferenceField";
 import { BodyUses } from "./BodyUses";
 import { PeriodsField, type NamedPeriod } from "./PeriodsField";
+import { RefObjectField, type RefValue } from "./RefObjectField";
 import { ReferencePicker } from "./ReferencePicker";
 import { fieldVocab, VocabOption } from "@/components/vocab";
 import { type FieldDef, type SheetKind, slugify, unitHint } from "./schema";
@@ -170,7 +171,11 @@ export function SheetForm({
     const spec: Record<string, unknown> = { ...(isEdit ? {} : preset) };
     for (const f of fields) {
       const raw = values[f.name];
-      const empty = raw === undefined || raw === "" || (Array.isArray(raw) && raw.length === 0);
+      const empty =
+        raw === undefined ||
+        raw === "" ||
+        (Array.isArray(raw) && raw.length === 0) ||
+        (f.kind === "ref-object" && !(raw as RefValue)?.id && !(raw as RefValue)?.external?.trim());
       if (empty) {
         continue;
       }
@@ -453,6 +458,22 @@ function SheetFormField({
                 ))}
               </SelectContent>
             </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  if (field.kind === "ref-object") {
+    return (
+      <FormField
+        control={control}
+        name={field.name}
+        render={({ field: rhf }) => (
+          <FormItem>
+            {heading}
+            <RefObjectField pointer={pointer} value={rhf.value as RefValue} onChange={rhf.onChange} />
             <FormMessage />
           </FormItem>
         )}

@@ -117,6 +117,7 @@ const ICONS = {
     weekly: RefreshCw,
     monthly: RefreshCw,
     quarterly: RefreshCw,
+    termly: RefreshCw,
     annual: RefreshCw,
     "irregular": RefreshCw,
   },

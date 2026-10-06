@@ -95,6 +95,12 @@ function SpecCell({
   const dash = <span className="text-muted-foreground">{"-"}</span>;
 
   switch (field.kind) {
+    case "ref-object": {
+      const r = value as { kind?: string; id?: string; external?: string } | undefined;
+      if (!r) return dash;
+      if (r.external) return <TruncatedText text={r.external} />;
+      return <TruncatedText text={refNames.get("Resource")?.get(r.id ?? "") ?? r.id ?? ""} />;
+    }
     case "ref": {
       if (!value || typeof value !== "string") return dash;
       const names = refNames.get(field.refKind as string);
@@ -174,7 +180,7 @@ export function Sheet({ kind, initialName, adding }: { kind: SheetKind; initialN
   const fields = useMemo(() => parseSpecFields(schemaQuery.data), [schemaQuery.data]);
   const enumFields = useMemo(() => fields.filter((f) => f.kind === "enum"), [fields]);
   const refFields = useMemo(
-    () => fields.filter((f) => f.kind === "ref" || f.kind === "ref-array"),
+    () => fields.filter((f) => f.kind === "ref" || f.kind === "ref-array" || f.kind === "ref-object"),
     [fields]
   );
   const refKinds = useMemo(
