@@ -1719,6 +1719,8 @@ export interface components {
             message: string;
             /** @description The editor's section where it is fixed. */
             section?: string;
+            /** @description The field it is about, as a JSON pointer, where it is one field: what the record must have before it can be merged. */
+            path?: string;
         };
         /** @description A proposal as its person reviews it: every part, in the order they would be saved. A proposal on its own has one part; a set (a KPI, the gap it measures and the outcome that closes it) has one per manifest, accepted or declined together. */
         ProposalReview: {
