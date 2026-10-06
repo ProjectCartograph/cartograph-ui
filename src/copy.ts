@@ -1026,9 +1026,9 @@ export const copy = {
         label: "Horizon",
         incomplete: "Give both a start and an end, each a year or a year and month, or leave both empty.",
         hint: {
-          goal: "The period this goal covers, usually the whole plan: three to five years. Pick a year, and a month only if it matters.",
-          objective: "Usually one to three years, inside its goal's horizon. Leave it empty to use the goal's.",
-          outcome: "When this state should be true, inside its objective's horizon. Leave it empty to use the objective's.",
+          goal: "When work on this goal starts and when it should be reached. Pick a year, and a month only if it matters.",
+          objective: "When work on this objective starts and when it should be reached. Leave it empty to use the goal's dates.",
+          outcome: "When work on this outcome starts and when it should be true. Leave it empty to use the objective's dates.",
         } as Record<string, string>,
         from: "Horizon start",
         to: "to",
