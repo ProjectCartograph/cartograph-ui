@@ -1,3 +1,5 @@
+import { currencyName } from "@/components/locale";
+
 /**
  * The active ISO 4217 currency codes.
  *
@@ -31,3 +33,11 @@ export const CURRENCIES = [
 ] as const;
 
 export type Currency = (typeof CURRENCIES)[number];
+
+// Each code with its name in the reader's language, found by either.
+// Built once: 170 options rebuilt on every keystroke is 170 objects a
+// render, and the list never changes.
+export const CURRENCY_OPTIONS = CURRENCIES.map((c) => {
+  const name = currencyName(c);
+  return { value: c, label: name === c ? c : `${c} · ${name}` };
+});

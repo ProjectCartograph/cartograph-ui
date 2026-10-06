@@ -6,6 +6,7 @@ import { copy } from "@/copy";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { STATUS_ICON, statusOf } from "@/operations/status";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
+import { ServiceFunding } from "../ServiceFunding";
 import type { OperationSpec } from "../types";
 
 const oc = copy.operations;
@@ -73,6 +74,7 @@ export function ServiceSection() {
           placeholder={oc.windowPlaceholder}
         />
       </div>
+      <ServiceFunding />
     </div>
   );
 }

@@ -22,8 +22,19 @@ export interface OperationSpec {
   kpis?: string[];
   data?: DataUse;
   mandate?: Mandate[];
+  /** What pays to run the service, per month or per year (TAXONOMY.md
+   * D39): a running cost recurs, so each line names its period. */
+  funding?: ServiceFundingLine[];
   /** A note per step of the walk, keyed by the step's own name. */
   notes?: Record<string, string>;
+}
+
+export interface ServiceFundingLine {
+  amount: number;
+  currency: string;
+  per: "month" | "year";
+  source?: string;
+  status: "approved" | "requested" | "unfunded";
 }
 
 export function blankOperationSpec(): OperationSpec {
