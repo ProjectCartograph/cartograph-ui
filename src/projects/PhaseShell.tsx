@@ -1,9 +1,8 @@
 import { AssemblyStrip } from "./Assembly";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
 import { copy } from "@/copy";
 import { CheckPanel } from "./CheckPanel";
 import { ProjectSectionNotes } from "./SectionNotes";
@@ -30,10 +29,13 @@ export function PhaseShell({
   children: ReactNode;
 }) {
   const store = useProjectStore();
-  const idx = STEPS.findIndex((s) => s.section === phase);
+  // Closing is not one of the initiation steps: it follows the last of
+  // them, in the Handover stage, so Back returns to Landing and Next is
+  // the project's record.
+  const idx = phase === "closing" ? STEPS.length : STEPS.findIndex((s) => s.section === phase);
   const prev = idx > 0 ? STEPS[idx - 1] : undefined;
   const next = idx >= 0 && idx < STEPS.length - 1 ? STEPS[idx + 1] : undefined;
-  const NextIcon = next ? stepIcon(next.section) : undefined;
+  const stage = phase === "closing" ? STEPS[STEPS.length - 1].stage : stageOfSection(phase);
   return (
     <div className="flex flex-col gap-4">
       <ProjectHeaderBar />
@@ -42,7 +44,7 @@ export function PhaseShell({
         <p className="text-muted-foreground text-pretty">{subtitle}</p>
       </div>
       <div className="-mx-1 overflow-x-auto px-1 pb-1">
-        <StageStepper id={id} current={stageOfSection(phase)} />
+        <StageStepper id={id} current={stage} />
       </div>
       <AssemblyStrip id={id} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_18rem]">
@@ -67,35 +69,42 @@ export function PhaseShell({
               (Refine ends on Closing, Polish ends on Landing), so Back and
               Next read their neighbours out of STEPS like every other
               step rather than naming them here. */}
-          <div className="flex items-center justify-between gap-2 pt-6">
-            <Button asChild variant="ghost" size="lg">
-              {prev ? (
-                <Link to={`/projects/$id${prev.path}`} params={{ id }}>
-                  <ArrowLeft />
-                  {pc.back}
-                </Link>
-              ) : (
-                <Link to="/projects/$id" params={{ id }}>
-                  <ArrowLeft />
-                  {pc.back}
-                </Link>
-              )}
-            </Button>
-            <Button asChild size="lg">
-              {next ? (
-                <Link to={`/projects/$id${next.path}`} params={{ id }}>
-                  {NextIcon ? <NextIcon /> : null}
-                  {pc.nextTo(pc.sections[next.section] ?? next.section)}
-                  <ArrowRight />
-                </Link>
-              ) : (
-                <Link to="/projects/$id" params={{ id }}>
-                  {pc.record.recordLink}
-                  <ArrowRight />
-                </Link>
-              )}
-            </Button>
-          </div>
+          <FlowNav>
+            <FlowBack
+              label={pc.back}
+              link={(c) =>
+                prev ? (
+                  <Link to={`/projects/$id${prev.path}`} params={{ id }}>
+                    {c}
+                  </Link>
+                ) : (
+                  <Link to="/projects/$id" params={{ id }}>
+                    {c}
+                  </Link>
+                )
+              }
+            />
+            {next ? (
+              <FlowNext
+                label={pc.nextTo(pc.sections[next.section] ?? next.section)}
+                icon={stepIcon(next.section)}
+                link={(c) => (
+                  <Link to={`/projects/$id${next.path}`} params={{ id }}>
+                    {c}
+                  </Link>
+                )}
+              />
+            ) : (
+              <FlowNext
+                label={pc.record.recordLink}
+                link={(c) => (
+                  <Link to="/projects/$id" params={{ id }}>
+                    {c}
+                  </Link>
+                )}
+              />
+            )}
+          </FlowNav>
         </div>
         <div className="flex flex-col gap-4">
           <CheckPanel id={id} draft scopePhase={phase} />

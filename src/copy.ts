@@ -1234,6 +1234,7 @@ export const copy = {
       evidence: "Evidence",
     },
     lastStep: "Last step.",
+    stepsLabel: "The steps of this definition",
     save: {
       // Autosave stages; this is the moment of deciding. So the word is
       // about what changes, not about the act of writing a file.
@@ -1706,6 +1707,12 @@ export const copy = {
     },
     tutorial: "Tutorial: this fills itself in, and does not affect your workspace.",
   },
+  // The progress bar every flow shows (components/walker).
+  flow: {
+    done: "Done",
+    warn: "Something to look at",
+    blocked: "Something needed",
+  },
   // What is one of a kind and what is not, where it is listed
   // (components/KindExamples).
   kindExamples: {
@@ -2117,6 +2124,7 @@ export const copy = {
     },
     leaveWarning: "This project has unsaved changes.",
     stepper: {
+      label: "The stages of this project",
       initiation: "Initiation",
       closing: "Closure",
       landing: "Handover",

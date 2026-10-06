@@ -6,10 +6,10 @@ import { ShowInGraph } from "@/graph/ShowInGraph";
 import { Link } from "@tanstack/react-router";
 
 import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, FileText, OctagonAlert, Table2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileText, OctagonAlert, Table2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { RailSheet } from "@/components/RailSheet";
+import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
 import { WorkTextProvider } from "@/components/relevance";
 import { copy } from "@/copy";
 import { useProjectChecks } from "./api";
@@ -98,38 +98,44 @@ export function InitiationBackNext({ id, stage }: { id: string; stage: Stage }) 
   const prev = idx > 0 ? stepsOfStage(STAGES[idx - 1])[0] : undefined;
   const nextStage = idx < STAGES.length - 1 ? STAGES[idx + 1] : undefined;
   const next = nextStage ? stepsOfStage(nextStage)[0] : undefined;
-  const NextIcon = nextStage ? STAGE_ICON[nextStage] : undefined;
 
   return (
-    <div className="flex items-center justify-between gap-2 pt-6">
-      <Button asChild variant="ghost" size="lg">
-        {prev ? (
-          <Link to={`/projects/$id${prev.path}`} params={{ id }}>
-            <ArrowLeft />
-            {pc.back}
-          </Link>
-        ) : (
-          <Link to="/projects/$id" params={{ id }}>
-            <ArrowLeft />
-            {pc.back}
-          </Link>
-        )}
-      </Button>
-      <Button asChild size="lg">
-        {next && nextStage ? (
-          <Link to={`/projects/$id${next.path}`} params={{ id }}>
-            {NextIcon ? <NextIcon /> : null}
-            {pc.nextTo(pc.stages[nextStage])}
-            <ArrowRight />
-          </Link>
-        ) : (
-          <Link to="/projects/$id/closing" params={{ id }}>
-            {pc.nextTo(pc.stepper.closing)}
-            <ArrowRight />
-          </Link>
-        )}
-      </Button>
-    </div>
+    <FlowNav>
+      <FlowBack
+        label={pc.back}
+        link={(c) =>
+          prev ? (
+            <Link to={`/projects/$id${prev.path}`} params={{ id }}>
+              {c}
+            </Link>
+          ) : (
+            <Link to="/projects/$id" params={{ id }}>
+              {c}
+            </Link>
+          )
+        }
+      />
+      {next && nextStage ? (
+        <FlowNext
+          label={pc.nextTo(pc.stages[nextStage])}
+          icon={STAGE_ICON[nextStage]}
+          link={(c) => (
+            <Link to={`/projects/$id${next.path}`} params={{ id }}>
+              {c}
+            </Link>
+          )}
+        />
+      ) : (
+        <FlowNext
+          label={pc.nextTo(pc.stepper.closing)}
+          link={(c) => (
+            <Link to="/projects/$id/closing" params={{ id }}>
+              {c}
+            </Link>
+          )}
+        />
+      )}
+    </FlowNav>
   );
 }
 
@@ -172,9 +178,10 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
           <ShowInGraph kind="Project" id={id} />
         </div>
       </div>
-      {/* The stages as a row of their own, scrolled sideways when they do
-          not fit; the wide layout has the rail for them instead. */}
-      <div className="-mx-1 overflow-x-auto px-1 pb-1 xl:hidden">
+      {/* The stages as every flow shows its progress, scrolled sideways
+          when they do not fit; the rail beside the page lists their
+          steps. */}
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
         <StageStepper id={id} current={stage} />
       </div>
       <AssemblyStrip id={id} />

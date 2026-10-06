@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { stringify as stringifyYAML } from "yaml";
-import { ArrowLeft, ArrowRight, Check, PencilLine, Plus, Sparkles } from "lucide-react";
+import { ArrowRight, Check, PencilLine, Plus, Sparkles } from "lucide-react";
 
 import { aliasFor } from "@/alias";
 import { useClient } from "@/client/context";
@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
 import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
-import { WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker";
+import { FlowBack, FlowNav, FlowNext, WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker";
 import { DidYouMean } from "@/components/DidYouMean";
 import { STEPS as TOUR_STEPS } from "@/tour/steps";
 import { useTour } from "@/tour/tourContext";
@@ -296,11 +296,8 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
           )}
         </WalkerStep>
 
-        <div className="mt-auto flex items-center justify-between gap-2">
-          <Button type="button" variant="ghost" size="lg" onClick={() => go(STEPS[at - 1])} disabled={at === 0} className={at === 0 ? "invisible" : ""}>
-            <ArrowLeft />
-            {sc.back}
-          </Button>
+        <FlowNav>
+          <FlowBack label={sc.back} onClick={() => at > 0 && go(STEPS[at - 1])} hidden={at === 0} />
           {/* The full page is always a step away: what has been answered
               is saved, and the rest is asked there. */}
           {step !== "ready" && !tutorial ? (
@@ -317,17 +314,15 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
             </Button>
           ) : null}
           {step === "ready" ? (
-            <Button type="button" size="lg" onClick={() => void start()} disabled={saving || tutorial || !projectName.trim()}>
-              {from ? sc.saveAgain : sc.start}
-              <ArrowRight />
-            </Button>
+            <FlowNext label={from ? sc.saveAgain : sc.start} onClick={() => void start()} disabled={saving || tutorial || !projectName.trim()} />
           ) : step === "details" ? null : (
-            <Button type="button" size="lg" onClick={() => go(STEPS[at + 1])} disabled={step === "about" && !about.trim()}>
-              {step !== "about" && chosen[step as keyof typeof chosen].length === 0 ? sc.skip : sc.next}
-              <ArrowRight />
-            </Button>
+            <FlowNext
+              label={step !== "about" && chosen[step as keyof typeof chosen].length === 0 ? sc.skip : sc.next}
+              onClick={() => go(STEPS[at + 1])}
+              disabled={step === "about" && !about.trim()}
+            />
           )}
-        </div>
+        </FlowNav>
       </div>
     </WorkTextProvider>
   );

@@ -1,7 +1,7 @@
 import { ProposalNotice } from "@/proposals/ProposalNotice";
 import type { ComponentType, ReactNode } from "react";
-import { Link, type LinkProps } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, FileText, Table2 } from "lucide-react";
+import { Link, useNavigate, type LinkProps } from "@tanstack/react-router";
+import { AlertTriangle, CheckCircle2, FileText, Table2 } from "lucide-react";
 import { OutlineStrip } from "@/components/OutlineStrip";
 import { useOperationChecks } from "@/operations/api";
 import type { OperationSpec } from "@/operations/types";
@@ -11,8 +11,8 @@ import { useGapChecks } from "@/gaps/api";
 import type { GapSpec } from "@/gaps/types";
 import { gapOutline, operationOutline, programmeOutline } from "./outline";
 
-import { Button } from "@/components/ui/button";
 import { RailSheet } from "@/components/RailSheet";
+import { FlowBack, FlowNav, FlowNext, FlowProgress, type FlowSegment } from "@/components/walker";
 import { WorkTextProvider } from "@/components/relevance";
 import { Separator } from "@/components/ui/separator";
 import { copy } from "@/copy";
@@ -144,6 +144,7 @@ export function DefinitionShell({
       : isGap
         ? gapOutline(store.spec as GapSpec, store.name)
         : null;
+  const navigate = useNavigate();
   const prev = idx > 0 ? steps[idx - 1] : undefined;
   const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : undefined;
 
@@ -210,6 +211,22 @@ export function DefinitionShell({
       </div>
       <ProposalNotice kind={store.kind} id={store.id} />
 
+      {/* The steps as every flow shows its progress: filled as their
+          checks are met, their worst state marked. */}
+      <div className="-mx-1 overflow-x-auto px-1 pb-1" data-cartograph-region="step-progress">
+        <div className={steps.length > 4 ? "min-w-[32rem]" : undefined}>
+          <FlowProgress
+            segments={steps.map((st) => {
+              const state = bySection.get(st.section) as FlowSegment["state"];
+              return { key: st.section, label: st.label, icon: st.icon, state, share: state === "ok" ? 1 : state === "warn" ? 0.5 : idx >= 0 && steps.indexOf(st) <= idx ? 1 : 0 };
+            })}
+            at={idx}
+            onGo={(i) => void navigate({ to: steps[i].to, params: ID_PARAM(store.id) })}
+            label={copy.definition.stepsLabel}
+          />
+        </div>
+      </div>
+
       {outline ? <OutlineStrip id={store.id} parts={outline} loaded={store.loaded} /> : null}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr]">
@@ -240,32 +257,33 @@ export function DefinitionShell({
                   shell drives gets the same moment of deciding without
                   each route remembering to host it. */}
               <SaveBar />
-              <div className="flex items-center justify-between gap-2 pt-6">
-                <Button asChild variant="ghost" size="lg">
-                  {prev ? (
-                    <Link to={prev.to} params={ID_PARAM(store.id)}>
-                      <ArrowLeft />
-                      {copy.projects.back}
-                    </Link>
-                  ) : (
-                    <Link to={home}>
-                      <ArrowLeft />
-                      {copy.projects.back}
-                    </Link>
-                  )}
-                </Button>
+              <FlowNav>
+                <FlowBack
+                  label={copy.projects.back}
+                  link={(c) =>
+                    prev ? (
+                      <Link to={prev.to} params={ID_PARAM(store.id)}>
+                        {c}
+                      </Link>
+                    ) : (
+                      <Link to={home}>{c}</Link>
+                    )
+                  }
+                />
                 {next ? (
-                  <Button asChild size="lg">
-                    <Link to={next.to} params={ID_PARAM(store.id)}>
-                      {next.icon ? <next.icon /> : null}
-                      {copy.projects.nextTo(next.label)}
-                      <ArrowRight />
-                    </Link>
-                  </Button>
+                  <FlowNext
+                    label={copy.projects.nextTo(next.label)}
+                    icon={next.icon}
+                    link={(c) => (
+                      <Link to={next.to} params={ID_PARAM(store.id)}>
+                        {c}
+                      </Link>
+                    )}
+                  />
                 ) : (
                   <span className="text-sm text-muted-foreground">{copy.definition.lastStep}</span>
                 )}
-              </div>
+              </FlowNav>
               {!next && finish ? finish : null}
             </>
           )}

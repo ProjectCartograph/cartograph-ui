@@ -1,9 +1,7 @@
 import { Check } from "lucide-react";
-import { ProgressRing } from "@/components/ProgressRing";
-import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorAlert } from "@/components/error-alert";
 import {
@@ -20,6 +18,7 @@ import { useProjectChecks } from "./api";
 import { useProjectStore, type SaveState } from "./store";
 import { STAGES, stepsOfStage, type Stage } from "./types";
 import { STAGE_ICON } from "./steps";
+import { FlowProgress, type FlowSegment } from "@/components/walker";
 import { ConflictNotes } from "@/collab/ConflictNotes";
 import { OfflineNote } from "@/collab/OfflineNote";
 import { ProposalNotice } from "@/proposals/ProposalNotice";
@@ -143,68 +142,45 @@ export function DiscardDraftDialog({ open, onOpenChange }: { open: boolean; onOp
   );
 }
 
-/** Initiation, Closing, Landing: the three-phase stepper every journey
- * screen shows in its header (rule 3). */
 /**
- * The four stages of a definition, as marks with one word each: Align,
- * Quality, Refine, Polish. Each jumps to the first step of its stage.
- * The stage a person is in is filled; the ones behind it are quiet; the
- * ones ahead are outlines. The lifecycle phases are unchanged underneath
- * (a stage groups the questions; a phase is where the answer belongs).
+ * The seven stages of a project's definition, as every flow shows its
+ * progress (components/walker FlowProgress): a segment per stage, filled
+ * by the share of its steps with nothing blocking, its worst check marked,
+ * each going to the stage's first step. The lifecycle phases are
+ * unchanged underneath (a stage groups the questions; a phase is where the
+ * answer belongs).
  */
 export function StageStepper({ id, current }: { id: string; current: Stage }) {
-  const currentIdx = STAGES.indexOf(current);
-  // A ring per stage, filled by the share of its steps with nothing
-  // blocking, read from the same checks the rail shows (LSS_REVIEW.md, D22).
+  const navigate = useNavigate();
+  // Read from the same checks the rail shows (LSS_REVIEW.md, D22).
   const checks = useProjectChecks(id, true);
-  const blocked = new Set((checks.data?.items ?? []).filter((c) => c.state === "block").map((c) => c.section));
-  const checked = new Set((checks.data?.items ?? []).map((c) => c.section));
-  // Where the row scrolls sideways (a narrow screen), the stage on screen
-  // is brought into the middle of it, without moving the page.
-  const row = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const scroller = row.current?.parentElement;
-    const here = row.current?.querySelector<HTMLElement>("[data-current-stage]");
-    if (!scroller || !here || scroller.scrollWidth <= scroller.clientWidth) return;
-    scroller.scrollLeft = here.offsetLeft - row.current!.offsetLeft - (scroller.clientWidth - here.offsetWidth) / 2;
-  }, [current, checks.data]);
+  const items = checks.data?.items ?? [];
+  const stateOf = (section: string) => {
+    const here = items.filter((c) => c.section === section);
+    if (here.length === 0) return undefined;
+    return here.some((c) => c.state === "block") ? "block" : here.some((c) => c.state === "warn") ? "warn" : "ok";
+  };
+  const segments: FlowSegment[] = STAGES.map((stage) => {
+    const steps = stepsOfStage(stage);
+    const states = steps.map((s) => stateOf(s.section)).filter((x): x is "ok" | "warn" | "block" => !!x);
+    const clear = states.filter((x) => x !== "block").length;
+    return {
+      key: stage,
+      label: pc.stages[stage],
+      icon: STAGE_ICON[stage],
+      share: states.length ? clear / steps.length : 0,
+      state: states.includes("block") ? "block" : states.includes("warn") ? "warn" : states.length === steps.length ? "ok" : undefined,
+      title: states.length ? `${pc.stageQuestion[stage]} ${pc.assembly.stageProgress(clear, steps.length)}` : pc.stageQuestion[stage],
+    };
+  });
   return (
-    <div ref={row} className="flex shrink-0 items-center gap-1.5" data-cartograph-region="stage-stepper">
-      {STAGES.map((stage, i) => {
-        const first = stepsOfStage(stage)[0];
-        const Icon = STAGE_ICON[stage];
-        return (
-          <Link
-            key={stage}
-            to={`/projects/$id${first.path}`}
-            params={{ id }}
-            title={pc.stageQuestion[stage]}
-            aria-current={stage === current ? "step" : undefined}
-            data-current-stage={stage === current ? "" : undefined}
-          >
-            <Badge
-              variant={stage === current ? "current" : i < currentIdx ? "secondary" : "outline"}
-              className="gap-1"
-            >
-              <Icon className="size-3.5 shrink-0" aria-hidden="true" />
-              {pc.stages[stage]}
-              {(() => {
-                const steps = stepsOfStage(stage).filter((s) => checked.has(s.section));
-                if (steps.length === 0) return null;
-                const clear = steps.filter((s) => !blocked.has(s.section)).length;
-                return (
-                  <ProgressRing
-                    value={clear / steps.length}
-                    size={12}
-                    label={pc.assembly.stageProgress(clear, steps.length)}
-                    className="ml-0.5 text-success"
-                  />
-                );
-              })()}
-            </Badge>
-          </Link>
-        );
-      })}
+    <div className="min-w-[36rem]" data-cartograph-region="stage-stepper">
+      <FlowProgress
+        segments={segments}
+        at={STAGES.indexOf(current)}
+        onGo={(i) => void navigate({ to: `/projects/$id${stepsOfStage(STAGES[i])[0].path}`, params: { id } })}
+        label={pc.stepper.label}
+      />
     </div>
   );
 }

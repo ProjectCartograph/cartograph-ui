@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, BookOpen, Plus } from "lucide-react";
+import { BookOpen, Plus } from "lucide-react";
 
 import { useClient } from "@/client/context";
 import type { Client } from "@/client/port";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker";
+import { FlowBack, FlowNav, FlowNext, WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker";
 import { copy } from "@/copy";
 import { useSettings } from "@/surfaces/goals/api";
 import { levelName } from "@/surfaces/goals/levels";
@@ -332,16 +332,13 @@ export function Onboarding() {
         ) : null}
       </WalkerStep>
 
-      <div className="mt-auto flex items-center justify-between gap-2">
+      <FlowNav>
         {step === "name" ? (
           <Button type="button" variant="ghost" size="lg" onClick={finish}>
             {oc.notNow}
           </Button>
         ) : (
-          <Button type="button" variant="ghost" size="lg" onClick={() => go(back(step, goals.length))}>
-            <ArrowLeft />
-            {oc.back}
-          </Button>
+          <FlowBack label={oc.back} onClick={() => go(back(step, goals.length))} />
         )}
         <div className="flex items-center gap-2">
           {part === HOW ? (
@@ -369,7 +366,7 @@ export function Onboarding() {
             <Forward onClick={() => void run(saveOutcomes, "map")} disabled={busy} />
           )}
         </div>
-      </div>
+      </FlowNav>
     </div>
   );
 }
@@ -383,12 +380,7 @@ function back(step: Step, goals: number): Step {
 }
 
 function Forward({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
-  return (
-    <Button type="button" size="lg" onClick={onClick} disabled={disabled}>
-      {oc.next}
-      <ArrowRight />
-    </Button>
-  );
+  return <FlowNext label={oc.next} onClick={onClick} disabled={disabled} />;
 }
 
 /**

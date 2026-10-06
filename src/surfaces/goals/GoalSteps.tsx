@@ -1,7 +1,7 @@
-import { ArrowLeft, ArrowRight, Check, type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ProgressRing } from "@/components/ProgressRing";
+import { FlowBack, FlowNav, FlowNext, FlowProgress } from "@/components/walker";
 import { useManifestName } from "@/api/names";
 import { copy } from "@/copy";
 import { SmartMarks } from "./SmartMarks";
@@ -19,65 +19,36 @@ export interface GoalStep {
 
 /**
  * The steps of defining an aim, one question each, in the order they are
- * best answered. Each lights when it has what it needs; any can be opened
- * at any time. Same shape as the project and gap flows (D22).
+ * best answered, as every flow shows its progress (components/walker): a
+ * segment each, full once it has what it needs; any can be opened at any
+ * time.
  */
 export function GoalSteps({ steps, current, onPick }: { steps: GoalStep[]; current: string; onPick: (k: string) => void }) {
-  const counted = steps.filter((s) => !s.optional && s.key !== "review");
-  const done = counted.filter((s) => s.done).length;
+  const at = steps.findIndex((s) => s.key === current);
   return (
-    <nav aria-label={sc.title} className="flex flex-col gap-2 rounded-xl bg-muted/30 px-3 py-2.5" data-cartograph-region="goal-steps">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ProgressRing value={counted.length ? done / counted.length : 0} size={16} label={sc.progress(done, counted.length)} className="text-primary" />
-        <span className="font-medium">{sc.title}</span>
+    <nav aria-label={sc.title} className="-mx-1 overflow-x-auto px-1 pb-1" data-cartograph-region="goal-steps">
+      <div className={steps.length > 4 ? "min-w-[32rem]" : undefined}>
+        <FlowProgress
+          segments={steps.map((s) => ({ key: s.key, label: s.label, icon: s.icon, share: s.done ? 1 : 0, state: s.done ? "ok" : undefined }))}
+          at={at}
+          onGo={(i) => onPick(steps[i].key)}
+          label={sc.title}
+        />
       </div>
-      <ol className="flex flex-wrap gap-1">
-        {steps.map((s, i) => {
-          const Icon = s.icon;
-          const active = s.key === current;
-          return (
-            <li key={s.key}>
-              <button
-                type="button"
-                aria-current={active ? "step" : undefined}
-                onClick={() => onPick(s.key)}
-                className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-sm ${active ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:bg-background/60"}`}
-              >
-                <span className={`flex size-5 items-center justify-center rounded-full text-[11px] ${s.done ? "bg-foreground text-background" : "border border-dashed border-muted-foreground/60"}`} aria-hidden="true">
-                  {s.done ? <Check className="size-3" /> : i + 1}
-                </span>
-                <Icon className="size-3.5" aria-hidden="true" />
-                {s.label}
-                {s.done ? <span className="sr-only">{sc.doneWord}</span> : null}
-              </button>
-            </li>
-          );
-        })}
-      </ol>
     </nav>
   );
 }
 
-/** Back and Next, naming where Next goes. */
+/** Back and Next, naming where Next goes, as every flow has them. */
 export function StepNav({ steps, current, onPick }: { steps: GoalStep[]; current: string; onPick: (k: string) => void }) {
   const i = steps.findIndex((s) => s.key === current);
   const prev = steps[i - 1];
   const next = steps[i + 1];
   return (
-    <div className="flex justify-between gap-2 border-t pt-4">
-      {prev ? (
-        <Button type="button" variant="outline" onClick={() => onPick(prev.key)}>
-          <ArrowLeft />
-          {sc.back}
-        </Button>
-      ) : <span />}
-      {next ? (
-        <Button type="button" onClick={() => onPick(next.key)}>
-          {sc.next(next.label)}
-          <ArrowRight />
-        </Button>
-      ) : null}
-    </div>
+    <FlowNav>
+      <FlowBack label={sc.back} onClick={() => prev && onPick(prev.key)} hidden={!prev} />
+      {next ? <FlowNext label={sc.next(next.label)} icon={next.icon} onClick={() => onPick(next.key)} /> : null}
+    </FlowNav>
   );
 }
 

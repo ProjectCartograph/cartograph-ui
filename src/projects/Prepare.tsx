@@ -7,6 +7,7 @@ import programmeFlow from "../../contract/flows/programme.flow.json";
 import projectFlow from "../../contract/flows/project.flow.json";
 import { termOf } from "@/components/glossary";
 import { WorkTextProvider } from "@/components/relevance";
+import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
 import { useRelevant } from "@/components/useRelevant";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -149,12 +150,10 @@ export function Prepare({ kind, partOf }: { kind: PreparedKind; partOf?: boolean
           ))}
         </ol>
 
-        <div className="flex justify-end">
-          <Button type="button" size="lg" onClick={start}>
-            {pc.start(pc.what[kind])}
-            <ArrowRight />
-          </Button>
-        </div>
+        <FlowNav>
+          <FlowBack label={copy.projects.back} onClick={() => window.history.back()} />
+          <FlowNext label={pc.start(pc.what[kind])} onClick={start} />
+        </FlowNav>
       </div>
     </WorkTextProvider>
   );

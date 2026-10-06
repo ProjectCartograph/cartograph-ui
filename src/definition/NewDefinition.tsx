@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { AlreadyThere } from "@/components/AlreadyThere";
 import { DidYouMean } from "@/components/DidYouMean";
+import { FlowBack, FlowNav, FlowNext, WalkerQuestion } from "@/components/walker";
 import { manifestLink } from "@/proposals/links";
 import { useNavigate, type LinkProps } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
 import { stringify as stringifyYAML } from "yaml";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useClient } from "@/client/context";
+import { copy } from "@/copy";
 import { ClientError } from "@/client/port";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
@@ -116,11 +116,10 @@ export function NewDefinition({
   }
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-6" data-cartograph-region="new-definition">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-muted-foreground">{subtitle}</p>
-      </div>
+    // The walker's frame and words, as every flow has them: one question,
+    // large, then what it needs, then Back and the way forward.
+    <div className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col gap-8 pt-[6vh] pb-12" data-cartograph-region="new-definition">
+      <WalkerQuestion title={title} hint={subtitle} />
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
@@ -163,12 +162,10 @@ export function NewDefinition({
 
       {children}
 
-      <div className="flex items-center justify-end gap-3 pt-2">
-        <Button type="button" size="lg" onClick={handleCreate} disabled={!canCreate || creating}>
-          {createLabel}
-          <ArrowRight />
-        </Button>
-      </div>
+      <FlowNav>
+        <FlowBack label={copy.projects.back} onClick={() => window.history.back()} />
+        <FlowNext label={createLabel} onClick={handleCreate} disabled={!canCreate || creating} />
+      </FlowNav>
     </div>
   );
 }
