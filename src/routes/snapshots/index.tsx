@@ -82,14 +82,14 @@ function SnapshotsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-[1_1_16rem]">
           <h1 className="text-2xl font-semibold tracking-tight">Snapshots</h1>
           <p className="text-muted-foreground">
             Every saved version in this vault. The file is the draft; a snapshot is a version.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm">
             <RotateCw className="h-4 w-4" />
             Rebuild index

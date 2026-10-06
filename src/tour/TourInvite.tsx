@@ -19,8 +19,8 @@ export function TourInvite() {
   return (
     <section className="cartograph-unfold flex w-full flex-wrap items-center gap-3 rounded-xl bg-primary/5 p-4 ring-1 ring-primary/20" data-cartograph-region="tour-invite" aria-label={tc.start}>
       <Compass className="size-5 shrink-0 text-primary" aria-hidden="true" />
-      <p className="min-w-0 flex-1 text-sm text-pretty">{tc.invite}</p>
-      <div className="flex gap-2">
+      <p className="min-w-[12rem] flex-1 text-sm text-pretty">{tc.invite}</p>
+      <div className="ml-auto flex gap-2">
         <Button
           type="button"
           variant="ghost"

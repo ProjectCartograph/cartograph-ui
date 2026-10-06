@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Circle, Hash } from "lucide-react";
+import { CheckCircle2, Circle, FileCode2, Hash, Network, Send } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -168,7 +168,7 @@ function ProjectRecordPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">{store.name}</h1>
+            <h1 className="min-w-0 text-2xl font-semibold tracking-tight break-words">{store.name}</h1>
             <Badge variant="secondary">{statePill()}</Badge>
           </div>
           {/* The reference people quote this by, which is not the id:
@@ -184,21 +184,31 @@ function ProjectRecordPage() {
             aria-label={copy.alias.label}
             title={copy.alias.hint}
             maxLength={80}
-            className="h-7 w-64 font-mono text-xs text-muted-foreground"
+            className="h-7 w-64 max-w-full font-mono text-xs text-muted-foreground"
           />
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" onClick={handleHandoff} disabled={stateQuery.data?.state === "handed off"}>
-            Hand off
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleHandoff}
+            disabled={stateQuery.data?.state === "handed off"}
+            aria-label={rc.handOffLabel}
+            title={rc.handOffLabel}
+          >
+            <Send />
+            {rc.handOff}
           </Button>
           <Button asChild variant="outline">
-            <Link to="/projects/$id/framework" params={{ id }}>
+            <Link to="/projects/$id/framework" params={{ id }} aria-label={rc.frameworkLabel} title={rc.frameworkLabel}>
+              <Network />
               {copy.framework.title}
             </Link>
           </Button>
-          <Button type="button" variant="outline" onClick={() => setYamlOpen(true)}>
-            {rc.viewYaml}
+          <Button type="button" variant="outline" onClick={() => setYamlOpen(true)} aria-label={rc.viewYaml} title={rc.viewYaml}>
+            <FileCode2 />
+            {rc.yaml}
           </Button>
         </div>
       </div>

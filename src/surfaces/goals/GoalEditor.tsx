@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarRange, CheckCircle2, ClipboardCheck, CornerDownRight, Gauge, MessageSquare, Plus, Save, Target, UserRound, X } from "lucide-react";
+import { AlertTriangle, CalendarRange, CheckCircle2, ClipboardCheck, CornerDownRight, Gauge, FileCode2, MessageSquare, Plus, Save, Target, UserRound, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -308,15 +308,15 @@ export function GoalEditor({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col gap-6" data-cartograph-region="goal-editor">
-      <div className="flex items-start justify-between gap-4">
-        <div id="goal-section-title" className="flex min-w-0 flex-col gap-2">
-          <div className="flex min-w-0 items-center gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div id="goal-section-title" className="flex min-w-0 flex-[1_1_18rem] flex-col gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
             <InlineTitle
               data-cartograph-field="/metadata/name"
               value={manifest.metadata.name}
               onSave={handleRename}
               as="h1"
-              className="min-w-0 text-2xl font-semibold tracking-tight"
+              className="min-w-0 max-w-full text-2xl font-semibold tracking-tight"
             />
             <Badge variant="secondary" className="shrink-0">
               {levelLabel}
@@ -330,10 +330,11 @@ export function GoalEditor({ id }: { id: string }) {
             <p className="text-xs text-muted-foreground">{ec.levelKept}</p>
           ) : null}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
           <OfflineNote />
-          <Button type="button" variant="outline" onClick={() => setYamlOpen(true)}>
-            {ec.viewAsYaml}
+          <Button type="button" variant="outline" onClick={() => setYamlOpen(true)} aria-label={ec.viewAsYaml} title={ec.viewAsYaml}>
+            <FileCode2 />
+            {ec.yaml}
           </Button>
           <Button type="button" onClick={() => setSaveOpen(true)} aria-label={ec.save.buttonLabel} title={ec.save.buttonLabel}>
             <Save />

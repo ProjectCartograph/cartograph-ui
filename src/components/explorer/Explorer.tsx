@@ -196,7 +196,9 @@ export function Explorer({
                     >
                       <ArrowUpRight className="size-3.5" aria-hidden="true" />
                     </Link>
-                    <span className="ml-auto flex shrink-0 items-center gap-2.5 text-xs text-muted-foreground">{f.row.marks}</span>
+                    {/* On a phone the name needs the width; the preview pane carries
+                        what the marks say. */}
+                    <span className="ml-auto hidden shrink-0 items-center gap-2.5 text-xs text-muted-foreground sm:flex">{f.row.marks}</span>
                   </div>
                 ),
               )}

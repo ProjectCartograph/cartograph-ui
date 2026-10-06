@@ -998,6 +998,7 @@ export const copy = {
       loading: "Loading.",
       error: "This could not be loaded.",
       viewAsYaml: "View as YAML",
+        yaml: "YAML",
       version: (n: number) => `version ${n}`,
       renameHint: "Click to rename",
       moveTo: {
@@ -2965,6 +2966,10 @@ export const copy = {
       draftUnsaved: "Draft, unsaved as a version",
       phasesTitle: "Phases",
       viewYaml: "View as YAML",
+      yaml: "YAML",
+      handOff: "Hand off",
+      handOffLabel: "Hand off this project",
+      frameworkLabel: "Open the results framework",
       recordLink: "The project record",
       sectionsEmpty: "Nothing entered yet.",
       plusMore: (first: string, n: number) => `${first} +${n} more`,

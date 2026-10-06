@@ -91,12 +91,13 @@ export function WorkingIn() {
           <Button
             variant={active ? "secondary" : "ghost"}
             size="sm"
-            className="max-w-72 gap-1.5"
+            className="max-w-72 shrink-0 gap-1.5"
             aria-label={c.menu}
             data-cartograph-region="working-in"
           >
             <GitPullRequest className="size-3.5 shrink-0" aria-hidden="true" />
-            <span className="truncate">{active ? (name ?? c.label) : c.label}</span>
+            {/* On a phone the icon and the count say it; the name is in the menu. */}
+            <span className="hidden truncate sm:inline">{active ? (name ?? c.label) : c.label}</span>
             {active ? <span className="shrink-0 text-xs text-muted-foreground">{c.items(count)}</span> : null}
             <ChevronDown className="size-3.5 shrink-0 opacity-60" aria-hidden="true" />
           </Button>
