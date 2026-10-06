@@ -35,6 +35,7 @@ import { ClientError, Conflict } from "@/client/port";
 import type { components } from "@/api/gen/schema";
 import { copy } from "@/copy";
 import { ReferenceField } from "./ReferenceField";
+import { BodyUses } from "./BodyUses";
 import { PeriodsField, type NamedPeriod } from "./PeriodsField";
 import { ReferencePicker } from "./ReferencePicker";
 import { fieldVocab, VocabOption } from "@/components/vocab";
@@ -308,6 +309,10 @@ export function SheetForm({
             {(minimal ? fields.filter((f) => f.required && !(preset && f.name in preset)) : fields).map((f) => (
               <SheetFormField key={f.name} kind={kind} field={f} control={form.control} />
             ))}
+
+            {isEdit && kind === "Resource" && existing?.spec.category === "governanceBody" ? (
+              <BodyUses id={existing.id} />
+            ) : null}
 
             {minimal ? null : (
             <FormField

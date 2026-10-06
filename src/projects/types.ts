@@ -15,7 +15,12 @@ export interface Mandate {
   kind: "decision" | "policy" | "lawOrRegulation" | "contract" | "businessCase" | "request";
   reference?: string;
   date?: string;
+  /** Who issued it, as written: only for an issuer outside the
+   * workspace, such as a government or a regulator. */
   issuedBy?: string;
+  /** Who issued it, by reference: a governance body or a role the
+   * workspace holds (TAXONOMY.md D43). Not both. */
+  issuer?: Ref;
 }
 
 export interface FundingLine {

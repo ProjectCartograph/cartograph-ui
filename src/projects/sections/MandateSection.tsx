@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { FieldHeading } from "@/components/guidance";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { copy, plusNoun } from "@/copy";
+import { RoleRefPicker, roleOptions, useResourceNames } from "../RoleRefPicker";
 import { useProjectStore } from "../store";
 import type { Mandate } from "../types";
 
@@ -16,6 +17,8 @@ const ac = copy.projects.aim;
 export function MandateSection() {
   const store = useProjectStore();
   const mandate = store.spec.mandate ?? [];
+  const resourceName = useResourceNames();
+  const roles = roleOptions(store.spec.resources ?? [], resourceName);
   function updateMandate(idx: number, patch: Partial<Mandate>) {
     store.updateSpec((s) => {
       const next = [...(s.mandate ?? [])];
@@ -85,6 +88,30 @@ export function MandateSection() {
                 onChange={(v) => updateMandate(idx, { date: v || undefined })}
                 placeholder={ac.mandateDateLabel}
                 aria-label={ac.mandateDateLabel}
+              />
+              {/* Who issued it: a governance body or a role the workspace
+                  holds, picked so its page can list what it decided; or,
+                  for an issuer outside the workspace, its name as written.
+                  One or the other (TAXONOMY.md D43). */}
+              <RoleRefPicker
+                data-cartograph-field={`/spec/mandate/${idx}/issuer`}
+                value={m.issuer}
+                options={roles}
+                onChange={(issuer) => updateMandate(idx, { issuer, issuedBy: issuer ? undefined : m.issuedBy })}
+                label={ac.mandateIssuerLabel}
+                placeholder={ac.mandateIssuerLabel}
+                withBodies
+              />
+              <Input
+                data-cartograph-field={`/spec/mandate/${idx}/issuedBy`}
+                value={m.issuedBy ?? ""}
+                onChange={(e) => {
+                  const issuedBy = e.target.value.slice(0, 80) || undefined;
+                  updateMandate(idx, { issuedBy, issuer: issuedBy ? undefined : m.issuer });
+                }}
+                placeholder={ac.mandateIssuedByLabel}
+                aria-label={ac.mandateIssuedByLabel}
+                maxLength={80}
               />
             </div>
           </div>

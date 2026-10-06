@@ -338,6 +338,7 @@ export function SuccessCriterionDialog({
               onAddRole={() => setNaming("confirmedBy")}
               label={c.confirmedByLabel}
               placeholder={c.rolePlaceholder}
+              withBodies
               className="w-full"
             />
             <p className="pt-1 text-xs font-medium text-muted-foreground">{c.whenLabel}</p>

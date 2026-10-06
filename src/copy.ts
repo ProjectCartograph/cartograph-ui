@@ -731,6 +731,14 @@ export const copy = {
         dueOffsetDays: "How many days after a round closes the report is due.",
       },
     } as Record<string, Record<string, string>>,
+    // What a governance body does, on its own dialog (TAXONOMY.md D43).
+    bodyUses: {
+      title: "What it decides",
+      none: "Nothing names it yet.",
+      confirms: "Confirms the success of",
+      receives: "Receives escalations from",
+      decided: "Issued the mandate for",
+    },
     // A reporting cycle's named periods (TAXONOMY.md D40).
     periods: {
       formLabel: "How the periods recur",
@@ -2303,6 +2311,8 @@ export const copy = {
       mandateReferenceLabel: "Reference",
       mandateReferencePlaceholder: "",
       mandateDateLabel: "Date",
+      mandateIssuerLabel: "Issued by",
+      mandateIssuedByLabel: "Or issued outside the workspace, by",
       addMandate: "Add a mandate",
       mandateEmpty: "No mandate named yet.",
       mandateKind: {
