@@ -37,6 +37,7 @@ export type ProjectChecks = Schemas["ProjectChecks"];
 export type ProjectState = Schemas["ProjectState"];
 export type ProjectStateName = Schemas["ProjectStateName"];
 export type GapCoverage = Schemas["GapCoverage"];
+export type CyclePeriod = Schemas["CyclePeriod"];
 export type Vault = Schemas["Vault"];
 export type ManifestRef = Schemas["ManifestRef"];
 export type Exclusion = Schemas["Exclusion"];
@@ -367,6 +368,10 @@ export interface Client {
   match(kind: string, text: string, level?: string): Promise<Match[]>;
   /** Which part of a gap each piece of work addresses. */
   gapCoverage(id: string): Promise<GapCoverage>;
+  /** A reporting cycle's periods that overlap two months (YYYY-MM), as
+   * the engine derives them: keyed by the month each ends, with its label
+   * and the day its reading is due (TAXONOMY.md D40). */
+  cyclePeriods(id: string, from: string, to: string): Promise<CyclePeriod[]>;
   /** Deletes a goal nothing references. Throws Refused naming what does. */
   deleteGoal(id: string, reason: string): Promise<void>;
 

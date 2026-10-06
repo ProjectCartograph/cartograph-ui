@@ -216,6 +216,8 @@ export function httpClient(
     fromIdea: (kind, idea) => answer(wire.POST("/from-idea", { body: { kind, idea } })),
     match: (kind, text, level) => answer(wire.POST("/match", { body: { kind, text, ...(level ? { level } : {}) } })),
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
+    cyclePeriods: (id, from, to) =>
+      answer(wire.GET("/manifests/ReportingCycle/{id}/periods", { params: { path: { id }, query: { from, to } } })),
     deleteGoal: (id, reason) =>
       done(wire.DELETE("/manifests/Goal/{id}", { params: { path: { id } }, body: { reason } })),
 

@@ -15,6 +15,7 @@ export type FieldKind =
   | "ref"
   | "ref-array"
   | "string-array"
+  | "object-array"
   | "unknown";
 
 export interface FieldDef {
@@ -82,6 +83,11 @@ function classify(prop: JSONSchemaDoc): Omit<FieldDef, "name" | "required"> {
     }
     if (Array.isArray(items.enum)) {
       return { kind: "string-array", enumValues: items.enum, minItems: prop.minItems };
+    }
+    // A list of records, such as a cycle's named periods: each has its
+    // own editor, never a text box.
+    if (items.properties && typeof items.properties === "object") {
+      return { kind: "object-array", minItems: prop.minItems };
     }
     return { kind: "string-array", minItems: prop.minItems };
   }

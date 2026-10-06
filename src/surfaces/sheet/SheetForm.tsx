@@ -35,6 +35,7 @@ import { ClientError, Conflict } from "@/client/port";
 import type { components } from "@/api/gen/schema";
 import { copy } from "@/copy";
 import { ReferenceField } from "./ReferenceField";
+import { PeriodsField, type NamedPeriod } from "./PeriodsField";
 import { ReferencePicker } from "./ReferencePicker";
 import { fieldVocab, VocabOption } from "@/components/vocab";
 import { type FieldDef, type SheetKind, slugify, unitHint } from "./schema";
@@ -62,6 +63,7 @@ function defaultForField(f: FieldDef): unknown {
       return false;
     case "ref-array":
     case "string-array":
+    case "object-array":
       return [];
     case "integer":
     case "number":
@@ -446,6 +448,29 @@ function SheetFormField({
                 ))}
               </SelectContent>
             </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  if (field.kind === "object-array") {
+    // Only a cycle's named periods are a list of records today; any other
+    // would need an editor of its own before it is shown.
+    if (field.name !== "periods") return null;
+    return (
+      <FormField
+        control={control}
+        name={field.name}
+        render={({ field: rhf }) => (
+          <FormItem>
+            {heading}
+            <PeriodsField
+              pointer={pointer}
+              value={(rhf.value as NamedPeriod[] | undefined) ?? []}
+              onChange={rhf.onChange}
+            />
             <FormMessage />
           </FormItem>
         )}

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { copy } from "@/copy";
-import type { Reading, Slot } from "./periods";
+import { periodLabel, type Reading, type Slot } from "./periods";
 
 /**
  * One row per period the cycle has, whether or not anybody has read it.
@@ -68,7 +68,7 @@ export function ReadingsTable({
                   {r ? null : (
                     <CircleDashed className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                   )}
-                  <span className="truncate">{slot.period}</span>
+                  <span className="truncate">{periodLabel(slot)}</span>
                 </span>
               </td>
               <td className="py-1.5">
@@ -78,7 +78,7 @@ export function ReadingsTable({
                     type="number"
                     className="h-8 w-28"
                     value={r?.value ?? ""}
-                    aria-label={`${c.value} ${slot.period}`}
+                    aria-label={`${c.value} ${periodLabel(slot)}`}
                     onChange={(e) =>
                       e.target.value === ""
                         ? write(slot.period, null)
@@ -97,7 +97,7 @@ export function ReadingsTable({
                   data-cartograph-field={`${pointer(r)}/provisional`}
                   checked={Boolean(r?.provisional)}
                   disabled={!r}
-                  aria-label={`${c.provisional} ${slot.period}`}
+                  aria-label={`${c.provisional} ${periodLabel(slot)}`}
                   onCheckedChange={(v) => write(slot.period, { provisional: v === true || undefined })}
                 />
               </td>

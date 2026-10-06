@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 
 import { copy } from "@/copy";
-import type { Slot } from "./periods";
+import { periodLabel, type Slot } from "./periods";
 
 /**
  * One KPI over time, against the bar it has to clear.
@@ -190,7 +190,7 @@ export function ReadingChart({
             onMouseLeave={() => setHover((h) => (h === i ? null : h))}
           >
             <title>
-              {s.period}
+              {periodLabel(s)}
               {s.reading ? ` — ${fmt(s.reading.value)}` : ` — ${c.unread}`}
             </title>
           </rect>
@@ -198,10 +198,10 @@ export function ReadingChart({
 
         {/* First and last period, so the span is readable without a table. */}
         <text x={PAD.left} y={H - 8} className="fill-muted-foreground text-[10px]">
-          {slots[0].period}
+          {periodLabel(slots[0])}
         </text>
         <text x={W - PAD.right} y={H - 8} textAnchor="end" className="fill-muted-foreground text-[10px]">
-          {slots[slots.length - 1].period}
+          {periodLabel(slots[slots.length - 1])}
         </text>
       </svg>
       <figcaption className="text-xs text-muted-foreground">

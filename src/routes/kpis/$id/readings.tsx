@@ -5,8 +5,8 @@ import { Help } from "@/components/guidance";
 import { copy } from "@/copy";
 import { DefinitionShell } from "@/definition/Shell";
 import { DefinitionStoreProvider, useDefinitionStore, useSectionAutosave } from "@/definition/store";
-import { readingsID, useCycle } from "@/kpis/api";
-import { readingSlots } from "@/kpis/periods";
+import { readingsID, useCycle, useCyclePeriods } from "@/kpis/api";
+import { readingSlots, readingSpan } from "@/kpis/periods";
 import { ReadingChart } from "@/kpis/ReadingChart";
 import { ReadingsTable } from "@/kpis/ReadingsTable";
 import { type KPIReadingsSpec, blankReadings, knownBaseline } from "@/kpis/types";
@@ -62,9 +62,9 @@ function Series({ kpiID, spec }: { kpiID: string; spec: KPIDefinitionSpec }) {
   const cycle = useCycle(spec.cycle);
 
   const readings = store.spec.readings ?? [];
-  const slots = cycle.data
-    ? readingSlots(cycle.data, readings, knownBaseline(spec.baseline)?.date, spec.target?.date)
-    : [];
+  const span = readingSpan(readings, knownBaseline(spec.baseline)?.date, spec.target?.date);
+  const periods = useCyclePeriods(spec.cycle, span);
+  const slots = cycle.data ? readingSlots(periods.data ?? [], readings) : [];
 
   return (
     <div className="flex flex-col gap-6">

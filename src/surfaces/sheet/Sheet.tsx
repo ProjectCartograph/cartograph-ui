@@ -105,6 +105,11 @@ function SpecCell({
       const label = copy.sheets.fields[kind]?.[field.name] ?? field.name;
       return <Badge variant="secondary">{`${ids.length} ${label.toLowerCase()}`}</Badge>;
     }
+    case "object-array": {
+      const items = Array.isArray(value) ? (value as { name?: string }[]) : [];
+      if (items.length === 0) return dash;
+      return <TruncatedText text={items.map((i) => i.name ?? "").filter(Boolean).join(", ")} />;
+    }
     case "string-array": {
       const items = Array.isArray(value) ? (value as string[]) : [];
       if (items.length === 0) return dash;

@@ -731,6 +731,16 @@ export const copy = {
         dueOffsetDays: "How many days after a round closes the report is due.",
       },
     } as Record<string, Record<string, string>>,
+    // A reporting cycle's named periods (TAXONOMY.md D40).
+    periods: {
+      formLabel: "How the periods recur",
+      yearly: "Each year, such as terms",
+      once: "Once, such as survey waves",
+      nameLabel: "Period name",
+      endMonthLabel: "Ends each year in",
+      endLabel: "Ends in",
+      add: "Add a period",
+    },
     fieldPlaceholders: {
       Team: {
         description: "Runs the depot network and its quality checks.",
@@ -1387,6 +1397,7 @@ export const copy = {
       every: (months: number) =>
         months === 1 ? "Read every month," : `Read every ${months} months,`,
       startingIn: (month: string) => `counting from ${month}.`,
+      named: (names: string) => `Read at the end of each named period: ${names}.`,
       periodsEnd: (months: string) => `Periods end in ${months}.`,
     },
     definition: {

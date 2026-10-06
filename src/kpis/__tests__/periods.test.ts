@@ -1,42 +1,26 @@
 import { describe, it, expect } from "vitest";
 
-import { periodsBetween, readingSlots } from "../periods";
+import type { CyclePeriod } from "@/client/port";
+import { periodLabel, readingSlots, readingSpan } from "../periods";
 
-const quarterly = { periodMonths: 3, startMonth: 1 };
-// A financial year that begins in October, which is the case that catches
-// a range-aligned implementation.
-const octoberYear = { periodMonths: 12, startMonth: 10 };
+// What the engine lays out for a quarterly cycle over 2026, and for terms.
+const quarters: CyclePeriod[] = ["2025-12", "2026-03", "2026-06", "2026-09", "2026-12"].map((end) => ({
+  end,
+  start: end,
+  due: `${end}-28`,
+}));
+const terms: CyclePeriod[] = [
+  { end: "2026-12", start: "2026-08", name: "Term I", label: "Term I 2026/27", due: "2027-01-14" },
+  { end: "2027-04", start: "2027-01", name: "Term II", label: "Term II 2026/27", due: "2027-05-14" },
+];
 
-describe("the periods a cycle lays out", () => {
-  it("names a period by the month it ends, because that is when its number exists", () => {
-    expect(periodsBetween(quarterly, "2026-01", "2026-12").map((s) => s.period)).toEqual([
-      "2026-03",
-      "2026-06",
-      "2026-09",
-      "2026-12",
-    ]);
+describe("the months a KPI asks about", () => {
+  it("span the baseline, the target and every reading", () => {
+    expect(readingSpan([{ period: "2027-03", value: 1 }], "2025-12", "2026-12")).toEqual({ from: "2025-12", to: "2027-03" });
   });
 
-  it("aligns to the cycle's own start month, not to what was asked about", () => {
-    // Asked from February; the quarter it falls in still ends in March.
-    expect(periodsBetween(quarterly, "2026-02", "2026-07").map((s) => s.period)).toEqual([
-      "2026-03",
-      "2026-06",
-      "2026-09",
-    ]);
-  });
-
-  it("starts a financial year in the month the cycle says", () => {
-    expect(periodsBetween(octoberYear, "2026-01", "2027-06").map((s) => s.period)).toEqual([
-      "2026-09",
-      "2027-09",
-    ]);
-    expect(periodsBetween(octoberYear, "2026-01", "2027-06")[0].startsOn).toBe("2025-10");
-  });
-
-  it("returns nothing for a backwards range or a cycle of no months", () => {
-    expect(periodsBetween(quarterly, "2026-06", "2026-01")).toEqual([]);
-    expect(periodsBetween({ periodMonths: 0, startMonth: 1 }, "2026-01", "2026-12")).toEqual([]);
+  it("are nothing when there is nothing to span", () => {
+    expect(readingSpan([])).toBeNull();
   });
 });
 
@@ -46,15 +30,9 @@ describe("the slots a KPI shows", () => {
     { period: "2026-09", value: 64, provisional: true },
   ];
 
-  it("spans the baseline to the target, and carries each reading in its place", () => {
-    const slots = readingSlots(quarterly, readings, "2025-12", "2026-12");
-    expect(slots.map((s) => s.period)).toEqual([
-      "2025-12",
-      "2026-03",
-      "2026-06",
-      "2026-09",
-      "2026-12",
-    ]);
+  it("carries each reading in its period", () => {
+    const slots = readingSlots(quarters, readings);
+    expect(slots.map((s) => s.period)).toEqual(["2025-12", "2026-03", "2026-06", "2026-09", "2026-12"]);
     expect(slots[1].reading?.value).toBe(61);
     // A period nobody has read yet is empty, not zero.
     expect(slots[2].reading).toBeUndefined();
@@ -63,17 +41,18 @@ describe("the slots a KPI shows", () => {
 
   it("keeps a reading that falls outside the cycle rather than dropping it", () => {
     // Somebody recorded a number mid-quarter. It is still their number.
-    const slots = readingSlots(
-      quarterly,
-      [...readings, { period: "2026-05", value: 62 }],
-      "2025-12",
-      "2026-12",
-    );
+    const slots = readingSlots(quarters, [...readings, { period: "2026-05", value: 62 }]);
     expect(slots.map((s) => s.period)).toContain("2026-05");
     expect(slots.map((s) => s.period)).toEqual([...slots.map((s) => s.period)].sort());
   });
 
+  it("reads a named period by its name and an equal one by its month", () => {
+    const [termOne] = readingSlots(terms, []);
+    expect(periodLabel(termOne)).toBe("Term I 2026/27");
+    expect(periodLabel(readingSlots(quarters, [])[0])).toBe("2025-12");
+  });
+
   it("says nothing when there is nothing to say", () => {
-    expect(readingSlots(quarterly, [])).toEqual([]);
+    expect(readingSlots([], [])).toEqual([]);
   });
 });
