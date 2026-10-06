@@ -1078,6 +1078,14 @@ export const copy = {
         objective: "A specific aim under the goal, starting with a verb.",
         outcome: "The state that will be true once achieved. Numbers go in the key results.",
       } as Record<string, string>,
+      closesGap: {
+        label: "Closes gaps",
+        hint: "The gaps this outcome closes: once it is true, each gap's current state has reached its desired state.",
+        choose: "Choose a gap",
+        add: "Gap",
+        addLabel: "Add a new gap this outcome closes",
+        remove: (name: string) => `Stop linking ${name}`,
+      },
       contributesTo: {
         label: "Also leads to",
         hint: "Other objectives this outcome serves besides the one it sits under. Give the reason, so a reader can check it.",

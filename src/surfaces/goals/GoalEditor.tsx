@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, CalendarRange, CheckCircle2, ClipboardCheck, CornerDownRight, Gauge, FileCode2, MessageSquare, Plus, Save, Target, UserRound, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ import { SmartMarks } from "./SmartMarks";
 import { fieldGuide, useGuide } from "@/components/guide";
 
 import { AimEditor } from "./AimEditor";
+import { ClosesGaps } from "./ClosesGaps";
 import { GoalTreePicker } from "./GoalTreePicker";
 import { HorizonPicker } from "./HorizonPicker";
 import { GoalReview, GoalSteps, StepNav, type GoalStep } from "./GoalSteps";
@@ -45,6 +47,15 @@ import type { GoalLink, GoalManifest, KeyResult } from "./types";
 import { defaultGoalLevels } from "./tree-types";
 
 const ec = copy.goals.editor;
+
+// A check's fix names a section; open the step that holds it first, then
+// bring the field into view once it has rendered.
+const SECTION_STEP: Record<string, string> = {
+  parent: "aim", objective: "aim", title: "aim",
+  keyResults: "measures", evidence: "measures",
+  owner: "timing", horizon: "timing",
+  whyItMatters: "why", contributesTo: "links", closesGap: "links",
+};
 
 function flattenPillars(nodes: GoalNode[]): GoalNode[] {
   return nodes.filter((n) => n.level === "goal");
@@ -79,8 +90,9 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-sm text-destructive">{message}</p>;
 }
 
-export function GoalEditor({ id }: { id: string }) {
+export function GoalEditor({ id, fix }: { id: string; fix?: string }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const client = useClient();
   const manifestQuery = useGoalManifest(id);
   const checksQuery = useGoalChecks(id);
@@ -161,6 +173,16 @@ export function GoalEditor({ id }: { id: string }) {
     [strategicOptions, pillarOptions, parent]
   );
 
+  // Sent here by a check on another aim: open the step that holds the
+  // fix once the record has loaded.
+  const loaded = Boolean(manifestQuery.data);
+  useEffect(() => {
+    if (!fix || !loaded) return;
+    setStep(SECTION_STEP[fix] ?? "aim");
+    const t = setTimeout(() => document.getElementById(`goal-section-${fix}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    return () => clearTimeout(t);
+  }, [fix, loaded]);
+
   if (manifestQuery.isLoading) {
     return (
       <div className="flex flex-col gap-6">
@@ -183,14 +205,7 @@ export function GoalEditor({ id }: { id: string }) {
   const levels = settingsQuery.data?.goalLevels ?? defaultGoalLevels();
   const levelLabel = level === "goal" ? (levels[0] ?? level) : level === "objective" ? (levels[1] ?? level) : (levels[2] ?? level);
 
-  // A check's fix names a section; open the step that holds it first, then
-  // bring the field into view once it has rendered.
-  const SECTION_STEP: Record<string, string> = {
-    parent: "aim", objective: "aim", title: "aim",
-    keyResults: "measures", evidence: "measures",
-    owner: "timing", horizon: "timing",
-    whyItMatters: "why", contributesTo: "links",
-  };
+
   function scrollTo(section: string) {
     setStep(SECTION_STEP[section] ?? "aim");
     setTimeout(() => document.getElementById(`goal-section-${section}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -503,6 +518,8 @@ export function GoalEditor({ id }: { id: string }) {
             </div>
           ) : null}
 
+          {level === "outcome" && step === "links" ? <ClosesGaps outcome={id} /> : null}
+
           {level === "outcome" && step === "links" ? (
             <div id="goal-section-contributes" className="flex flex-col gap-2">
               <div className="flex items-center gap-1">
@@ -599,7 +616,11 @@ export function GoalEditor({ id }: { id: string }) {
                           type="button"
                           variant="link"
                           className="ml-1 h-auto p-0 text-sm"
-                          onClick={() => scrollTo(c.fix!.section)}
+                          onClick={() =>
+                            c.fix!.goal
+                              ? void navigate({ to: "/goals/$id", params: { id: c.fix!.goal }, search: { fix: c.fix!.section } })
+                              : scrollTo(c.fix!.section)
+                          }
                         >
                           {ec.checks.fix}
                         </Button>
