@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Help } from "@/components/guidance";
 import { ErrorAlert } from "@/components/error-alert";
 import { vocabIcon } from "@/components/vocab";
+import { ProposedMark } from "@/changesets/ProposedMark";
 import { copy } from "@/copy";
 import { useGoalTree, useSettings } from "./api";
 import { LevelBadge, levelName } from "./levels";
@@ -322,12 +323,13 @@ function Column({ node, levels, chosen, onOpen }: { node: GoalNode; levels: stri
     `flex w-full items-start gap-2 rounded-md text-left transition-colors duration-150 ease-standard active:bg-muted ${cls} ${chosen === n.id ? "bg-primary/10 text-primary" : "hover:bg-muted/60"}`;
   return (
     <section aria-label={node.name} className="flex flex-col gap-2" data-cartograph-region={`goal-${node.id}`}>
-      <button type="button" onClick={() => onOpen(node)} aria-current={chosen === node.id || undefined} className={row(node, "px-1 py-1 font-semibold")}>
+      <button type="button" onClick={() => onOpen(node)} aria-current={chosen === node.id || undefined} className={row(node, "px-1 py-1 font-semibold")} data-proposed={node.proposed}>
         <LevelIcon node={node} levels={levels} />
         <span className="flex flex-1 flex-col">
           {node.name}
           {node.horizon ? <span className="text-xs font-normal text-muted-foreground">{span(node.horizon)}</span> : null}
         </span>
+        <ProposedMark proposed={node.proposed} />
         <Attention node={node} />
       </button>
       {objectives.length === 0 ? (
@@ -335,17 +337,19 @@ function Column({ node, levels, chosen, onOpen }: { node: GoalNode; levels: stri
       ) : (
         objectives.map((o) => (
           <Card key={o.id} className="gap-1 p-2">
-            <button type="button" onClick={() => onOpen(o)} aria-current={chosen === o.id || undefined} className={row(o, "px-1 py-1 text-sm font-medium")}>
+            <button type="button" onClick={() => onOpen(o)} aria-current={chosen === o.id || undefined} className={row(o, "px-1 py-1 text-sm font-medium")} data-proposed={o.proposed}>
               <LevelIcon node={o} levels={levels} />
               <span className="flex-1">{o.name}</span>
+              <ProposedMark proposed={o.proposed} />
               <Attention node={o} />
             </button>
             <ul className="flex flex-col">
               {(o.children ?? []).map((c) => (
                 <li key={c.id}>
-                  <button type="button" onClick={() => onOpen(c)} aria-current={chosen === c.id || undefined} className={row(c, "py-1 pr-1 pl-6 text-sm")}>
+                  <button type="button" onClick={() => onOpen(c)} aria-current={chosen === c.id || undefined} className={row(c, "py-1 pr-1 pl-6 text-sm")} data-proposed={c.proposed}>
                     <LevelIcon node={c} levels={levels} />
                     <span className="min-w-0 flex-1">{c.name}</span>
+                    <ProposedMark proposed={c.proposed} />
                     <Attention node={c} />
                   </button>
                 </li>

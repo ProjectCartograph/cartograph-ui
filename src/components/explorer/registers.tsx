@@ -32,6 +32,7 @@ interface Item {
   labels?: Record<string, string>;
   state?: string;
   spec?: Spec;
+  proposed?: "new" | "changed";
 }
 
 const rc = copy.registers;
@@ -104,6 +105,7 @@ export function useProjectRows(): { rows: ExplorerRow[]; loading: boolean } {
     const m = months(s);
     return {
       id: i.id,
+      proposed: i.proposed,
       name: i.name,
       labels: i.labels,
       folder: [names(strs(al.programmes).slice(0, 1), programmes) || rc.noProgramme],
@@ -168,6 +170,7 @@ export function useProgrammeRows(): { rows: ExplorerRow[]; loading: boolean } {
     const outcomes = strs(s.goals);
     return {
       id: i.id,
+      proposed: i.proposed,
       name: i.name,
       labels: i.labels,
       folder: [goalOf.get(outcomes[0] ?? "") ?? rc.noGoal],
@@ -215,6 +218,7 @@ export function usePortfolioRows(): { rows: ExplorerRow[]; loading: boolean } {
     ];
     return {
       id: i.id,
+      proposed: i.proposed,
       name: i.name,
       labels: i.labels,
       folder: [goalOf.get(objectives[0] ?? "") ?? goals.get(objectives[0] ?? "") ?? rc.noGoal],
@@ -250,6 +254,7 @@ export function useOperationRows(): { rows: ExplorerRow[]; loading: boolean } {
     const s = i.spec ?? {};
     return {
       id: i.id,
+      proposed: i.proposed,
       name: i.name,
       labels: i.labels,
       folder: [teams.get(str(s.team)) ?? (str(s.team) || rc.noTeam)],
@@ -309,6 +314,7 @@ export function useGapRows(): { rows: ExplorerRow[]; loading: boolean } {
     const outcomes = strs(s.outcomes);
     return {
       id: i.id,
+      proposed: i.proposed,
       name: i.name,
       labels: i.labels,
       folder: [goalOf.get(outcomes[0] ?? "") ?? rc.noOutcome],
@@ -352,6 +358,7 @@ export function useKPIRows(): { rows: ExplorerRow[]; loading: boolean } {
     const unit = str(s.unit);
     return {
       id: i.id,
+      proposed: i.proposed,
       name: i.name,
       labels: i.labels,
       folder: [rc.resultLevel[str(s.resultLevel)] ?? rc.noLevel],

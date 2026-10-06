@@ -6,6 +6,7 @@ import { ArrowUpRight, ChevronRight, Folder, FolderOpen, Search, type LucideIcon
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProposedMark } from "@/changesets/ProposedMark";
 import { copy } from "@/copy";
 
 /** One record in an explorer list. */
@@ -18,6 +19,8 @@ export interface ExplorerRow {
   folder: string[];
   /** Rows nested under this one (a project's components). */
   children?: ExplorerRow[];
+  /** What the active change set does to it (engine docs/adr/0024). */
+  proposed?: "new" | "changed";
   /** The row's marks: icons and counts only. */
   marks: ReactNode;
   /** What the preview pane shows for it. */
@@ -173,6 +176,7 @@ export function Explorer({
                     role="treeitem"
                     aria-selected={f.row.id === selected}
                     data-row={f.row.id}
+                    data-proposed={f.row.proposed}
                     onClick={() => setSelected(f.row.id)}
                     onDoubleClick={() => open(f.row.id)}
                     className={`group flex cursor-default items-center gap-2 rounded-md py-1.5 pr-2 text-sm transition-colors duration-150 ease-standard active:bg-muted ${
@@ -182,6 +186,7 @@ export function Explorer({
                   >
                     <Icon className={`size-3.5 shrink-0 ${f.row.id === selected ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1 truncate">{f.row.name}</span>
+                    <ProposedMark proposed={f.row.proposed} />
                     <Link
                       to={route}
                       params={{ id: f.row.id } as never}

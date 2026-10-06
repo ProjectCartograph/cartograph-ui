@@ -71,6 +71,18 @@ describe("the HTTP adapter", () => {
     expect(new URL(asked[0].url).searchParams.get("changeSet")).toBe("cs1");
   });
 
+  it("reads the record as it is for a moment, still editing in the change set", async () => {
+    activeChangeSet.set("cs1");
+    activeChangeSet.setAsItIs(true);
+    const { client, asked } = wire(200, []);
+    await client.goalTree().catch(() => undefined);
+    expect(new URL(asked[0].url).searchParams.get("changeSet")).toBeNull();
+    expect(activeChangeSet.get()).toBe("cs1");
+    // Switching change sets shows the new one as proposed again.
+    activeChangeSet.set("cs2");
+    expect(activeChangeSet.asItIs()).toBe(false);
+  });
+
   it("reads and changes the access list at its paths", async () => {
     const person = {
       email: "sam@example.org", name: "", roles: ["reader"], teams: ["assessment"],

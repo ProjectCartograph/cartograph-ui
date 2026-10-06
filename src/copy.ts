@@ -382,7 +382,13 @@ export const copy = {
     start: "Start a new change set",
     startTitle: "New change set",
     menu: "Change set menu",
+    asItIs: "See the record as it is",
+    asProposed: "See it with this change set",
   },
+  proposed: {
+    new: "New in this change set",
+    changed: "Changed in this change set",
+  } as Record<"new" | "changed", string>,
   leftOpen: {
     heading: "Left for you to supply",
     count: (facts: number, checks: number) =>

@@ -395,7 +395,8 @@ export function GraphView({ graph, focus }: { graph: Graph; focus?: string }) {
                   data-dim={dim || undefined}
                   role="button"
                   tabIndex={0}
-                  aria-label={gc.node(kindName(n.kind), n.name)}
+                  aria-label={n.proposed ? `${gc.node(kindName(n.kind), n.name)}, ${copy.proposed[n.proposed]}` : gc.node(kindName(n.kind), n.name)}
+                  data-proposed-node={n.proposed}
                   aria-pressed={i === chosen}
                   onPointerDown={(e) => onDown(e, i)}
                   onPointerEnter={() => !drag.current && setHover(i)}
@@ -410,6 +411,14 @@ export function GraphView({ graph, focus }: { graph: Graph; focus?: string }) {
                   }}
                 >
                   {isCentre ? <circle r={r + 6} fill={colorOf(n.kind)} opacity={0.18} className="cartograph-graph-halo" /> : null}
+                  {n.proposed ? (
+                    <circle
+                      r={r + 4}
+                      fill="none"
+                      stroke={n.proposed === "new" ? "var(--color-success)" : "var(--color-changed)"}
+                      strokeWidth={2.5}
+                    />
+                  ) : null}
                   <circle r={r} fill={colorOf(n.kind)} stroke="var(--background)" strokeWidth={1.5} />
                   {Icon && r * v.k >= 9 ? <Icon x={-r * 0.6} y={-r * 0.6} width={r * 1.2} height={r * 1.2} color="white" strokeWidth={2.4} aria-hidden /> : null}
                   {label ? (

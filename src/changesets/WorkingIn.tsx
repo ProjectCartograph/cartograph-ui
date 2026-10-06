@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { copy } from "@/copy";
-import { useActiveChangeSet } from "./useActive";
+import { useActiveChangeSet, useAsItIs } from "./useActive";
 
 const c = copy.workingIn;
 
@@ -33,6 +33,7 @@ export function WorkingIn() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const active = useActiveChangeSet();
+  const asItIs = useAsItIs();
   const [renaming, setRenaming] = useState(false);
   const [title, setTitle] = useState("");
 
@@ -106,6 +107,14 @@ export function WorkingIn() {
               <DropdownMenuLabel className="truncate">{name}</DropdownMenuLabel>
               <DropdownMenuItem onSelect={() => void navigate({ to: "/changesets/$id", params: { id: active } })}>
                 {c.review}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  activeChangeSet.setAsItIs(!asItIs);
+                  void queryClient.invalidateQueries();
+                }}
+              >
+                {asItIs ? c.asProposed : c.asItIs}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onSelect={() => {

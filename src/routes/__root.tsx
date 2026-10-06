@@ -55,6 +55,7 @@ import { useSettings } from "@/surfaces/goals/api";
 import { useLeftToDo } from "@/surfaces/home/leftToDo";
 import { TourProvider } from "@/tour/TourProvider";
 import { TourEntry } from "@/tour/TourEntry";
+import { useActiveChangeSet } from "@/changesets/useActive";
 
 const defineItems = [
   {
@@ -386,6 +387,7 @@ function AgentsAtWork() {
 }
 
 function RootLayout() {
+  const workingIn = useActiveChangeSet();
   const crumbs = useBreadcrumbCrumbs();
   const { data: session } = useSession();
   // What agents proposed for this person: the rail shows the count, and
@@ -603,7 +605,7 @@ function RootLayout() {
             <WorkingIn />
             <PeopleHere />
           </header>
-          <main className="min-w-0 flex-1 p-6" data-cartograph-region="main">
+          <main className="min-w-0 flex-1 p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
             {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
           </main>
         </SidebarInset>

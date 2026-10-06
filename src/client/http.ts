@@ -113,7 +113,7 @@ export function httpClient(
   // the workspace as if it were rolled in, drafts are its live drafts,
   // and every write lands in it, starting one on the first edit.
   const preview = () => {
-    const set = activeChangeSet.get();
+    const set = activeChangeSet.shown();
     return set ? { changeSet: set } : {};
   };
   async function workingSet(kind: string, id: string): Promise<string> {

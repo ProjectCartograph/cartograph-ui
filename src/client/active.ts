@@ -7,6 +7,9 @@
 const KEY = "cartograph.changeSet";
 
 let current: string | undefined = read();
+// Seeing the record as it is, for a moment, without leaving the change
+// set: reads leave it out; edits still go into it.
+let asItIs = false;
 const listeners = new Set<() => void>();
 
 // A link may name the change set to open in (?changeSet=), so a review
@@ -26,9 +29,19 @@ function read(): string | undefined {
 
 export const activeChangeSet = {
   get: (): string | undefined => current,
+  /** The change set reads show the workspace through, unless the person
+   * is looking at it as it is. */
+  shown: (): string | undefined => (asItIs ? undefined : current),
+  asItIs: (): boolean => asItIs,
+  setAsItIs(on: boolean) {
+    if (on === asItIs) return;
+    asItIs = on;
+    for (const l of listeners) l();
+  },
   set(id: string | undefined) {
     if (id === current) return;
     current = id;
+    asItIs = false;
     try {
       if (id) window.localStorage.setItem(KEY, id);
       else window.localStorage.removeItem(KEY);
