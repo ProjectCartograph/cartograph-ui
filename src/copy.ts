@@ -2662,6 +2662,8 @@ export const copy = {
       mitigationPlaceholder: "",
       escalateLabel: "Needs a decision above the project",
       escalateToLabel: "Decision needed from",
+      ownerLabel: "Owned by",
+      ownerPlaceholder: "The manager, until named",
       escalateReasonLabel: "Decision needed",
       // The dependency edge. A dependency is the one type that points at
       // something, and until it did every dependency in both vaults was a

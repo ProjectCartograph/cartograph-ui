@@ -271,6 +271,9 @@ export interface Risk {
   impact?: ImpactLikelihood;
   likelihood?: ImpactLikelihood;
   mitigation?: string;
+  /** The role that manages it day to day (TAXONOMY.md D41); unowned, the
+   * manager answers for it. Not who it escalates to. */
+  owner?: Ref;
   escalate?: RiskEscalate;
 }
 

@@ -15,7 +15,8 @@ import { copy, plusNoun } from "@/copy";
 import { VocabOption } from "@/components/vocab";
 import { DependencyEdgeEditor } from "./DependencyEdgeEditor";
 import { seg } from "./field";
-import type { RoleOption } from "./RoleRefPicker";
+import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
+import { RoleRefPicker, type RoleOption } from "./RoleRefPicker";
 import { retypeRisk, type Risk, type RiskType, type TimelinePhase } from "./types";
 
 const rc = copy.projects.risks;
@@ -123,6 +124,35 @@ export function RiskList({
           aria-label={rc.mitigationLabel}
           maxLength={160}
         />
+        {/* Who manages it day to day (TAXONOMY.md D41): a role on the
+            work, a governance body, or, where the work names no roles, an
+            entry in the catalogue. A high-impact risk without one warns. */}
+        <div className="flex items-center gap-2">
+          <Label className="w-24 shrink-0 text-muted-foreground">{rc.ownerLabel}</Label>
+          {roles && roles.length > 0 ? (
+            <RoleRefPicker
+              data-cartograph-field={at(r, idx, "owner")}
+              value={r.owner}
+              options={roles}
+              onChange={(owner) => update(idx, { owner })}
+              label={rc.ownerLabel}
+              placeholder={rc.ownerPlaceholder}
+              withBodies
+              className="w-56"
+            />
+          ) : (
+            <div className="w-56">
+              <ReferencePicker
+                data-cartograph-field={at(r, idx, "owner")}
+                refKind="Resource"
+                value={r.owner?.kind === "Resource" ? r.owner.id : undefined}
+                onChange={(id) => update(idx, { owner: id ? { kind: "Resource", id } : undefined })}
+                label={rc.ownerLabel}
+                placeholder={rc.ownerPlaceholder}
+              />
+            </div>
+          )}
+        </div>
         {/* Escalating hands a decision up to someone with more authority
             than the work: so it says who, and why (PRINCE2, GovS 002). A
             bare "escalated" flag told a reader neither. */}
@@ -141,23 +171,16 @@ export function RiskList({
           {r.escalate?.flag ? (
             <div className="flex flex-wrap items-center gap-2 pl-6">
               {roles && roles.length > 0 ? (
-                <Select
-                  value={r.escalate.to?.id ?? ""}
-                  onValueChange={(id) =>
-                    update(idx, { escalate: { ...r.escalate!, to: { local: "resources", id } } })
-                  }
-                >
-                  <SelectTrigger className="w-56" aria-label={rc.escalateToLabel} data-cartograph-field={at(r, idx, "escalate/to/id")}>
-                    <SelectValue placeholder={rc.escalateToLabel} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((o) => (
-                      <SelectItem key={o.id} value={o.id}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <RoleRefPicker
+                  data-cartograph-field={at(r, idx, "escalate/to/id")}
+                  value={r.escalate.to}
+                  options={roles}
+                  onChange={(to) => update(idx, { escalate: { ...r.escalate!, to } })}
+                  label={rc.escalateToLabel}
+                  placeholder={rc.escalateToLabel}
+                  withBodies
+                  className="w-56"
+                />
               ) : (
                 <Input
                   data-cartograph-field={at(r, idx, "escalate/to/external")}

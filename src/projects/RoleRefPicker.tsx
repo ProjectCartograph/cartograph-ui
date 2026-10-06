@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { copy } from "@/copy";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
+import { useGovernanceBodies } from "./governanceBodies";
 import type { ProjectRole, Ref } from "./types";
 
 /** The sentinel for "name a role that does not exist yet"; never stored. */
@@ -64,13 +65,17 @@ export function useResourceNames(): (id: string) => string | undefined {
   return (id: string) => byID.get(id);
 }
 
+/** A governance body's value in a picker: prefixed, since a body's id may
+ * be spelt like a role's, and the colon is never in a slug. */
+const BODY = "body:";
+
 /** What a reference should read as, given the roles this project has. A
  * reference to a role shows the role's current title, which is the whole
  * point: the title lives in one place and every mention follows it. */
 export function roleRefLabel(value: Ref | undefined, options: RoleOption[]): string {
   if (!value) return "";
   if (value.external) return value.external;
-  return options.find((o) => o.id === value.id)?.label ?? value.id ?? "";
+  return options.find((o) => o.id === value.id && !value.kind)?.label ?? value.id ?? "";
 }
 
 /**
@@ -95,6 +100,7 @@ export function RoleRefPicker({
   label,
   placeholder,
   className,
+  withBodies = false,
   "data-cartograph-field": field,
 }: {
   /** The manifest field this edits, by JSON pointer. */
@@ -102,23 +108,34 @@ export function RoleRefPicker({
   value: Ref | undefined;
   options: RoleOption[];
   onChange: (ref: Ref | undefined) => void;
-  onAddRole: () => void;
+  /** Names a role that does not exist yet; without it the picker offers
+   * only what exists. */
+  onAddRole?: () => void;
   label: string;
   placeholder?: string;
   className?: string;
+  /** Offers the catalogue's governance bodies beside the roles, for a
+   * place a committee or board may fill: who confirms, who an escalation
+   * goes to, who owns a risk or a relationship (TAXONOMY.md D43). */
+  withBodies?: boolean;
 }) {
-  const known = value?.id !== undefined && options.some((o) => o.id === value.id);
+  const bodies = useGovernanceBodies(withBodies);
+  const isBody = value?.kind === "Resource" && value.id !== undefined;
+  const known =
+    value?.id !== undefined &&
+    (isBody ? bodies.some((b) => b.id === value.id) : options.some((o) => o.id === value.id));
   // An external reference has no id to select on, so it rides under a
   // value of its own text; it can never collide with a role id, which is
   // a slug.
-  const current = value?.external ?? (value?.id ?? "");
+  const current = value?.external ?? (isBody ? BODY + value!.id : (value?.id ?? ""));
 
   return (
     <Select
       value={current}
       onValueChange={(v) => {
-        if (v === ADD_ROLE) return onAddRole();
+        if (v === ADD_ROLE) return onAddRole?.();
         if (!v) return onChange(undefined);
+        if (v.startsWith(BODY)) return onChange({ kind: "Resource", id: v.slice(BODY.length) });
         const option = options.find((o) => o.id === v);
         onChange(option ? { local: "resources", id: option.id } : { external: v });
       }}
@@ -135,15 +152,25 @@ export function RoleRefPicker({
             {o.label}
           </SelectItem>
         ))}
-        {options.length > 0 ? <SelectSeparator /> : null}
+        {bodies.length > 0 && options.length > 0 ? <SelectSeparator /> : null}
+        {bodies.map((b) => (
+          <SelectItem key={BODY + b.id} value={BODY + b.id}>
+            {b.label}
+          </SelectItem>
+        ))}
         {/* An action, not another option. Without the mark it sat in the
             same list as the roles and read as one of them, which is the
             one thing a list of nouns must not do to a verb (Programme
             Lead, 2026-09-29). */}
-        <SelectItem value={ADD_ROLE} className="text-muted-foreground">
-          <Plus />
-          {copy.projects.common.nameRole}
-        </SelectItem>
+        {onAddRole ? (
+          <>
+            {options.length > 0 || bodies.length > 0 ? <SelectSeparator /> : null}
+            <SelectItem value={ADD_ROLE} className="text-muted-foreground">
+              <Plus />
+              {copy.projects.common.nameRole}
+            </SelectItem>
+          </>
+        ) : null}
       </SelectContent>
     </Select>
   );
