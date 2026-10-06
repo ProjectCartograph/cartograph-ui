@@ -668,7 +668,7 @@ export const copy = {
         "Somewhere a number actually comes from. A key result or an indicator is only as good as the source that settles it, so a source says who keeps it, how often it changes, and what is wrong with it today.",
       ReportingCycle: "How often something is reported, and when each round is due.",
       Segment:
-        "A way of slicing up what the organisation serves, so a gap can say where it was found and an indicator can be broken down. Define the slicing first (Region), then its slices under it (the northern region). Not a group of people, which is a beneficiary group, and not a team.",
+        "A way of slicing up what the organisation serves, so you can compare one part with another: a gap says where it was found, an indicator is broken down the same way. Define the slicing first (Region), then its slices under it (the northern region). Not a role or anything else the work draws on, which is a resource; not a group of people, which is a beneficiary group; and not a team.",
     } as Record<string, string>,
     // One line per field saying what belongs in it, and a placeholder
     // showing the shape of an answer.
@@ -1705,6 +1705,12 @@ export const copy = {
       name: "My first project",
     },
     tutorial: "Tutorial: this fills itself in, and does not affect your workspace.",
+  },
+  // What is one of a kind and what is not, where it is listed
+  // (components/KindExamples).
+  kindExamples: {
+    is: "For example:",
+    isNot: "Not one of these:",
   },
   // A record already there under another spelling (components/DidYouMean).
   didYouMean: {

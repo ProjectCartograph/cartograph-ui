@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { KindExamples } from "@/components/KindExamples";
 import { FieldHeading } from "@/components/guidance";
 import { ComboboxMultiple } from "@/components/ui/combobox";
 import { copy } from "@/copy";
@@ -27,6 +28,7 @@ export function ScopeSection() {
   return (
     <div data-cartograph-region="gap-scope" className="flex max-w-3xl flex-col gap-2">
       <FieldHeading label={gc.segmentsLabel} hint={gc.segmentsHint} />
+      <KindExamples kind="Segment" compact />
       <ComboboxMultiple
         data-cartograph-field="/spec/segments"
         options={data?.options ?? []}

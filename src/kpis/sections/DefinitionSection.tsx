@@ -1,3 +1,4 @@
+import { KindExamples } from "@/components/KindExamples";
 import { FieldHeading } from "@/components/guidance";
 import { LabelsEditor } from "@/components/LabelsEditor";
 import { ComboboxMultiple } from "@/components/ui/combobox";
@@ -271,6 +272,7 @@ export function DefinitionSection() {
 
       <div className="flex flex-col gap-2">
         <FieldHeading label={kc.splitLabel} hint={kc.splitHint} />
+        <KindExamples kind="Segment" compact />
         <ComboboxMultiple
           data-cartograph-field="/spec/disaggregations"
           options={segments?.options ?? []}
