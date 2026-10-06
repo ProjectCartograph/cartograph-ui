@@ -1871,6 +1871,21 @@ export interface components {
             examples?: {
                 [key: string]: string[];
             };
+            changeControl?: components["schemas"]["ChangeControl"];
+        };
+        /** @description How the record may change (docs/adr/0024). Absent or false, every write path works as before. */
+        ChangeControl: {
+            /** @description Every change goes through a change set; direct saves, working copies, snapshots, deletes and project state changes are refused with a problem of type change-control. */
+            changeSetsRequired?: boolean;
+            /** @description What a change set needs before it is rolled into the record. */
+            rollIn?: {
+                /** @description Every check on every record in it is met. */
+                checksMet?: boolean;
+                /** @description No check is left open for the person, even with a reason. */
+                nothingLeftOpen?: boolean;
+                /** @description Someone other than its author rolls it in. */
+                secondReviewer?: boolean;
+            };
         };
         GoalAligned: {
             projects: number;
@@ -2109,6 +2124,15 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["ConflictResponse"];
+            };
+        };
+        /** @description The workspace requires every change to go through a change set (Settings.changeControl.changeSetsRequired, docs/adr/0024): make this change in a change set and roll it in. */
+        ChangeSetRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ProblemList"];
             };
         };
         /** @description Schema, reference or kind rule violation */
@@ -2411,6 +2435,7 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ChangeSetRequired"];
             /** @description Refused, something still references this goal */
             422: {
                 headers: {
@@ -2499,6 +2524,7 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ChangeSetRequired"];
             422: components["responses"]["Unprocessable"];
         };
     };
@@ -4108,6 +4134,7 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ChangeSetRequired"];
             /** @description Refused, something still references this manifest */
             422: {
                 headers: {
@@ -4206,6 +4233,7 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            409: components["responses"]["ChangeSetRequired"];
             422: components["responses"]["Unprocessable"];
         };
     };
