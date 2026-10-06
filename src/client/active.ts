@@ -11,6 +11,7 @@ let current: string | undefined = read();
 // set: reads leave it out; edits still go into it.
 let asItIs = false;
 const listeners = new Set<() => void>();
+const touched = new Set<() => void>();
 
 // A link may name the change set to open in (?changeSet=), so a review
 // can be shared; it is then the window's own.
@@ -53,5 +54,14 @@ export const activeChangeSet = {
   subscribe(listener: () => void): () => void {
     listeners.add(listener);
     return () => listeners.delete(listener);
+  },
+  /** Says a record was just put in the change set, for what shows its
+   * contents to read it again. */
+  touch() {
+    for (const l of touched) l();
+  },
+  onTouch(listener: () => void): () => void {
+    touched.add(listener);
+    return () => touched.delete(listener);
   },
 };

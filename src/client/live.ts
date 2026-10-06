@@ -398,6 +398,7 @@ class Draft implements SharedDraft {
     } finally {
       this.changing = false;
     }
+    activeChangeSet.touch();
   }
 
   subscribe(listener: (change: DraftChange) => void): () => void {

@@ -123,8 +123,10 @@ export function httpClient(
     activeChangeSet.set(started.id);
     return started.id;
   }
-  const putItem = (set: string, kind: string, id: string, yaml: string) =>
-    done(wire.PUT("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } }, body: { yaml } }));
+  const putItem = async (set: string, kind: string, id: string, yaml: string) => {
+    await done(wire.PUT("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } }, body: { yaml } }));
+    activeChangeSet.touch();
+  };
   // What a save into a change set answers: no new version (draft), the
   // record as it stands until the change set is rolled in.
   const inChangeSet = (kind: string, id: string, reason: string): Version => ({

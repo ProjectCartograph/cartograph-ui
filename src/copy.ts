@@ -382,6 +382,16 @@ export const copy = {
     confirmReady: "Everything is complete. Merging puts these changes into the workspace.",
     confirmOpen: "These are not finished yet. Open one to finish it, or merge now and finish later.",
     whyLabel: "Why merge before these are finished?",
+    finishFirst: "Fill these in first. Merge saves each record, and a record cannot be saved without them.",
+    needed: (n: number) => (n === 1 ? "1 field to fill before merging" : `${n} fields to fill before merging`),
+    required: (field: string) => `Fill in ${field}`,
+    // A field's name where its pointer's last part does not read well.
+    fields: {
+      situation: "the problem",
+      what: "the intended change",
+      groups: "the affected groups",
+      about: "what the project is about",
+    } as Record<string, string>,
     cancel: "Cancel",
     merged: "Merged into the workspace.",
     stale: "Someone changed one of these records first. Review the change set, then merge again.",
