@@ -1,4 +1,4 @@
-import { Check, Save } from "lucide-react";
+import { Check } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -185,27 +185,19 @@ export function StageStepper({ id, current }: { id: string; current: Stage }) {
   );
 }
 
+/**
+ * Whether the project's edits have reached the change set. Every edit is
+ * saved as it is made, and the bar at the foot of the screen merges them
+ * (changesets/MergeBar), so there is nothing to press here.
+ */
 export function ProjectHeaderBar() {
   const store = useProjectStore();
-  const [saveOpen, setSaveOpen] = useState(false);
-  const [discardOpen, setDiscardOpen] = useState(false);
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3" data-cartograph-region="project-header">
-        <div className="flex flex-wrap items-center gap-3">
-          <SaveStatus state={store.saveState} />
-          <OfflineNote />
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="ghost" size="sm" onClick={() => setDiscardOpen(true)}>
-            {pc.header.discardDraft}
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setSaveOpen(true)} aria-label={pc.header.saveVersionLabel} title={pc.header.saveVersionLabel}>
-            <Save />
-            {pc.header.saveVersion}
-          </Button>
-        </div>
+      <div className="flex flex-wrap items-center gap-3" data-cartograph-region="project-header">
+        <SaveStatus state={store.saveState} />
+        <OfflineNote />
       </div>
       {/* A failed debounced/navigation-flush save (rule: never drops the
           edits, so this is purely a "try sending it again" retry, not a
@@ -216,8 +208,6 @@ export function ProjectHeaderBar() {
       ) : null}
       <ConflictNotes conflicts={store.conflicts} onResolve={store.resolveConflict} />
       <ProposalNotice kind="Project" id={store.id} />
-      <SaveVersionDialog open={saveOpen} onOpenChange={setSaveOpen} />
-      <DiscardDraftDialog open={discardOpen} onOpenChange={setDiscardOpen} />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { WriteGate } from "@/access/WriteGate";
+import { InChangeSet } from "@/changesets/InChangeSet";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { GoalEditor } from "@/surfaces/goals/GoalEditor";
@@ -14,8 +15,10 @@ function GoalPage() {
   const { id } = Route.useParams();
   const { fix } = Route.useSearch();
   return (
-    <WriteGate kind="Goal" id={id}>
-      <GoalEditor key={id} id={id} fix={fix} />
-    </WriteGate>
+    <InChangeSet>
+      <WriteGate kind="Goal" id={id}>
+        <GoalEditor key={id} id={id} fix={fix} />
+      </WriteGate>
+    </InChangeSet>
   );
 }

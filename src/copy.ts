@@ -1789,6 +1789,7 @@ export const copy = {
     done: "Done",
     warn: "Something to look at",
     blocked: "Something needed",
+    notYet: "Not started",
   },
   // What is one of a kind and what is not, where it is listed
   // (components/KindExamples).
@@ -2201,6 +2202,7 @@ export const copy = {
       confirm: "Discard",
     },
     leaveWarning: "This project has unsaved changes.",
+    openCharter: "Open the charter this project makes",
     stepper: {
       label: "The stages of this project",
       initiation: "Initiation",
@@ -2369,22 +2371,22 @@ export const copy = {
       whoPlaceholder: "Choose a group",
       whoGeneric: "The organisation itself",
       situationLabel: "Problem",
-      situationHint: "One sentence about the people above, as things are today.",
+      situationHint: "What is going wrong for the affected groups now.",
       situationExamples: [
         "Customers are told a different answer each time they call.",
       ],
       causeLabel: "Cause",
-      causeHint: "The main reason. If it were fixed, the problem would go away.",
+      causeHint: "Why the problem happens. Fix the cause and the problem goes away.",
       causeExamples: [
         "Each office keeps its own list, and the lists don't agree.",
       ],
       changeWhatLabel: "Intended change",
-      changeWhatHint: "How things will be once this has worked.",
+      changeWhatHint: "What will be different once the project has worked.",
       changeWhatExamples: [
         "Every office answers from one approved list.",
       ],
       changeGainLabel: "Benefit",
-      changeGainHint: "What the people above can do then that they can't today.",
+      changeGainHint: "What the affected groups gain once the change is made.",
       changeGainExamples: [
         "Customers get the same answer whoever they ask.",
       ],

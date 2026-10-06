@@ -351,10 +351,14 @@ export function GoalEditor({ id, fix }: { id: string; fix?: string }) {
             <FileCode2 />
             {ec.yaml}
           </Button>
-          <Button type="button" onClick={() => setSaveOpen(true)} aria-label={ec.save.buttonLabel} title={ec.save.buttonLabel}>
-            <Save />
-            {ec.save.button}
-          </Button>
+          {/* A shared draft lands in the change set as it is typed, and the
+              bar at the foot merges it; only a screen without one saves. */}
+          {sharing ? null : (
+            <Button type="button" onClick={() => setSaveOpen(true)} aria-label={ec.save.buttonLabel} title={ec.save.buttonLabel}>
+              <Save />
+              {ec.save.button}
+            </Button>
+          )}
         </div>
       </div>
 

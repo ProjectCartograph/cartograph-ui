@@ -1,93 +1,65 @@
-import { AssemblyStrip } from "./Assembly";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { createElement, useEffect } from "react";
 import { FromIdeaProvider } from "@/components/FromIdea";
-import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
 import { ShowInGraph } from "@/graph/ShowInGraph";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { sectionRing } from "@/collab/SectionPeers";
+import { sameView } from "@/collab/presence";
+import { usePresence } from "@/collab/presenceContext";
+import { Scrubber, type ScrubStage } from "@/components/Scrubber";
+import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 
-import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, CheckCircle2, FileText, OctagonAlert, Table2 } from "lucide-react";
 
-import { RailSheet } from "@/components/RailSheet";
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
 import { WorkTextProvider } from "@/components/relevance";
 import { copy } from "@/copy";
 import { useProjectChecks } from "./api";
 import { CheckPanel } from "./CheckPanel";
 import { ProjectSectionNotes } from "./SectionNotes";
-import { StageStepper, ProjectHeaderBar } from "./Chrome";
+import { ProjectHeaderBar } from "./Chrome";
 import { useProjectStore } from "./store";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type Stage } from "./types";
-import { STAGE_ICON, stepIcon } from "./steps";
+import { STAGE_ICON } from "./steps";
 
 const pc = copy.projects;
 
 /**
- * The left rail for the Initiation phase: every stage and the steps in it,
- * each step with its own state dot (worst check state among that step's
- * items, or none when nothing has been checked yet), the stage on screen
- * highlighted. One stage on screen at a time (TAXONOMY.md D33); a step
- * opens its stage at that step, and Back and Next walk the stages.
+ * The project's walk as one scrubber: every stage, every step in it
+ * coloured by its worst check, the step in hand raised, and anyone else on
+ * a step ringed in their colour. It is the only navigation in the flow:
+ * no rail beside it, no stepper or outline under it.
  */
-function SectionRail({ id, current }: { id: string; current: InitiationSection }) {
+function ProjectScrubber({ id, section }: { id: string; section: InitiationSection }) {
+  const navigate = useNavigate();
   const checksQuery = useProjectChecks(id, true);
-  const bySection = new Map<string, string>();
+  const { peers } = usePresence();
+  const bySection = new Map<string, "ok" | "warn" | "block">();
+  const rank = (s: string) => (s === "block" ? 2 : s === "warn" ? 1 : 0);
   for (const item of checksQuery.data?.items ?? []) {
     const existing = bySection.get(item.section);
-    const rank = (s: string) => (s === "block" ? 2 : s === "warn" ? 1 : 0);
-    if (!existing || rank(item.state) > rank(existing)) bySection.set(item.section, item.state);
+    if (!existing || rank(item.state) > rank(existing)) bySection.set(item.section, item.state as "ok" | "warn" | "block");
   }
-
-  const here = stageOfSection(current);
-
+  const stages: ScrubStage[] = STAGES.map((stage) => ({
+    key: stage,
+    label: pc.stages[stage],
+    icon: STAGE_ICON[stage],
+    steps: stepsOfStage(stage).map((st) => {
+      const path = `/projects/${id}${st.path}`;
+      const on = peers.filter((pr) => sameView(pr.route, path));
+      return { key: st.section, label: pc.sections[st.section], state: bySection.get(st.section), ring: sectionRing(on) };
+    }),
+  }));
+  const pathOf = new Map(STAGES.flatMap((stage) => stepsOfStage(stage).map((st) => [st.section, st.path] as const)));
   return (
-    <div className="flex w-full shrink-0 flex-col gap-1 rounded-xl p-2 bg-card ring-1 ring-foreground/10 xl:w-56" data-cartograph-region="section-rail">
-      {/* The whole walk, not the stage in hand. Somebody filling a
-          definition in wants to see what there is to assemble before
-          assembling it (Programme Lead, 2026-09-29), and a rail that
-          shows four of twelve steps answers a question nobody asked. */}
-      {STAGES.map((stage) => (
-        <div key={stage} className="flex flex-col gap-1 pt-2 first:pt-0">
-          <p
-            className={`flex items-center gap-1.5 px-2 pb-1 text-xs font-medium uppercase ${
-              stage === here ? "text-foreground" : "text-muted-foreground"
-            }`}
-            title={pc.stageQuestion[stage]}
-          >
-            {(() => {
-              const StageIcon = STAGE_ICON[stage];
-              return <StageIcon className="size-3.5 shrink-0" aria-hidden="true" />;
-            })()}
-            {pc.stages[stage]}
-          </p>
-          {stepsOfStage(stage).map((step) => (
-            <ProjectStep key={step.section} id={id} path={step.path} section={step.section} isCurrent={stage === here} state={bySection.get(step.section)} />
-          ))}
-        </div>
-      ))}
-
-      {/* Not steps of the walk: what the steps add up to, read from the
-          definition every time either is opened. */}
-      <Separator className="my-1" />
-      <Link
-        to="/projects/$id/charter"
-        params={{ id }}
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-accent/50"
-      >
-        <FileText className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <span className="truncate">{copy.charter.title}</span>
-      </Link>
-      <Link
-        to="/projects/$id/framework"
-        params={{ id }}
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-accent/50"
-      >
-        <Table2 className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <span className="truncate">{copy.framework.title}</span>
-      </Link>
-    </div>
+    <Scrubber
+      stages={stages}
+      stage={stageOfSection(section)}
+      step={section}
+      label={pc.stepper.label}
+      onGo={(_, step) => void navigate({ to: `/projects/$id${pathOf.get(step as InitiationSection) ?? ""}`, params: { id } })}
+    />
   );
 }
 
@@ -175,27 +147,19 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
           <h1 className="text-2xl font-semibold tracking-tight">{pc.stages[stage]}</h1>
           <p className="text-muted-foreground text-pretty">{pc.stageQuestion[stage]}</p>
         </div>
-        <div className="shrink-0">
+        <div className="flex shrink-0 items-center gap-1">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/projects/$id/charter" params={{ id }} aria-label={pc.openCharter} title={pc.openCharter}>
+              <FileText />
+              {copy.charter.title}
+            </Link>
+          </Button>
           <ShowInGraph kind="Project" id={id} />
         </div>
       </div>
-      {/* The stages as every flow shows its progress, scrolled sideways
-          when they do not fit; the rail beside the page lists their
-          steps. */}
-      <div className="-mx-1 overflow-x-auto px-1 pb-1">
-        <StageStepper id={id} current={stage} />
-      </div>
-      <AssemblyStrip id={id} />
+      <ProjectScrubber id={id} section={section} />
       <RequiredMarks kind="Project" />
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[14rem_1fr_18rem]">
-        {/* Beside the page on a wide screen; behind one small button on a
-            narrow one, where the stages across the top show the way. */}
-        <div className="hidden xl:block">
-          <SectionRail id={id} current={section} />
-        </div>
-        <RailSheet current={pc.stages[stage]}>
-          <SectionRail id={id} current={section} />
-        </RailSheet>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_18rem]">
         <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
@@ -237,34 +201,5 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
     </div>
     </FromIdeaProvider>
     </WorkTextProvider>
-  );
-}
-
-/** One step of the project's walk: its state, and who else is on it. */
-function ProjectStep({ id, path, section, isCurrent, state }: { id: string; path: string; section: string; isCurrent: boolean; state?: string }) {
-  const Icon = stepIcon(section);
-  const others = usePeersOn(`/projects/${id}${path}`);
-  const shown = isCurrent ? [] : others;
-  const at = shown.length ? "" : "ml-auto ";
-  return (
-    <Link
-      to={`/projects/$id${path}` as never}
-      params={{ id } as never}
-      style={sectionRing(shown)}
-      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-150 ease-standard active:bg-muted ${
-        isCurrent ? "bg-primary/10 font-medium text-primary shadow-[inset_2px_0_0_var(--color-primary)]" : "text-foreground hover:bg-accent/60"
-      }`}
-    >
-      {Icon ? <Icon className={`size-4 shrink-0 ${isCurrent ? "text-primary" : "text-muted-foreground"}`} aria-hidden="true" /> : null}
-      <span className="truncate">{pc.sections[section]}</span>
-      <SectionPeers peers={shown} />
-      {state === "ok" ? (
-        <CheckCircle2 className={`${at}size-3.5 shrink-0 text-success/70`} aria-label={pc.checks.railDone} />
-      ) : state === "block" ? (
-        <OctagonAlert className={`${at}size-3.5 shrink-0 text-destructive`} aria-label={pc.checks.railBlocked} />
-      ) : state === "warn" ? (
-        <AlertTriangle className={`${at}size-3.5 shrink-0 text-warning`} aria-label={pc.checks.railWarn} />
-      ) : null}
-    </Link>
   );
 }

@@ -1,7 +1,8 @@
 import { Save, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { FlowBack, FlowNav, FlowNext, FlowProgress } from "@/components/walker";
+import { Scrubber } from "@/components/Scrubber";
+import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
 import { useManifestName } from "@/api/names";
 import { copy } from "@/copy";
 import { SmartMarks } from "./SmartMarks";
@@ -26,16 +27,15 @@ export interface GoalStep {
 export function GoalSteps({ steps, current, onPick }: { steps: GoalStep[]; current: string; onPick: (k: string) => void }) {
   const at = steps.findIndex((s) => s.key === current);
   return (
-    <nav aria-label={sc.title} className="-mx-1 overflow-x-auto px-1 pb-1" data-cartograph-region="goal-steps">
-      <div className={steps.length > 4 ? "min-w-[32rem]" : undefined}>
-        <FlowProgress
-          segments={steps.map((s) => ({ key: s.key, label: s.label, icon: s.icon, share: s.done ? 1 : 0, state: s.done ? "ok" : undefined }))}
-          at={at}
-          onGo={(i) => onPick(steps[i].key)}
-          label={sc.title}
-        />
-      </div>
-    </nav>
+    <div data-cartograph-region="goal-steps">
+      <Scrubber
+        stages={steps.map((s) => ({ key: s.key, label: s.label, icon: s.icon, steps: [{ key: s.key, label: s.label, state: s.done ? "ok" : undefined }] }))}
+        stage={steps[at]?.key ?? current}
+        step={steps[at]?.key ?? current}
+        onGo={(_, key) => onPick(key)}
+        label={sc.title}
+      />
+    </div>
   );
 }
 
