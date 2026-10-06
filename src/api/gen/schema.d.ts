@@ -2042,6 +2042,8 @@ export interface components {
         };
         GoalCheckFix: {
             section: string;
+            /** @description The goal, objective or outcome whose editor holds the fix, when it is not the one checked: an objective's outcome that closes no gap is fixed on the outcome. */
+            goal?: string;
         };
         GapClaim: {
             kind: string;
