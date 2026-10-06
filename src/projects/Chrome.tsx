@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Save } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -201,7 +201,8 @@ export function ProjectHeaderBar() {
           <Button type="button" variant="ghost" size="sm" onClick={() => setDiscardOpen(true)}>
             {pc.header.discardDraft}
           </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setSaveOpen(true)}>
+          <Button type="button" variant="outline" size="sm" onClick={() => setSaveOpen(true)} aria-label={pc.header.saveVersionLabel} title={pc.header.saveVersionLabel}>
+            <Save />
             {pc.header.saveVersion}
           </Button>
         </div>

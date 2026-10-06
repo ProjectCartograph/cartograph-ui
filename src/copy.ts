@@ -367,6 +367,22 @@ export const copy = {
     summary: "What it holds",
     nothingIncluded: "Nothing is included. Include at least one record to accept.",
   },
+  workingIn: {
+    label: "Working in",
+    none: "No change set yet: your next edit starts one",
+    untitled: (kind: string, id: string) => `Changes to ${kind.toLowerCase()} ${id}`,
+    items: (n: number) => `${n} change${n === 1 ? "" : "s"}`,
+    review: "Review and roll in",
+    rename: "Rename",
+    renameLabel: "What this piece of work is",
+    save: "Save",
+    leave: "Stop working in it",
+    leaveHint: "Your changes stay in the change set; the workspace shows the record as it is.",
+    switchTo: "Your open change sets",
+    start: "Start a new change set",
+    startTitle: "New change set",
+    menu: "Change set menu",
+  },
   leftOpen: {
     heading: "Left for you to supply",
     count: (facts: number, checks: number) =>
@@ -1100,7 +1116,8 @@ export const copy = {
         moreLink: (n: number) => `+${n} more`,
       },
       save: {
-        button: "Propose change",
+        button: "Change set",
+        buttonLabel: "Save to the change set you are working in",
         dialogTitle: "Save",
         reasonLabel: "Reason",
         reasonPlaceholder: "",
@@ -1247,15 +1264,16 @@ export const copy = {
     lastStep: "Last step.",
     stepsLabel: "The steps of this definition",
     save: {
-      // Autosave stages; this is the moment of deciding. So the word is
-      // about what changes, not about the act of writing a file.
-      button: "Save to the vault",
+      // Every edit is made in a change set (engine docs/adr/0024): saving
+      // puts the draft in it, and the record changes when it is rolled in.
+      button: "Change set",
+      buttonLabel: "Save to the change set you are working in",
       staged: "Unsaved draft",
       savedAll: "Saved",
       discard: "Discard draft",
       discardTitle: "Discard this draft?",
       discardBody:
-        "Everything since the last save goes, and what the vault holds comes back. Nothing else in the vault changes.",
+        "This record leaves the change set, and the record as it is comes back. Nothing else in the change set changes.",
       discardConfirm: "Discard",
       cancel: "Cancel",
       conflict: "This did not save: the file changed underneath this draft. Reload and try again.",
@@ -1729,7 +1747,7 @@ export const copy = {
   },
   // What a definition cannot leave out (components/RequiredMarks).
   required: {
-    legend: "A bar marks what is required.",
+    because: "Needed before this can be rolled in.",
   },
   // The progress bar every flow shows (components/walker).
   flow: {
@@ -2130,7 +2148,8 @@ export const copy = {
       saved: "Saved",
       saving: "Saving",
       unsaved: "Unsaved changes",
-      saveVersion: "Save as version",
+      saveVersion: "Change set",
+      saveVersionLabel: "Save to the change set you are working in",
       discardDraft: "Discard draft",
       viewYaml: "View as YAML",
       blockingHint: (n: number) => (n === 1 ? "1 blocking item" : `${n} blocking items`),
@@ -2138,8 +2157,8 @@ export const copy = {
       saveFailed: "This did not save. Your edits are kept; try again.",
     },
     saveVersionDialog: {
-      title: "Save as version",
-      hint: "Saves what you have now as a numbered version you can come back to.",
+      title: "Save to change set",
+      hint: "Puts what you have now in the change set you are working in. The record changes when the change set is reviewed and rolled in.",
     },
     discardDialog: {
       title: "Discard draft",

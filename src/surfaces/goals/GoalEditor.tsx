@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarRange, CheckCircle2, ClipboardCheck, CornerDownRight, Gauge, MessageSquare, Plus, Target, UserRound, X } from "lucide-react";
+import { AlertTriangle, CalendarRange, CheckCircle2, ClipboardCheck, CornerDownRight, Gauge, MessageSquare, Plus, Save, Target, UserRound, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -335,7 +335,8 @@ export function GoalEditor({ id }: { id: string }) {
           <Button type="button" variant="outline" onClick={() => setYamlOpen(true)}>
             {ec.viewAsYaml}
           </Button>
-          <Button type="button" onClick={() => setSaveOpen(true)}>
+          <Button type="button" onClick={() => setSaveOpen(true)} aria-label={ec.save.buttonLabel} title={ec.save.buttonLabel}>
+            <Save />
             {ec.save.button}
           </Button>
         </div>

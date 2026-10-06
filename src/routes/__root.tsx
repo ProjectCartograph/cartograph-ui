@@ -39,6 +39,7 @@ import { stageOfSection } from "@/projects/types";
 import { useProjectManifest } from "@/projects/api";
 import { useGoalManifest } from "@/surfaces/goals/api";
 import { PeopleHere } from "@/collab/PeopleHere";
+import { WorkingIn } from "@/changesets/WorkingIn";
 import { PresenceOverlay } from "@/collab/PresenceOverlay";
 import { PresenceProvider } from "@/collab/presence";
 import { FollowProvider, useFollow } from "@/collab/follow";
@@ -599,6 +600,7 @@ function RootLayout() {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
+            <WorkingIn />
             <PeopleHere />
           </header>
           <main className="min-w-0 flex-1 p-6" data-cartograph-region="main">

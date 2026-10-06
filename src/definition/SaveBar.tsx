@@ -62,7 +62,7 @@ export function SaveBar() {
             <Undo2 />
             {c.discard}
           </Button>
-          <Button type="button" size="sm" disabled={saving} onClick={handleSave} data-celebrate="">
+          <Button type="button" size="sm" disabled={saving} onClick={handleSave} data-celebrate="" aria-label={c.buttonLabel} title={c.buttonLabel}>
             <Save />
             {c.button}
           </Button>

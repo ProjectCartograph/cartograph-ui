@@ -5,6 +5,9 @@
 
 import createClient from "openapi-fetch";
 
+import { copy } from "@/copy";
+import { activeChangeSet } from "./active";
+
 import type { paths } from "@/api/gen/schema";
 import {
   ClientError,
@@ -15,6 +18,7 @@ import {
   type CharterKind,
   type CharterOptions,
   type Client,
+  type Version,
   type KindSchema,
   type Problem,
 } from "./port";
@@ -69,7 +73,7 @@ export function httpClient(
   const wire = createClient<paths>({ baseUrl, ...(opts.fetch ? { fetch: opts.fetch } : {}) });
 
   function checks(kind: string, id: string) {
-    const params = { params: { path: { id } } };
+    const params = { params: { path: { id }, query: preview() } };
     switch (kind) {
       case "Project":
         return answer(wire.GET("/manifests/Project/{id}/checks", params));
@@ -105,9 +109,41 @@ export function httpClient(
     }
   }
 
+  // The change set this window works in (engine docs/adr/0024): reads see
+  // the workspace as if it were rolled in, drafts are its live drafts,
+  // and every write lands in it, starting one on the first edit.
+  const preview = () => {
+    const set = activeChangeSet.get();
+    return set ? { changeSet: set } : {};
+  };
+  async function workingSet(kind: string, id: string): Promise<string> {
+    const set = activeChangeSet.get();
+    if (set) return set;
+    const started = await answer(wire.POST("/changesets", { body: { title: copy.workingIn.untitled(kind, id) } }));
+    activeChangeSet.set(started.id);
+    return started.id;
+  }
+  const putItem = (set: string, kind: string, id: string, yaml: string) =>
+    done(wire.PUT("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } }, body: { yaml } }));
+  // What a save into a change set answers: no new version (draft), the
+  // record as it stands until the change set is rolled in.
+  const inChangeSet = (kind: string, id: string, reason: string): Version => ({
+    kind,
+    id,
+    number: 0,
+    actor: "",
+    reason,
+    on: new Date().toISOString(),
+    draft: true,
+  });
+
   const session = () => answer(wire.GET("/session"));
-  const sharedDocument = (kind: string, id: string) =>
-    answer(wire.GET("/manifests/{kind}/{id}/document", { params: { path: { kind, id } } }));
+  const sharedDocument = (kind: string, id: string) => {
+    const set = activeChangeSet.get();
+    return set
+      ? answer(wire.GET("/changesets/{set}/items/{kind}/{id}/document", { params: { path: { set, kind, id } } }))
+      : answer(wire.GET("/manifests/{kind}/{id}/document", { params: { path: { kind, id } } }));
+  };
   const presenceDocument = () => answer(wire.GET("/presence"));
   const agentFeed = (person?: string) => answer(wire.GET("/agents/feed", { params: { query: person ? { person } : {} } }));
 
@@ -158,57 +194,47 @@ export function httpClient(
             path: { kind },
             query: query
               ? {
+                  ...preview(),
                   ...(query.q ? { q: query.q } : {}),
                   ...(query.ref?.length ? { ref: query.ref } : {}),
                   ...(query.expand ? { expand: query.expand } : {}),
                 }
-              : undefined,
+              : preview(),
           },
         }),
       );
       return Array.isArray(data) ? data : (data?.items ?? []);
     },
-    get: (kind, id) => answer(wire.GET("/manifests/{kind}/{id}", { params: { path: { kind, id } } })),
+    get: (kind, id) => answer(wire.GET("/manifests/{kind}/{id}", { params: { path: { kind, id }, query: preview() } })),
     versions: (kind, id) =>
       answer(wire.GET("/manifests/{kind}/{id}/versions", { params: { path: { kind, id } } })),
     references: (kind, id) =>
       answer(wire.GET("/manifests/{kind}/{id}/references", { params: { path: { kind, id } } })),
-    saveWorking: (kind, id, text) =>
-      done(
-        wire.PUT("/manifests/{kind}/{id}/working", {
-          params: { path: { kind, id } },
-          body: { yaml: text },
-        }),
-      ),
-    discardWorking: (kind, id) =>
-      done(wire.DELETE("/manifests/{kind}/{id}/working", { params: { path: { kind, id } } })),
-    // The text when there is one: a manifest sent as JSON is decoded into
-    // a Go map on the way in and written back out sorted.
-    saveVersion: (kind, id, doc, reason) =>
-      answer(
-        wire.PUT("/manifests/{kind}/{id}", {
-          params: { path: { kind, id } },
-          // WriteRequest.manifest is "an object" in the contract, which the
-          // generator can only type as an empty one; the engine validates
-          // the real shape against the kind's JSON Schema.
-          body:
-            typeof doc === "string"
-              ? { yaml: doc, reason }
-              : { manifest: doc as Record<string, never>, reason },
-        }),
-      ),
-    snapshot: (kind, id, reason) =>
-      answer(
-        wire.POST("/manifests/{kind}/{id}/snapshots", {
-          params: { path: { kind, id } },
-          body: { reason },
-        }),
-      ),
+    saveWorking: async (kind, id, text) => putItem(await workingSet(kind, id), kind, id, text),
+    // Leaving a change set's draft drops it from the change set; with none
+    // active there is nothing of the person's own to discard.
+    discardWorking: async (kind, id) => {
+      const set = activeChangeSet.get();
+      if (set) await done(wire.DELETE("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } }));
+    },
+    // A JSON manifest is YAML too, so it goes in as text.
+    saveVersion: async (kind, id, doc, reason) => {
+      await putItem(await workingSet(kind, id), kind, id, typeof doc === "string" ? doc : JSON.stringify(doc));
+      return inChangeSet(kind, id, reason);
+    },
+    // A snapshot is the record as the change set holds it; one it does not
+    // hold yet starts from the record.
+    snapshot: async (kind, id, reason) => {
+      const set = await workingSet(kind, id);
+      const draft = await answer(wire.GET("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } }));
+      if (!draft.inChangeSet) await putItem(set, kind, id, draft.yaml);
+      return inChangeSet(kind, id, reason);
+    },
     checks: checks as Client["checks"],
 
-    goalTree: () => answer(wire.GET("/goals/tree")),
-    graph: (focus) => answer(wire.GET("/graph", { params: { query: focus ? { focus } : {} } })),
-    order: () => answer(wire.GET("/order")),
+    goalTree: () => answer(wire.GET("/goals/tree", { params: { query: preview() } })),
+    graph: (focus) => answer(wire.GET("/graph", { params: { query: { ...preview(), ...(focus ? { focus } : {}) } } })),
+    order: () => answer(wire.GET("/order", { params: { query: preview() } })),
     glossary: () => answer(wire.GET("/glossary", { params: { query: {} } })),
     understand: (text) => answer(wire.POST("/understand", { body: { text } })),
     relevant: (text, kinds, level) => answer(wire.POST("/relevant", { body: { text, ...(kinds ? { kinds } : {}), ...(level ? { level } : {}) } })),
@@ -218,17 +244,19 @@ export function httpClient(
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
     cyclePeriods: (id, from, to) =>
       answer(wire.GET("/manifests/ReportingCycle/{id}/periods", { params: { path: { id }, query: { from, to } } })),
-    deleteGoal: (id, reason) =>
-      done(wire.DELETE("/manifests/Goal/{id}", { params: { path: { id } }, body: { reason } })),
+    deleteGoal: async (id) => {
+      const set = await workingSet("Goal", id);
+      await done(wire.PUT("/changesets/{set}/items/{kind}/{id}/removal", { params: { path: { set, kind: "Goal", id } } }));
+    },
 
     projectState: (id) => answer(wire.GET("/manifests/Project/{id}/state", { params: { path: { id } } })),
-    transition: (id, to, reason) =>
-      answer(
-        wire.POST("/manifests/Project/{id}/state", {
-          params: { path: { id } },
-          body: reason === undefined ? { to } : { to, reason },
-        }),
-      ),
+    // The move lands in the change set; the project stays where it is
+    // until the change set is rolled in.
+    transition: async (id, to) => {
+      const set = await workingSet("Project", id);
+      await done(wire.PUT("/changesets/{set}/items/Project/{id}/state", { params: { path: { set, id } }, body: { state: to } }));
+      return answer(wire.GET("/manifests/Project/{id}/state", { params: { path: { id } } }));
+    },
 
     vault: () => answer(wire.GET("/vault")),
     unapplied: async () => {
@@ -258,6 +286,11 @@ export function httpClient(
     acceptChangeSet: (set, reason) => answer(wire.POST("/changesets/{set}/accept", { params: { path: { set } }, body: reason ? { reason } : {} })),
     reopenChangeSet: (set, reason) => answer(wire.POST("/changesets/{set}/reopen", { params: { path: { set } }, body: reason ? { reason } : {} })),
     closeChangeSet: (set, reason) => answer(wire.POST("/changesets/{set}/close", { params: { path: { set } }, body: reason ? { reason } : {} })),
+    startChangeSet: (title, description) => answer(wire.POST("/changesets", { body: { title, ...(description ? { description } : {}) } })),
+    retitleChangeSet: (set, title, description) =>
+      answer(wire.PATCH("/changesets/{set}", { params: { path: { set } }, body: { title, ...(description ? { description } : {}) } })),
+    proposeChangeSet: (set, reason) => answer(wire.POST("/changesets/{set}/propose", { params: { path: { set } }, body: reason ? { reason } : {} })),
+    dropChangeSetItem: (set, kind, id) => done(wire.DELETE("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } })),
     acceptProposal: (id, reason) =>
       answer(wire.POST("/proposals/{proposal}/accept", { params: { path: { proposal: id } }, body: reason ? { reason } : {} })),
     declineProposal: (id, reason) =>

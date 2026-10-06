@@ -449,6 +449,17 @@ export interface Client {
   reopenChangeSet(set: string, reason?: string): Promise<ChangeSet>;
   /** End a change set without saving it. */
   closeChangeSet(set: string, reason?: string): Promise<ChangeSet>;
+  /** Start a change set: a piece of work, named, that every edit made
+   * while it is active goes into (engine docs/adr/0024). */
+  startChangeSet(title: string, description?: string): Promise<ChangeSet>;
+  /** Rename a change set, or say what it is for. */
+  retitleChangeSet(set: string, title: string, description?: string): Promise<ChangeSet>;
+  /** Put a change set up for review, with checks left open waived for a
+   * reason where the person gives one. */
+  proposeChangeSet(set: string, reason?: string): Promise<ChangeSet>;
+  /** Drop one record from a change set, as if it had never been changed
+   * there. */
+  dropChangeSetItem(set: string, kind: string, id: string): Promise<void>;
   /** Makes the record a proposal proposed, as the caller. Conflict when
    * it was decided already or its manifest changed since. */
   acceptProposal(id: string, reason?: string): Promise<Proposal>;

@@ -9,6 +9,8 @@
 // the engine's sync socket (./browser-live.ts).
 
 import * as A from "@automerge/automerge/slim";
+
+import { activeChangeSet } from "./active";
 import {
   Repo,
   type DocHandle,
@@ -623,8 +625,12 @@ export function createLive(opts: LiveOptions): Live {
     return repo.find<T>(url as never, { signal });
   }
 
+  // A draft is the change set's when one is active (engine docs/adr/0024):
+  // the same record has a document per change set.
+  const scope = () => activeChangeSet.get() ?? "";
+
   async function locate(kind: string, id: string): Promise<string> {
-    const key = `draft:${kind}/${id}`;
+    const key = `draft:${scope()}|${kind}/${id}`;
     try {
       const doc = await opts.locate(kind, id);
       opts.remember?.set(key, doc.url);
@@ -640,7 +646,7 @@ export function createLive(opts: LiveOptions): Live {
     repo,
 
     openDraft(kind, id) {
-      const key = `${kind}/${id}`;
+      const key = `${scope()}|${kind}/${id}`;
       let entry = drafts.get(key);
       if (!entry) {
         const draft = (async () => {

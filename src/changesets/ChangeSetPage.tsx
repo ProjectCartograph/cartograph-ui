@@ -129,7 +129,9 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
     onSuccess: () => queries.invalidateQueries({ queryKey: ["changesets", set] }),
   });
   const openChecks = item.checks.filter((c) => c.state !== "ok");
-  const isNew = item.base === 0;
+  // The engine says whether the change set creates the record: a vault
+  // record may have no numbered version, so a base of 0 does not.
+  const isNew = item.proposed ? item.proposed === "new" : item.base === 0;
   const link = manifestLink({ kind: item.kind, manifestId: item.id });
   const Icon = kindIcon(item.kind);
   return (

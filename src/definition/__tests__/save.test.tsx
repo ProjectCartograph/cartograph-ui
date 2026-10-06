@@ -60,7 +60,7 @@ async function mount() {
 describe("the save that promotes a staged draft", () => {
   it("offers nothing to press until there is a draft", async () => {
     await mount();
-    expect(screen.queryByRole("button", { name: sc.button })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: sc.buttonLabel })).not.toBeInTheDocument();
   });
 
   it("appears once autosave has staged something", async () => {
@@ -69,7 +69,7 @@ describe("the save that promotes a staged draft", () => {
     await act(async () => {
       await store().flushNow();
     });
-    expect(screen.getByRole("button", { name: sc.button })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: sc.buttonLabel })).toBeInTheDocument();
     expect(screen.getByText(sc.staged)).toBeInTheDocument();
   });
 
@@ -100,7 +100,7 @@ describe("the save that promotes a staged draft", () => {
     await act(async () => {
       await store().save();
     });
-    expect(screen.queryByRole("button", { name: sc.button })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: sc.buttonLabel })).not.toBeInTheDocument();
   });
 
   it("says what went wrong when the server refuses it", async () => {
@@ -110,10 +110,10 @@ describe("the save that promotes a staged draft", () => {
     await act(async () => {
       await store().flushNow();
     });
-    await userEvent.click(screen.getByRole("button", { name: sc.button }));
+    await userEvent.click(screen.getByRole("button", { name: sc.buttonLabel }));
     expect(screen.getByText("/spec/aim: An aim is needed.")).toBeInTheDocument();
     // Still staged: a refusal did not throw the work away.
-    expect(screen.getByRole("button", { name: sc.button })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: sc.buttonLabel })).toBeInTheDocument();
   });
 });
 
@@ -130,6 +130,6 @@ describe("discarding a staged draft", () => {
     expect(discardWorking).toHaveBeenCalledWith("Programme", "p1");
     expect(store().name).toBe("As the vault holds it");
     // And there is nothing left to save.
-    expect(screen.queryByRole("button", { name: sc.button })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: sc.buttonLabel })).not.toBeInTheDocument();
   });
 });

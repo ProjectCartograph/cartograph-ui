@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect } from "vitest";
 
+import { activeChangeSet } from "./active";
 import { httpClient } from "./http";
 import { ClientError, Conflict, Forbidden, NotFound, Refused } from "./port";
 
@@ -17,6 +18,8 @@ function wire(status: number, body?: unknown, type = "application/json") {
 }
 
 describe("the HTTP adapter", () => {
+  afterEach(() => activeChangeSet.set(undefined));
+
   it("lists a kind as rows, whether the engine answers with an array or a page", async () => {
     const rows = [{ kind: "Goal", id: "g1", name: "One", version: 1, updatedOn: "2026-09-01T00:00:00Z" }];
     expect(await wire(200, rows).client.list("Goal")).toEqual(rows);
@@ -33,22 +36,39 @@ describe("the HTTP adapter", () => {
     expect(url.searchParams.get("expand")).toBe("spec");
   });
 
-  it("writes the working copy as text, and never the validating write", async () => {
-    const { client, asked } = wire(204);
-    await client.saveWorking("Project", "p1", "kind: Project\n");
-    expect(asked).toEqual([
-      { method: "PUT", url: "http://engine/api/v1/manifests/Project/p1/working", body: { yaml: "kind: Project\n" } },
+  it("puts every edit in the change set it works in, starting one on the first edit", async () => {
+    const first = wire(200, { id: "cs9" });
+    await first.client.saveWorking("Project", "p1", "kind: Project\n");
+    expect(first.asked.map((a) => `${a.method} ${new URL(a.url).pathname}`)).toEqual([
+      "POST /api/v1/changesets",
+      "PUT /api/v1/changesets/cs9/items/Project/p1",
+    ]);
+    expect(first.asked[1].body).toEqual({ yaml: "kind: Project\n" });
+    expect(activeChangeSet.get()).toBe("cs9");
+
+    const next = wire(204);
+    await next.client.saveWorking("Project", "p1", "kind: Project\n");
+    expect(next.asked).toEqual([
+      { method: "PUT", url: "http://engine/api/v1/changesets/cs9/items/Project/p1", body: { yaml: "kind: Project\n" } },
     ]);
   });
 
-  it("saves a version from text as yaml, and from an object as a manifest", async () => {
-    const version = { kind: "Goal", id: "g1", number: 2, actor: "local", reason: "r", on: "2026-09-01T00:00:00Z" };
-    const text = wire(200, version);
-    expect(await text.client.saveVersion("Goal", "g1", "kind: Goal\n", "r")).toEqual(version);
-    expect(text.asked[0].body).toEqual({ yaml: "kind: Goal\n", reason: "r" });
-    const object = wire(200, version);
+  it("saves into the change set, never a version, from text or from an object", async () => {
+    activeChangeSet.set("cs1");
+    const text = wire(204);
+    const saved = await text.client.saveVersion("Goal", "g1", "kind: Goal\n", "r");
+    expect(saved).toMatchObject({ kind: "Goal", id: "g1", reason: "r", draft: true });
+    expect(text.asked[0]).toEqual({ method: "PUT", url: "http://engine/api/v1/changesets/cs1/items/Goal/g1", body: { yaml: "kind: Goal\n" } });
+    const object = wire(204);
     await object.client.saveVersion("Goal", "g1", { kind: "Goal" }, "r");
-    expect(object.asked[0].body).toEqual({ manifest: { kind: "Goal" }, reason: "r" });
+    expect(object.asked[0].body).toEqual({ yaml: JSON.stringify({ kind: "Goal" }) });
+  });
+
+  it("reads as the change set would leave the workspace", async () => {
+    activeChangeSet.set("cs1");
+    const { client, asked } = wire(200, []);
+    await client.goalTree().catch(() => undefined);
+    expect(new URL(asked[0].url).searchParams.get("changeSet")).toBe("cs1");
   });
 
   it("reads and changes the access list at its paths", async () => {

@@ -1,4 +1,4 @@
-import { type LucideIcon } from "lucide-react";
+import { Save, type LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FlowBack, FlowNav, FlowNext, FlowProgress } from "@/components/walker";
@@ -102,7 +102,10 @@ export function GoalReview({
           </div>
         ))}
       </dl>
-      <Button type="button" className="self-start" onClick={onSave}>{copy.goals.editor.save.button}</Button>
+      <Button type="button" className="self-start" onClick={onSave} aria-label={copy.goals.editor.save.buttonLabel} title={copy.goals.editor.save.buttonLabel}>
+        <Save />
+        {copy.goals.editor.save.button}
+      </Button>
     </div>
   );
 }

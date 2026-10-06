@@ -1,4 +1,5 @@
 /// <reference types="@testing-library/jest-dom" />
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -41,9 +42,17 @@ describe("required fields", () => {
         </QueryClientProvider>
       </ClientProvider>,
     );
-    expect(await screen.findByText(copy.required.legend)).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText("name")).toHaveAttribute("aria-required", "true"));
     expect(screen.getByLabelText("name")).toHaveAttribute("data-required");
     expect(screen.getByLabelText("description")).not.toHaveAttribute("data-required");
+    // Nothing is said until the person leaves it empty; then why it is
+    // required, until they fill it.
+    expect(screen.queryByText(copy.required.because)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText("name"));
+    await userEvent.click(screen.getByLabelText("description"));
+    expect(await screen.findByText(copy.required.because)).toBeInTheDocument();
+    expect(screen.getByLabelText("name")).toHaveAttribute("data-required-missing");
+    await userEvent.type(screen.getByLabelText("name"), "Grading manual");
+    expect(screen.queryByText(copy.required.because)).not.toBeInTheDocument();
   });
 });
