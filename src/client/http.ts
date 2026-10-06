@@ -289,7 +289,8 @@ export function httpClient(
     startChangeSet: (title, description) => answer(wire.POST("/changesets", { body: { title, ...(description ? { description } : {}) } })),
     retitleChangeSet: (set, title, description) =>
       answer(wire.PATCH("/changesets/{set}", { params: { path: { set } }, body: { title, ...(description ? { description } : {}) } })),
-    proposeChangeSet: (set, reason) => answer(wire.POST("/changesets/{set}/propose", { params: { path: { set } }, body: reason ? { reason } : {} })),
+    proposeChangeSet: (set, reason, openChecks) =>
+      answer(wire.POST("/changesets/{set}/propose", { params: { path: { set } }, body: { ...(reason ? { reason } : {}), ...(openChecks ? { openChecks } : {}) } })),
     dropChangeSetItem: (set, kind, id) => done(wire.DELETE("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } })),
     acceptProposal: (id, reason) =>
       answer(wire.POST("/proposals/{proposal}/accept", { params: { path: { proposal: id } }, body: reason ? { reason } : {} })),

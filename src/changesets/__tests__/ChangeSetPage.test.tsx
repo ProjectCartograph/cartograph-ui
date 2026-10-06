@@ -65,14 +65,17 @@ describe("a change set's review", () => {
     await waitFor(() => expect(screen.getByRole("checkbox", { name: `${cc.include}: Sound on arrival` })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("checkbox", { name: `${cc.include}: Sound on arrival` }));
     await waitFor(() => expect(includeChangeSetItem).toHaveBeenCalledWith("cs1", "KPI", "k-sound", false));
-    fireEvent.click(screen.getByRole("button", { name: cc.accept(3) }));
+    fireEvent.click(screen.getByRole("button", { name: copy.mergeBar.mergeLabel }));
+    // What is still open is shown before it merges.
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: copy.mergeBar.mergeLabel }));
     await waitFor(() => expect(acceptChangeSet).toHaveBeenCalledWith("cs1"));
   });
 
   it("offers nothing to decide to anyone but its person", async () => {
     mount({ session: async () => ({ actor: "sam@example.org", email: "sam@example.org", canWrite: true }) as never });
     await screen.findByRole("heading", { name: "Define the bruising gap" });
-    expect(screen.queryByRole("button", { name: cc.accept(3) })).toBeNull();
+    expect(screen.queryByRole("button", { name: copy.mergeBar.mergeLabel })).toBeNull();
     expect(screen.queryByRole("checkbox")).toBeNull();
   });
 });

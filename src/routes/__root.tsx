@@ -56,6 +56,7 @@ import { useLeftToDo } from "@/surfaces/home/leftToDo";
 import { TourProvider } from "@/tour/TourProvider";
 import { TourEntry } from "@/tour/TourEntry";
 import { useActiveChangeSet } from "@/changesets/useActive";
+import { MergeBar } from "@/changesets/MergeBar";
 
 const defineItems = [
   {
@@ -607,6 +608,7 @@ function RootLayout() {
           </header>
           <main className="min-w-0 flex-1 p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
             {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
+            {unlisted ? null : <MergeBar />}
           </main>
         </SidebarInset>
       </TourProvider>

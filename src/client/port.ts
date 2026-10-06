@@ -456,7 +456,9 @@ export interface Client {
   retitleChangeSet(set: string, title: string, description?: string): Promise<ChangeSet>;
   /** Put a change set up for review, with checks left open waived for a
    * reason where the person gives one. */
-  proposeChangeSet(set: string, reason?: string): Promise<ChangeSet>;
+  /** Proposes a change set; openChecks leaves each named check open with
+   * its reason, by Kind/id then check id. */
+  proposeChangeSet(set: string, reason?: string, openChecks?: Record<string, Record<string, string>>): Promise<ChangeSet>;
   /** Drop one record from a change set, as if it had never been changed
    * there. */
   dropChangeSetItem(set: string, kind: string, id: string): Promise<void>;

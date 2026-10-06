@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed, GitPullRequest } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed, GitMerge, GitPullRequest } from "lucide-react";
 
 import { useSession } from "@/access/access";
 import { useClient } from "@/client/context";
+import { MergeDialog } from "./MergeBar";
 import { ClientError, type ChangeSetItem, type ChangeSetReview } from "@/client/port";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -226,14 +227,13 @@ function Decide({ set, status, included, all }: { set: string; status: string; i
   const [said, setSaid] = useState<string | undefined>(undefined);
   const refresh = () => queries.invalidateQueries({ queryKey: ["changesets"] });
   const fail = (e: unknown) => setSaid(e instanceof ClientError && e.status === 409 ? cc.staleRefused : cc.failed);
-  const accept = useMutation({ mutationFn: () => client.acceptChangeSet(set), onSuccess: () => { setSaid(cc.accepted); void refresh(); }, onError: fail });
+  const [merging, setMerging] = useState(false);
   const reopen = useMutation({ mutationFn: () => client.reopenChangeSet(set), onSuccess: () => void refresh(), onError: fail });
   const close = useMutation({ mutationFn: () => client.closeChangeSet(set), onSuccess: () => { setSaid(cc.closed); void refresh(); }, onError: fail });
-  const busy = accept.isPending || reopen.isPending || close.isPending;
+  const busy = reopen.isPending || close.isPending;
   if (status !== "open" && status !== "proposed") return said ? <p className="text-sm text-muted-foreground">{said}</p> : null;
   return (
     <section className="sticky bottom-0 flex flex-col gap-2 border-t bg-background/95 py-3 backdrop-blur" data-cartograph-region="change-set-decide">
-      {status === "open" ? <p className="text-sm text-muted-foreground">{cc.inProgress}</p> : null}
       {status === "proposed" && included === 0 ? <p className="text-sm text-muted-foreground">{cc.nothingIncluded}</p> : null}
       <div className="flex flex-wrap items-center justify-end gap-2">
         <span className="mr-auto text-sm text-muted-foreground">{cc.included(included, all)}</span>
@@ -241,16 +241,16 @@ function Decide({ set, status, included, all }: { set: string; status: string; i
           {cc.close}
         </Button>
         {status === "proposed" ? (
-          <>
-            <Button variant="outline" disabled={busy} onClick={() => reopen.mutate()}>
-              {cc.askForChanges}
-            </Button>
-            <Button disabled={busy || included === 0} onClick={() => accept.mutate()}>
-              {cc.accept(included)}
-            </Button>
-          </>
+          <Button variant="outline" disabled={busy} onClick={() => reopen.mutate()}>
+            {cc.askForChanges}
+          </Button>
         ) : null}
+        <Button disabled={busy || included === 0} onClick={() => setMerging(true)} aria-label={copy.mergeBar.mergeLabel} title={copy.mergeBar.mergeLabel}>
+          <GitMerge />
+          {cc.accept(included)}
+        </Button>
       </div>
+      <MergeDialog set={set} open={merging} onOpenChange={setMerging} onMerged={() => setSaid(cc.accepted)} />
       {said ? <p className="text-right text-sm text-muted-foreground">{said}</p> : null}
     </section>
   );
