@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -105,6 +105,7 @@ export function RecordDrawerProvider({ children }: { children: ReactNode }) {
               </div>
               <div className="sticky bottom-0 flex justify-end border-t bg-background/95 p-3 backdrop-blur">
                 <Button type="button" onClick={() => setStack((s) => s.slice(0, -1))}>
+                  <Check />
                   {stack.length > 1 ? rc.doneBack : rc.done}
                 </Button>
               </div>

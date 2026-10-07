@@ -8,7 +8,7 @@ import { sameView } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 import { Scrubber, type ScrubStage } from "@/components/Scrubber";
 import { Button } from "@/components/ui/button";
-import { FileText, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
 
 
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
@@ -287,8 +287,9 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
             role="tab"
             aria-selected={tab === t}
             onClick={() => pick(t)}
-            className={`rounded px-3 py-1 text-sm transition-colors duration-150 ${tab === t ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            className={`flex items-center gap-1.5 rounded px-3 py-1 text-sm transition-colors duration-150 ${tab === t ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
           >
+            {t === "map" ? <Waypoints className="size-3.5" aria-hidden="true" /> : t === "charter" ? <FileText className="size-3.5" aria-hidden="true" /> : <ListChecks className="size-3.5" aria-hidden="true" />}
             {mc.tabs[t]}
           </button>
         ))}

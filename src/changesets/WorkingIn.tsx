@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, GitPullRequest } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, GitBranch, GitPullRequest, LogOut, Pencil, Plus } from "lucide-react";
 
 import { activeChangeSet } from "@/client/active";
 import { useClient } from "@/client/context";
@@ -107,6 +107,7 @@ export function WorkingIn() {
             <>
               <DropdownMenuLabel className="truncate">{name}</DropdownMenuLabel>
               <DropdownMenuItem onSelect={() => void navigate({ to: "/changesets/$id", params: { id: active } })}>
+                <Eye />
                 {c.review}
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -115,6 +116,7 @@ export function WorkingIn() {
                   void queryClient.invalidateQueries();
                 }}
               >
+                {asItIs ? <GitPullRequest /> : <EyeOff />}
                 {asItIs ? c.asProposed : c.asItIs}
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -123,9 +125,11 @@ export function WorkingIn() {
                   setRenaming(true);
                 }}
               >
+                <Pencil />
                 {c.rename}
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => switchTo(undefined)} title={c.leaveHint}>
+                <LogOut />
                 {c.leave}
               </DropdownMenuItem>
             </>
@@ -138,13 +142,17 @@ export function WorkingIn() {
               <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">{c.switchTo}</DropdownMenuLabel>
               {others.map((cs) => (
                 <DropdownMenuItem key={cs.id} onSelect={() => switchTo(cs.id)}>
+                  <GitBranch />
                   <span className="truncate">{cs.title}</span>
                 </DropdownMenuItem>
               ))}
             </>
           ) : null}
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => start.mutate()}>{c.start}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => start.mutate()}>
+            <Plus />
+            {c.start}
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
