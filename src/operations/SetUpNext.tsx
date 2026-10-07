@@ -3,6 +3,7 @@ import { ArrowRight, Hourglass } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { copy } from "@/copy";
+import { useRecordDrawer } from "@/records/RecordDrawer";
 import { useDefinitionStore } from "@/definition/store";
 import { useReferencing } from "@/operations/api";
 import { statusOf } from "@/operations/status";
@@ -24,7 +25,10 @@ const sc = copy.operations.setUpNext;
 export function SetUpNext() {
   const store = useDefinitionStore<OperationSpec>();
   const setUpBy = useReferencing("Operation", store.id, "Project");
-  if (statusOf(store.spec) !== "planned" || !setUpBy.data || setUpBy.data.length > 0) return null;
+  // Opened from a project's walk, the project that sets it up is the one
+  // open behind it, even while it is still a draft: nothing to start.
+  const drawer = useRecordDrawer();
+  if (drawer || statusOf(store.spec) !== "planned" || !setUpBy.data || setUpBy.data.length > 0) return null;
   const waiting = waitingProject(store.id);
   return (
     <section

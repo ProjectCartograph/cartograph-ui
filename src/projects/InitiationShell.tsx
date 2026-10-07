@@ -23,7 +23,7 @@ import { useRecordDrawer } from "@/records/RecordDrawer";
 import { CharterView } from "@/charter/CharterView";
 import { useProjectStore } from "./store";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
-import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type Stage } from "./types";
+import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
 import { STAGE_ICON } from "./steps";
 
 const pc = copy.projects;
@@ -256,6 +256,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
  */
 function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode; onClose: () => void }) {
   const store = useProjectStore();
+  const navigate = useNavigate();
   const drawer = useRecordDrawer();
   const mc = copy.projectMap;
   const [tab, setTab] = useState<"map" | "charter" | "checks">(() => {
@@ -304,7 +305,20 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
           />
         ) : tab === "charter" ? (
           <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10" data-cartograph-region="charter-pane">
-            <CharterView kind="Project" id={id} working fileName={id} empty={copy.charter.empty} />
+            <CharterView
+              kind="Project"
+              id={id}
+              working
+              fileName={id}
+              empty={copy.charter.empty}
+              editable={{
+                onStep: (step) => {
+                  const path = pathOfStep(step);
+                  if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
+                },
+                onField: (pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value)),
+              }}
+            />
           </div>
         ) : (
           checks
@@ -312,4 +326,30 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
       </div>
     </div>
   );
+}
+
+/** The route of a step of the walk, by its section key. */
+function pathOfStep(step: string): string | undefined {
+  for (const stage of STAGES) for (const st of stepsOfStage(stage)) if (st.section === step) return st.path;
+  return undefined;
+}
+
+/** Sets one text value in the spec by its JSON pointer, as the charter
+ * names it ("/spec/summary/problems/0/problem/situation"). */
+function setAt(spec: ProjectSpec, pointer: string, value: string): ProjectSpec {
+  const parts = pointer.split("/").filter(Boolean).slice(1);
+  const copyOf = (v: unknown): unknown => (Array.isArray(v) ? [...v] : v && typeof v === "object" ? { ...(v as object) } : {});
+  const root = copyOf(spec) as Record<string, unknown>;
+  let at: Record<string, unknown> | unknown[] = root;
+  parts.forEach((key, i) => {
+    const k = /^\d+$/.test(key) ? Number(key) : key;
+    const container = at as Record<string | number, unknown>;
+    if (i === parts.length - 1) {
+      container[k] = value;
+      return;
+    }
+    container[k] = copyOf(container[k]);
+    at = container[k] as Record<string, unknown>;
+  });
+  return root as unknown as ProjectSpec;
 }

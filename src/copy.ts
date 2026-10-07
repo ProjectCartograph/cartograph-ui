@@ -1563,6 +1563,8 @@ export const copy = {
     placeholder: "",
   },
   charter: {
+    openStep: "Open this section's step",
+    editHere: "Click to edit. Enter to save, Escape to cancel.",
     title: "Charter",
     subtitle: "",
     back: "Back",

@@ -98,14 +98,14 @@ export function httpClient(
       case "Project":
         return answer(
           wire.GET("/manifests/Project/{id}/charter.html", {
-            params: { ...path, query: working ? { working } : undefined },
+            params: { ...path, query: { ...(working ? { working } : {}), ...preview() } },
             parseAs: "text",
           }),
         );
       case "Programme":
-        return answer(wire.GET("/manifests/Programme/{id}/charter.html", { params: path, parseAs: "text" }));
+        return answer(wire.GET("/manifests/Programme/{id}/charter.html", { params: { ...path, query: preview() }, parseAs: "text" }));
       case "Operation":
-        return answer(wire.GET("/manifests/Operation/{id}/charter.html", { params: path, parseAs: "text" }));
+        return answer(wire.GET("/manifests/Operation/{id}/charter.html", { params: { ...path, query: preview() }, parseAs: "text" }));
     }
   }
 
@@ -316,7 +316,8 @@ export function httpClient(
 
     charter: (kind, id, opts?: CharterOptions) => charterHTML(kind, id, !!opts?.working),
     charterLink: (kind, id, format, opts?: CharterOptions) =>
-      `${baseUrl}/manifests/${kind}/${encodeURIComponent(id)}/charter.${format}` +
-      (opts?.working ? "?working=true" : ""),
+      ((q) => `${baseUrl}/manifests/${kind}/${encodeURIComponent(id)}/charter.${format}${q ? `?${q}` : ""}`)(
+        new URLSearchParams({ ...(opts?.working ? { working: "true" } : {}), ...(preview().changeSet ? { changeSet: preview().changeSet as string } : {}) }).toString(),
+      ),
   };
 }
