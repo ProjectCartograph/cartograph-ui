@@ -3358,6 +3358,7 @@ export const copy = {
       deliverables: "Deliverables",
       conditions: "Conditions",
       somethingElse: "Something outside this project",
+      otherProject: (name: string) => `Milestones of ${name}`,
       externalLabel: "What happens, in words",
     },
     // The projects and programmes a piece of work depends on (engine

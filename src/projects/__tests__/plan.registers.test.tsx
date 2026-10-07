@@ -11,6 +11,7 @@ import { ProjectStoreProvider, useProjectStore } from "../store";
 import { RaciEditor } from "../sections/PlanRegisters";
 import { ApprovalSection } from "../sections/ApprovalSection";
 import { MilestonesSection } from "../sections/MilestonesSection";
+import { EventPicker } from "../TimingField";
 import type { ProjectSpec } from "../types";
 
 vi.mock("@tanstack/react-router", () => ({ useBlocker: () => undefined, Link: ({ children }: { children?: ReactNode }) => <a>{children}</a> }));
@@ -68,5 +69,37 @@ describe("the plan's registers", () => {
     mount({ timeline: { start: "2025-09", phases: [{ name: "Pilot", months: 3 }, { name: "Rollout", months: 6 }] } }, <MilestonesSection />);
     fireEvent.click(await screen.findByRole("button", { name: copy.projects.milestones.fromPhasesHint }));
     expect(spec.milestones?.map((m) => m.timing.date)).toEqual(["2025-11", "2026-05"]);
+  });
+
+  // A milestone may wait on a milestone of a project linked by components
+  // (engine TAXONOMY.md D47): the picker offers theirs, and keeps the
+  // choice as the project and the item.
+  it("offers the milestones of linked projects", async () => {
+    const survey = { apiVersion: "cartograph/v1", kind: "Project", metadata: { id: "survey", name: "Survey" }, spec: { milestones: [{ id: "s1", name: "Instruments approved", timing: { form: "date", date: "2026-08" } }] } };
+    const own = { apiVersion: "cartograph/v1", kind: "Project", metadata: { id: "p1", name: "Survey app" }, spec: { team: "t1", summary: {} } };
+    const onChange = vi.fn();
+    render(
+      <ClientProvider
+        client={fakeClient({
+          get: async (_kind: string, id: string) => ({ version: { number: 0 }, manifest: id === "survey" ? survey : own, yaml: "" }) as never,
+          list: async () => [] as never,
+          saveWorking: async () => undefined,
+          components: async () =>
+            ({
+              nodes: [{ kind: "Project", id: "p1", name: "Survey app" }, { kind: "Project", id: "survey", name: "Survey" }],
+              edges: [{ from: { kind: "Project", id: "survey" }, to: { kind: "Project", id: "p1" } }],
+              loops: [],
+              criticalPath: [],
+            }) as never,
+        })}
+      >
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <ProjectStoreProvider id="p1">
+            <EventPicker value={{ on: { kind: "Project", id: "survey" }, item: "s1" }} onChange={onChange} />
+          </ProjectStoreProvider>
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    expect(await screen.findByText("Instruments approved")).toBeInTheDocument();
   });
 });

@@ -144,6 +144,8 @@ export interface Task {
 /** Something that happens (engine TAXONOMY.md D47). */
 export interface PlanEvent {
   on: Ref;
+  /** With on naming another project: the item in it, a milestone first. */
+  item?: string;
   happens?: "reached" | "accepted" | "met" | "firstReading" | "issued" | "decided" | "approved" | "closed" | "landed" | "occurred";
 }
 

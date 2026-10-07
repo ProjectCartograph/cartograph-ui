@@ -1,6 +1,8 @@
 import { ArrowRightToLine, CalendarDays, CalendarRange, Hourglass, Sun } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useQueries } from "@tanstack/react-query";
 
+import { useClient } from "@/client/context";
 import { Input } from "@/components/ui/input";
 import { DatePicker, MonthPicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +11,7 @@ import { RoleRefPicker, roleOptions, useResourceNames } from "./RoleRefPicker";
 import { useProjectStore } from "./store";
 import type { PlanEvent, Timing } from "./types";
 import { Labelled } from "./Labelled";
+import { useComponentGraph } from "./components/ComponentsTable";
 
 const tc = copy.projects.timing;
 
@@ -144,22 +147,62 @@ const EXTERNAL = "__external__";
 
 /** What an event happens to: this project's milestones, deliverables and
  * conditions, or something outside it, in words. */
+/**
+ * The projects linked to this one by components, either way, each with its
+ * milestones: a milestone here may wait on one of theirs (engine
+ * TAXONOMY.md D47).
+ */
+function useLinkedMilestones(self: string) {
+  const client = useClient();
+  const graph = useComponentGraph();
+  const linked = new Map<string, string>();
+  for (const e of graph.data?.edges ?? []) {
+    const other = e.from.kind === "Project" && e.from.id === self ? e.to : e.to.kind === "Project" && e.to.id === self ? e.from : undefined;
+    if (other?.kind === "Project" && other.id !== self) {
+      linked.set(other.id, graph.data?.nodes.find((n) => n.kind === "Project" && n.id === other.id)?.name ?? other.id);
+    }
+  }
+  const ids = [...linked.keys()].sort();
+  const got = useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ["manifest", "Project", id],
+      queryFn: () => client.get("Project", id),
+    })),
+  });
+  return ids.map((id, i) => {
+    const spec = (got[i]?.data?.manifest.spec ?? {}) as { milestones?: { id: string; name?: string }[] };
+    return { id, name: linked.get(id) ?? id, milestones: (spec.milestones ?? []).map((m) => ({ id: m.id, name: m.name ?? m.id })) };
+  });
+}
+
 export function EventPicker({ value, onChange, exclude }: { value: PlanEvent | undefined; onChange: (v: PlanEvent | undefined) => void; exclude?: string }) {
   const store = useProjectStore();
   const s = store.spec;
+  const others = useLinkedMilestones(store.id).filter((o) => o.milestones.length > 0);
   const groups: { list: "milestones" | "deliverables" | "conditions"; label: string; items: { id: string; name: string }[] }[] = [
     { list: "milestones", label: tc.milestones, items: (s.milestones ?? []).map((m) => ({ id: m.id, name: m.name })) },
     { list: "deliverables", label: tc.deliverables, items: (s.deliverables ?? []).map((d) => ({ id: d.id, name: d.name })) },
     { list: "conditions", label: tc.conditions, items: (s.conditions ?? []).map((c) => ({ id: c.id, name: c.action })) },
   ];
   const on = value?.on;
-  const current = on && "local" in on && on.local ? `${on.local}:${on.id}` : on && "external" in on && on.external !== undefined ? EXTERNAL : "";
+  const current =
+    on && "local" in on && on.local
+      ? `${on.local}:${on.id}`
+      : on && "kind" in on && on.kind === "Project" && value?.item
+        ? `project:${on.id}:${value.item}`
+        : on && "external" in on && on.external !== undefined
+          ? EXTERNAL
+          : "";
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Select
         value={current}
         onValueChange={(v) => {
           if (v === EXTERNAL) return onChange({ on: { external: on && "external" in on && on.external ? on.external : "" } });
+          if (v.startsWith("project:")) {
+            const [, project, item] = v.split(":");
+            return onChange({ on: { kind: "Project", id: project }, item });
+          }
           const [list, id] = v.split(":");
           onChange({ on: { local: list as "milestones", id } });
         }}
@@ -182,6 +225,16 @@ export function EventPicker({ value, onChange, exclude }: { value: PlanEvent | u
               </SelectGroup>
             ) : null,
           )}
+          {others.map((o) => (
+            <SelectGroup key={o.id}>
+              <SelectLabel>{tc.otherProject(o.name)}</SelectLabel>
+              {o.milestones.map((m) => (
+                <SelectItem key={m.id} value={`project:${o.id}:${m.id}`}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          ))}
           <SelectGroup>
             <SelectItem value={EXTERNAL}>{tc.somethingElse}</SelectItem>
           </SelectGroup>
