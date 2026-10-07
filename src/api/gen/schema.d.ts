@@ -2698,6 +2698,8 @@ export interface operations {
     getProjectCharterHtml: {
         parameters: {
             query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
                 /** @description Use working copy instead of latest snapshot */
                 working?: boolean;
             };
@@ -2726,6 +2728,8 @@ export interface operations {
     getCharterPdf: {
         parameters: {
             query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
                 /** @description For a project, use the working copy instead of the latest snapshot. */
                 working?: boolean;
             };
@@ -2756,7 +2760,10 @@ export interface operations {
     };
     getProgrammeCharterHtml: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 id: components["parameters"]["IdParam"];
@@ -2781,7 +2788,10 @@ export interface operations {
     };
     getOperationCharterHtml: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
             header?: never;
             path: {
                 id: components["parameters"]["IdParam"];
