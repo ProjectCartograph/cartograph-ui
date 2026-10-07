@@ -63,7 +63,7 @@ export function ProjectMap({
   const [selected, setSelected] = useState<string | null>(null);
 
   // The nodes: records near the project, and its own problems.
-  const { nodes, edges } = useMemo(() => {
+  const { nodes, edges, lines } = useMemo(() => {
     const problems = spec.summary.problems ?? [];
     // What the project names, and what those name in turn, followed
     // outward only: the outcomes it serves and the aims above them, its
@@ -106,10 +106,44 @@ export function ProjectMap({
       const r = ROW[n.kind === "Goal" ? (n.level ?? "outcome") : n.kind] ?? 6;
       rows.set(r, [...(rows.get(r) ?? []), n]);
     }
+    // Who links to whom, either way, to order each row beside its links.
+    const linked = new Map<string, Set<string>>();
+    const tie = (a: string, b: string) => {
+      linked.set(a, (linked.get(a) ?? new Set()).add(b));
+      linked.set(b, (linked.get(b) ?? new Set()).add(a));
+    };
+    for (const e of graph.data?.edges ?? []) tie(`${e.from.kind}/${e.from.id}`, `${e.to.kind}/${e.to.id}`);
+    problems.forEach((p, i) => {
+      const pk = `Problem/${p.id ?? `#${i}`}`;
+      tie(`Project/${id}`, pk);
+      for (const c of p.gaps ?? []) tie(pk, `Gap/${c.gap}`);
+      for (const g of p.groups ?? []) tie(pk, `BeneficiaryGroup/${g}`);
+    });
+    // Each row in the order that crosses least: by the average position of
+    // what it links to in the rows already placed, swept down and up a few
+    // times (the barycentre method).
+    const order = [...rows.keys()].sort((a, b) => a - b);
+    const pos = new Map<string, number>();
+    for (const r of order) (rows.get(r) ?? []).forEach((n, i) => pos.set(n.key, i));
+    const sweep = (lines: number[]) => {
+      for (const r of lines) {
+        const list = rows.get(r) ?? [];
+        const score = (n: MapNode) => {
+          const near = [...(linked.get(n.key) ?? [])].filter((k) => pos.has(k) && !list.some((m) => m.key === k));
+          return near.length ? near.reduce((t, k) => t + (pos.get(k) ?? 0), 0) / near.length : (pos.get(n.key) ?? 0);
+        };
+        list.sort((a, b) => score(a) - score(b));
+        list.forEach((n, i) => pos.set(n.key, i - (list.length - 1) / 2));
+      }
+    };
+    for (let i = 0; i < 4; i++) {
+      sweep(order);
+      sweep([...order].reverse());
+    }
     const widest = Math.max(1, ...[...rows.values()].map((l) => l.length));
     const placed = new Map<string, Placed>();
     // Rows with nothing in them close up, so the chain stays compact.
-    [...rows.keys()].sort((a, b) => a - b).forEach((r, line) => {
+    order.forEach((r, line) => {
       const list = rows.get(r) ?? [];
       const left = ((widest - list.length) * (W + GAP_X)) / 2;
       list.forEach((n, i) => placed.set(n.key, { ...n, x: left + i * (W + GAP_X), y: line * (H + GAP_Y) }));
@@ -129,7 +163,8 @@ export function ProjectMap({
       for (const c of p.gaps ?? []) add(placed.get(pk), placed.get(`Gap/${c.gap}`));
       for (const g of p.groups ?? []) add(placed.get(pk), placed.get(`BeneficiaryGroup/${g}`));
     });
-    return { nodes: [...placed.values()], edges: out };
+    const lines = order.map((r, line) => ({ row: r, y: line * (H + GAP_Y) }));
+    return { nodes: [...placed.values()], edges: out, lines };
   }, [graph.data, spec, id]);
 
   // The view: pan and zoom, fitted to the map when it first draws.
@@ -139,14 +174,15 @@ export function ProjectMap({
   const fit = useCallback(() => {
     const el = box.current;
     if (!el || nodes.length === 0) return;
-    const w = Math.max(...nodes.map((n) => n.x + W)) + 24;
+    // Room on the left for the row labels.
+    const w = Math.max(...nodes.map((n) => n.x + W)) + 24 + 132;
     const h = Math.max(...nodes.map((n) => n.y + H)) + 24;
     // Readable first: never smaller than the text can be read at; a map
     // larger than the pane is moved, not shrunk to nothing.
     const k = Math.min(1.1, Math.max(0.7, Math.min(el.clientWidth / w, el.clientHeight / h)));
     // Centred when it fits; from the top (the strategy) when it is taller
     // than the pane, and centred on its middle when wider.
-    setView({ k, x: (el.clientWidth - w * k) / 2 + 12 * k, y: h * k > el.clientHeight ? 12 : (el.clientHeight - h * k) / 2 + 12 * k });
+    setView({ k, x: (el.clientWidth - w * k) / 2 + 144 * k, y: h * k > el.clientHeight ? 12 : (el.clientHeight - h * k) / 2 + 12 * k });
   }, [nodes]);
   useEffect(() => {
     const el = box.current;
@@ -221,6 +257,18 @@ export function ProjectMap({
   const zoom = (f: number) => setView((v) => ({ ...v, k: Math.min(2, Math.max(0.25, v.k * f)) }));
 
   const sel = nodes.find((n) => n.key === selected);
+  // A node in focus, pointed at or selected, brings out its links and its
+  // neighbours; the rest step back.
+  const [hovered, setHovered] = useState<string | null>(null);
+  const focus = drawing ? null : (hovered ?? selected);
+  const near = new Set<string>();
+  if (focus) {
+    near.add(focus);
+    for (const ed of edges) {
+      if (ed.from.key === focus) near.add(ed.to.key);
+      if (ed.to.key === focus) near.add(ed.from.key);
+    }
+  }
 
   return (
     <section className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10" aria-label={mc.label} data-cartograph-region="project-map">
@@ -297,7 +345,13 @@ export function ProjectMap({
                 >
                   {removable ? <title>{mc.unlink(ed.from.name, ed.to.name)}</title> : null}
                   <path d={d} fill="none" stroke="transparent" strokeWidth={14} />
-                  <path d={d} fill="none" stroke="var(--color-muted-foreground)" strokeOpacity={0.55} strokeWidth={1.5} />
+                  <path
+                    d={d}
+                    fill="none"
+                    stroke={focus && (ed.from.key === focus || ed.to.key === focus) ? "var(--color-primary)" : "var(--color-muted-foreground)"}
+                    strokeOpacity={focus ? (ed.from.key === focus || ed.to.key === focus ? 0.9 : 0.08) : 0.3}
+                    strokeWidth={focus && (ed.from.key === focus || ed.to.key === focus) ? 2 : 1.25}
+                  />
                 </g>
               );
             })}
@@ -305,6 +359,17 @@ export function ProjectMap({
               <line x1={drawing.from.x + W / 2} y1={drawing.from.y + H / 2} x2={drawing.at.x} y2={drawing.at.y} stroke="var(--color-primary)" strokeWidth={2} strokeDasharray="5 4" />
             ) : null}
           </svg>
+          {/* What each row is, at its left. */}
+          {lines.map((l) => (
+            <span
+              key={l.row}
+              className="absolute -translate-x-full pr-3 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
+              style={{ left: Math.min(...nodes.map((n) => n.x)), top: l.y + H / 2 - 8, width: 120 }}
+              aria-hidden="true"
+            >
+              {mc.rows[l.row] ?? ""}
+            </span>
+          ))}
           {nodes.map((n) => {
             const Icon = n.kind === "Problem" ? null : kindIcon(n.kind);
             const v = drawing && n.key !== drawing.from.key ? verdict.get(n.key) : undefined;
@@ -326,12 +391,14 @@ export function ProjectMap({
                   (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
                   setDrawing({ from: n, at: { x: n.x + W / 2, y: n.y + H / 2 } });
                 }}
+                onPointerEnter={() => setHovered(n.key)}
+                onPointerLeave={() => setHovered((h) => (h === n.key ? null : h))}
                 onClick={() => {
                   if (mode !== "select") return;
                   setSelected(n.key);
                   onSelect?.(n);
                 }}
-                className={`absolute flex items-center gap-2 rounded-lg border bg-card px-2.5 text-sm shadow-sm transition-[opacity,box-shadow] duration-150 ${dim ? "opacity-30" : ""} ${v?.allowed ? "ring-2 ring-primary" : ""} ${selected === n.key ? "ring-2 ring-foreground" : ""} ${mode === "connect" && linksFrom(n).length > 0 ? "cursor-crosshair" : "cursor-pointer"}`}
+                className={`absolute flex items-center gap-2 rounded-lg border bg-card px-2.5 text-sm shadow-sm transition-[opacity,box-shadow] duration-150 ${dim || (focus && !near.has(n.key)) ? "opacity-30" : ""} ${v?.allowed ? "ring-2 ring-primary" : ""} ${selected === n.key ? "ring-2 ring-foreground" : ""} ${mode === "connect" && linksFrom(n).length > 0 ? "cursor-crosshair" : "cursor-pointer"}`}
                 style={{ left: n.x, top: n.y, width: W, height: H }}
               >
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: n.kind === "Problem" ? "var(--color-warning)" : colorOf(n.kind) }} aria-hidden="true" />

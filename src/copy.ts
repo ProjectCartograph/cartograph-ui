@@ -488,6 +488,7 @@ export const copy = {
     unlink: (a: string, b: string) => `Remove the link between ${a} and ${b}`,
     kinds: { Problem: "Problem", Project: "Project" } as Record<string, string>,
     tabs: { map: "Map", charter: "Charter", checks: "Checks" },
+    rows: { 0: "Goals", 1: "Objectives", 2: "Outcomes", 3: "Evidence", 4: "Problems", 5: "Project", 6: "Reaches" } as Record<number, string>,
     tabsLabel: "Side panel",
     closePane: "Close the side panel",
     openPane: "Open the side panel",
