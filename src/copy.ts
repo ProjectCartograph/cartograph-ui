@@ -2769,13 +2769,6 @@ export const copy = {
       due: "Due",
       evidence: "Evidence it was accepted",
       evidenceHint: "The record someone else could check: the final document and its distribution record.",
-      workstream: "Workstream",
-      workstreams: "Workstreams",
-      workstreamsHint: "Group the deliverables under a lead role. A workstream that needs its own sponsor or budget is a project this one depends on.",
-      workstreamName: "Workstream name",
-      workstreamLead: "Lead",
-      workstreamPurpose: "What it is for",
-      addWorkstream: "Add a workstream",
       heading: "Deliverables",
       subtitle: "",
       nameLabel: "Name",
@@ -3234,7 +3227,7 @@ export const copy = {
       empty: "No success criterion is set for handover.",
       editOnSuccess: "Edit success criteria",
     },
-    // Approval: conditions, sign-off, the record and template sections
+    // Approval: conditions, sign-off and the record
     // (projects/sections/ApprovalSection).
     approval: {
       heading: "Approval",
@@ -3274,13 +3267,6 @@ export const copy = {
       recordIt: "Record what happened",
       recordShort: "Record",
       lists: { milestones: "Milestones", deliverables: "Deliverables", risks: "Risks", successCriteria: "Success criteria", conditions: "Conditions" } as Record<string, string>,
-      sections: "Template sections",
-      sectionsHint: "Parts of your organisation's charter template that Cartograph does not hold as a field, in the template's words. Each prints beside the step you choose.",
-      section: "Section",
-      addSection: "Add a template section",
-      sectionHeading: "Heading",
-      besideStep: "Printed beside",
-      text: "Text",
     },
     // The plan's registers (projects/sections/PlanRegisters).
     registers: {

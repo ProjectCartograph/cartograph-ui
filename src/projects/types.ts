@@ -65,7 +65,7 @@ export type RefKind =
 /** The lists inside a manifest a reference can name. */
 export type LocalRefList =
   | "resources" | "stakeholders" | "objectives" | "deliverables" | "successCriteria"
-  | "risks" | "problems" | "phases" | "milestones" | "conditions" | "signOffs" | "workstreams";
+  | "risks" | "problems" | "phases" | "milestones" | "conditions" | "signOffs";
 
 /** Whether a reference names anything at all. */
 export function refIsSet(ref: Ref | undefined): ref is Ref {
@@ -174,15 +174,6 @@ export interface Milestone {
   evidence?: string;
 }
 
-export interface Workstream {
-  id: string;
-  name: string;
-  purpose?: string;
-  lead?: Ref;
-  supporting?: Ref[];
-  dependsOn?: string;
-}
-
 export interface Responsibility {
   id: string;
   item: string;
@@ -247,14 +238,6 @@ export interface ProjectEvent {
   recordedBy?: string;
 }
 
-/** A part of the organisation's template held as text (TAXONOMY.md D53). */
-export interface TemplateSection {
-  id: string;
-  heading: string;
-  text: string;
-  step?: string;
-}
-
 export interface Deliverable {
   id: string;
   name: string;
@@ -262,7 +245,6 @@ export interface Deliverable {
   owner?: Ref;
   due?: Timing;
   evidence?: string;
-  workstream?: string;
   acceptance?: AcceptanceCriterion[];
   tasks?: Task[];
 }
@@ -578,14 +560,12 @@ export interface ProjectSpec {
   /** The projects and programmes this one depends on (engine TAXONOMY.md D46). */
   components?: { kind: "Project" | "Programme"; id: string; why?: string }[];
   milestones?: Milestone[];
-  workstreams?: Workstream[];
   responsibilities?: Responsibility[];
   costs?: CostLine[];
   procurement?: ProcurementItem[];
   conditions?: Condition[];
   signOffs?: SignOff[];
   events?: ProjectEvent[];
-  sections?: TemplateSection[];
   classification?: string;
   objectives?: ProjectObjective[];
   deliverables?: Deliverable[];

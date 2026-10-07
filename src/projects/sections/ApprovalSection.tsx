@@ -1,4 +1,4 @@
-import { CheckCheck, FileSignature, History, ListChecks, NotebookText, Plus, Trash2 } from "lucide-react";
+import { CheckCheck, FileSignature, History, ListChecks, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,7 @@ import { RoleRefPicker, roleOptions, useResourceNames, roleRefLabel } from "../R
 import { EventPicker, TimingField } from "../TimingField";
 import { Labelled } from "../Labelled";
 import { useProjectStore, useSectionAutosave } from "../store";
-import type { Condition, ProjectEvent, SignOff, TemplateSection } from "../types";
-import { INITIATION_SECTIONS } from "../types";
+import type { Condition, ProjectEvent, SignOff } from "../types";
 
 const ac = copy.projects.approval;
 
@@ -37,7 +36,6 @@ export function ApprovalSection() {
       <Conditions />
       <SignOffs />
       <Record />
-      <Sections />
     </div>
   );
 }
@@ -394,69 +392,6 @@ function Record() {
             ))}
         </ol>
       ) : null}
-    </section>
-  );
-}
-
-/** Parts of the organisation's template Cartograph holds as text, each
- * printed beside the step it belongs to (engine TAXONOMY.md D53). */
-function Sections() {
-  const store = useProjectStore();
-  const list = store.spec.sections ?? [];
-  const set = (next: TemplateSection[]) => store.updateSpec((s) => ({ ...s, sections: next.length > 0 ? next : undefined }));
-  const patch = (i: number, p: Partial<TemplateSection>) => set(list.map((c, j) => (j === i ? { ...c, ...p } : c)));
-  return (
-    <section className="flex flex-col gap-3" data-cartograph-field="/spec/sections">
-      <Heading icon={NotebookText} title={ac.sections} hint={ac.sectionsHint} />
-      {list.map((sec, i) => (
-        <div key={sec.id} className="flex flex-col gap-2 rounded-xl p-3 ring-1 ring-foreground/10" data-template-section={sec.id}>
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              className="min-w-56 flex-1"
-              value={sec.heading}
-              onChange={(e) => patch(i, { heading: e.target.value.slice(0, 80) })}
-              maxLength={80}
-              aria-label={ac.sectionHeading}
-            />
-            <Select value={sec.step ?? ""} onValueChange={(v) => patch(i, { step: v || undefined })}>
-              <SelectTrigger className="h-9 w-48" aria-label={ac.besideStep}>
-                <SelectValue placeholder={ac.besideStep} />
-              </SelectTrigger>
-              <SelectContent>
-                {INITIATION_SECTIONS.map((st) => (
-                  <SelectItem key={st} value={st}>
-                    {copy.projects.sections[st] ?? st}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => set(list.filter((_, j) => j !== i))}
-              aria-label={copy.projects.common.remove}
-              title={copy.projects.common.remove}
-            >
-              <Trash2 />
-            </Button>
-          </div>
-          <Textarea rows={4} value={sec.text} onChange={(e) => patch(i, { text: e.target.value.slice(0, 4000) })} maxLength={4000} aria-label={ac.text} />
-          <span className="self-end text-xs tabular-nums text-muted-foreground">{copy.projects.goals.aboutCount(sec.text.length, 4000)}</span>
-        </div>
-      ))}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="self-start"
-        onClick={() => set([...list, { id: nextId("t", list), heading: "", text: "" }])}
-        aria-label={ac.addSection}
-        title={ac.addSection}
-      >
-        <Plus />
-        {ac.section}
-      </Button>
     </section>
   );
 }
