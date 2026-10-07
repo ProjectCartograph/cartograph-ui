@@ -8,31 +8,13 @@ import { ClientError, type ManifestCheck, type ProposalPart, type ProposalReview
 import { LeftOpen } from "@/components/LeftOpen";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/copy";
+import { ChangeRow, Value, readableChanges, useRecordNames } from "@/changesets/ChangeView";
 
 import { manifestLink } from "./links";
 import { proposalTitle } from "./ProposalsPage";
 
 const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 const pc = copy.proposals;
-
-/** A JSON pointer as a person reads it: /spec/keyResults/0/target becomes
- * "Key results › 1 › Target". */
-export function fieldLabel(path: string): string {
-  const parts = path.split("/").filter(Boolean);
-  const words = (parts[0] === "spec" ? parts.slice(1) : parts).map((p) => {
-    const key = p.replace(/~1/g, "/").replace(/~0/g, "~");
-    if (/^\d+$/.test(key)) return String(Number(key) + 1);
-    const spaced = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
-    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-  });
-  return words.join(" › ") || "Everything";
-}
-
-export function show(v: unknown): string {
-  if (v === undefined || v === null) return "";
-  if (typeof v === "string") return v;
-  return JSON.stringify(v, null, 2);
-}
 
 /**
  * One proposal as its person reviews it (engine docs/adr/0016): what it
@@ -81,6 +63,7 @@ function Review({ review }: { review: ProposalReview }) {
 }
 
 function Part({ part, titled }: { part: ProposalPart; titled: boolean }) {
+  const names = useRecordNames();
   const p = part.proposal;
   const link = manifestLink(p);
   const isNew = p.op === "save" && p.base === 0;
@@ -102,20 +85,8 @@ function Part({ part, titled }: { part: ProposalPart; titled: boolean }) {
           <p className="text-xs text-muted-foreground">{pc.openDraftHint}</p>
           {part.changes.length === 0 ? <p className="text-sm text-muted-foreground">{pc.noChanges}</p> : null}
           <dl className="divide-y rounded-lg border">
-            {part.changes.map((c) => (
-              <div key={c.path} className="grid gap-1 p-3 sm:grid-cols-[12rem_1fr]" data-cartograph-change={c.path}>
-                <dt className="text-sm font-medium">{fieldLabel(c.path)}</dt>
-                <dd className="space-y-1 text-sm">
-                  {c.op !== "add" && c.from !== undefined ? (
-                    <pre className="whitespace-pre-wrap rounded bg-destructive/10 px-2 py-1 text-destructive line-through">{show(c.from)}</pre>
-                  ) : null}
-                  {c.op !== "remove" ? (
-                    <pre className="whitespace-pre-wrap rounded bg-success/10 px-2 py-1 text-success">{show(c.to)}</pre>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">{pc.removed}</span>
-                  )}
-                </dd>
-              </div>
+            {readableChanges(part.changes).map((c) => (
+              <ChangeRow key={c.path} change={c} names={names} removedText={pc.removed} />
             ))}
           </dl>
         </div>
@@ -124,7 +95,9 @@ function Part({ part, titled }: { part: ProposalPart; titled: boolean }) {
       {p.op === "append" ? (
         <div className="space-y-2">
           <h3 className="font-medium">{pc.item}</h3>
-          <pre className="whitespace-pre-wrap rounded bg-muted p-3 text-sm">{show(p.item)}</pre>
+          <div className="rounded bg-muted p-3 text-sm">
+            <Value v={p.item} names={names} />
+          </div>
         </div>
       ) : null}
       {p.op === "state" ? <p>{pc.moves(p.state ?? "")}</p> : null}

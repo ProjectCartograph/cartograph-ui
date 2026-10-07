@@ -74,7 +74,7 @@ export function MergeBar() {
   // opens next.
   if (merged) {
     return (
-      <div role="status" className="sticky bottom-0 z-10 mt-6 flex items-center gap-2 rounded-lg border bg-background/95 px-4 py-3 text-sm backdrop-blur" data-cartograph-region="merge-bar">
+      <div role="status" className="sticky bottom-3 z-10 mx-auto mt-10 mb-1 flex w-fit max-w-[min(42rem,100%)] items-center gap-2 rounded-lg border bg-background/95 px-4 py-3 text-sm backdrop-blur" data-cartograph-region="merge-bar">
         <CheckCircle2 className="size-4 text-success" aria-hidden="true" />
         {c.merged}
       </div>
@@ -88,10 +88,10 @@ export function MergeBar() {
   return (
     <>
       <div
-        className="sticky bottom-0 z-10 mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-background/95 px-4 py-3 shadow-sm backdrop-blur"
+        className="sticky bottom-3 z-10 mx-auto mt-10 mb-1 flex w-fit max-w-[min(42rem,100%)] flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-background/95 px-4 py-3 shadow-sm backdrop-blur"
         data-cartograph-region="merge-bar"
       >
-        <div className="min-w-0 flex-[1_1_12rem] text-sm">
+        <div className="min-w-0 flex-[1_1_14rem] text-sm">
           <p className="truncate font-medium">{c.saved(review.data?.changeSet.title ?? "")}</p>
           <p className="text-xs text-muted-foreground">
             {c.changes(items.length)}
@@ -207,7 +207,7 @@ function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
                     className="min-w-0 flex-1 text-muted-foreground hover:text-foreground hover:underline"
                     onClick={onGo}
                   >
-                    {required && check.path && check.message === MISSING ? c.required(fieldName(check.path)) : check.message}
+                    {checkText(check)}
                     {required && check.path && titleOf(check.path) ? <span className="ml-1.5 text-xs text-muted-foreground/80">{titleOf(check.path)}</span> : null}
                   </Link>
                 </li>
@@ -218,6 +218,12 @@ function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
       ))}
     </li>
   );
+}
+
+/** What a check says, in words: a missing field by its name, anything
+ * else as the engine says it. */
+export function checkText(check: ItemCheck): string {
+  return isRequired(check) && check.path && check.message === MISSING ? c.required(fieldName(check.path)) : check.message;
 }
 
 /** A field's own name, from the last part of its pointer. */

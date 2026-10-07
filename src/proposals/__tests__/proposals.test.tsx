@@ -12,7 +12,8 @@ import { ClientError, type Client, type Proposal, type ProposalReview } from "@/
 import { copy } from "@/copy";
 
 import { ProposalNotice } from "../ProposalNotice";
-import { fieldLabel, ProposalReviewPage } from "../ProposalReviewPage";
+import { ProposalReviewPage } from "../ProposalReviewPage";
+import { changePlace } from "@/changesets/ChangeView";
 import { ProposalsPage } from "../ProposalsPage";
 
 const reading: Proposal = {
@@ -137,8 +138,9 @@ describe("proposals", () => {
   });
 
   it("name fields as a person reads them", () => {
-    expect(fieldLabel("/spec/keyResults/0/target")).toBe("Key results › 1 › Target");
-    expect(fieldLabel("/metadata/name")).toBe("Metadata › Name");
+    expect(changePlace("/spec/keyResults/0/target")).toBe("Key result 1 › Target");
+    expect(changePlace("/metadata/name")).toBe("Name");
+    expect(changePlace("/spec/summary/problems/0/change/what")).toBe("Problem 1 › Intended change");
   });
 
   it("show on the manifest they concern, for everyone who reads it", async () => {

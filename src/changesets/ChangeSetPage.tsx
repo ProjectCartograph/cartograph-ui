@@ -5,7 +5,7 @@ import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed
 
 import { useSession } from "@/access/access";
 import { useClient } from "@/client/context";
-import { MergeDialog } from "./MergeBar";
+import { MergeDialog, checkText } from "./MergeBar";
 import { ClientError, type ChangeSetItem, type ChangeSetReview } from "@/client/port";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { LeftOpen } from "@/components/LeftOpen";
 import { kindIcon } from "@/components/vocab";
 import { copy } from "@/copy";
 import { manifestLink } from "@/proposals/links";
-import { fieldLabel, show } from "@/proposals/ProposalReviewPage";
+import { ChangeRow, readableChanges, useRecordNames } from "./ChangeView";
 
 const cc = copy.changeSets;
 const kindName = (k: string) => copy.graph.kind[k] ?? k;
@@ -130,6 +130,7 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
     onSuccess: () => queries.invalidateQueries({ queryKey: ["changesets", set] }),
   });
   const openChecks = item.checks.filter((c) => c.state !== "ok");
+  const names = useRecordNames();
   // The engine says whether the change set creates the record: a vault
   // record may have no numbered version, so a base of 0 does not.
   const isNew = item.proposed ? item.proposed === "new" : item.base === 0;
@@ -177,20 +178,8 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
       {open ? (
         <div className="space-y-4 border-t p-3 animate-in fade-in duration-150">
           <dl className="divide-y rounded-md border">
-            {item.changes.map((c) => (
-              <div key={c.path} className="grid gap-1 p-2.5 sm:grid-cols-[12rem_1fr]" data-cartograph-change={c.path}>
-                <dt className="text-sm font-medium">{fieldLabel(c.path)}</dt>
-                <dd className="space-y-1 text-sm">
-                  {c.op !== "add" && c.from !== undefined ? (
-                    <pre className="whitespace-pre-wrap rounded bg-destructive/10 px-2 py-1 text-destructive line-through">{show(c.from)}</pre>
-                  ) : null}
-                  {c.op !== "remove" ? (
-                    <pre className="whitespace-pre-wrap rounded bg-success/10 px-2 py-1 text-success">{show(c.to)}</pre>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">{copy.proposals.removed}</span>
-                  )}
-                </dd>
-              </div>
+            {readableChanges(item.changes).map((c) => (
+              <ChangeRow key={c.path} change={c} names={names} removedText={copy.proposals.removed} />
             ))}
           </dl>
           {openChecks.length > 0 ? (
@@ -198,7 +187,7 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
               {openChecks.map((c) => (
                 <li key={c.id} className="flex items-start gap-2" data-cartograph-check={c.id}>
                   <CircleDashed className={`mt-0.5 size-4 shrink-0 ${c.state === "block" ? "text-destructive" : "text-warning"}`} />
-                  {c.message}
+                  {checkText(c)}
                 </li>
               ))}
             </ul>

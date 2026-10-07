@@ -163,7 +163,7 @@ export function ResourcesSection() {
       ...s,
       // Nothing written for them: an amount of 0 was typed after ("012000"),
       // and an empty source named a source that does not exist.
-      funding: [...(s.funding ?? []), { currency: "", status: "requested" } as FundingLine],
+      funding: [...(s.funding ?? []), { status: "requested" } as FundingLine],
     }));
   }
   function removeFunding(idx: number) {
@@ -258,7 +258,7 @@ export function ResourcesSection() {
                   type="number"
                   value={f.amount ?? ""}
                   onChange={(e) => updateFunding(idx, { amount: e.target.value === "" ? undefined : Number(e.target.value) } as Partial<FundingLine>)}
-                  placeholder="0"
+                  
                   aria-label={pc.amountLabel}
                   className="w-32 shrink-0"
                 />
@@ -271,7 +271,7 @@ export function ResourcesSection() {
                   <Combobox
                     options={CURRENCY_OPTIONS}
                     value={f.currency || undefined}
-                    onValueChange={(v) => updateFunding(idx, { currency: v ?? "" })}
+                    onValueChange={(v) => updateFunding(idx, { currency: v || undefined } as Partial<FundingLine>)}
                     placeholder={pc.currencyLabel}
                     searchPlaceholder={pc.currencySearchPlaceholder}
                     emptyText={pc.currencyEmpty}

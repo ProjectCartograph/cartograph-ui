@@ -36,6 +36,8 @@ interface Drawing {
   /** The node it starts from, by its data-node key. */
   node: string;
   at?: { x: number; y: number };
+  /** Where the press began, to tell a click from a drag. */
+  pressed?: { x: number; y: number };
 }
 
 /** An edge on the map: two nodes and how to remove what joins them. */
@@ -158,7 +160,8 @@ export function ProblemMap({
     if (!project) return;
     e.preventDefault();
     const base = box.current!.getBoundingClientRect();
-    setDrawing({ link, from, node, at: { x: e.clientX - base.left, y: e.clientY - base.top } });
+    const here = { x: e.clientX - base.left, y: e.clientY - base.top };
+    setDrawing({ link, from, node, at: here, pressed: here });
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   }
   function move(e: React.PointerEvent) {
@@ -167,9 +170,11 @@ export function ProblemMap({
     setDrawing({ ...drawing, at: { x: e.clientX - base.left, y: e.clientY - base.top } });
   }
   function end(e: React.PointerEvent) {
-    if (!drawing) return;
+    // Started by a click, the link waits for a node to be clicked; that
+    // click is the offer's own.
+    if (!drawing || !drawing.at) return;
     const target = document.elementFromPoint?.(e.clientX, e.clientY)?.closest<HTMLElement>("[data-drop]");
-    const moved = drawing.at && places[drawing.node] && Math.hypot(drawing.at.x - centre(places[drawing.node]).x, drawing.at.y - centre(places[drawing.node]).y) > 12;
+    const moved = drawing.at && drawing.pressed && Math.hypot(drawing.at.x - drawing.pressed.x, drawing.at.y - drawing.pressed.y) > 6;
     if (target?.dataset.allowed === "true") {
       connect(drawing, target.dataset.drop as string);
       setDrawing(null);
@@ -250,7 +255,9 @@ export function ProblemMap({
           ) : null}
         </svg>
 
-        <div className="relative grid grid-cols-1 items-start gap-x-10 gap-y-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)]">
+        {/* The node layer lets a click through to the links beneath it;
+            the nodes and what is offered take their own. */}
+        <div className="pointer-events-none relative grid grid-cols-1 items-start gap-x-10 gap-y-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,1fr)] [&_[data-node]]:pointer-events-auto [&_[data-slot=link-offer]]:pointer-events-auto">
           <Column label={mc.gaps}>
             {cited.length === 0 && !gapOffer ? <Empty text={mc.noGaps} /> : null}
             {cited.map((g) => {
@@ -287,7 +294,7 @@ export function ProblemMap({
             ))}
             {groupOffer ? (
               <Offer
-                items={groupOffer.filter((c) => !(drawing?.link === "problem-group" ? groups.includes(c.id) : false))}
+                items={groupOffer.filter((c) => !c.linked && !(drawing?.link === "problem-group" && groups.includes(c.id)))}
                 onPick={(id) => (connect(drawing!, id), setDrawing(null))}
               />
             ) : null}
