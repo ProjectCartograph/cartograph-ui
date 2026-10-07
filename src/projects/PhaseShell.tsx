@@ -1,4 +1,3 @@
-import { AssemblyStrip } from "./Assembly";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
@@ -7,10 +6,11 @@ import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
 import { copy } from "@/copy";
 import { CheckPanel } from "./CheckPanel";
 import { ProjectSectionNotes } from "./SectionNotes";
-import { StageStepper, ProjectHeaderBar } from "./Chrome";
+import { ProjectHeaderBar } from "./Chrome";
+import { ProjectScrubber } from "./InitiationShell";
 import { useProjectStore } from "./store";
 import { stepIcon } from "./steps";
-import { STEPS, stageOfSection } from "./types";
+import { STEPS } from "./types";
 
 const pc = copy.projects;
 
@@ -36,7 +36,6 @@ export function PhaseShell({
   const idx = phase === "closing" ? STEPS.length : STEPS.findIndex((s) => s.section === phase);
   const prev = idx > 0 ? STEPS[idx - 1] : undefined;
   const next = idx >= 0 && idx < STEPS.length - 1 ? STEPS[idx + 1] : undefined;
-  const stage = phase === "closing" ? STEPS[STEPS.length - 1].stage : stageOfSection(phase);
   return (
     <div className="flex flex-col gap-4">
       <ProjectHeaderBar />
@@ -44,10 +43,7 @@ export function PhaseShell({
         <h1 className="text-2xl font-semibold tracking-tight">{heading}</h1>
         <p className="text-muted-foreground text-pretty">{subtitle}</p>
       </div>
-      <div className="-mx-1 overflow-x-auto px-1 pb-1">
-        <StageStepper id={id} current={stage} />
-      </div>
-      <AssemblyStrip id={id} />
+      <ProjectScrubber id={id} section={phase} />
       <RequiredMarks kind="Project" />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_18rem]">
         <div className="min-w-0 flex flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">

@@ -3,7 +3,7 @@ import { ArrowUpRight, TriangleAlert } from "lucide-react";
 
 import { Label } from "@/components/ui/label";
 import { copy } from "@/copy";
-import { AcceptanceEditor } from "../AcceptanceEditor";
+import { roleOptions, roleRefLabel, useResourceNames } from "../RoleRefPicker";
 import { CriteriaSlice } from "./SuccessSection";
 import { useSectionAutosave, useProjectStore } from "../store";
 
@@ -18,9 +18,9 @@ const cl = copy.projects.closing;
  * between them, and a category list that invited an outcome nobody can
  * assess on the day. The result was a screen nobody could answer.
  *
- * It refines rather than authors now. Each deliverable's own acceptance
- * criteria are the closing test, edited here through the same editor
- * Deliverables uses, against the same `deliverables[].acceptance[]`.
+ * It shows rather than authors now. Each deliverable's own acceptance
+ * criteria are the closing test, read here as Scope wrote them and edited
+ * only there, so one fact has one place.
  * Only the handful of conditions no deliverable can carry are written
  * here, and only four kinds of those exist.
  */
@@ -28,6 +28,8 @@ export function ClosingSection({ id }: { id: string }) {
   useSectionAutosave();
   const store = useProjectStore();
   const deliverables = store.spec.deliverables ?? [];
+  const resourceName = useResourceNames();
+  const roles = roleOptions(store.spec.resources ?? [], resourceName);
   const dueOnTheDay = (store.spec.successCriteria ?? []).filter((k) => k.when === "atClosing");
 
   return (
@@ -71,9 +73,16 @@ export function ClosingSection({ id }: { id: string }) {
                   </span>
                 ) : null}
               </div>
-              <div className="pl-8">
-                <AcceptanceEditor index={idx} />
-              </div>
+              {/* What was agreed, as Scope wrote it: read here, edited
+                  there, so one fact has one place. */}
+              <ul className="flex flex-col gap-1.5 pl-8 text-sm">
+                {(d.acceptance ?? []).map((a, i) => (
+                  <li key={i} className="flex flex-wrap items-baseline gap-x-2" data-slot="closing-criterion">
+                    <span className="text-muted-foreground">{roleRefLabel(a.by, roles)}</span>
+                    <span>{a.outcome}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           ))
         )}

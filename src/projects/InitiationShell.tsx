@@ -34,7 +34,7 @@ const pc = copy.projects;
  * a step ringed in their colour. It is the only navigation in the flow:
  * no rail beside it, no stepper or outline under it.
  */
-export function ProjectScrubber({ id, section }: { id: string; section?: InitiationSection }) {
+export function ProjectScrubber({ id, section }: { id: string; section?: InitiationSection | "closing" }) {
   const navigate = useNavigate();
   const checksQuery = useProjectChecks(id, true);
   const { peers } = usePresence();
@@ -54,14 +54,17 @@ export function ProjectScrubber({ id, section }: { id: string; section?: Initiat
       return { key: st.section, label: pc.sections[st.section], state: bySection.get(st.section), ring: sectionRing(on) };
     }),
   }));
-  const pathOf = new Map(STAGES.flatMap((stage) => stepsOfStage(stage).map((st) => [st.section, st.path] as const)));
+  // Closure follows the walk: the one page of its phase, so the last
+  // segment of the same scrubber rather than a bar of its own.
+  stages.push({ key: "closing", label: pc.stepper.closing, steps: [{ key: "closing", label: pc.stepper.closing, state: bySection.get("closing") }] });
+  const pathOf = new Map<string, string>([...STAGES.flatMap((stage) => stepsOfStage(stage).map((st) => [st.section, st.path] as const)), ["closing", "/closing"]]);
   return (
     <Scrubber
       stages={stages}
-      stage={section ? stageOfSection(section) : ""}
+      stage={section === "closing" ? "closing" : section ? stageOfSection(section) : ""}
       step={section ?? ""}
       label={pc.stepper.label}
-      onGo={(_, step) => void navigate({ to: `/projects/$id${pathOf.get(step as InitiationSection) ?? ""}`, params: { id } })}
+      onGo={(_, step) => void navigate({ to: `/projects/$id${pathOf.get(step) ?? ""}`, params: { id } })}
     />
   );
 }

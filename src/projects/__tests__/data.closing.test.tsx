@@ -198,31 +198,18 @@ describe("the data step says what the project does to data", () => {
   });
 });
 
-describe("closing refines what the deliverables already promise", () => {
-  it("shows every deliverable and edits its acceptance criteria in place", async () => {
+describe("closing shows what the deliverables already promise", () => {
+  // What the deliverables promise is read here as Scope wrote it, and
+  // edited only there: one fact, one place.
+  it("shows every deliverable's acceptance criteria, read-only", async () => {
     await mount(<ClosingSection id="p1" />);
     await screen.findByText(cl.deliverablesTitle);
 
     const cards = document.querySelectorAll('[data-slot="closing-deliverable"]');
     expect(cards).toHaveLength(2);
     expect(cards[0]).toHaveTextContent("Training pack");
-    expect(screen.getByDisplayValue("signs it off")).toBeInTheDocument();
-  });
-
-  // The whole point of the rewrite: one store, edited from two screens,
-  // rather than the closing step re-authoring what Deliverables said.
-  it("writes an edit back to deliverables[].acceptance, not to successCriteria", async () => {
-    const user = userEvent.setup();
-    await mount(<ClosingSection id="p1" />);
-    await screen.findByText(cl.deliverablesTitle);
-
-    const test = screen.getByDisplayValue("signs it off");
-    await user.clear(test);
-    await user.type(test, "accepts the pack");
-
-    expect(spec.deliverables?.[0].acceptance?.[0].outcome).toBe("accepts the pack");
-    // Only the one project-level condition is stored here, unchanged.
-    expect((spec.successCriteria ?? []).filter((c) => c.when === "atClosing")).toHaveLength(1);
+    expect(cards[0]).toHaveTextContent("signs it off");
+    expect(screen.queryByDisplayValue("signs it off")).toBeNull();
   });
 
   it("marks a deliverable that has no test", async () => {

@@ -206,10 +206,15 @@ function Combobox({
   "aria-label": ariaLabel,
   "aria-invalid": ariaInvalid,
   "data-cartograph-field": field,
+  onAdd,
+  addLabel,
 }: {
   options: ComboboxOption[]
   value: string | undefined
   onValueChange: (next: string | undefined) => void
+  /** Adds one that does not exist yet, at the foot of the list. */
+  onAdd?: () => void
+  addLabel?: string
   placeholder?: string
   searchPlaceholder?: string
   emptyText: string
@@ -264,6 +269,8 @@ function Combobox({
             onValueChange(v === value ? undefined : v)
             setOpen(false)
           }}
+          onAdd={onAdd ? () => { setOpen(false); onAdd() } : undefined}
+          addLabel={addLabel}
         />
       </PopoverContent>
     </Popover>

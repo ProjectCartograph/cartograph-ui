@@ -458,6 +458,14 @@ export const copy = {
       tasks: "Tasks",
     } as Record<string, string>,
   },
+  // Create, at the top right of every screen (components/CreateMenu).
+  createMenu: {
+    button: "Create",
+    label: "Create something new",
+    work: "Work",
+    strategy: "Strategy and evidence",
+    kinds: { Project: "Project", Programme: "Programme", Portfolio: "Portfolio", Operation: "Service", Goal: "Goal", Gap: "Gap", KPI: "Indicator" } as Record<string, string>,
+  },
   // Defining a record without leaving a walk (records/RecordDrawer).
   recordDrawer: {
     title: (kind: string) => `Define the ${kind.toLowerCase()}`,
@@ -3186,6 +3194,9 @@ export const copy = {
       landsInHint: "The service that runs what the project delivers. If it does not run yet, add it as planned.",
       operationLabel: "Operation",
       operationPlaceholder: "Choose a service",
+      newService: "New service",
+      newServiceHint: "Added as planned: it starts running once this project hands it over.",
+      createService: "Add as planned",
       legacyNewOperation: "A new service, not yet defined",
       // A placeholder for a service not defined yet (TAXONOMY.md D31).
       notDefinedYet: "Not defined yet",

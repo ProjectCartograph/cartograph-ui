@@ -57,6 +57,7 @@ import { TourProvider } from "@/tour/TourProvider";
 import { TourEntry } from "@/tour/TourEntry";
 import { useActiveChangeSet } from "@/changesets/useActive";
 import { MergeBar } from "@/changesets/MergeBar";
+import { CreateMenu } from "@/components/CreateMenu";
 
 const defineItems = [
   {
@@ -610,6 +611,7 @@ function RootLayout() {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
+            <CreateMenu />
             <WorkingIn />
             <PeopleHere />
           </header>

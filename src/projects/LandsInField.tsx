@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { stringify } from "yaml";
-import { ArrowRight, Hourglass } from "lucide-react";
+import { ArrowRight, Hourglass, Plus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 import { Suggested } from "@/components/relevance";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { copy } from "@/copy";
 import { useClient } from "@/client/context";
@@ -49,6 +50,7 @@ export function LandsInField({ resolve }: { resolve?: string }) {
   // Inside a walk, the service is defined in the drawer: made here as
   // planned, run by the project's team, and named as where it lands.
   const drawer = useRecordDrawer();
+  const [naming, setNaming] = useState(false);
   const client = useClient();
   const queryClient = useQueryClient();
   const define = useMutation({
@@ -62,7 +64,11 @@ export function LandsInField({ resolve }: { resolve?: string }) {
         id,
         stringify({ apiVersion: "cartograph/v1", kind: "Operation", metadata: { id, name }, spec: { status: "planned", ...(store.spec.team ? { team: store.spec.team } : {}) } }),
       );
-      await queryClient.invalidateQueries({ queryKey: ["manifests", "Operation"] });
+      // Every list of services reads again, so the picker shows its name.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["manifests", "Operation"] }),
+        queryClient.invalidateQueries({ queryKey: ["sheet-ref-options", "Operation"] }),
+      ]);
       return id;
     },
   });
@@ -99,6 +105,24 @@ export function LandsInField({ resolve }: { resolve?: string }) {
           clearLabel={copy.common.clear}
           aria-label={lc.landsInTitle}
           data-cartograph-field="/spec/operation"
+          // A service that does not run yet is added here as planned, and
+          // defined in the drawer, in one step.
+          onAdd={drawer ? () => setNaming(true) : undefined}
+          addLabel={lc.newService}
+        />
+        <NewServiceDialog
+          open={naming}
+          onOpenChange={setNaming}
+          busy={define.isPending}
+          onCreate={(name) =>
+            define.mutate(name, {
+              onSuccess: (id) => {
+                setNaming(false);
+                set(id);
+                drawer?.open("Operation", id);
+              },
+            })
+          }
         />
         {!current && !waiting ? (
           <NotDefinedYet onAdd={(name) => store.setPending([...others, { path: OPERATION_PATH, kind: "Operation", name }])} />
@@ -190,5 +214,38 @@ function NotDefinedYet({ onAdd }: { onAdd: (name: string) => void }) {
         </Button>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Names a new service, added as planned. */
+function NewServiceDialog({ open, onOpenChange, busy, onCreate }: { open: boolean; onOpenChange: (o: boolean) => void; busy: boolean; onCreate: (name: string) => void }) {
+  const [name, setName] = useState("");
+  return (
+    <Dialog open={open} onOpenChange={(o) => (onOpenChange(o), o || setName(""))}>
+      <DialogContent className="sm:max-w-md" data-cartograph-region="new-service">
+        <DialogHeader>
+          <DialogTitle>{lc.newService}</DialogTitle>
+          <DialogDescription>{lc.newServiceHint}</DialogDescription>
+        </DialogHeader>
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (name.trim()) onCreate(name.trim());
+          }}
+        >
+          <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={lc.placeholderName} />
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              {copy.projects.common.cancel}
+            </Button>
+            <Button type="submit" disabled={busy || !name.trim()}>
+              <Plus />
+              {lc.createService}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
