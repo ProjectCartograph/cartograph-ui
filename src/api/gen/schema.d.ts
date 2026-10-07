@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/links/{link}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a link may join from one record, and why not the rest
+         * @description For a kind of link and the record it starts from, every record it could reach, each marked whether the link may be made and, where it may not, why: the wrong kind or level, already linked, a loop, or a problem and its gaps about different people (TAXONOMY.md D24, D28, D45). An interface lets a person connect only to the records marked allowed. The engine checks the link again when the change set is merged.
+         */
+        get: operations["getLinkCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/graph": {
         parameters: {
             query?: never;
@@ -2042,6 +2062,21 @@ export interface components {
             /** @description Objectives and outcomes with no parent yet, held by a placeholder (TAXONOMY.md D35), each with what sits under it. */
             unplaced?: components["schemas"]["GoalNode"][];
         };
+        /**
+         * @description A kind of link between two records: problem-gap (a project's problem cites a gap), problem-group (a problem affects a beneficiary group), gap-group (a gap affects a group), gap-outcome (a gap closes into an outcome), goal-parent (an aim sits under another), goal-contributes (an outcome also leads to another aim), kpi-gap (an indicator measures a gap), project-outcome (a project serves an outcome).
+         * @enum {string}
+         */
+        LinkKind: "problem-gap" | "problem-group" | "gap-group" | "gap-outcome" | "goal-parent" | "goal-contributes" | "kpi-gap" | "project-outcome";
+        LinkCandidate: {
+            kind: string;
+            id: string;
+            name: string;
+            allowed: boolean;
+            /** @description Already linked; removing it is the way to change it. */
+            linked?: boolean;
+            /** @description Why the link may not be made, in a sentence a person reads. */
+            reason?: string;
+        };
         GoalCheckFix: {
             section: string;
             /** @description The goal, objective or outcome whose editor holds the fix, when it is not the one checked: an objective's outcome that closes no gap is fixed on the outcome. */
@@ -2282,6 +2317,38 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    getLinkCandidates: {
+        parameters: {
+            query: {
+                /** @description The id of the record the link starts from. */
+                from: string;
+                /** @description For a link from a project's problem, the problem's id, or #n for the one at position n counting from 0 when it has no id yet. */
+                problem?: string;
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                link: components["schemas"]["LinkKind"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkCandidate"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     getGraph: {
