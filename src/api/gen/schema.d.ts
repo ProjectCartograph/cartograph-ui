@@ -58,6 +58,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/components": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every project and programme, what each depends on, and what follows
+         * @description The graph of components across the workspace (TAXONOMY.md D46): each project and programme, the ones it depends on, every loop, the critical path by duration, and how much work depends on each, read as the change set reads it.
+         */
+        get: operations["getComponents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/graph": {
         parameters: {
             query?: never;
@@ -2063,10 +2083,47 @@ export interface components {
             unplaced?: components["schemas"]["GoalNode"][];
         };
         /**
-         * @description A kind of link between two records: problem-gap (a project's problem cites a gap), problem-group (a problem affects a beneficiary group), gap-group (a gap affects a group), gap-outcome (a gap closes into an outcome), goal-parent (an aim sits under another), goal-contributes (an outcome also leads to another aim), kpi-gap (an indicator measures a gap), project-outcome (a project serves an outcome).
+         * @description A kind of link between two records: problem-gap (a project's problem cites a gap), problem-group (a problem affects a beneficiary group), gap-group (a gap affects a group), gap-outcome (a gap closes into an outcome), goal-parent (an aim sits under another), goal-contributes (an outcome also leads to another aim), kpi-gap (an indicator measures a gap), project-outcome (a project serves an outcome), project-component and programme-component (a project or a programme depends on another project or programme, TAXONOMY.md D46).
          * @enum {string}
          */
-        LinkKind: "problem-gap" | "problem-group" | "gap-group" | "gap-outcome" | "goal-parent" | "goal-contributes" | "kpi-gap" | "project-outcome";
+        LinkKind: "problem-gap" | "problem-group" | "gap-group" | "gap-outcome" | "goal-parent" | "goal-contributes" | "kpi-gap" | "project-outcome" | "project-component" | "programme-component";
+        WorkRef: {
+            /** @enum {string} */
+            kind: "Project" | "Programme";
+            id: string;
+        };
+        ComponentNode: {
+            /** @enum {string} */
+            kind: "Project" | "Programme";
+            id: string;
+            name: string;
+            /** @description How long it takes itself; a programme takes none of its own. */
+            months: number;
+            /** @description How many projects and programmes depend on it, directly or through others. */
+            dependents: number;
+            /** @description On the critical path. */
+            critical: boolean;
+            /** @description On a loop of components. */
+            inLoop: boolean;
+            /** @description More work depends on it than on any other, and at least two. */
+            mostDependedOn: boolean;
+        };
+        ComponentEdge: {
+            from: components["schemas"]["WorkRef"];
+            to: components["schemas"]["WorkRef"];
+            why?: string;
+            /** @description Read from an older declaration made on the component (a project's alignment.partOf or alignment.programmes, a programme's programmes). */
+            legacy?: boolean;
+        };
+        ComponentGraph: {
+            nodes: components["schemas"]["ComponentNode"][];
+            edges: components["schemas"]["ComponentEdge"][];
+            /** @description Each loop in order, ending where it began. */
+            loops: components["schemas"]["WorkRef"][][];
+            /** @description The longest chain of components by duration, from the work that depends to the work depended on. */
+            criticalPath: components["schemas"]["WorkRef"][];
+            criticalMonths: number;
+        };
         LinkCandidate: {
             kind: string;
             id: string;
@@ -2349,6 +2406,31 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getComponents: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComponentGraph"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getGraph: {
