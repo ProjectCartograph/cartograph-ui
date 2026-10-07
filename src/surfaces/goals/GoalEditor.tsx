@@ -36,6 +36,7 @@ import { fieldGuide, useGuide } from "@/components/guide";
 
 import { AimEditor } from "./AimEditor";
 import { ClosesGaps } from "./ClosesGaps";
+import { useRecordDrawer } from "@/records/RecordDrawer";
 import { GoalTreePicker } from "./GoalTreePicker";
 import { HorizonPicker } from "./HorizonPicker";
 import { GoalReview, GoalSteps, StepNav, type GoalStep } from "./GoalSteps";
@@ -90,9 +91,11 @@ function FieldError({ message }: { message?: string }) {
   return <p className="text-sm text-destructive">{message}</p>;
 }
 
-export function GoalEditor({ id, fix }: { id: string; fix?: string }) {
+export function GoalEditor({ id, fix, embedded = false }: { id: string; fix?: string; embedded?: boolean }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // Inside a walk's drawer, another aim opens there too.
+  const drawer = useRecordDrawer();
   const client = useClient();
   const manifestQuery = useGoalManifest(id);
   const checksQuery = useGoalChecks(id);
@@ -338,7 +341,7 @@ export function GoalEditor({ id, fix }: { id: string; fix?: string }) {
             </Badge>
             <SmartMarks smart={smart} />
             {version ? <span className="shrink-0 text-sm text-muted-foreground">{ec.version(version)}</span> : null}
-            <ShowInGraph kind="Goal" id={id} />
+            {embedded ? null : <ShowInGraph kind="Goal" id={id} />}
           </div>
           <AimContext horizon={node?.horizon} owner={node?.owner} />
           {version !== undefined && version > 0 ? (
@@ -622,7 +625,9 @@ export function GoalEditor({ id, fix }: { id: string; fix?: string }) {
                           className="ml-1 h-auto p-0 text-sm"
                           onClick={() =>
                             c.fix!.goal
-                              ? void navigate({ to: "/goals/$id", params: { id: c.fix!.goal }, search: { fix: c.fix!.section } })
+                              ? drawer
+                                ? drawer.open("Goal", c.fix!.goal, c.fix!.section)
+                                : void navigate({ to: "/goals/$id", params: { id: c.fix!.goal }, search: { fix: c.fix!.section } })
                               : scrollTo(c.fix!.section)
                           }
                         >

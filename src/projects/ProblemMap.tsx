@@ -5,6 +5,7 @@ import { CircleAlert, Plus, TriangleAlert, Users } from "lucide-react";
 import { parseDocument } from "yaml";
 
 import { useClient } from "@/client/context";
+import { useRecordDrawer } from "@/records/RecordDrawer";
 import type { LinkCandidate, LinkKind } from "@/client/port";
 import { Button } from "@/components/ui/button";
 import { copy } from "@/copy";
@@ -83,6 +84,7 @@ export function ProblemMap({
 }) {
   const client = useClient();
   const queryClient = useQueryClient();
+  const drawer = useRecordDrawer();
   const { data: gaps } = useGaps();
   const { data: groupRefs } = useReferenceOptions("BeneficiaryGroup");
   const nameOf = (g: string) => groupNames.get(g) ?? groupRefs?.names.get(g) ?? g;
@@ -331,7 +333,11 @@ export function ProblemMap({
                     {mc.useGroups(groups.map(nameOf).join(", "))}
                   </Button>
                 ) : null}
-                {b.gap ? (
+                {b.gap && drawer ? (
+                  <Button type="button" variant="link" size="sm" className="h-auto p-0 text-muted-foreground" onClick={() => drawer.open("Gap", b.gap as string)}>
+                    {mc.openGap}
+                  </Button>
+                ) : b.gap ? (
                   <Link to="/gaps/$id" params={{ id: b.gap }} className="text-muted-foreground underline">
                     {mc.openGap}
                   </Link>

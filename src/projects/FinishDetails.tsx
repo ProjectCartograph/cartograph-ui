@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { PencilLine } from "lucide-react";
 
 import { useClient } from "@/client/context";
+import { useRecordDrawer } from "@/records/RecordDrawer";
 import { copy } from "@/copy";
 import { parseSpecFields } from "@/surfaces/sheet/schema";
 import { SheetForm } from "@/surfaces/sheet/SheetForm";
@@ -32,6 +33,7 @@ export function FinishDetails({ kind, ids }: { kind: Kind; ids: string[] }) {
   const client = useClient();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<string | null>(null);
+  const drawer = useRecordDrawer();
   const docs = useQueries({ queries: ids.map((id) => ({ queryKey: ["finish", kind, id], queryFn: () => client.get(kind, id) })) });
   const todo = docs
     .map((q, i) => {
@@ -46,7 +48,12 @@ export function FinishDetails({ kind, ids }: { kind: Kind; ids: string[] }) {
       <ul className="flex flex-wrap gap-1.5">
         {todo.map((t, n) => (
           <li key={t.id} className="cartograph-arrive" style={{ animationDelay: `${n * 40}ms` }}>
-            {kind === "BeneficiaryGroup" ? (
+            {kind !== "BeneficiaryGroup" && drawer ? (
+              <button type="button" className={amber} onClick={() => drawer.open(kind, t.id)} data-finish={t.id}>
+                <PencilLine className="size-3.5 shrink-0" aria-hidden="true" />
+                <span className="truncate">{copy.start.finish(t.name)}</span>
+              </button>
+            ) : kind === "BeneficiaryGroup" ? (
               <button type="button" className={amber} onClick={() => setEditing(t.id)} data-finish={t.id}>
                 <PencilLine className="size-3.5 shrink-0" aria-hidden="true" />
                 <span className="truncate">{copy.start.finish(t.name)}</span>

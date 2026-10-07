@@ -19,6 +19,7 @@ import { CheckPanel } from "./CheckPanel";
 import { ProjectSectionNotes } from "./SectionNotes";
 import { ProjectHeaderBar } from "./Chrome";
 import { ProjectMap } from "./canvas/ProjectMap";
+import { useRecordDrawer } from "@/records/RecordDrawer";
 import { CharterView } from "@/charter/CharterView";
 import { useProjectStore } from "./store";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
@@ -211,6 +212,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
  */
 function SidePane({ id, checks }: { id: string; checks: React.ReactNode }) {
   const store = useProjectStore();
+  const drawer = useRecordDrawer();
   const mc = copy.projectMap;
   const [tab, setTab] = useState<"map" | "charter" | "checks">(() => {
     try {
@@ -245,7 +247,14 @@ function SidePane({ id, checks }: { id: string; checks: React.ReactNode }) {
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {tab === "map" ? (
-          <ProjectMap id={id} spec={store.spec} updateSpec={store.updateSpec} />
+          <ProjectMap
+            id={id}
+            spec={store.spec}
+            updateSpec={store.updateSpec}
+            onSelect={(n) => {
+              if (drawer && (n.kind === "Goal" || n.kind === "Gap" || n.kind === "KPI" || n.kind === "Operation")) drawer.open(n.kind, n.id);
+            }}
+          />
         ) : tab === "charter" ? (
           <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10" data-cartograph-region="charter-pane">
             <CharterView kind="Project" id={id} working fileName={id} empty={copy.charter.empty} />

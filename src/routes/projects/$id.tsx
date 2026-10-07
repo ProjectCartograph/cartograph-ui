@@ -1,5 +1,6 @@
 import { WriteGate } from "@/access/WriteGate";
 import { InChangeSet } from "@/changesets/InChangeSet";
+import { RecordDrawerProvider } from "@/records/RecordDrawer";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { ProjectStoreProvider } from "@/projects/store";
@@ -12,7 +13,9 @@ function ProjectLayout() {
     <InChangeSet>
       <ProjectStoreProvider id={id}>
         <WriteGate kind="Project" id={id}>
-          <Outlet />
+          <RecordDrawerProvider>
+            <Outlet />
+          </RecordDrawerProvider>
         </WriteGate>
       </ProjectStoreProvider>
     </InChangeSet>

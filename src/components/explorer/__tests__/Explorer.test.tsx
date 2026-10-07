@@ -1,3 +1,4 @@
+import { copy } from "@/copy";
 import { describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
@@ -36,7 +37,7 @@ describe("Explorer", () => {
 
   it("filters fuzzily on the name, and on a label", () => {
     renderIt();
-    const filter = screen.getByLabelText("Filter by name or label");
+    const filter = screen.getByLabelText(copy.explorer.filter);
     fireEvent.change(filter, { target: { value: "cldstr" } });
     let tree = within(screen.getByRole("tree"));
     expect(tree.getByText("Cold store upgrade")).toBeTruthy();
