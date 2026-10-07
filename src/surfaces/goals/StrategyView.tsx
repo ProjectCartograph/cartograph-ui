@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, BookOpen, Briefcase, Compass, CornerDownRight, Eye, Gauge, Pencil, TriangleAlert } from "lucide-react";
+import { ArrowRight, BookOpen, Briefcase, Compass, CornerDownRight, Eye, Gauge, ImagePlus, Pencil, Trash2, TriangleAlert } from "lucide-react";
 
 import { mayWrite, useSession } from "@/access/access";
 import { useClient } from "@/client/context";
@@ -147,7 +147,7 @@ function Purpose() {
     queryFn: async () => {
       try {
         const v = await client.get("Purpose", "default");
-        return (v.manifest.spec ?? {}) as { vision?: string; mission?: string; source?: string };
+        return (v.manifest.spec ?? {}) as { organisation?: string; vision?: string; mission?: string; source?: string; logo?: string };
       } catch {
         return null;
       }
@@ -198,7 +198,7 @@ function Purpose() {
   );
 }
 
-function PurposeDialog({ initial, onClose }: { initial: { organisation?: string; vision?: string; mission?: string; source?: string }; onClose: () => void }) {
+function PurposeDialog({ initial, onClose }: { initial: { organisation?: string; vision?: string; mission?: string; source?: string; logo?: string }; onClose: () => void }) {
   const client = useClient();
   const queries = useQueryClient();
   const d = sc.purposeDialog;
@@ -206,6 +206,8 @@ function PurposeDialog({ initial, onClose }: { initial: { organisation?: string;
   const [vision, setVision] = useState(initial.vision ?? "");
   const [mission, setMission] = useState(initial.mission ?? "");
   const [source, setSource] = useState(initial.source ?? "");
+  const [logo, setLogo] = useState(initial.logo ?? "");
+  const [logoError, setLogoError] = useState("");
   const save = useMutation({
     mutationFn: () =>
       client.saveVersion(
@@ -222,6 +224,7 @@ function PurposeDialog({ initial, onClose }: { initial: { organisation?: string;
             ...(vision.trim() ? { vision: vision.trim() } : {}),
             ...(mission.trim() ? { mission: mission.trim() } : {}),
             ...(source.trim() ? { source: source.trim() } : {}),
+            ...(logo ? { logo } : {}),
           },
         },
         d.reason,
@@ -243,6 +246,7 @@ function PurposeDialog({ initial, onClose }: { initial: { organisation?: string;
             <Label htmlFor="purpose-organisation">{d.organisation}</Label>
             <Input id="purpose-organisation" data-cartograph-field="/spec/organisation" value={organisation} maxLength={120} onChange={(e) => setOrganisation(e.target.value)} />
           </div>
+          <LogoField logo={logo} error={logoError} onChange={(v, err) => { setLogo(v); setLogoError(err); }} />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="purpose-vision">{d.vision}</Label>
             <p className="text-xs text-muted-foreground">{d.visionHint}</p>
@@ -270,6 +274,54 @@ function PurposeDialog({ initial, onClose }: { initial: { organisation?: string;
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** The largest logo kept: the record carries it, so it stays small. */
+const LOGO_BYTES = 300_000;
+const LOGO_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+
+/** The organisation's logo, read from a file into the record as a data
+ * URL (engine TAXONOMY.md D37), with a preview and a way to remove it. */
+function LogoField({ logo, error, onChange }: { logo: string; error: string; onChange: (logo: string, error: string) => void }) {
+  const d = sc.purposeDialog;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Label htmlFor="purpose-logo">{d.logo}</Label>
+      <div className="flex items-center gap-3">
+        {logo ? <img src={logo} alt={d.logoPreview} className="h-12 max-w-36 rounded border bg-white object-contain p-1" /> : null}
+        <Button variant="outline" size="sm" asChild>
+          <label htmlFor="purpose-logo" className="cursor-pointer" title={d.logoChoose}>
+            <ImagePlus />
+            {logo ? d.logoReplace : d.logoAdd}
+          </label>
+        </Button>
+        <input
+          id="purpose-logo"
+          type="file"
+          accept={LOGO_TYPES.join(",")}
+          className="sr-only"
+          data-cartograph-field="/spec/logo"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            if (!LOGO_TYPES.includes(file.type)) return onChange(logo, d.logoType);
+            if (file.size > LOGO_BYTES) return onChange(logo, d.logoSize);
+            const reader = new FileReader();
+            reader.onload = () => onChange(String(reader.result), "");
+            reader.readAsDataURL(file);
+          }}
+        />
+        {logo ? (
+          <Button variant="ghost" size="sm" aria-label={d.logoRemove} title={d.logoRemove} onClick={() => onChange("", "")}>
+            <Trash2 />
+          </Button>
+        ) : null}
+      </div>
+      <p className="text-xs text-muted-foreground">{d.logoHint}</p>
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+    </div>
   );
 }
 

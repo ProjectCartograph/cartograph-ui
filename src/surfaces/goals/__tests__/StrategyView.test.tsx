@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { ClientProvider } from "@/client/context";
 import { fakeClient } from "@/client/fake";
 import type { Settings } from "@/client/port";
+import { copy } from "@/copy";
 import { StrategyView } from "../StrategyView";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -135,5 +136,35 @@ describe("StrategyView", () => {
     await vi.waitFor(() => expect(saveVersion).toHaveBeenCalled());
     const [kind, id, doc] = saveVersion.mock.calls[0] as unknown as [string, string, { kind: string; spec: { vision: string } }];
     expect([kind, id, doc.kind, doc.spec.vision]).toEqual(["Purpose", "default", "Purpose", "Every member earns a fair living"]);
+  });
+
+  it("keeps the organisation's logo on the purpose, and refuses a file that is not an image", async () => {
+    const saveVersion = vi.fn(async () => ({ number: 1 }) as never);
+    const client = fakeClient({
+      goalTree: async () => tree,
+      settings: async () => ({ goalLevels: [], projectLevelName: "Project", operator: "x" }),
+      get: async () => Promise.reject(new Error("not found")),
+      session: async () => ({ actor: "ren", canWrite: true }) as never,
+      saveVersion,
+      list: async () => [],
+    });
+    render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <StrategyView />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "State the purpose" }));
+    const input = document.querySelector('[data-cartograph-field="/spec/logo"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(["x"], "notes.txt", { type: "text/plain" })] } });
+    expect(await screen.findByText(copy.strategy.purposeDialog.logoType)).toBeInTheDocument();
+    fireEvent.change(input, { target: { files: [new File([new Uint8Array([137, 80, 78, 71])], "logo.png", { type: "image/png" })] } });
+    expect(await screen.findByRole("img", { name: copy.strategy.purposeDialog.logoPreview })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Organisation name"), { target: { value: "Northwind Co-operative" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await vi.waitFor(() => expect(saveVersion).toHaveBeenCalled());
+    const doc = (saveVersion.mock.calls[0] as unknown as [string, string, { spec: { logo?: string } }])[2];
+    expect(doc.spec.logo).toMatch(/^data:image\/png;base64,/);
   });
 });
