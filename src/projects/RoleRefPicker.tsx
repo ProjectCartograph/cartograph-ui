@@ -120,6 +120,9 @@ export function RoleRefPicker({
   withBodies?: boolean;
 }) {
   const bodies = useGovernanceBodies(withBodies);
+  // A catalogue entry named directly (a role the project has not listed)
+  // reads by its name, never its id.
+  const resourceName = useResourceNames();
   const isBody = value?.kind === "Resource" && value.id !== undefined;
   const known =
     value?.id !== undefined &&
@@ -145,7 +148,7 @@ export function RoleRefPicker({
       </SelectTrigger>
       <SelectContent>
         {value && !known ? (
-          <SelectItem value={current}>{roleRefLabel(value, options)}</SelectItem>
+          <SelectItem value={current}>{value.kind === "Resource" && value.id ? (resourceName(value.id) ?? value.id) : roleRefLabel(value, options)}</SelectItem>
         ) : null}
         {options.map((o) => (
           <SelectItem key={o.id} value={o.id}>

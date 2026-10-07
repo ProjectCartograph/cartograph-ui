@@ -86,7 +86,9 @@ export function MilestonesSection() {
         {milestones.map((m, i) => (
           <li key={m.id} className="flex flex-col gap-3 rounded-xl p-3 ring-1 ring-foreground/10" data-milestone={m.id}>
             <div className="flex items-center gap-2">
-              <span className="flex h-6 min-w-8 items-center justify-center rounded-md bg-muted px-1 text-xs font-medium text-muted-foreground">M{i + 1}</span>
+              <span className="flex h-6 min-w-8 items-center justify-center rounded-md bg-muted px-1 text-xs font-medium text-muted-foreground">
+                {/^m\d/i.test(m.id) && m.id.length <= 5 ? m.id.toUpperCase() : `M${i + 1}`}
+              </span>
               <Input
                 value={m.name}
                 onChange={(e) => patch(i, { name: e.target.value.slice(0, 120) })}
@@ -264,7 +266,7 @@ function MilestoneChart({ items, onLink }: { items: ScheduleItem[]; onLink: (fro
           return (
             <g key={it.id} data-schedule={it.id}>
               <text x={8} y={y + 4} fontSize="12" fill="var(--color-foreground)">
-                <tspan fill="var(--color-muted-foreground)">M{i + 1} </tspan>
+                <tspan fill="var(--color-muted-foreground)">{/^m\d/i.test(it.id) && it.id.length <= 5 ? it.id.toUpperCase() : `M${i + 1}`} </tspan>
                 {(it.name || it.id).length > 24 ? `${(it.name || it.id).slice(0, 23)}…` : it.name || it.id}
               </text>
               {it.notBefore && it.notAfter ? (

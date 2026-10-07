@@ -125,7 +125,7 @@ function Conditions() {
               <Labelled label={ac.owner}>
                 <RoleRefPicker value={c.owner} options={roles} onChange={(owner) => patch(i, { owner })} label={ac.owner} withBodies className="w-full" />
               </Labelled>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-col gap-1 sm:col-span-2">
                 <span className="text-xs text-muted-foreground">{ac.gates}</span>
                 <EventPicker value={c.gates} onChange={(gates) => patch(i, { gates })} />
               </div>

@@ -107,7 +107,17 @@ export function RaciEditor() {
     if (next === "I") p.informed = [...(p.informed ?? []), ref];
     patch(i, p);
   };
+  // The project's roles, then any body or party a row names besides them,
+  // so nothing a row says is hidden for want of a column.
+  const resourceNames = names;
   const columns = roles.map((o) => ({ ref: { local: "resources", id: o.id } as Ref, label: o.label }));
+  for (const r of list) {
+    for (const ref of [...(r.responsible ?? []), r.accountable, ...(r.consulted ?? []), ...(r.informed ?? [])]) {
+      if (!ref || columns.some((c) => refKey(c.ref) === refKey(ref))) continue;
+      const label = ref.external ?? (ref.kind === "Resource" && ref.id ? (resourceNames(ref.id) ?? ref.id) : (ref.id ?? ""));
+      columns.push({ ref, label });
+    }
+  }
   return (
     <Register
       icon={UsersRound}
@@ -135,7 +145,7 @@ export function RaciEditor() {
             <tbody>
               {list.map((r, i) => (
                 <tr key={r.id} className="border-t" data-raci={r.id}>
-                  <td className="min-w-56 p-1">
+                  <td className="min-w-72 p-1">
                     <div className="flex items-center gap-1">
                       <button
                         type="button"

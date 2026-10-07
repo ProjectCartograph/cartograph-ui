@@ -482,6 +482,7 @@ export const copy = {
     deps: "Dependencies",
     dependsOnWord: "depends on",
     notLinked: "Not linked",
+    noCriticalPath: "No critical path yet: none of the linked work has a schedule to measure it by.",
     loopFact: (chain: string) => `Loop: ${chain}. Remove one of these components to break it.`,
     criticalFact: (chain: string, months: number) => `Critical path: ${chain}, ${months} month${months === 1 ? "" : "s"}.`,
     noDependencies: "No project or programme depends on another yet. Choose Connect, then drag from one to another to add a dependency.",

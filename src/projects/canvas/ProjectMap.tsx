@@ -242,9 +242,24 @@ export function ProjectMap({
     // larger than the pane is moved, not shrunk to nothing.
     const k = Math.min(1.1, Math.max(0.7, Math.min(el.clientWidth / w, el.clientHeight / h)));
     // Centred when it fits; from the top (the strategy) when it is taller
-    // than the pane, and centred on its middle when wider.
-    setView({ k, x: (el.clientWidth - w * k) / 2 + 144 * k, y: h * k > el.clientHeight ? 12 : (el.clientHeight - h * k) / 2 + 12 * k });
-  }, [nodes]);
+    // than the pane. When wider, centred on this project, which is what the
+    // person came to see, rather than on the middle of the map.
+    const self = nodes.find((n) => n.kind === "Project" && n.id === id);
+    const x = w * k <= el.clientWidth || !self ? (el.clientWidth - w * k) / 2 + 144 * k : el.clientWidth / 2 - (self.x + W / 2) * k;
+    setView({ k, x, y: h * k > el.clientHeight ? 12 : (el.clientHeight - h * k) / 2 + 12 * k });
+  }, [nodes, id]);
+  // Until the person moves the map themselves, it is fitted again whenever
+  // the pane changes size: it is laid out before the page settles.
+  const moved = useRef(false);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      if (!moved.current && el.clientWidth > 0) fit();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fit]);
   // Each view is fitted when it is first shown; declared before the fit
   // below so it runs first.
   useEffect(() => {
@@ -298,6 +313,7 @@ export function ProjectMap({
     if (mode === "connect" && !(e.target as HTMLElement).closest("[data-map-node]")) return;
     if (mode === "move" || !(e.target as HTMLElement).closest("[data-map-node]")) {
       panFrom.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
+      moved.current = true;
       (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     }
   }
@@ -315,13 +331,17 @@ export function ProjectMap({
     setDrawing(null);
   }
   function onWheel(e: React.WheelEvent) {
+    moved.current = true;
     const r = box.current!.getBoundingClientRect();
     const k = Math.min(2, Math.max(0.25, view.k * (e.deltaY < 0 ? 1.1 : 0.9)));
     const px = e.clientX - r.left;
     const py = e.clientY - r.top;
     setView({ k, x: px - ((px - view.x) * k) / view.k, y: py - ((py - view.y) * k) / view.k });
   }
-  const zoom = (f: number) => setView((v) => ({ ...v, k: Math.min(2, Math.max(0.25, v.k * f)) }));
+  const zoom = (f: number) => {
+    moved.current = true;
+    setView((v) => ({ ...v, k: Math.min(2, Math.max(0.25, v.k * f)) }));
+  };
 
   const sel = nodes.find((n) => n.key === selected);
   // A node in focus, pointed at or selected, brings out its links and its
@@ -539,7 +559,9 @@ function DependencyFacts({ graph }: { graph: NonNullable<ReturnType<typeof useCo
           {mc.criticalFact(say(graph.criticalPath), graph.criticalMonths)}
         </li>
       ) : null}
-      {graph.loops.length === 0 && graph.criticalPath.length <= 1 ? <li className="text-muted-foreground">{mc.noDependencies}</li> : null}
+      {graph.loops.length === 0 && graph.criticalPath.length <= 1 ? (
+        <li className="text-muted-foreground">{graph.edges.length === 0 ? mc.noDependencies : mc.noCriticalPath}</li>
+      ) : null}
     </ul>
   );
 }
