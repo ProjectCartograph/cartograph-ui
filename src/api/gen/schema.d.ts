@@ -58,6 +58,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/Project/{id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A project's milestones placed on time
+         * @description Each milestone with the month its timing implies (a date, a window, or what it follows plus its lag), what it waits on, whether it is set once something happens, and whether it is on the chain that decides the last date (TAXONOMY.md D48). Nothing is rescheduled: this is what the definition says, read as the change set has it.
+         */
+        get: operations["getProjectSchedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/components": {
         parameters: {
             query?: never;
@@ -2087,6 +2107,23 @@ export interface components {
          * @enum {string}
          */
         LinkKind: "problem-gap" | "problem-group" | "gap-group" | "gap-outcome" | "goal-parent" | "goal-contributes" | "kpi-gap" | "project-outcome" | "project-component" | "programme-component";
+        ScheduleItem: {
+            id: string;
+            name: string;
+            /** @enum {string} */
+            form?: "date" | "window" | "after" | "when";
+            /** @description The month it falls in as far as its timing says, YYYY-MM. */
+            month?: string;
+            notBefore?: string;
+            notAfter?: string;
+            /** @description The ids of the milestones it waits on. */
+            waitsOn: string[];
+            pending: boolean;
+            late: boolean;
+            critical: boolean;
+            /** @description It follows something outside the project, or a loop, so no month can be worked out. */
+            unplaced: boolean;
+        };
         WorkRef: {
             /** @enum {string} */
             kind: "Project" | "Programme";
@@ -2401,6 +2438,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LinkCandidate"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getProjectSchedule: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleItem"][];
                 };
             };
             401: components["responses"]["Unauthenticated"];
