@@ -174,6 +174,15 @@ function useBreadcrumbCrumbs(): Crumb[] {
   const kpiId = routeId?.startsWith("/kpis/$id") ? params.id : undefined;
   const kpiName = useManifestName("KPI", kpiId).data;
 
+  // The change set under review, read from the page's own query.
+  const crumbClient = useClient();
+  const changeSetId = routeId === "/changesets/$id" ? params.id : undefined;
+  const changeSetTitle = useQuery({
+    queryKey: ["changesets", changeSetId],
+    queryFn: () => crumbClient.changeSet(changeSetId!),
+    enabled: Boolean(changeSetId),
+  }).data?.changeSet.title;
+
   const projectId = routeId?.startsWith("/projects/$id") ? params.id : undefined;
   const projectQuery = useProjectManifest(projectId);
   const projectName = projectQuery.data?.manifest.metadata.name;
@@ -291,6 +300,12 @@ function useBreadcrumbCrumbs(): Crumb[] {
   }
   if (routeId === "/new") {
     return [{ label: copy.newWork.title }];
+  }
+  if (routeId === "/changesets/") {
+    return [{ label: copy.changeSets.title }];
+  }
+  if (routeId === "/changesets/$id") {
+    return [{ label: copy.changeSets.title, to: "/changesets" }, { label: changeSetTitle ?? copy.changeSets.title }];
   }
   if (routeId === "/glossary") {
     return [{ label: copy.glossary.title }];

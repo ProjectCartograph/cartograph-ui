@@ -53,7 +53,9 @@ function openOf(it: ChangeSetItem) {
 function Review({ review }: { review: ChangeSetReview }) {
   const cs = review.changeSet;
   const { data: session } = useSession();
-  const mine = !!session && (cs.for ?? "") === (session.email ?? session.actor ?? "").toLowerCase();
+  // It is for the person named, or, where it names nobody (an agent's work
+  // on a workspace without sign-in), for whoever may write.
+  const mine = !!session && (cs.for ? cs.for === (session.email ?? session.actor ?? "").toLowerCase() : Boolean(session.canWrite));
   const included = review.items.filter((i) => i.included);
   const byKind = new Map<string, ChangeSetItem[]>();
   for (const it of review.items) byKind.set(it.kind, [...(byKind.get(it.kind) ?? []), it]);
