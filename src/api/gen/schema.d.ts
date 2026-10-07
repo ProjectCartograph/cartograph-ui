@@ -2157,8 +2157,9 @@ export interface components {
             edges: components["schemas"]["ComponentEdge"][];
             /** @description Each loop in order, ending where it began. */
             loops: components["schemas"]["WorkRef"][][];
-            /** @description The longest chain of components by duration, from the work that depends to the work depended on. */
+            /** @description The chain of components that runs longest on the calendar, from the earliest start on it to the latest finish, from the work that depends to the work depended on. */
             criticalPath: components["schemas"]["WorkRef"][];
+            /** @description The critical path's length on the calendar, in months, both ends counted. */
             criticalMonths: number;
         };
         LinkCandidate: {
