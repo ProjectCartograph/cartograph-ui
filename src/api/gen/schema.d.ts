@@ -1997,6 +1997,8 @@ export interface components {
                 vision?: string;
                 mission?: string;
                 source?: string;
+                /** @description The organisation's logo as a data URL (TAXONOMY.md D37). */
+                logo?: string;
             };
             /** @description Examples this vault shows per field, in its own words (TAXONOMY.md D20). Absent when the vault supplies none. */
             examples?: {
