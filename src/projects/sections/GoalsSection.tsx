@@ -52,7 +52,7 @@ const ABOUT_MAX = 300;
  * One question of a chain, compact: the question and a yes or no beside
  * it, and on yes, what it asks for beneath. Answered, the next appears.
  */
-function Ask({ question, value, onAnswer, children }: { question: string; value: boolean | undefined; onAnswer: (yes: boolean) => void; children: ReactNode }) {
+function Ask({ question, value, onAnswer, children }: { question: string; value: boolean | undefined; onAnswer: (yes: boolean | undefined) => void; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200 ease-enter" data-slot="ask">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -62,7 +62,8 @@ function Ask({ question, value, onAnswer, children }: { question: string; value:
           variant="outline"
           size="sm"
           value={value === undefined ? "" : value ? "yes" : "no"}
-          onValueChange={(v) => v && onAnswer(v === "yes")}
+          // Picking the chosen answer again takes it back: unanswered.
+          onValueChange={(v) => onAnswer(v ? v === "yes" : undefined)}
           aria-label={question}
         >
           <ToggleGroupItem value="yes" className={PICKED}>
@@ -185,15 +186,17 @@ export function AlignmentSection() {
   // What the manifest already answers stands until the person answers.
   const [answered, setSaid] = useState<{ project?: boolean; programme?: boolean; portfolio?: boolean }>({});
   const said = {
-    project: answered.project ?? (parent ? true : programmes.length || portfolios.length || startedStandalone(store.id) ? false : undefined),
-    programme: answered.programme ?? (programmes.length ? true : portfolios.length ? false : undefined),
-    portfolio: answered.portfolio ?? (portfolios.length ? true : undefined),
+    // An answer given, or taken back, stands over what is inferred.
+    project: "project" in answered ? answered.project : parent ? true : programmes.length || portfolios.length || startedStandalone(store.id) ? false : undefined,
+    programme: "programme" in answered ? answered.programme : programmes.length ? true : portfolios.length ? false : undefined,
+    portfolio: "portfolio" in answered ? answered.portfolio : portfolios.length ? true : undefined,
   };
   const partOf = said.project ? "project" : "programmes";
 
-  function answer(q: "project" | "programme" | "portfolio", yes: boolean) {
+  function answer(q: "project" | "programme" | "portfolio", yes: boolean | undefined) {
     setSaid((prev) => ({ ...prev, [q]: yes }));
     if (yes) return;
+    // No, or taken back: what a yes had picked goes with it.
     store.updateSpec((s) => ({
       ...s,
       alignment: {

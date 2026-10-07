@@ -43,6 +43,18 @@ describe("where a project sits", () => {
     expect(await screen.findByRole("radiogroup", { name: gc.askPortfolio })).toBeInTheDocument();
   });
 
+  // An answer picked by mistake is taken back by picking it again.
+  it("takes an answer back when it is picked again", async () => {
+    mount({});
+    const bigger = await screen.findByRole("radiogroup", { name: gc.askProject });
+    const no = within(bigger).getByRole("radio", { name: gc.no });
+    fireEvent.click(no);
+    expect(no).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(no);
+    expect(no).toHaveAttribute("aria-checked", "false");
+    expect(within(bigger).getByRole("radio", { name: gc.yes })).toHaveAttribute("aria-checked", "false");
+  });
+
   it("opens on what is already answered, and offers to walk it again", async () => {
     mount({ alignment: { programmes: ["quality"] } });
     const programme = await screen.findByRole("radiogroup", { name: gc.askProgramme });
