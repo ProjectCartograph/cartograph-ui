@@ -58,6 +58,7 @@ const every: Record<keyof Client, true> = {
   startChangeSet: true,
   retitleChangeSet: true,
   proposeChangeSet: true,
+  linkCandidates: true,
   dropChangeSetItem: true,
   getGuide: true,
   acceptProposal: true,

@@ -33,6 +33,7 @@ export function ProblemCard({
   canRemove,
   list = "/spec/summary/problems",
   onAddGroup,
+  project,
 }: {
   line: ProblemLine;
   index: number;
@@ -51,6 +52,9 @@ export function ProblemCard({
   /** Names a group the problem's gaps affect: on a project, also among
    * its beneficiaries. Left out, the group joins the problem alone. */
   onAddGroup?: (group: string) => void;
+  /** The project the problem belongs to, for drawing its links; a
+   * programme's problems are linked through their fields alone. */
+  project?: string;
 }) {
   const groups = line.groups ?? [];
   const groupNames = groups.map((g) => groupOptions.find((o) => o.value === g)?.label ?? g);
@@ -173,7 +177,14 @@ export function ProblemCard({
               onChange={(e) => onChange({ change: { ...line.change, gain: e.target.value || undefined } as ProblemLine["change"] })}
             />
           </Lead>
-          <ProblemMap line={line} groupNames={new Map(groupOptions.map((o) => [o.value, o.label]))} onAddGroup={(g) => (onAddGroup ? onAddGroup(g) : onChange({ groups: [...groups, g] }))} />
+          <ProblemMap
+            line={line}
+            groupNames={new Map(groupOptions.map((o) => [o.value, o.label]))}
+            onAddGroup={(g) => (onAddGroup ? onAddGroup(g) : onChange({ groups: [...groups, g] }))}
+            onChange={onChange}
+            project={project}
+            problem={line.id ?? `#${index}`}
+          />
         </div>
       ) : null}
     </div>

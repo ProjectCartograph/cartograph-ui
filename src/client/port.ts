@@ -20,6 +20,8 @@ export type References = Schemas["References"];
 export type KindCount = Schemas["KindCount"];
 export type Settings = Schemas["Settings"];
 export type GoalTree = Schemas["GoalTree"];
+export type LinkKind = Schemas["LinkKind"];
+export type LinkCandidate = Schemas["LinkCandidate"];
 export type Graph = Schemas["Graph"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
@@ -440,6 +442,10 @@ export interface Client {
    * agents', newest first; everyone's for an administrator who asks. */
   changeSets(opts?: { status?: ChangeSetStatus; everyone?: boolean }): Promise<ChangeSet[]>;
   /** A change set as its person reviews it. */
+  /** What a link of this kind may join from the record from (and, for a
+   * project's problem, that problem, by id or "#n"), each allowed or not
+   * with the reason (engine docs/UI_CONTRACT.md "Drawing a link"). */
+  linkCandidates(link: LinkKind, from: string, problem?: string): Promise<LinkCandidate[]>;
   changeSet(id: string): Promise<ChangeSetReview>;
   /** Include an item in the next acceptance, or trim it from it. */
   includeChangeSetItem(set: string, kind: string, id: string, included: boolean): Promise<void>;

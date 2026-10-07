@@ -121,6 +121,7 @@ export function AimSection() {
             onRemove={() => removeProblem(idx)}
             canRemove={problems.length > 1}
             onAddGroup={(g) => addGroup(idx, g)}
+            project={store.id}
           />
         ))}
         <Button type="button" variant="outline" className="self-start border-dashed" onClick={addProblem} aria-label={ac.addProblem}>
