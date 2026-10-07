@@ -22,6 +22,9 @@ export type Settings = Schemas["Settings"];
 export type GoalTree = Schemas["GoalTree"];
 export type LinkKind = Schemas["LinkKind"];
 export type LinkCandidate = Schemas["LinkCandidate"];
+export type ComponentGraph = Schemas["ComponentGraph"];
+export type ComponentNode = Schemas["ComponentNode"];
+export type WorkRef = Schemas["WorkRef"];
 export type Graph = Schemas["Graph"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
@@ -446,6 +449,10 @@ export interface Client {
    * project's problem, that problem, by id or "#n"), each allowed or not
    * with the reason (engine docs/UI_CONTRACT.md "Drawing a link"). */
   linkCandidates(link: LinkKind, from: string, problem?: string): Promise<LinkCandidate[]>;
+  /** Every project and programme, what each depends on, every loop, the
+   * critical path and how much work depends on each (engine TAXONOMY.md
+   * D46). */
+  components(): Promise<ComponentGraph>;
   changeSet(id: string): Promise<ChangeSetReview>;
   /** Include an item in the next acceptance, or trim it from it. */
   includeChangeSetItem(set: string, kind: string, id: string, included: boolean): Promise<void>;

@@ -1,5 +1,5 @@
 import { RequiredMarks } from "@/components/RequiredMarks";
-import { createElement, useEffect, useState } from "react";
+import { createElement, useEffect, useRef, useState } from "react";
 import { FromIdeaProvider } from "@/components/FromIdea";
 import { ShowInGraph } from "@/graph/ShowInGraph";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -277,8 +277,45 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
       // Private windows refuse storage; the pane just forgets.
     }
   };
+  // Ends at the foot of the window wherever it starts, so the map's own
+  // foot is always in view: lower at the top of the page, where the
+  // walker sits above it, and the full height once it sticks.
+  const pane = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const fit = () => {
+      const el = pane.current;
+      if (!el) return;
+      if (!window.matchMedia("(min-width: 80rem)").matches) {
+        el.style.height = "";
+        return;
+      }
+      // The change set's bar sits at the foot of the window; the pane
+      // stops above it where the two would overlap.
+      const box = el.getBoundingClientRect();
+      const bar = document.querySelector('[data-cartograph-region="merge-bar"]')?.getBoundingClientRect();
+      const under = bar && bar.right > box.left && bar.left < box.right ? bar.height + 12 : 0;
+      el.style.height = `${Math.max(448, window.innerHeight - Math.max(16, box.top) - 16 - under)}px`;
+    };
+    fit();
+    window.addEventListener("scroll", fit, { passive: true });
+    window.addEventListener("resize", fit);
+    // The bar comes and goes, and grows, as the change set does; read
+    // once a frame however much the page changes.
+    let frame = 0;
+    const watch = new MutationObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      window.removeEventListener("scroll", fit);
+      window.removeEventListener("resize", fit);
+      watch.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, []);
   return (
-    <div className="relative flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
+    <div ref={pane} className="relative flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
       <div role="tablist" aria-label={mc.tabsLabel} className="flex items-center gap-0.5 self-start rounded-md bg-muted p-0.5">
         {(["map", "charter", "checks"] as const).map((t) => (
           <button

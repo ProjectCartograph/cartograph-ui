@@ -7,8 +7,11 @@ import { copy } from "@/copy";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { useProgrammeMembers, type MemberSummary } from "../api";
 import type { ProgrammeSpec } from "../types";
+import { ComponentsTable } from "@/projects/components/ComponentsTable";
+import { UsedBy } from "@/projects/components/UsedBy";
 
 const pc = copy.programmes;
+const cc = copy.projects.components;
 
 /** A mark, not a word. "Projects" repeated down every row is the case the
  * text-is-the-last-resort rule covers: the kind is the same four letters
@@ -17,12 +20,12 @@ const pc = copy.programmes;
 const KIND_MARK = { Project: FolderKanban, Operation: Settings2 } as const;
 
 /**
- * What is inside the programme, read back rather than stored.
+ * What the programme depends on, and what is inside it.
  *
- * A project names its programmes and an operation names its programmes, so
- * membership is declared by the work and derived here (TAXONOMY.md D1).
- * There is deliberately no picker that adds a project to a programme: that
- * would be a second place to change one fact, and the two would disagree.
+ * The programme lists the projects and programmes it depends on, as any
+ * piece of work does (TAXONOMY.md D46), in the table at the top. Below
+ * it, what is read back: services, which name their programmes, and work
+ * an older definition declared part of this programme (D1).
  *
  * What this screen does do is the thing that was asked for — show the work
  * that shares a goal without naming this programme, and let a programme
@@ -58,8 +61,21 @@ export function ComponentsSection() {
     });
   }
 
+  const self = { kind: "Programme" as const, id: store.id };
   return (
     <div className="flex max-w-3xl flex-col gap-8">
+      <section className="flex flex-col gap-3" data-cartograph-region="programme-dependencies">
+        <span className="text-sm font-medium">{cc.askProgramme}</span>
+        <ComponentsTable
+          from={self}
+          value={store.spec.components ?? []}
+          onChange={(next) => store.updateSpec((s) => ({ ...s, components: next.length > 0 ? next : undefined }))}
+        />
+        <UsedBy
+          self={self}
+          onRemoveOwn={(_, id) => store.updateSpec((s) => ({ ...s, programmes: (s.programmes ?? []).filter((p) => p !== id) }))}
+        />
+      </section>
       <section className="flex flex-col gap-2" data-slot="programme-inside" data-cartograph-region="components">
         {inside.length === 0 ? (
           <p className="text-sm text-muted-foreground">{pc.insideEmpty}</p>

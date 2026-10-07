@@ -31,14 +31,17 @@ import { KeyResultCard } from "@/surfaces/goals/KeyResultCard";
 import { KeyResultDialog } from "@/surfaces/goals/KeyResultDialog";
 import type { KeyResult } from "@/surfaces/goals/types";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
-import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { Suggested } from "@/components/relevance";
 import { Textarea } from "@/components/ui/textarea";
+import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useSectionAutosave, useProjectStore } from "../store";
+import { ComponentsTable, dependentsOf, useComponentGraph } from "../components/ComponentsTable";
+import { UsedBy } from "../components/UsedBy";
 import { seg } from "../field";
 
 const gc = copy.projects.goals;
+const cc = copy.projects.components;
 
 // The stock toggle's "on" state is a muted fill, which reads as a hover
 // rather than a choice (the success dialog uses the same).
@@ -174,45 +177,35 @@ export function AlignmentSection() {
   const { data: portfolioOptions } = useReferenceOptions("Portfolio");
   const { data: programmeGoals } = useProgrammeGoals();
 
-  const { data: projectOptions } = useReferenceOptions("Project");
+  const self = { kind: "Project" as const, id: store.id };
+  const graph = useComponentGraph();
   const goals = store.spec.alignment?.goals ?? [];
-  const programmes = store.spec.alignment?.programmes ?? [];
+  const components = store.spec.components ?? [];
+  // The programmes that list this project, and any an older definition
+  // named here: the outcomes they serve are offered first.
+  const programmes = [
+    ...new Set([...(store.spec.alignment?.programmes ?? []), ...dependentsOf(graph.data, self).filter((n) => n.kind === "Programme").map((n) => n.id)]),
+  ];
+  // An older definition that made this project part of another: its goals
+  // are the parent's (TAXONOMY.md D15), until the person removes it.
   const parent = store.spec.alignment?.partOf;
-  const parentName = parent ? (projectOptions?.names.get(parent) ?? parent) : "";
   const portfolios = store.spec.alignment?.portfolios ?? [];
-  // Where the project sits, asked in turn: a bigger project, else a
-  // programme, then a portfolio. An answer of no is held here, as the
-  // manifest has nothing to say it with; a yes is what was picked.
-  // What the manifest already answers stands until the person answers.
-  const [answered, setSaid] = useState<{ project?: boolean; programme?: boolean; portfolio?: boolean }>({});
+  // Asked in turn: what it depends on, then a portfolio. An answer of no
+  // is held here, as the manifest has nothing to say it with; a yes is
+  // what was picked. What the manifest already answers stands until the
+  // person answers, and an answer given, or taken back, stands over it.
+  const [answered, setSaid] = useState<{ deps?: boolean; portfolio?: boolean }>({});
   const said = {
-    // An answer given, or taken back, stands over what is inferred.
-    project: "project" in answered ? answered.project : parent ? true : programmes.length || portfolios.length || startedStandalone(store.id) ? false : undefined,
-    programme: "programme" in answered ? answered.programme : programmes.length ? true : portfolios.length ? false : undefined,
+    deps: "deps" in answered ? answered.deps : components.length ? true : portfolios.length || startedStandalone(store.id) ? false : undefined,
     portfolio: "portfolio" in answered ? answered.portfolio : portfolios.length ? true : undefined,
   };
-  const partOf = said.project ? "project" : "programmes";
+  const partOf = parent ? "project" : "programmes";
 
-  function answer(q: "project" | "programme" | "portfolio", yes: boolean | undefined) {
+  function answer(q: "deps" | "portfolio", yes: boolean | undefined) {
     setSaid((prev) => ({ ...prev, [q]: yes }));
     if (yes) return;
     // No, or taken back: what a yes had picked goes with it.
-    store.updateSpec((s) => ({
-      ...s,
-      alignment: {
-        ...s.alignment,
-        ...(q === "project" ? { partOf: undefined } : q === "programme" ? { programmes: undefined } : { portfolios: undefined }),
-      },
-    }));
-  }
-
-  function chooseParent(id: string | undefined) {
-    // A component belongs to its parent's programmes (TAXONOMY.md D15), so
-    // naming its own would be a second place to change one fact.
-    store.updateSpec((s) => ({
-      ...s,
-      alignment: { ...s.alignment, partOf: id, programmes: id ? undefined : s.alignment?.programmes },
-    }));
+    store.updateSpec((s) => (q === "deps" ? { ...s, components: undefined } : { ...s, alignment: { ...s.alignment, portfolios: undefined } }));
   }
 
   // Each goal's parent, from the tree: a programme may be judged on an aim
@@ -327,48 +320,34 @@ export function AlignmentSection() {
         </div>
 
         <div className="flex flex-col gap-3 border-t pt-3" data-cartograph-region="part-of">
-          <Ask question={gc.askProject} value={said.project} onAnswer={(yes) => answer("project", yes)}>
-            <ReferencePicker
-              data-cartograph-field="/spec/alignment/partOf"
-              refKind="Project"
-              value={parent}
-              onChange={chooseParent}
-              placeholder={gc.parentPlaceholder}
-              label={gc.parentLabel}
+          <Ask question={cc.ask} value={said.deps} onAnswer={(yes) => answer("deps", yes)}>
+            <ComponentsTable
+              from={self}
+              value={components}
+              onChange={(next) => store.updateSpec((s) => ({ ...s, components: next.length > 0 ? next : undefined }))}
             />
-            {parent ? <p className="text-sm text-muted-foreground">{gc.inheritsGoals(parentName)}</p> : null}
           </Ask>
-          {said.project === false ? (
-            <Ask question={gc.askProgramme} value={said.programme} onAnswer={(yes) => answer("programme", yes)}>
-              <Suggested
-                kind="Programme"
-                selected={programmes}
-                onPick={(id) =>
-                  store.updateSpec((s) => {
-                    const cur = s.alignment?.programmes ?? [];
-                    return { ...s, alignment: { ...s.alignment, programmes: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] } };
-                  })
-                }
-              />
-              <ComboboxMultiple
-                options={programmeOptions?.options ?? []}
-                value={programmes}
-                onValueChange={(next) => store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, programmes: next } }))}
-                placeholder={gc.programmesPlaceholder}
-                emptyText={copy.sheets.dialog.noMatches}
-                removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
-                aria-label={gc.programmesLabel}
-                data-cartograph-field="/spec/alignment/programmes"
-              />
-              {unproven.length > 0 ? (
-                <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-slot="unproven-programmes">
-                  <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
-                  {gc.unprovenProgramme(unproven.map((id) => programmeOptions?.names.get(id) ?? id).join(", "))}
-                </p>
-              ) : null}
-            </Ask>
+          <UsedBy
+            self={self}
+            onRemoveOwn={(kind, id) =>
+              store.updateSpec((s) => ({
+                ...s,
+                alignment: {
+                  ...s.alignment,
+                  ...(kind === "Project" ? { partOf: undefined } : { programmes: (s.alignment?.programmes ?? []).filter((p) => p !== id) }),
+                },
+              }))
+            }
+          />
+          {/* A programme that lists this project expects it to serve one
+              of its aims. */}
+          {unproven.length > 0 ? (
+            <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-slot="unproven-programmes">
+              <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
+              {gc.unprovenProgramme(unproven.map((id) => programmeOptions?.names.get(id) ?? id).join(", "))}
+            </p>
           ) : null}
-          {said.project === false && said.programme !== undefined ? (
+          {said.deps !== undefined ? (
             <Ask question={gc.askPortfolio} value={said.portfolio} onAnswer={(yes) => answer("portfolio", yes)}>
               <Suggested
                 kind="Portfolio"

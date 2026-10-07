@@ -293,6 +293,7 @@ export function httpClient(
       answer(wire.PATCH("/changesets/{set}", { params: { path: { set } }, body: { title, ...(description ? { description } : {}) } })),
     linkCandidates: (link, from, problem) =>
       answer(wire.GET("/links/{link}/candidates", { params: { path: { link }, query: { from, ...(problem ? { problem } : {}), ...preview() } } })),
+    components: () => answer(wire.GET("/components", { params: { query: { ...preview() } } })),
     proposeChangeSet: (set, reason, openChecks) =>
       answer(wire.POST("/changesets/{set}/propose", { params: { path: { set } }, body: { ...(reason ? { reason } : {}), ...(openChecks ? { openChecks } : {}) } })),
     dropChangeSetItem: (set, kind, id) => done(wire.DELETE("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } })),

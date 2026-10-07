@@ -457,6 +457,8 @@ export interface ProjectSpec {
   escalationRoute?: { kind?: string; id?: string; external?: string }[];
   funding?: FundingLine[];
   alignment?: ProjectAlignment;
+  /** The projects and programmes this one depends on (engine TAXONOMY.md D46). */
+  components?: { kind: "Project" | "Programme"; id: string; why?: string }[];
   objectives?: ProjectObjective[];
   deliverables?: Deliverable[];
   kpis?: ProjectKPI[];

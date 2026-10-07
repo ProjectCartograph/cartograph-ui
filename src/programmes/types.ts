@@ -39,6 +39,9 @@ export interface ProgrammeSpec {
   leadTeam?: string;
   supportingTeams?: string[];
   goals?: string[];
+  /** The projects and programmes this programme depends on (engine
+   * TAXONOMY.md D46). */
+  components?: { kind: "Project" | "Programme"; id: string; why?: string }[];
   kpis?: string[];
   /** The programmes this one is a sub-programme of, and the portfolios
    * that fund it (engine TAXONOMY.md D32). */

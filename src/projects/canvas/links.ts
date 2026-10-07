@@ -33,12 +33,24 @@ export function linkFor(from: MapNode, to: MapNode): LinkKind | undefined {
       return "kpi-gap";
     case "Goal>Goal":
       return "goal-parent";
+    case "Project>Project":
+    case "Project>Programme":
+      return "project-component";
+    case "Programme>Project":
+    case "Programme>Programme":
+      return "programme-component";
   }
   return undefined;
 }
 
-/** The links a node may start, by the kind each reaches. */
-export function linksFrom(node: MapNode): { link: LinkKind; target: string }[] {
+/** The links a node may start, by the kind each reaches ("*" for any):
+ * on the dependency map, a piece of work starts only its components. */
+export function linksFrom(node: MapNode, lens: "chain" | "deps" = "chain"): { link: LinkKind; target: string }[] {
+  if (lens === "deps") {
+    if (node.kind === "Project") return [{ link: "project-component", target: "*" }];
+    if (node.kind === "Programme") return [{ link: "programme-component", target: "*" }];
+    return [];
+  }
   switch (node.kind) {
     case "Problem":
       return [
@@ -86,6 +98,7 @@ export async function setLink(
   from: MapNode,
   to: MapNode,
   on: boolean,
+  self?: string,
 ) {
   const toggle = (list: string[], id: string) => (on ? [...new Set([...list, id])] : list.filter((x) => x !== id));
   switch (link) {
@@ -120,5 +133,27 @@ export async function setLink(
       return editRecord(client, "Gap", to.id, (doc) => (on ? doc.setIn(["spec", "measure"], from.id) : doc.deleteIn(["spec", "measure"])));
     case "goal-parent":
       return editRecord(client, "Goal", from.id, (doc) => (on ? doc.setIn(["spec", "parent"], to.id) : doc.deleteIn(["spec", "parent"])));
+    case "project-component":
+    case "programme-component": {
+      // Kept on the work that depends (TAXONOMY.md D46): this project's
+      // own through its store, any other's in the change set.
+      type Component = { kind: "Project" | "Programme"; id: string; why?: string };
+      const next = (list: Component[]) => {
+        const rest = list.filter((c) => !(c.kind === to.kind && c.id === to.id));
+        return on ? [...rest, { kind: to.kind as Component["kind"], id: to.id }] : rest;
+      };
+      if (from.kind === "Project" && from.id === self) {
+        updateSpec((s) => {
+          const list = next(s.components ?? []);
+          return { ...s, components: list.length > 0 ? list : undefined };
+        });
+        return;
+      }
+      return editRecord(client, from.kind, from.id, (doc) => {
+        const list = next(((doc.getIn(["spec", "components"]) as { toJSON(): Component[] } | undefined)?.toJSON() ?? []) as Component[]);
+        if (list.length > 0) doc.setIn(["spec", "components"], list);
+        else doc.deleteIn(["spec", "components"]);
+      });
+    }
   }
 }

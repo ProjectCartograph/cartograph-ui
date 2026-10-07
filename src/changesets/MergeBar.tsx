@@ -31,11 +31,12 @@ function useReview(set: string | undefined) {
       // after it changes.
       t = setTimeout(() => {
         void queryClient.invalidateQueries({ queryKey: ["changeSet", set] });
-        // Every checks panel reads the drafts too, so it follows the edit.
-        // Every checks panel, the map and the charter read the drafts too,
-        // so they follow the edit.
+        // Every checks panel, the maps and the charter read the drafts
+        // too, so they follow the edit.
         void queryClient.invalidateQueries({
-          predicate: (q) => typeof q.queryKey[0] === "string" && (q.queryKey[0].endsWith("-checks") || q.queryKey[0] === "graph" || q.queryKey[0] === "charter"),
+          predicate: (q) =>
+            typeof q.queryKey[0] === "string" &&
+            (q.queryKey[0].endsWith("-checks") || ["graph", "charter", "components", "link-candidates"].includes(q.queryKey[0])),
         });
       }, 1500);
     });

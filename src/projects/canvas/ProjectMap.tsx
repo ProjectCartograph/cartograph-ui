@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Hand, Link2, Maximize, Minus, MousePointer2, Plus } from "lucide-react";
+import { Blocks, Hand, Link2, ListTree, Maximize, Minus, MousePointer2, Plus, RefreshCcw, Share2, Timer } from "lucide-react";
 
 import { useClient } from "@/client/context";
 import type { LinkCandidate } from "@/client/port";
@@ -9,11 +9,17 @@ import { kindIcon } from "@/components/vocab";
 import { copy } from "@/copy";
 import { colorOf } from "@/graph/kinds";
 import type { ProjectSpec } from "../types";
+import { useComponentGraph } from "../components/ComponentsTable";
+import { dependencyRows, type Tone, type WorkNode } from "./dependencies";
 import { linkFor, linksFrom, setLink, type MapNode } from "./links";
 
 const mc = copy.projectMap;
+const cc = copy.projects.components;
 
 type Mode = "select" | "connect" | "move";
+/** What the map shows: the project's results chain, or the projects and
+ * programmes it depends on and that depend on it. */
+type Lens = "chain" | "deps";
 
 // The project's results chain, top to bottom, which suits a pane taller
 // than it is wide: the strategy it serves, the evidence, its problems,
@@ -28,12 +34,14 @@ const GAP_Y = 56;
 interface Placed extends MapNode {
   x: number;
   y: number;
+  marks?: WorkNode["marks"];
 }
 
 interface Edge {
   from: Placed;
   to: Placed;
   link?: ReturnType<typeof linkFor>;
+  tone?: Tone;
 }
 
 /**
@@ -60,10 +68,62 @@ export function ProjectMap({
   const queryClient = useQueryClient();
   const graph = useQuery({ queryKey: ["graph", `Project/${id}`], queryFn: () => client.graph(`Project/${id}`) });
   const [mode, setMode] = useState<Mode>("select");
+  const [lens, setLens] = useState<Lens>("chain");
   const [selected, setSelected] = useState<string | null>(null);
+  const components = useComponentGraph();
+
+  // The dependency map: every project and programme, each line running
+  // down from the work to what it depends on (TAXONOMY.md D46).
+  const depsMap = useMemo(() => {
+    if (!components.data) return { nodes: [] as Placed[], edges: [] as Edge[], lines: [] as { row: number; y: number; label?: string }[] };
+    const { rows, tones, legacy, loose } = dependencyRows(components.data);
+    // Each row ordered beside what it links to, swept down and up.
+    const pos = new Map<string, number>();
+    rows.forEach((list) => list.forEach((n, i) => pos.set(n.key, i)));
+    const ties = new Map<string, string[]>();
+    for (const e of components.data.edges) {
+      const a = `${e.from.kind}/${e.from.id}`;
+      const b = `${e.to.kind}/${e.to.id}`;
+      ties.set(a, [...(ties.get(a) ?? []), b]);
+      ties.set(b, [...(ties.get(b) ?? []), a]);
+    }
+    const sweep = (order: WorkNode[][]) => {
+      for (const list of order) {
+        const score = (n: WorkNode) => {
+          const near = (ties.get(n.key) ?? []).filter((k) => pos.has(k) && !list.some((m) => m.key === k));
+          return near.length ? near.reduce((t, k) => t + (pos.get(k) ?? 0), 0) / near.length : (pos.get(n.key) ?? 0);
+        };
+        list.sort((a, b) => score(a) - score(b));
+        list.forEach((n, i) => pos.set(n.key, i - (list.length - 1) / 2));
+      }
+    };
+    for (let i = 0; i < 4; i++) {
+      sweep(rows);
+      sweep([...rows].reverse());
+    }
+    const widest = Math.max(1, ...rows.map((l) => l.length));
+    const placed = new Map<string, Placed>();
+    rows.forEach((list, line) => {
+      const left = ((widest - list.length) * (W + GAP_X)) / 2;
+      list.forEach((n, i) => placed.set(n.key, { ...n, x: left + i * (W + GAP_X), y: line * (H + GAP_Y) }));
+    });
+    const out: Edge[] = [];
+    for (const e of components.data.edges) {
+      const a = placed.get(`${e.from.kind}/${e.from.id}`);
+      const b = placed.get(`${e.to.kind}/${e.to.id}`);
+      if (!a || !b) continue;
+      const k = `${a.key}>${b.key}`;
+      // A link an older definition recorded on the component is changed
+      // there, not by clicking it here.
+      out.push({ from: a, to: b, link: legacy.has(k) ? undefined : linkFor(a, b), tone: tones.get(k) ?? "plain" });
+    }
+    // The last row, when it holds work with no link yet, says so.
+    const lines: { row: number; y: number; label?: string }[] = loose ? [{ row: -1, y: (rows.length - 1) * (H + GAP_Y), label: mc.notLinked }] : [];
+    return { nodes: [...placed.values()], edges: out, lines };
+  }, [components.data]);
 
   // The nodes: records near the project, and its own problems.
-  const { nodes, edges, lines } = useMemo(() => {
+  const chainMap = useMemo(() => {
     const problems = spec.summary.problems ?? [];
     // What the project names, and what those name in turn, followed
     // outward only: the outcomes it serves and the aims above them, its
@@ -166,6 +226,7 @@ export function ProjectMap({
     const lines = order.map((r, line) => ({ row: r, y: line * (H + GAP_Y) }));
     return { nodes: [...placed.values()], edges: out, lines };
   }, [graph.data, spec, id]);
+  const { nodes, edges, lines } = lens === "deps" ? depsMap : chainMap;
 
   // The view: pan and zoom, fitted to the map when it first draws.
   const box = useRef<HTMLDivElement>(null);
@@ -184,6 +245,11 @@ export function ProjectMap({
     // than the pane, and centred on its middle when wider.
     setView({ k, x: (el.clientWidth - w * k) / 2 + 144 * k, y: h * k > el.clientHeight ? 12 : (el.clientHeight - h * k) / 2 + 12 * k });
   }, [nodes]);
+  // Each view is fitted when it is first shown; declared before the fit
+  // below so it runs first.
+  useEffect(() => {
+    fitted.current = false;
+  }, [lens]);
   useEffect(() => {
     const el = box.current;
     if (fitted.current || nodes.length === 0 || !el || el.clientWidth === 0) return;
@@ -194,16 +260,16 @@ export function ProjectMap({
   // Drawing a link: what it starts from, where the pointer is, and what
   // the engine says each other node may be.
   const [drawing, setDrawing] = useState<{ from: Placed; at: { x: number; y: number } } | null>(null);
-  const starts = drawing ? linksFrom(drawing.from) : [];
+  const starts = drawing ? linksFrom(drawing.from, lens) : [];
   const offers = useQueries({
     queries: starts.map((s) => ({
       queryKey: ["link-candidates", s.link, drawing?.from.kind === "Problem" ? id : drawing?.from.id, drawing?.from.problem],
-      queryFn: () => client.linkCandidates(s.link, drawing!.from.kind === "Problem" || drawing!.from.kind === "Project" ? id : drawing!.from.id, drawing!.from.problem),
+      queryFn: () => client.linkCandidates(s.link, drawing!.from.kind === "Problem" ? id : drawing!.from.id, drawing!.from.problem),
     })),
   });
   const verdict = new Map<string, LinkCandidate>();
   offers.forEach((q, i) => {
-    for (const c of q.data ?? []) if (c.kind === starts[i].target) verdict.set(`${c.kind}/${c.id}`, c);
+    for (const c of q.data ?? []) if (starts[i].target === "*" || c.kind === starts[i].target) verdict.set(`${c.kind}/${c.id}`, c);
   });
   const problemIndex = (key: string) => {
     const list = spec.summary.problems ?? [];
@@ -213,9 +279,10 @@ export function ProjectMap({
   async function link(from: Placed, to: Placed, on: boolean) {
     const kind = linkFor(from, to);
     if (!kind) return;
-    await setLink(client, updateSpec, problemIndex, kind, from, to, on);
+    await setLink(client, updateSpec, problemIndex, kind, from, to, on, id);
     // Everything that shows the records it changed reads them again.
     void queryClient.invalidateQueries({ queryKey: ["graph"] });
+    void queryClient.invalidateQueries({ queryKey: ["components"] });
     void queryClient.invalidateQueries({ queryKey: ["link-candidates"] });
     void queryClient.invalidateQueries({ queryKey: ["manifests"] });
     void queryClient.invalidateQueries({ predicate: (q) => typeof q.queryKey[0] === "string" && q.queryKey[0].endsWith("-checks") });
@@ -273,6 +340,28 @@ export function ProjectMap({
   return (
     <section className="flex h-full min-h-[28rem] flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10" aria-label={mc.label} data-cartograph-region="project-map">
       <div className="flex flex-wrap items-center gap-1 border-b bg-card px-2 py-1.5">
+        <div role="radiogroup" aria-label={mc.lens} className="flex items-center gap-0.5 rounded-md bg-muted p-0.5">
+          {(
+            [
+              ["chain", ListTree, mc.chain],
+              ["deps", Blocks, mc.deps],
+            ] as const
+          ).map(([l, Icon, label]) => (
+            <button
+              key={l}
+              type="button"
+              role="radio"
+              aria-checked={lens === l}
+              aria-label={label}
+              title={label}
+              onClick={() => setLens(l)}
+              className={`flex items-center rounded px-1.5 py-1 transition-colors duration-150 ${lens === l ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              data-map-lens={l}
+            >
+              <Icon className="size-3.5" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
         <div role="radiogroup" aria-label={mc.modes} className="flex items-center gap-0.5 rounded-md bg-muted p-0.5">
           {(
             [
@@ -336,6 +425,8 @@ export function ProjectMap({
                 ? `M${p.x},${p.y} L${q.x},${q.y}`
                 : `M${p.x},${p.y} C${p.x},${(p.y + q.y) / 2} ${q.x},${(p.y + q.y) / 2} ${q.x},${q.y}`;
               const removable = mode === "select" && ed.link;
+              const on = focus && (ed.from.key === focus || ed.to.key === focus);
+              const toned = ed.tone === "loop" ? "var(--color-destructive)" : ed.tone === "critical" ? "var(--color-warning)" : undefined;
               return (
                 <g
                   key={`${ed.from.key}>${ed.to.key}`}
@@ -348,9 +439,11 @@ export function ProjectMap({
                   <path
                     d={d}
                     fill="none"
-                    stroke={focus && (ed.from.key === focus || ed.to.key === focus) ? "var(--color-primary)" : "var(--color-muted-foreground)"}
-                    strokeOpacity={focus ? (ed.from.key === focus || ed.to.key === focus ? 0.9 : 0.08) : 0.3}
-                    strokeWidth={focus && (ed.from.key === focus || ed.to.key === focus) ? 2 : 1.25}
+                    stroke={toned ?? (on ? "var(--color-primary)" : "var(--color-muted-foreground)")}
+                    strokeOpacity={focus ? (on ? 0.9 : 0.08) : toned ? 0.85 : 0.3}
+                    strokeWidth={on || toned ? 2.25 : 1.25}
+                    strokeDasharray={ed.tone === "loop" ? "6 4" : undefined}
+                    data-tone={ed.tone}
                   />
                 </g>
               );
@@ -367,7 +460,7 @@ export function ProjectMap({
               style={{ left: Math.min(...nodes.map((n) => n.x)), top: l.y + H / 2 - 8, width: 120 }}
               aria-hidden="true"
             >
-              {mc.rows[l.row] ?? ""}
+              {("label" in l && typeof l.label === "string" ? l.label : undefined) ?? mc.rows[l.row] ?? ""}
             </span>
           ))}
           {nodes.map((n) => {
@@ -385,7 +478,7 @@ export function ProjectMap({
                 aria-label={why ? `${n.name}: ${why}` : n.name}
                 title={why}
                 onPointerDown={(e) => {
-                  if (mode !== "connect" || linksFrom(n).length === 0) return;
+                  if (mode !== "connect" || linksFrom(n, lens).length === 0) return;
                   e.stopPropagation();
                   e.preventDefault();
                   (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
@@ -398,23 +491,55 @@ export function ProjectMap({
                   setSelected(n.key);
                   onSelect?.(n);
                 }}
-                className={`absolute flex items-center gap-2 rounded-lg border bg-card px-2.5 text-sm shadow-sm transition-[opacity,box-shadow] duration-150 ${dim || (focus && !near.has(n.key)) ? "opacity-30" : ""} ${v?.allowed ? "ring-2 ring-primary" : ""} ${selected === n.key ? "ring-2 ring-foreground" : ""} ${mode === "connect" && linksFrom(n).length > 0 ? "cursor-crosshair" : "cursor-pointer"}`}
+                className={`absolute flex items-center gap-2 rounded-lg border bg-card px-2.5 text-sm shadow-sm transition-[opacity,box-shadow] duration-150 ${dim || (focus && !near.has(n.key)) ? "opacity-30" : ""} ${v?.allowed ? "ring-2 ring-primary" : ""} ${selected === n.key ? "ring-2 ring-foreground" : ""} ${mode === "connect" && linksFrom(n, lens).length > 0 ? "cursor-crosshair" : "cursor-pointer"} ${lens === "deps" && n.kind === "Project" && n.id === id ? "border-foreground" : ""}`}
                 style={{ left: n.x, top: n.y, width: W, height: H }}
               >
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: n.kind === "Problem" ? "var(--color-warning)" : colorOf(n.kind) }} aria-hidden="true" />
                 {Icon ? <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
                 <span className="line-clamp-2 min-w-0 flex-1 leading-tight">{n.name}</span>
+                {n.marks ? (
+                  <span className="flex shrink-0 flex-col items-center gap-0.5">
+                    {n.marks.inLoop ? <RefreshCcw className="size-3.5 text-destructive" role="img" aria-label={cc.inLoop} data-mark="loop"><title>{cc.inLoop}</title></RefreshCcw> : null}
+                    {n.marks.critical ? <Timer className="size-3.5 text-warning" role="img" aria-label={cc.critical} data-mark="critical"><title>{cc.critical}</title></Timer> : null}
+                    {n.marks.mostDependedOn ? <Share2 className="size-3.5 text-primary" role="img" aria-label={cc.mostDependedOn} data-mark="shared"><title>{cc.mostDependedOn}</title></Share2> : null}
+                  </span>
+                ) : null}
               </div>
             );
           })}
         </div>
         {nodes.length <= 1 && !graph.isLoading ? <p className="absolute inset-x-0 bottom-4 text-center text-sm text-muted-foreground">{mc.empty}</p> : null}
       </div>
+      {lens === "deps" && components.data ? <DependencyFacts graph={components.data} /> : null}
       {sel ? (
         <p className="border-t bg-card px-3 py-2 text-xs text-muted-foreground" aria-live="polite">
           <span className="font-medium text-foreground">{sel.name}</span> · {copy.sheets.kindsSingular[sel.kind] ?? mc.kinds[sel.kind] ?? sel.kind}
         </p>
       ) : null}
     </section>
+  );
+}
+
+/** What the dependency map shows, said in words under it: each loop in
+ * order, and the critical path with its length. */
+function DependencyFacts({ graph }: { graph: NonNullable<ReturnType<typeof useComponentGraph>["data"]> }) {
+  const name = new Map(graph.nodes.map((n) => [`${n.kind}/${n.id}`, n.name]));
+  const say = (list: { kind: string; id: string }[]) => list.map((r) => name.get(`${r.kind}/${r.id}`) ?? r.id).join(` ${mc.dependsOnWord} `);
+  return (
+    <ul className="flex flex-col gap-1 border-t bg-card px-3 py-2 text-xs" data-slot="dependency-facts" aria-live="polite">
+      {graph.loops.map((loop, i) => (
+        <li key={i} className="flex items-start gap-1.5 text-destructive" data-fact="loop">
+          <RefreshCcw className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          {mc.loopFact(say(loop))}
+        </li>
+      ))}
+      {graph.criticalPath.length > 1 ? (
+        <li className="flex items-start gap-1.5 text-muted-foreground" data-fact="critical">
+          <Timer className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden="true" />
+          {mc.criticalFact(say(graph.criticalPath), graph.criticalMonths)}
+        </li>
+      ) : null}
+      {graph.loops.length === 0 && graph.criticalPath.length <= 1 ? <li className="text-muted-foreground">{mc.noDependencies}</li> : null}
+    </ul>
   );
 }
