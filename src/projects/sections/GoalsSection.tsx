@@ -1,6 +1,5 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { startedStandalone } from "../standalone";
-import { Footprints, Plus, TriangleAlert, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Blocks, BriefcaseBusiness, CornerLeftUp, Footprints, Plus, TriangleAlert, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
@@ -16,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ComboboxMultiple } from "@/components/ui/combobox";
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { FieldHeading, Help } from "@/components/guidance";
@@ -36,16 +34,13 @@ import { Suggested } from "@/components/relevance";
 import { Textarea } from "@/components/ui/textarea";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useSectionAutosave, useProjectStore } from "../store";
-import { ComponentsTable, dependentsOf, useComponentGraph } from "../components/ComponentsTable";
-import { UsedBy } from "../components/UsedBy";
+import { ComponentsTable, dependentsOf, KIND_ICON, Marks, useComponentGraph } from "../components/ComponentsTable";
+import { RelationRow } from "../components/Relations";
 import { seg } from "../field";
 
 const gc = copy.projects.goals;
 const cc = copy.projects.components;
 
-// The stock toggle's "on" state is a muted fill, which reads as a hover
-// rather than a choice (the success dialog uses the same).
-const PICKED = "data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:border-primary";
 
 /** What the project is about, in a sentence a newcomer would follow: the
  * schema's limit, shown as it is reached. */
@@ -55,32 +50,6 @@ const ABOUT_MAX = 300;
  * One question of a chain, compact: the question and a yes or no beside
  * it, and on yes, what it asks for beneath. Answered, the next appears.
  */
-function Ask({ question, value, onAnswer, children }: { question: string; value: boolean | undefined; onAnswer: (yes: boolean | undefined) => void; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-1 duration-200 ease-enter" data-slot="ask">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm font-medium">{question}</span>
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          size="sm"
-          value={value === undefined ? "" : value ? "yes" : "no"}
-          // Picking the chosen answer again takes it back: unanswered.
-          onValueChange={(v) => onAnswer(v ? v === "yes" : undefined)}
-          aria-label={question}
-        >
-          <ToggleGroupItem value="yes" className={PICKED}>
-            {gc.yes}
-          </ToggleGroupItem>
-          <ToggleGroupItem value="no" className={PICKED}>
-            {gc.no}
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-      {value ? <div className="flex flex-col gap-2 pl-0 sm:pl-4">{children}</div> : null}
-    </div>
-  );
-}
 
 /**
  * Which goals each programme serves, by programme id.
@@ -190,23 +159,7 @@ export function AlignmentSection() {
   // are the parent's (TAXONOMY.md D15), until the person removes it.
   const parent = store.spec.alignment?.partOf;
   const portfolios = store.spec.alignment?.portfolios ?? [];
-  // Asked in turn: what it depends on, then a portfolio. An answer of no
-  // is held here, as the manifest has nothing to say it with; a yes is
-  // what was picked. What the manifest already answers stands until the
-  // person answers, and an answer given, or taken back, stands over it.
-  const [answered, setSaid] = useState<{ deps?: boolean; portfolio?: boolean }>({});
-  const said = {
-    deps: "deps" in answered ? answered.deps : components.length ? true : portfolios.length || startedStandalone(store.id) ? false : undefined,
-    portfolio: "portfolio" in answered ? answered.portfolio : portfolios.length ? true : undefined,
-  };
   const partOf = parent ? "project" : "programmes";
-
-  function answer(q: "deps" | "portfolio", yes: boolean | undefined) {
-    setSaid((prev) => ({ ...prev, [q]: yes }));
-    if (yes) return;
-    // No, or taken back: what a yes had picked goes with it.
-    store.updateSpec((s) => (q === "deps" ? { ...s, components: undefined } : { ...s, alignment: { ...s.alignment, portfolios: undefined } }));
-  }
 
   // Each goal's parent, from the tree: a programme may be judged on an aim
   // at any level, and an outcome beneath it serves it (TAXONOMY.md D24,
@@ -319,57 +272,125 @@ export function AlignmentSection() {
           ) : null}
         </div>
 
-        <div className="flex flex-col gap-3 border-t pt-3" data-cartograph-region="part-of">
-          <Ask question={cc.ask} value={said.deps} onAnswer={(yes) => answer("deps", yes)}>
-            <ComponentsTable
-              from={self}
-              value={components}
-              onChange={(next) => store.updateSpec((s) => ({ ...s, components: next.length > 0 ? next : undefined }))}
-            />
-          </Ask>
-          <UsedBy
-            self={self}
-            onRemoveOwn={(kind, id) =>
-              store.updateSpec((s) => ({
-                ...s,
-                alignment: {
-                  ...s.alignment,
-                  ...(kind === "Project" ? { partOf: undefined } : { programmes: (s.alignment?.programmes ?? []).filter((p) => p !== id) }),
-                },
-              }))
+        <div className="flex flex-col divide-y border-t pt-3" data-cartograph-region="part-of">
+          <RelationRow
+            slot="depends-on"
+            icon={Blocks}
+            label={cc.dependsOnLabel}
+            hint={cc.dependsOnHint}
+            empty={cc.dependsOnNone}
+            addLabel={cc.add}
+            addTitle={cc.addDependency}
+            wide
+            items={components.map((c) => {
+              const node = graph.data?.nodes.find((n) => n.kind === c.kind && n.id === c.id);
+              const name = node?.name ?? c.id;
+              return {
+                key: `${c.kind}/${c.id}`,
+                name,
+                icon: KIND_ICON[c.kind],
+                title: c.why,
+                marks: node ? <Marks node={node} /> : undefined,
+                onRemove: () => store.updateSpec((s) => {
+                  const next = (s.components ?? []).filter((x) => !(x.kind === c.kind && x.id === c.id));
+                  return { ...s, components: next.length > 0 ? next : undefined };
+                }),
+                removeLabel: cc.removeDependency(name),
+              };
+            })}
+            picker={
+              <ComponentsTable
+                from={self}
+                value={components}
+                onChange={(next) => store.updateSpec((s) => ({ ...s, components: next.length > 0 ? next : undefined }))}
+              />
+            }
+          />
+          <RelationRow
+            slot="used-by"
+            icon={CornerLeftUp}
+            label={cc.usedBy}
+            hint={cc.usedByHint}
+            empty={cc.usedByNone}
+            items={(graph.data?.edges ?? [])
+              .filter((e) => e.to.kind === "Project" && e.to.id === store.id)
+              .map((e) => {
+                const node = graph.data?.nodes.find((n) => n.kind === e.from.kind && n.id === e.from.id);
+                const name = node?.name ?? e.from.id;
+                return {
+                  key: `${e.from.kind}/${e.from.id}`,
+                  name,
+                  icon: KIND_ICON[e.from.kind],
+                  title: e.legacy ? cc.declaredHere(name) : e.why,
+                  marks: node ? <Marks node={node} /> : undefined,
+                  // Only a link an older definition recorded here can be
+                  // removed here; the rest belong to the work that lists it.
+                  onRemove: e.legacy
+                    ? () => store.updateSpec((s) => ({
+                        ...s,
+                        alignment: {
+                          ...s.alignment,
+                          ...(e.from.kind === "Project" ? { partOf: undefined } : { programmes: (s.alignment?.programmes ?? []).filter((x) => x !== e.from.id) }),
+                        },
+                      }))
+                    : undefined,
+                  removeLabel: cc.stopPartOf(name),
+                };
+              })}
+          />
+          <RelationRow
+            slot="portfolios"
+            icon={BriefcaseBusiness}
+            label={gc.portfoliosLabel}
+            hint={cc.portfoliosHint}
+            empty={cc.portfoliosNone}
+            addLabel={cc.add}
+            addTitle={cc.addPortfolio}
+            items={portfolios.map((id) => {
+              const name = portfolioOptions?.names.get(id) ?? id;
+              return {
+                key: id,
+                name,
+                icon: BriefcaseBusiness,
+                onRemove: () => store.updateSpec((s) => {
+                  const next = (s.alignment?.portfolios ?? []).filter((x) => x !== id);
+                  return { ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } };
+                }),
+                removeLabel: `${copy.projects.common.remove} ${name}`,
+              };
+            })}
+            picker={
+              <div className="flex flex-col gap-3">
+                <Suggested
+                  kind="Portfolio"
+                  selected={portfolios}
+                  onPick={(id) =>
+                    store.updateSpec((s) => {
+                      const cur = s.alignment?.portfolios ?? [];
+                      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+                      return { ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } };
+                    })
+                  }
+                />
+                <ComboboxMultiple
+                  options={portfolioOptions?.options ?? []}
+                  value={portfolios}
+                  onValueChange={(next) => store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } }))}
+                  emptyText={copy.sheets.dialog.noMatches}
+                  removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+                  aria-label={gc.portfoliosLabel}
+                  data-cartograph-field="/spec/alignment/portfolios"
+                />
+              </div>
             }
           />
           {/* A programme that lists this project expects it to serve one
               of its aims. */}
           {unproven.length > 0 ? (
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-slot="unproven-programmes">
+            <p className="flex items-center gap-1.5 pt-3 text-xs text-muted-foreground" data-slot="unproven-programmes">
               <TriangleAlert className="size-3.5 shrink-0" aria-hidden="true" />
               {gc.unprovenProgramme(unproven.map((id) => programmeOptions?.names.get(id) ?? id).join(", "))}
             </p>
-          ) : null}
-          {said.deps !== undefined ? (
-            <Ask question={gc.askPortfolio} value={said.portfolio} onAnswer={(yes) => answer("portfolio", yes)}>
-              <Suggested
-                kind="Portfolio"
-                selected={portfolios}
-                onPick={(id) =>
-                  store.updateSpec((s) => {
-                    const cur = s.alignment?.portfolios ?? [];
-                    const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
-                    return { ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } };
-                  })
-                }
-              />
-              <ComboboxMultiple
-                options={portfolioOptions?.options ?? []}
-                value={portfolios}
-                onValueChange={(next) => store.updateSpec((s) => ({ ...s, alignment: { ...s.alignment, portfolios: next.length > 0 ? next : undefined } }))}
-                emptyText={copy.sheets.dialog.noMatches}
-                removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
-                aria-label={gc.portfoliosLabel}
-                data-cartograph-field="/spec/alignment/portfolios"
-              />
-            </Ask>
           ) : null}
         </div>
       </section>

@@ -84,6 +84,7 @@ import { Route as ProjectsIdFrameworkRouteImport } from './routes/projects/$id/f
 import { Route as ProjectsIdHandoffRouteImport } from './routes/projects/$id/handoff'
 import { Route as ProjectsIdLandingRouteImport } from './routes/projects/$id/landing'
 import { Route as ProjectsIdInitiationAimRouteImport } from './routes/projects/$id/initiation/aim'
+import { Route as ProjectsIdInitiationApprovalRouteImport } from './routes/projects/$id/initiation/approval'
 import { Route as ProjectsIdInitiationBeneficiariesRouteImport } from './routes/projects/$id/initiation/beneficiaries'
 import { Route as ProjectsIdInitiationDataRouteImport } from './routes/projects/$id/initiation/data'
 import { Route as ProjectsIdInitiationDeliverablesRouteImport } from './routes/projects/$id/initiation/deliverables'
@@ -473,6 +474,12 @@ const ProjectsIdInitiationAimRoute = ProjectsIdInitiationAimRouteImport.update({
   path: '/initiation/aim',
   getParentRoute: () => ProjectsIdRoute,
 } as any)
+const ProjectsIdInitiationApprovalRoute =
+  ProjectsIdInitiationApprovalRouteImport.update({
+    id: '/initiation/approval',
+    path: '/initiation/approval',
+    getParentRoute: () => ProjectsIdRoute,
+  } as any)
 const ProjectsIdInitiationBeneficiariesRoute =
   ProjectsIdInitiationBeneficiariesRouteImport.update({
     id: '/initiation/beneficiaries',
@@ -622,6 +629,7 @@ export interface FileRoutesByFullPath {
   '/programmes/$id/': typeof ProgrammesIdIndexRoute
   '/projects/$id/': typeof ProjectsIdIndexRoute
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
+  '/projects/$id/initiation/approval': typeof ProjectsIdInitiationApprovalRoute
   '/projects/$id/initiation/beneficiaries': typeof ProjectsIdInitiationBeneficiariesRoute
   '/projects/$id/initiation/data': typeof ProjectsIdInitiationDataRoute
   '/projects/$id/initiation/deliverables': typeof ProjectsIdInitiationDeliverablesRoute
@@ -705,6 +713,7 @@ export interface FileRoutesByTo {
   '/programmes/$id': typeof ProgrammesIdIndexRoute
   '/projects/$id': typeof ProjectsIdIndexRoute
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
+  '/projects/$id/initiation/approval': typeof ProjectsIdInitiationApprovalRoute
   '/projects/$id/initiation/beneficiaries': typeof ProjectsIdInitiationBeneficiariesRoute
   '/projects/$id/initiation/data': typeof ProjectsIdInitiationDataRoute
   '/projects/$id/initiation/deliverables': typeof ProjectsIdInitiationDeliverablesRoute
@@ -795,6 +804,7 @@ export interface FileRoutesById {
   '/programmes/$id/': typeof ProgrammesIdIndexRoute
   '/projects/$id/': typeof ProjectsIdIndexRoute
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
+  '/projects/$id/initiation/approval': typeof ProjectsIdInitiationApprovalRoute
   '/projects/$id/initiation/beneficiaries': typeof ProjectsIdInitiationBeneficiariesRoute
   '/projects/$id/initiation/data': typeof ProjectsIdInitiationDataRoute
   '/projects/$id/initiation/deliverables': typeof ProjectsIdInitiationDeliverablesRoute
@@ -886,6 +896,7 @@ export interface FileRouteTypes {
     | '/programmes/$id/'
     | '/projects/$id/'
     | '/projects/$id/initiation/aim'
+    | '/projects/$id/initiation/approval'
     | '/projects/$id/initiation/beneficiaries'
     | '/projects/$id/initiation/data'
     | '/projects/$id/initiation/deliverables'
@@ -969,6 +980,7 @@ export interface FileRouteTypes {
     | '/programmes/$id'
     | '/projects/$id'
     | '/projects/$id/initiation/aim'
+    | '/projects/$id/initiation/approval'
     | '/projects/$id/initiation/beneficiaries'
     | '/projects/$id/initiation/data'
     | '/projects/$id/initiation/deliverables'
@@ -1058,6 +1070,7 @@ export interface FileRouteTypes {
     | '/programmes/$id/'
     | '/projects/$id/'
     | '/projects/$id/initiation/aim'
+    | '/projects/$id/initiation/approval'
     | '/projects/$id/initiation/beneficiaries'
     | '/projects/$id/initiation/data'
     | '/projects/$id/initiation/deliverables'
@@ -1642,6 +1655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIdInitiationAimRouteImport
       parentRoute: typeof ProjectsIdRoute
     }
+    '/projects/$id/initiation/approval': {
+      id: '/projects/$id/initiation/approval'
+      path: '/initiation/approval'
+      fullPath: '/projects/$id/initiation/approval'
+      preLoaderRoute: typeof ProjectsIdInitiationApprovalRouteImport
+      parentRoute: typeof ProjectsIdRoute
+    }
     '/projects/$id/initiation/beneficiaries': {
       id: '/projects/$id/initiation/beneficiaries'
       path: '/initiation/beneficiaries'
@@ -1841,6 +1861,7 @@ interface ProjectsIdRouteChildren {
   ProjectsIdLandingRoute: typeof ProjectsIdLandingRoute
   ProjectsIdIndexRoute: typeof ProjectsIdIndexRoute
   ProjectsIdInitiationAimRoute: typeof ProjectsIdInitiationAimRoute
+  ProjectsIdInitiationApprovalRoute: typeof ProjectsIdInitiationApprovalRoute
   ProjectsIdInitiationBeneficiariesRoute: typeof ProjectsIdInitiationBeneficiariesRoute
   ProjectsIdInitiationDataRoute: typeof ProjectsIdInitiationDataRoute
   ProjectsIdInitiationDeliverablesRoute: typeof ProjectsIdInitiationDeliverablesRoute
@@ -1863,6 +1884,7 @@ const ProjectsIdRouteChildren: ProjectsIdRouteChildren = {
   ProjectsIdLandingRoute: ProjectsIdLandingRoute,
   ProjectsIdIndexRoute: ProjectsIdIndexRoute,
   ProjectsIdInitiationAimRoute: ProjectsIdInitiationAimRoute,
+  ProjectsIdInitiationApprovalRoute: ProjectsIdInitiationApprovalRoute,
   ProjectsIdInitiationBeneficiariesRoute:
     ProjectsIdInitiationBeneficiariesRoute,
   ProjectsIdInitiationDataRoute: ProjectsIdInitiationDataRoute,

@@ -294,6 +294,7 @@ export function httpClient(
     linkCandidates: (link, from, problem) =>
       answer(wire.GET("/links/{link}/candidates", { params: { path: { link }, query: { from, ...(problem ? { problem } : {}), ...preview() } } })),
     components: () => answer(wire.GET("/components", { params: { query: { ...preview() } } })),
+    schedule: (id) => answer(wire.GET("/manifests/Project/{id}/schedule", { params: { path: { id }, query: { ...preview() } } })),
     proposeChangeSet: (set, reason, openChecks) =>
       answer(wire.POST("/changesets/{set}/propose", { params: { path: { set } }, body: { ...(reason ? { reason } : {}), ...(openChecks ? { openChecks } : {}) } })),
     dropChangeSetItem: (set, kind, id) => done(wire.DELETE("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } })),

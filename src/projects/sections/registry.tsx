@@ -3,18 +3,20 @@ import type { ComponentType } from "react";
 import { copy } from "@/copy";
 import type { InitiationSection, Stage } from "../types";
 import { AimSection } from "./AimSection";
+import { ApprovalSection } from "./ApprovalSection";
 import { BeneficiariesSection } from "./BeneficiariesSection";
 import { DataSection } from "./DataSection";
 import { DeliverablesSection } from "./DeliverablesSection";
 import { AlignmentSection, MeasuresSection } from "./GoalsSection";
 import { HandoverSection } from "./HandoverSection";
 import { MandateSection } from "./MandateSection";
+import { CostsEditor, ProcurementEditor, RaciEditor } from "./PlanRegisters";
 import { ResourcesSection } from "./ResourcesSection";
 import { RisksSection } from "./RisksSection";
 import { ScopeSection } from "./ScopeSection";
 import { StakeholdersSection } from "./StakeholdersSection";
 import { SuccessSection } from "./SuccessSection";
-import { TimelineSection } from "./TimelineSection";
+import { MilestonesSection } from "./MilestonesSection";
 
 const pc = copy.projects;
 
@@ -33,17 +35,23 @@ export const SECTION_VIEW: Record<InitiationSection, { heading: string; subtitle
       <div className="flex flex-col gap-6">
         <ResourcesSection />
         <MandateSection />
+        <RaciEditor />
+        <CostsEditor />
+        <ProcurementEditor />
       </div>
     ),
   },
   stakeholders: { ...pc.stakeholdersStep, View: StakeholdersSection },
   scope: { ...pc.scope, View: ScopeSection },
   deliverables: { ...pc.deliverables, View: DeliverablesSection },
-  timeline: { ...pc.timeline, View: TimelineSection },
+  // Milestones carry the schedule (engine TAXONOMY.md D48); phases from
+  // before them convert in one step.
+  timeline: { ...pc.timeline, View: MilestonesSection },
   data: { ...pc.data, View: DataSection },
   risks: { ...pc.risks, View: RisksSection },
   success: { ...pc.success, View: SuccessSection },
   landing: { ...pc.landing, View: () => <HandoverSection /> },
+  approval: { ...pc.approval, View: ApprovalSection },
 };
 
 /** Checks a stage shows besides its own steps': the deliverables' closing

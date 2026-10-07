@@ -65,7 +65,7 @@ export type RefKind =
 /** The lists inside a manifest a reference can name. */
 export type LocalRefList =
   | "resources" | "stakeholders" | "objectives" | "deliverables" | "successCriteria"
-  | "risks" | "problems" | "phases";
+  | "risks" | "problems" | "phases" | "milestones" | "conditions" | "signOffs" | "workstreams";
 
 /** Whether a reference names anything at all. */
 export function refIsSet(ref: Ref | undefined): ref is Ref {
@@ -141,10 +141,126 @@ export interface Task {
   note?: string;
 }
 
+/** Something that happens (engine TAXONOMY.md D47). */
+export interface PlanEvent {
+  on: Ref;
+  happens?: "reached" | "accepted" | "met" | "firstReading" | "issued" | "decided" | "approved" | "closed" | "landed" | "occurred";
+}
+
+/** When something falls, in one of four forms (engine TAXONOMY.md D47). */
+export interface Timing {
+  form: "date" | "window" | "after" | "when";
+  date?: string;
+  notBefore?: string;
+  notAfter?: string;
+  event?: PlanEvent;
+  lagMonths?: number;
+  lagDays?: number;
+  expectedBy?: string;
+  decidedBy?: Ref;
+  risks?: string[];
+  note?: string;
+}
+
+export interface Milestone {
+  id: string;
+  name: string;
+  timing: Timing;
+  owner?: Ref;
+  waitsOn?: PlanEvent[];
+  deliverables?: string[];
+  evidence?: string;
+}
+
+export interface Workstream {
+  id: string;
+  name: string;
+  purpose?: string;
+  lead?: Ref;
+  supporting?: Ref[];
+  dependsOn?: string;
+}
+
+export interface Responsibility {
+  id: string;
+  item: string;
+  deliverable?: string;
+  decision?: boolean;
+  responsible?: Ref[];
+  accountable?: Ref;
+  consulted?: Ref[];
+  informed?: Ref[];
+}
+
+export interface CostLine {
+  id: string;
+  category: string;
+  basis?: string;
+  amount?: number;
+  currency?: string;
+  period?: string;
+  source?: string;
+  status?: "approved" | "requested" | "beingCosted" | "unfunded";
+  recurrent?: string;
+  condition?: string;
+}
+
+export interface ProcurementItem {
+  id: string;
+  requirement: string;
+  value?: number;
+  currency?: string;
+  valueNote?: string;
+  method?: string;
+  leadTime?: string;
+  requiredBy?: Timing;
+  owner?: Ref;
+}
+
+export interface Condition {
+  id: string;
+  action: string;
+  owner?: Ref;
+  due?: Timing;
+  gates?: PlanEvent;
+}
+
+export interface SignOff {
+  id: string;
+  stage: "definition" | "closing" | "handover";
+  label?: string;
+  role: Ref;
+}
+
+/** What happened (engine TAXONOMY.md D52). */
+export interface ProjectEvent {
+  id: string;
+  on: Ref;
+  happened: "reached" | "slipped" | "accepted" | "rejected" | "met" | "notMet" | "occurred" | "issued" | "decided" | "signed";
+  date: string;
+  note?: string;
+  evidence?: string;
+  value?: number;
+  decision?: "approve" | "approveWithConditions" | "reject";
+  recordedBy?: string;
+}
+
+/** A part of the organisation's template held as text (TAXONOMY.md D53). */
+export interface TemplateSection {
+  id: string;
+  heading: string;
+  text: string;
+  step?: string;
+}
+
 export interface Deliverable {
   id: string;
   name: string;
   description?: string;
+  owner?: Ref;
+  due?: Timing;
+  evidence?: string;
+  workstream?: string;
   acceptance?: AcceptanceCriterion[];
   tasks?: Task[];
 }
@@ -459,6 +575,16 @@ export interface ProjectSpec {
   alignment?: ProjectAlignment;
   /** The projects and programmes this one depends on (engine TAXONOMY.md D46). */
   components?: { kind: "Project" | "Programme"; id: string; why?: string }[];
+  milestones?: Milestone[];
+  workstreams?: Workstream[];
+  responsibilities?: Responsibility[];
+  costs?: CostLine[];
+  procurement?: ProcurementItem[];
+  conditions?: Condition[];
+  signOffs?: SignOff[];
+  events?: ProjectEvent[];
+  sections?: TemplateSection[];
+  classification?: string;
   objectives?: ProjectObjective[];
   deliverables?: Deliverable[];
   kpis?: ProjectKPI[];
@@ -518,6 +644,7 @@ export const INITIATION_SECTIONS = [
   "risks",
   "success",
   "landing",
+  "approval",
 ] as const;
 export type InitiationSection = (typeof INITIATION_SECTIONS)[number];
 
@@ -537,7 +664,7 @@ export type InitiationSection = (typeof INITIATION_SECTIONS)[number];
  *   Plan        when, on what data, and what could go wrong
  *   Handover    what success is, and the service that runs the result
  */
-export const STAGES = ["context", "problem", "objectives", "governance", "scope", "plan", "handover"] as const;
+export const STAGES = ["context", "problem", "objectives", "governance", "scope", "plan", "handover", "approval"] as const;
 export type Stage = (typeof STAGES)[number];
 
 /** The route each step lives at, as literals: the router types its links
@@ -556,7 +683,8 @@ export type StepPath =
   | "/initiation/timeline"
   | "/initiation/data"
   | "/initiation/risks"
-  | "/initiation/landing";
+  | "/initiation/landing"
+  | "/initiation/approval";
 
 export interface Step {
   stage: Stage;
@@ -586,6 +714,7 @@ export const STEPS: Step[] = [
   step("plan", "risks"),
   step("handover", "success"),
   step("handover", "landing"),
+  step("approval", "approval"),
 ];
 
 export function stepsOfStage(stage: Stage): Step[] {

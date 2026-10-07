@@ -36,7 +36,7 @@ function useReview(set: string | undefined) {
         void queryClient.invalidateQueries({
           predicate: (q) =>
             typeof q.queryKey[0] === "string" &&
-            (q.queryKey[0].endsWith("-checks") || ["graph", "charter", "components", "link-candidates"].includes(q.queryKey[0])),
+            (q.queryKey[0].endsWith("-checks") || ["graph", "charter", "components", "link-candidates", "schedule"].includes(q.queryKey[0])),
         });
       }, 1500);
     });

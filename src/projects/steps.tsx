@@ -1,21 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  Briefcase,
-  Scale,
-  CalendarRange,
-  CircleCheck,
-  Compass,
-  Crosshair,
-  Database,
-  Gauge,
-  Medal,
-  Package,
-  Landmark,
-  PlaneLanding,
-  SquareDashed,
-  TriangleAlert,
-  Users,
-} from "lucide-react";
+import { Briefcase, CalendarRange, CircleCheck, Compass, Crosshair, Database, FileSignature, Gauge, Landmark, Medal, Package, PlaneLanding, Scale, SquareDashed, TriangleAlert, Users } from "lucide-react";
 
 import type { Stage } from "./types";
 
@@ -33,11 +17,13 @@ export const STAGE_ICON: Record<Stage, LucideIcon> = {
   scope: SquareDashed,
   plan: CalendarRange,
   handover: PlaneLanding,
+  approval: FileSignature,
 };
 
 export const STEP_ICON: Record<string, LucideIcon> = {
   goals: Compass,
   aim: Crosshair,
+  approval: FileSignature,
   beneficiaries: Users,
   scope: SquareDashed,
   measures: Gauge,

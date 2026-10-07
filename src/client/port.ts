@@ -25,6 +25,7 @@ export type LinkCandidate = Schemas["LinkCandidate"];
 export type ComponentGraph = Schemas["ComponentGraph"];
 export type ComponentNode = Schemas["ComponentNode"];
 export type WorkRef = Schemas["WorkRef"];
+export type ScheduleItem = Schemas["ScheduleItem"];
 export type Graph = Schemas["Graph"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
@@ -453,6 +454,8 @@ export interface Client {
    * critical path and how much work depends on each (engine TAXONOMY.md
    * D46). */
   components(): Promise<ComponentGraph>;
+  /** A project's milestones placed on time (engine TAXONOMY.md D48). */
+  schedule(project: string): Promise<ScheduleItem[]>;
   changeSet(id: string): Promise<ChangeSetReview>;
   /** Include an item in the next acceptance, or trim it from it. */
   includeChangeSetItem(set: string, kind: string, id: string, included: boolean): Promise<void>;

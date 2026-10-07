@@ -60,55 +60,38 @@ function mount(spec: object) {
 // Where a project sits is asked a question at a time, each opening the
 // next once answered, and what it is about is held to the schema's limit.
 describe("where a project sits", () => {
-  it("asks what it depends on, then about a portfolio", async () => {
+  // What it depends on, what uses it and its portfolios are shown as
+  // themselves; nothing asks a yes or no question to reach them.
+  it("shows each relation with its count, and asks nothing", async () => {
     mount({});
-    const deps = await screen.findByRole("radiogroup", { name: cc.ask });
-    expect(screen.queryByRole("radiogroup", { name: gc.askPortfolio })).toBeNull();
-    fireEvent.click(within(deps).getByRole("radio", { name: gc.no }));
-    expect(await screen.findByRole("radiogroup", { name: gc.askPortfolio })).toBeInTheDocument();
-  });
-
-  // An answer picked by mistake is taken back by picking it again.
-  it("takes an answer back when it is picked again", async () => {
-    mount({});
-    const deps = await screen.findByRole("radiogroup", { name: cc.ask });
-    const no = within(deps).getByRole("radio", { name: gc.no });
-    fireEvent.click(no);
-    expect(no).toHaveAttribute("aria-checked", "true");
-    fireEvent.click(no);
-    expect(no).toHaveAttribute("aria-checked", "false");
-    expect(within(deps).getByRole("radio", { name: gc.yes })).toHaveAttribute("aria-checked", "false");
-  });
-
-  it("opens on what it already depends on, and offers to walk it again", async () => {
-    mount({ components: [{ kind: "Project", id: "platform" }] });
-    const deps = await screen.findByRole("radiogroup", { name: cc.ask });
-    expect(within(deps).getByRole("radio", { name: gc.yes })).toHaveAttribute("aria-checked", "true");
-    expect(await screen.findByRole("checkbox", { name: cc.dependOn("Data platform") })).toHaveAttribute("data-state", "checked");
+    const depends = await screen.findByText(cc.dependsOnLabel);
+    expect(depends.closest('[data-slot="depends-on"]')).toHaveTextContent(cc.dependsOnNone);
+    expect(screen.queryByRole("radiogroup")).toBeNull();
+    const usedBy = await screen.findByText("Quality programme");
+    expect(usedBy.closest('[data-slot="used-by"]')).toHaveTextContent("Grading app");
     expect(screen.getByText(gc.walkAgain).closest("a")).toHaveAttribute("data-search", JSON.stringify({ from: "p1" }));
   });
 
-  // A row that would close a loop stays in the table, says why, and
-  // cannot be ticked; what depends on this project is read back below.
-  it("says why a row cannot be added, and shows what uses this project", async () => {
+  it("opens on what it already depends on", async () => {
+    mount({ components: [{ kind: "Project", id: "platform" }] });
+    const chip = await screen.findByText("Data platform");
+    expect(chip.closest("[data-relation-item]")).toHaveAttribute("data-relation-item", "Project/platform");
+    expect(screen.getByRole("button", { name: cc.removeDependency("Data platform") })).toBeInTheDocument();
+  });
+
+  // The picker is a table: a row that would close a loop stays in it,
+  // says why, and cannot be ticked; ticking a row adds the chip and asks
+  // what is needed from it.
+  it("adds a dependency from the table, and says why a row cannot be added", async () => {
     mount({});
-    fireEvent.click(within(await screen.findByRole("radiogroup", { name: cc.ask })).getByRole("radio", { name: gc.yes }));
+    fireEvent.click(await screen.findByRole("button", { name: cc.addDependency }));
     const loop = await screen.findByRole("checkbox", { name: cc.dependOn("Grading app") });
     expect(loop).toBeDisabled();
     expect(loop.closest("tr")).toHaveTextContent("would make a loop");
-    const usedBy = document.querySelector('[data-slot="used-by"]') as HTMLElement;
-    expect(usedBy).toHaveTextContent("Quality programme");
-    expect(usedBy).toHaveTextContent("Grading app");
-  });
-
-  it("adds a component by ticking its row, and asks what is needed from it", async () => {
-    mount({});
-    fireEvent.click(within(await screen.findByRole("radiogroup", { name: cc.ask })).getByRole("radio", { name: gc.yes }));
-    const platform = await screen.findByRole("checkbox", { name: cc.dependOn("Data platform") });
+    const platform = screen.getByRole("checkbox", { name: cc.dependOn("Data platform") });
     fireEvent.click(platform);
     expect(platform).toHaveAttribute("data-state", "checked");
     expect(screen.getByRole("textbox", { name: cc.why("Data platform") })).toHaveAttribute("data-cartograph-field", "/spec/components/0/why");
-    expect(screen.getByRole("radio", { name: cc.picked(1) })).toBeInTheDocument();
   });
 
   it("holds what it is about to the limit, and counts toward it", async () => {
