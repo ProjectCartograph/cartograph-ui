@@ -67,6 +67,7 @@ export function ProblemMap({
   onChange,
   project,
   problem,
+  showGraph = true,
 }: {
   line: ProblemLine;
   groupNames: Map<string, string>;
@@ -76,6 +77,9 @@ export function ProblemMap({
   project?: string;
   /** The problem's id, or "#n" for its position. */
   problem: string;
+  /** Whether to draw the map here; the project's map pane draws it
+   * once for the whole project, so a problem shows only what to fix. */
+  showGraph?: boolean;
 }) {
   const client = useClient();
   const queryClient = useQueryClient();
@@ -227,8 +231,8 @@ export function ProblemMap({
 
   return (
     <section aria-label={mc.label} className="flex flex-col gap-3 rounded-lg bg-muted/40 p-3" data-cartograph-region="problem-map">
-      <p className="text-xs text-muted-foreground">{drawing ? (drawing.at ? mc.dropHint : mc.clickHint) : project ? mc.drawHint : null}</p>
-      <div ref={box} className="relative" onPointerMove={move} onPointerUp={end}>
+      {showGraph ? <p className="text-xs text-muted-foreground">{drawing ? (drawing.at ? mc.dropHint : mc.clickHint) : project ? mc.drawHint : null}</p> : null}
+      <div ref={box} className={showGraph ? "relative" : "hidden"} onPointerMove={move} onPointerUp={end}>
         <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden="true">
           {edges.map((ed) => {
             const a = places[ed.from];

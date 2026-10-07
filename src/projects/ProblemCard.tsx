@@ -184,6 +184,7 @@ export function ProblemCard({
             onChange={onChange}
             project={project}
             problem={line.id ?? `#${index}`}
+            showGraph={!project}
           />
         </div>
       ) : null}

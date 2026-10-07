@@ -32,7 +32,11 @@ function useReview(set: string | undefined) {
       t = setTimeout(() => {
         void queryClient.invalidateQueries({ queryKey: ["changeSet", set] });
         // Every checks panel reads the drafts too, so it follows the edit.
-        void queryClient.invalidateQueries({ predicate: (q) => typeof q.queryKey[0] === "string" && q.queryKey[0].endsWith("-checks") });
+        // Every checks panel, the map and the charter read the drafts too,
+        // so they follow the edit.
+        void queryClient.invalidateQueries({
+          predicate: (q) => typeof q.queryKey[0] === "string" && (q.queryKey[0].endsWith("-checks") || q.queryKey[0] === "graph" || q.queryKey[0] === "charter"),
+        });
       }, 1500);
     });
     return () => {

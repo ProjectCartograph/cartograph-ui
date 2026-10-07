@@ -1,5 +1,5 @@
 import { RequiredMarks } from "@/components/RequiredMarks";
-import { createElement, useEffect } from "react";
+import { createElement, useEffect, useState } from "react";
 import { FromIdeaProvider } from "@/components/FromIdea";
 import { ShowInGraph } from "@/graph/ShowInGraph";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -18,6 +18,8 @@ import { useProjectChecks } from "./api";
 import { CheckPanel } from "./CheckPanel";
 import { ProjectSectionNotes } from "./SectionNotes";
 import { ProjectHeaderBar } from "./Chrome";
+import { ProjectMap } from "./canvas/ProjectMap";
+import { CharterView } from "@/charter/CharterView";
 import { useProjectStore } from "./store";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type Stage } from "./types";
@@ -159,7 +161,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
       </div>
       <ProjectScrubber id={id} section={section} />
       <RequiredMarks kind="Project" />
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_18rem]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
@@ -194,12 +196,64 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
           )}
           <InitiationBackNext id={id} stage={stage} />
         </div>
-        <div className="flex flex-col gap-4">
-          <CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(STAGE_ALSO_CHECKS[stage] ?? [])]} />
-        </div>
+        <SidePane id={id} checks={<CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(STAGE_ALSO_CHECKS[stage] ?? [])]} />} />
       </div>
     </div>
     </FromIdeaProvider>
     </WorkTextProvider>
+  );
+}
+
+/**
+ * Beside every step, whichever the person wants: the project's map, its
+ * charter as it reads now, or the checks on this stage. The map is the
+ * default: what the steps define appears there as it is defined.
+ */
+function SidePane({ id, checks }: { id: string; checks: React.ReactNode }) {
+  const store = useProjectStore();
+  const mc = copy.projectMap;
+  const [tab, setTab] = useState<"map" | "charter" | "checks">(() => {
+    try {
+      return (localStorage.getItem("cartograph.sidePane") as "map" | "charter" | "checks") || "map";
+    } catch {
+      return "map";
+    }
+  });
+  const pick = (t: typeof tab) => {
+    setTab(t);
+    try {
+      localStorage.setItem("cartograph.sidePane", t);
+    } catch {
+      // Private windows refuse storage; the pane just forgets.
+    }
+  };
+  return (
+    <div className="flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
+      <div role="tablist" aria-label={mc.tabsLabel} className="flex items-center gap-0.5 self-start rounded-md bg-muted p-0.5">
+        {(["map", "charter", "checks"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => pick(t)}
+            className={`rounded px-3 py-1 text-sm transition-colors duration-150 ${tab === t ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            {mc.tabs[t]}
+          </button>
+        ))}
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        {tab === "map" ? (
+          <ProjectMap id={id} spec={store.spec} updateSpec={store.updateSpec} />
+        ) : tab === "charter" ? (
+          <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10" data-cartograph-region="charter-pane">
+            <CharterView kind="Project" id={id} working fileName={id} empty={copy.charter.empty} />
+          </div>
+        ) : (
+          checks
+        )}
+      </div>
+    </div>
   );
 }
