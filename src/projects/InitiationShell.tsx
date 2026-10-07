@@ -8,7 +8,7 @@ import { sameView } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 import { Scrubber, type ScrubStage } from "@/components/Scrubber";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, PanelRightClose, PanelRightOpen } from "lucide-react";
 
 
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
@@ -136,6 +136,22 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
     .filter((x): x is string => typeof x === "string" && x.trim() !== "")
     .join(". ");
   const steps = stepsOfStage(stage);
+  // The side pane, open or closed, as the person last left it.
+  const [paneOpen, setPaneOpen] = useState(() => {
+    try {
+      return localStorage.getItem("cartograph.sidePaneOpen") !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const setPane = (open: boolean) => {
+    setPaneOpen(open);
+    try {
+      localStorage.setItem("cartograph.sidePaneOpen", open ? "1" : "0");
+    } catch {
+      // Private windows refuse storage; the pane just forgets.
+    }
+  };
   useEffect(() => {
     if (!store.loaded || steps[0]?.section === section) return;
     document.getElementById(`step-${section}`)?.scrollIntoView({ block: "start" });
@@ -158,11 +174,17 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
             </Link>
           </Button>
           <ShowInGraph kind="Project" id={id} />
+          {paneOpen ? null : (
+            <Button type="button" variant="ghost" size="sm" onClick={() => setPane(true)} aria-label={copy.projectMap.openPane} title={copy.projectMap.openPane} data-cartograph-region="pane-open">
+              <PanelRightOpen />
+              {copy.projectMap.tabs.map}
+            </Button>
+          )}
         </div>
       </div>
       <ProjectScrubber id={id} section={section} />
       <RequiredMarks kind="Project" />
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className={`grid grid-cols-1 gap-6 ${paneOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
         <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
@@ -197,7 +219,9 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
           )}
           <InitiationBackNext id={id} stage={stage} />
         </div>
-        <SidePane id={id} checks={<CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(STAGE_ALSO_CHECKS[stage] ?? [])]} />} />
+        {paneOpen ? (
+          <SidePane id={id} onClose={() => setPane(false)} checks={<CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(STAGE_ALSO_CHECKS[stage] ?? [])]} />} />
+        ) : null}
       </div>
     </div>
     </FromIdeaProvider>
@@ -210,7 +234,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
  * charter as it reads now, or the checks on this stage. The map is the
  * default: what the steps define appears there as it is defined.
  */
-function SidePane({ id, checks }: { id: string; checks: React.ReactNode }) {
+function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode; onClose: () => void }) {
   const store = useProjectStore();
   const drawer = useRecordDrawer();
   const mc = copy.projectMap;
@@ -230,7 +254,7 @@ function SidePane({ id, checks }: { id: string; checks: React.ReactNode }) {
     }
   };
   return (
-    <div className="flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
+    <div className="relative flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
       <div role="tablist" aria-label={mc.tabsLabel} className="flex items-center gap-0.5 self-start rounded-md bg-muted p-0.5">
         {(["map", "charter", "checks"] as const).map((t) => (
           <button
@@ -245,6 +269,9 @@ function SidePane({ id, checks }: { id: string; checks: React.ReactNode }) {
           </button>
         ))}
       </div>
+      <Button type="button" variant="ghost" size="icon" className="absolute top-0 right-0 size-8" onClick={onClose} aria-label={mc.closePane} title={mc.closePane} data-cartograph-region="pane-close">
+        <PanelRightClose />
+      </Button>
       <div className="min-h-0 flex-1 overflow-auto">
         {tab === "map" ? (
           <ProjectMap

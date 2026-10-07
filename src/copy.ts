@@ -489,6 +489,8 @@ export const copy = {
     kinds: { Problem: "Problem", Project: "Project" } as Record<string, string>,
     tabs: { map: "Map", charter: "Charter", checks: "Checks" },
     tabsLabel: "Side panel",
+    closePane: "Close the side panel",
+    openPane: "Open the side panel",
   },
   // An address that is not a page (routes/__root).
   notFound: {

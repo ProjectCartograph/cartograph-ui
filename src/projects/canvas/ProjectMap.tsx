@@ -144,13 +144,15 @@ export function ProjectMap({
     // Readable first: never smaller than the text can be read at; a map
     // larger than the pane is moved, not shrunk to nothing.
     const k = Math.min(1.1, Math.max(0.7, Math.min(el.clientWidth / w, el.clientHeight / h)));
-    setView({ k, x: (el.clientWidth - w * k) / 2 + 12 * k, y: (el.clientHeight - h * k) / 2 + 12 * k });
+    // Centred when it fits; from the top (the strategy) when it is taller
+    // than the pane, and centred on its middle when wider.
+    setView({ k, x: (el.clientWidth - w * k) / 2 + 12 * k, y: h * k > el.clientHeight ? 12 : (el.clientHeight - h * k) / 2 + 12 * k });
   }, [nodes]);
   useEffect(() => {
-    if (!fitted.current && nodes.length > 0) {
-      fitted.current = true;
-      fit();
-    }
+    const el = box.current;
+    if (fitted.current || nodes.length === 0 || !el || el.clientWidth === 0) return;
+    fitted.current = true;
+    fit();
   }, [nodes, fit]);
 
   // Drawing a link: what it starts from, where the pointer is, and what

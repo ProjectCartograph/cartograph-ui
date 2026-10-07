@@ -443,6 +443,9 @@ function RootLayout() {
       <TourProvider>
         <Sidebar variant="inset" collapsible="icon" data-cartograph-region="rail">
           <SidebarHeader>
+            {/* Opening and closing the rail belongs to the rail: its first
+                thing, at the top left, open or folded to its icons. */}
+            <SidebarTrigger className="size-8" data-cartograph-region="rail-toggle" />
             <div className="flex items-center gap-2 px-2 py-1.5">
               {/* The organisation the workspace is about, once named
                   (engine TAXONOMY.md D37); the product's name until then. */}
@@ -579,8 +582,10 @@ function RootLayout() {
         </Sidebar>
         <SidebarInset className="min-w-0">
           <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4" data-cartograph-region="header">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
+            {/* On a phone the rail slides in over the page, so its
+                toggle is here too. */}
+            <SidebarTrigger className="-ml-1 md:hidden" />
+            <Separator orientation="vertical" className="mr-2 h-4 md:hidden" />
             <Breadcrumb className="min-w-0 flex-1">
               <BreadcrumbList className="flex-nowrap">
                 {crumbs.map((crumb, i) => {
