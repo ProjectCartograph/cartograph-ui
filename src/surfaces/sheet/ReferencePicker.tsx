@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { copy } from "@/copy";
+import { useRecordDrawer } from "@/records/RecordDrawer";
 import { ReferenceField } from "./ReferenceField";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
 import { SheetAddDialog } from "./InlineSheetAdd";
@@ -37,6 +38,7 @@ export function ReferencePicker({
   /** The manifest field this edits, by JSON pointer. */
   "data-cartograph-field"?: string;
 }) {
+  const drawer = useRecordDrawer();
   const [addOpen, setAddOpen] = useState(false);
   // A measure is not a sheet kind — its baseline and target are objects
   // where a sheet's cells hold values — so it brings its own dialog
@@ -79,7 +81,16 @@ export function ReferencePicker({
           </Button>
           )}
           {isKPI ? (
-            <KPIAddDialog open={addOpen} onOpenChange={setAddOpen} onAdded={(id) => onChange(id)} />
+            <KPIAddDialog
+              open={addOpen}
+              onOpenChange={setAddOpen}
+              onAdded={(id) => {
+                onChange(id);
+                // Inside a walk, its baseline, target and aims are asked
+                // next, in the drawer, rather than on its own page.
+                drawer?.open("KPI", id);
+              }}
+            />
           ) : (
             <SheetAddDialog
               kind={refKind as SheetKind}

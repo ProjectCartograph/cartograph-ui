@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { stringify as stringifyYAML } from "yaml";
+import { slugify } from "@/definition/NewDefinition";
 import { AlertTriangle, CalendarRange, CheckCircle2, ClipboardCheck, CornerDownRight, Gauge, FileCode2, MessageSquare, Plus, Save, Target, UserRound, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +38,7 @@ import { fieldGuide, useGuide } from "@/components/guide";
 
 import { AimEditor } from "./AimEditor";
 import { ClosesGaps } from "./ClosesGaps";
+import { RecordBlocks } from "@/changesets/RecordBlocks";
 import { useRecordDrawer } from "@/records/RecordDrawer";
 import { GoalTreePicker } from "./GoalTreePicker";
 import { HorizonPicker } from "./HorizonPicker";
@@ -386,6 +389,17 @@ export function GoalEditor({ id, fix, embedded = false }: { id: string; fix?: st
                     exclude={id}
                     labelledBy="goal-move-to"
                   />
+                  {/* The aim above it may not exist yet: it is named here
+                      and defined next, rather than on the strategy page. */}
+                  <NewParent
+                    level={level}
+                    levels={levels}
+                    onCreated={(newId) => {
+                      void handleMoveTo(newId);
+                      if (drawer) drawer.open("Goal", newId);
+                      else void navigate({ to: "/goals/$id", params: { id: newId } });
+                    }}
+                  />
                   <FieldError message={fieldErrors.parent} />
                 </div>
               ) : (
@@ -596,6 +610,7 @@ export function GoalEditor({ id, fix, embedded = false }: { id: string; fix?: st
         </div>
 
         <div className="flex flex-col gap-6">
+          <RecordBlocks kind="Goal" id={id} />
           <div className="flex flex-col gap-3 rounded-lg border p-4" data-cartograph-region="checks">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold">{ec.checks.title}</h2>
@@ -774,5 +789,49 @@ export function AimContext({ horizon, owner }: { horizon?: { start: string; end:
         </span>
       ) : null}
     </div>
+  );
+}
+
+/** Names the aim one level above, creates it, and hands back its id. */
+function NewParent({ level, levels, onCreated }: { level: string; levels: string[]; onCreated: (id: string) => void }) {
+  const client = useClient();
+  const queryClient = useQueryClient();
+  const above = level === "outcome" ? "objective" : "goal";
+  const aboveName = above === "objective" ? (levels[1] ?? above) : (levels[0] ?? above);
+  const [name, setName] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function create() {
+    const n = (name ?? "").trim();
+    if (!n) return;
+    setBusy(true);
+    const base = slugify(n) || above;
+    const taken = new Set(((await client.list("Goal")) as { id: string }[]).map((g) => g.id));
+    let newId = base;
+    for (let i = 2; taken.has(newId); i++) newId = `${base}-${i}`;
+    await client.saveWorking("Goal", newId, stringifyYAML({ apiVersion: "cartograph/v1", kind: "Goal", metadata: { id: newId, name: n }, spec: { level: above, objective: n } }));
+    await queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
+    setBusy(false);
+    setName(null);
+    onCreated(newId);
+  }
+  if (name === null) {
+    return (
+      <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setName("")}>
+        <Plus />
+        {ec.moveTo.newAbove(aboveName)}
+      </Button>
+    );
+  }
+  return (
+    <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => (e.preventDefault(), void create())}>
+      <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={ec.moveTo.newAboveName(aboveName)} className="w-72 max-w-full" />
+      <Button type="submit" size="sm" disabled={busy || !name.trim()}>
+        <Plus />
+        {ec.moveTo.create}
+      </Button>
+      <Button type="button" size="sm" variant="ghost" onClick={() => setName(null)}>
+        {ec.moveTo.cancel}
+      </Button>
+    </form>
   );
 }

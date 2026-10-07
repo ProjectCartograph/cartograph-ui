@@ -685,6 +685,7 @@ export const copy = {
     purposeDialog: {
       title: "Purpose",
       hint: "The future your organisation works towards, and what it does to get there. Quote your published plan if you have one.",
+      organisation: "Organisation name",
       vision: "Vision",
       visionHint: "The future you want for the people you serve, not for your organisation.",
       mission: "Mission",
@@ -1176,6 +1177,10 @@ export const copy = {
         label: "Move to",
         placeholder: "Choose a goal",
         pillarHint: "A goal sits directly under the purpose and cannot move.",
+        newAbove: (level: string) => `New ${level.toLowerCase()}`,
+        newAboveName: (level: string) => `Name the new ${level.toLowerCase()}`,
+        create: "Create",
+        cancel: "Cancel",
       },
       objective: {
         label: "Objective",
@@ -1518,6 +1523,8 @@ export const copy = {
     affectsLabel: "Affected groups",
     affectsHint: "The groups of people this shortfall falls on.",
     affectsPlaceholder: "Choose the groups",
+    affectsAdd: "New group",
+    affectsAddReason: "Named for a gap",
     outcomesLabel: "Outcomes",
     outcomesHint: "The outcome that will be true once this gap is closed.",
     outcomesPlaceholder: "Choose outcomes",

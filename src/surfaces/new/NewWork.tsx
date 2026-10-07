@@ -172,10 +172,10 @@ function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStag
   const [partOf, setPartOf] = useState<PartOf | null>(null);
   const [together, setTogether] = useState<YesNo | null>(null);
   const [funds, setFunds] = useState<YesNo | null>(null);
-  // Work that finishes serves an outcome, so it waits until the strategy
-  // has one. A service waits on nothing: one that runs today is recorded
-  // as it is (TAXONOMY.md D30).
-  const finishWaits = !loaded || stages.get("project")?.state === "waiting";
+  // Work that finishes serves an outcome, and where the strategy has none
+  // yet, the project's own start walk names one, with the aims above it,
+  // in place: nothing waits on the strategy page first.
+  const finishWaits = !loaded;
   const kind =
     ends === "finishes" && finishWaits
       ? null

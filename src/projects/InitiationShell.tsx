@@ -136,6 +136,26 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
     .filter((x): x is string => typeof x === "string" && x.trim() !== "")
     .join(". ");
   const steps = stepsOfStage(stage);
+  // Every role the project names can be picked where a role is asked for
+  // (who verifies, who owns a risk): a role is picked by its id, so one
+  // named without an id is given one, once.
+  const resources = store.spec.resources ?? [];
+  const missingIds = store.loaded && resources.some((r) => !r.id);
+  useEffect(() => {
+    if (!missingIds) return;
+    store.updateSpec((s) => {
+      const taken = new Set((s.resources ?? []).map((r) => r.id).filter(Boolean) as string[]);
+      const next = (s.resources ?? []).map((r) => {
+        if (r.id) return r;
+        const base = `role-${r.role || "member"}`;
+        let roleId = base;
+        for (let n = 2; taken.has(roleId); n++) roleId = `${base}-${n}`;
+        taken.add(roleId);
+        return { ...r, id: roleId };
+      });
+      return { ...s, resources: next };
+    });
+  }, [missingIds, store]);
   // The side pane, open or closed, as the person last left it.
   const [paneOpen, setPaneOpen] = useState(() => {
     try {

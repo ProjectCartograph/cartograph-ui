@@ -198,10 +198,11 @@ function Purpose() {
   );
 }
 
-function PurposeDialog({ initial, onClose }: { initial: { vision?: string; mission?: string; source?: string }; onClose: () => void }) {
+function PurposeDialog({ initial, onClose }: { initial: { organisation?: string; vision?: string; mission?: string; source?: string }; onClose: () => void }) {
   const client = useClient();
   const queries = useQueryClient();
   const d = sc.purposeDialog;
+  const [organisation, setOrganisation] = useState(initial.organisation ?? "");
   const [vision, setVision] = useState(initial.vision ?? "");
   const [mission, setMission] = useState(initial.mission ?? "");
   const [source, setSource] = useState(initial.source ?? "");
@@ -215,6 +216,9 @@ function PurposeDialog({ initial, onClose }: { initial: { vision?: string; missi
           kind: "Purpose",
           metadata: { id: "default", name: d.title },
           spec: {
+            // Kept with the rest: the dialog writes the whole purpose, and
+            // an organisation left out was an organisation lost.
+            ...(organisation.trim() ? { organisation: organisation.trim() } : {}),
             ...(vision.trim() ? { vision: vision.trim() } : {}),
             ...(mission.trim() ? { mission: mission.trim() } : {}),
             ...(source.trim() ? { source: source.trim() } : {}),
@@ -236,6 +240,10 @@ function PurposeDialog({ initial, onClose }: { initial: { vision?: string; missi
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="purpose-organisation">{d.organisation}</Label>
+            <Input id="purpose-organisation" data-cartograph-field="/spec/organisation" value={organisation} maxLength={120} onChange={(e) => setOrganisation(e.target.value)} />
+          </div>
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="purpose-vision">{d.vision}</Label>
             <p className="text-xs text-muted-foreground">{d.visionHint}</p>
             <Textarea id="purpose-vision" data-cartograph-field="/spec/vision" value={vision} maxLength={600} onChange={(e) => setVision(e.target.value)} />
@@ -256,7 +264,7 @@ function PurposeDialog({ initial, onClose }: { initial: { vision?: string; missi
           <Button variant="outline" onClick={onClose}>
             {d.cancel}
           </Button>
-          <Button onClick={() => save.mutate()} disabled={save.isPending || (!vision.trim() && !mission.trim())}>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || (!organisation.trim() && !vision.trim() && !mission.trim())}>
             {d.save}
           </Button>
         </DialogFooter>

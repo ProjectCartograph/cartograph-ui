@@ -20,6 +20,7 @@ import { OfflineNote } from "@/collab/OfflineNote";
 import { sectionRing } from "@/collab/SectionPeers";
 import { ShowInGraph } from "@/graph/ShowInGraph";
 import { useDefinitionStore } from "./store";
+import { RecordBlocks } from "@/changesets/RecordBlocks";
 
 export interface DefinitionStep {
   /** The section's own id, matched against the route's `current`. */
@@ -187,6 +188,7 @@ export function DefinitionShell({
                 {children}
               </div>
               <ConflictNotes conflicts={store.conflicts} onResolve={store.resolveConflict} />
+              <RecordBlocks kind={store.kind} id={store.id} />
               {aside}
               {/* The save sits under the step, once, so every kind this
                   shell drives gets the same moment of deciding without

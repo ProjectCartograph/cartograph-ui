@@ -220,7 +220,8 @@ export function KeyResultDialog({
       return;
     }
     const kr: KeyResult = {
-      id: existing?.id ?? `kr-${slugify(metric) || "item"}-${randomSuffix()}`,
+      // Within the 64 characters an id may have, prefix and suffix included.
+      id: existing?.id ?? `kr-${slugify(metric).slice(0, 40).replace(/-+$/, "") || "item"}-${randomSuffix()}`,
       metric: metric.trim(),
       direction: form.direction,
       kind: form.kind,

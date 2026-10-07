@@ -53,7 +53,7 @@ function renderNew(order: Order) {
 }
 
 describe("New, in the order of work", () => {
-  it("starts an empty workspace at its purpose, and holds the work back", async () => {
+  it("starts an empty workspace at its purpose, and lets a project start anyway", async () => {
     const container = renderNew(orderWith(0));
     const purpose = await screen.findByText("Purpose");
     const row = purpose.closest("li")!;
@@ -67,13 +67,13 @@ describe("New, in the order of work", () => {
     const goals = container.querySelector('[data-cartograph-stage="goal"]')!;
     expect(goals.getAttribute("data-state")).toBe("waiting");
     expect(within(goals as HTMLElement).queryByRole("link")).toBeNull();
-    // Work that finishes waits for the strategy: its questions cannot be
-    // answered yet.
+    // Work that finishes does not wait for the strategy: a project's own
+    // start walk names the outcome it serves, and the aims above it, in
+    // place.
     const work = container.querySelector('[data-cartograph-region="new-work"]') as HTMLElement;
     fireEvent.click(within(work).getAllByRole("radio")[0]);
-    expect(within(work).getByRole("status").textContent).toContain("Purpose");
     for (const radio of within(work).getAllByRole("radio").slice(2)) {
-      expect((radio as HTMLButtonElement).disabled).toBe(true);
+      expect((radio as HTMLButtonElement).disabled).toBe(false);
     }
     // A service waits on nothing: one running today can be recorded first,
     // and a new one is recorded as planned (TAXONOMY.md D30).

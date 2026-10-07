@@ -21,6 +21,8 @@ export function manifestLink(p: Pick<Proposal, "kind" | "manifestId" | "manifest
       const spec = (p.manifest?.spec ?? {}) as { kpi?: string };
       return { to: "/kpis/$id/readings", params: { id: spec.kpi ?? id.replace(/-readings$/, "") } };
     }
+    case "Purpose":
+      return { to: "/strategy", params: {} };
     default:
       return { to: "/sheets/$kind", params: { kind: p.kind } };
   }

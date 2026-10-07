@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { FieldHeading } from "@/components/guidance";
@@ -12,6 +13,7 @@ import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { PartText } from "@/projects/StatementEditor";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
+import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
 import type { GapSpec } from "../types";
 
 const gc = copy.gaps;
@@ -32,6 +34,7 @@ export function ShortfallSection() {
   const kpi = useKPIStates(spec.measure);
   const outcomeOptions = useOutcomeOptions();
   const { data: groupRefs } = useReferenceOptions("BeneficiaryGroup");
+  const [addingGroup, setAddingGroup] = useState(false);
 
   return (
     <div data-cartograph-region="gap-shortfall" className="flex max-w-3xl flex-col gap-6">
@@ -94,6 +97,16 @@ export function ShortfallSection() {
           emptyText={copy.sheets.dialog.noMatches}
           removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
           aria-label={gc.affectsLabel}
+          // A group not named yet is named here, not on another page.
+          onAdd={() => setAddingGroup(true)}
+          addLabel={gc.affectsAdd}
+        />
+        <SheetAddDialog
+          kind="BeneficiaryGroup"
+          open={addingGroup}
+          onOpenChange={setAddingGroup}
+          minimal={{ reason: gc.affectsAddReason }}
+          onAdded={(id) => store.updateSpec((s) => ({ ...s, affects: [...new Set([...(s.affects ?? []), id])] }))}
         />
       </div>
 

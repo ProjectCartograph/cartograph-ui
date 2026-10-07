@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { copy } from "@/copy";
+import { RecordBlocks } from "@/changesets/RecordBlocks";
 import { useProjectChecks } from "./api";
 import { ALL_SECTIONS } from "./types";
 
@@ -103,6 +104,7 @@ export function CheckPanel({
 
   return (
     <div className="flex flex-col gap-3 rounded-xl p-4 bg-card ring-1 ring-foreground/10" data-cartograph-region="checks">
+      <RecordBlocks kind="Project" id={id} />
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold">{cc.title}</h2>
         {/* The state of the section as three marks and three numbers,

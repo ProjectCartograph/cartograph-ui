@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { stringify } from "yaml";
 import { ArrowRight, Hourglass } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
@@ -8,6 +10,9 @@ import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { copy } from "@/copy";
+import { useClient } from "@/client/context";
+import { slugify } from "@/definition/NewDefinition";
+import { useRecordDrawer } from "@/records/RecordDrawer";
 import { useProjectStore } from "@/projects/store";
 import { NEW_OPERATION_ID } from "@/projects/types";
 import { type RefOption, useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
@@ -41,6 +46,26 @@ export function LandsInField({ resolve }: { resolve?: string }) {
     if (next && waiting) store.setPending(others);
   };
   const resolvedName = resolve ? data?.names.get(resolve) : undefined;
+  // Inside a walk, the service is defined in the drawer: made here as
+  // planned, run by the project's team, and named as where it lands.
+  const drawer = useRecordDrawer();
+  const client = useClient();
+  const queryClient = useQueryClient();
+  const define = useMutation({
+    mutationFn: async (name: string) => {
+      const taken = new Set((data?.options ?? []).map((o) => o.value));
+      const base = slugify(name) || "service";
+      let id = base;
+      for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
+      await client.saveWorking(
+        "Operation",
+        id,
+        stringify({ apiVersion: "cartograph/v1", kind: "Operation", metadata: { id, name }, spec: { status: "planned", ...(store.spec.team ? { team: store.spec.team } : {}) } }),
+      );
+      await queryClient.invalidateQueries({ queryKey: ["manifests", "Operation"] });
+      return id;
+    },
+  });
   return (
     <div className="flex flex-col gap-3">
       {waiting ? (
@@ -48,6 +73,18 @@ export function LandsInField({ resolve }: { resolve?: string }) {
           name={waiting.name}
           projectId={store.id}
           onRemove={() => store.setPending(others)}
+          onDefine={
+            drawer
+              ? () =>
+                  define.mutate(waiting.name, {
+                    onSuccess: (id) => {
+                      set(id);
+                      store.setPending(others);
+                      drawer.open("Operation", id);
+                    },
+                  })
+              : undefined
+          }
           ready={resolve && resolvedName ? { name: resolvedName, onName: () => set(resolve) } : undefined}
         />
       ) : null}
@@ -77,11 +114,14 @@ function WaitingOn({
   name,
   projectId,
   onRemove,
+  onDefine,
   ready,
 }: {
   name: string;
   projectId: string;
   onRemove: () => void;
+  /** Defines the service in place; left out, its own walk does. */
+  onDefine?: () => void;
   ready?: { name: string; onName: () => void };
 }) {
   return (
@@ -98,12 +138,19 @@ function WaitingOn({
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
-          <Button asChild size="sm" variant="outline">
-            <Link to="/operations/new" search={{ status: "planned", name, for: projectId }}>
+          {onDefine ? (
+            <Button type="button" size="sm" variant="outline" onClick={onDefine}>
               {lc.defineIt}
               <ArrowRight />
-            </Link>
-          </Button>
+            </Button>
+          ) : (
+            <Button asChild size="sm" variant="outline">
+              <Link to="/operations/new" search={{ status: "planned", name, for: projectId }}>
+                {lc.defineIt}
+                <ArrowRight />
+              </Link>
+            </Button>
+          )}
           <Button type="button" size="sm" variant="ghost" onClick={onRemove}>
             {lc.removePlaceholder}
           </Button>

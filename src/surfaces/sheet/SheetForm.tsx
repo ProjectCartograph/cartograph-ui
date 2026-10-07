@@ -90,6 +90,14 @@ function fieldForPath(path: string, fields: FieldDef[]): string | null {
  * no actor picker anywhere); a 422 maps every problems[].path onto its
  * field, a 409 shows at the top.
  */
+/** A field's value as the schema has it: a choice among numbers comes back
+ * from its select as text, and the schema wants the number (a reporting
+ * cycle's months). */
+export function specValue(f: { kind: string; enumValues?: unknown[] }, raw: unknown): unknown {
+  const numeric = f.kind === "integer" || f.kind === "number" || (f.kind === "enum" && (f.enumValues ?? []).length > 0 && (f.enumValues ?? []).every((v) => typeof v === "number"));
+  return numeric ? Number(raw) : raw;
+}
+
 export function SheetForm({
   kind,
   kindLabel,
@@ -179,7 +187,7 @@ export function SheetForm({
       if (empty) {
         continue;
       }
-      spec[f.name] = f.kind === "integer" || f.kind === "number" ? Number(raw) : raw;
+      spec[f.name] = specValue(f, raw);
     }
 
     const manifest = {

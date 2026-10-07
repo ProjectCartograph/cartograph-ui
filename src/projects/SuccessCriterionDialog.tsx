@@ -228,7 +228,7 @@ export function SuccessCriterionDialog({
       return;
     }
     const criterion: SuccessCriterion = {
-      id: existing?.id ?? `sc-${slugify(form.statement) || "line"}-${randomSuffix()}`,
+      id: existing?.id ?? `sc-${slugify(form.statement).slice(0, 40).replace(/-+$/, "") || "line"}-${randomSuffix()}`,
       statement: form.statement.trim(),
       metric: form.metric as SuccessMetric,
       confirmedBy: form.confirmedBy as Ref,
