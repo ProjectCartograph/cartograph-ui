@@ -78,4 +78,20 @@ describe("a change set's review", () => {
     expect(screen.queryByRole("button", { name: copy.mergeBar.mergeLabel })).toBeNull();
     expect(screen.queryByRole("checkbox")).toBeNull();
   });
+
+  it("hands an open change set of mine to an agent, by its id", async () => {
+    const writeText = vi.fn(async () => undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    mount({ changeSet: async () => ({ ...review, changeSet: { ...review.changeSet, status: "open", agent: undefined } }) });
+    fireEvent.click(await screen.findByRole("button", { name: copy.askAgent.label }));
+    fireEvent.click(await screen.findByRole("button", { name: copy.askAgent.copyLabel }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(copy.askAgent.request("Define the bruising gap", "cs1")));
+    expect(await screen.findByText(copy.askAgent.copied)).toBeInTheDocument();
+  });
+
+  it("offers no agent on a change set already proposed", async () => {
+    mount();
+    await screen.findByRole("heading", { name: "Define the bruising gap" });
+    expect(screen.queryByRole("button", { name: copy.askAgent.label })).not.toBeInTheDocument();
+  });
 });

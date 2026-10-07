@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { manifestLink } from "@/proposals/links";
+import { AskAgent } from "./AskAgent";
 import { mergeChangeSet } from "./merge";
 import { useActiveChangeSet } from "./useActive";
 
@@ -104,6 +105,7 @@ export function MergeBar() {
             {open > 0 ? <span className="text-warning"> · {c.open(open)}</span> : null}
           </p>
         </div>
+        <AskAgent set={active} title={review.data?.changeSet.title ?? ""} />
         <Button asChild variant="outline" size="sm">
           <Link to="/changesets/$id" params={{ id: active }} aria-label={c.reviewLabel} title={c.reviewLabel}>
             <Eye />

@@ -336,7 +336,7 @@ export const copy = {
   changeSets: {
     title: "Change sets",
     rail: "Change sets",
-    intro: "A change set keeps your edits apart until you review and merge them. Each agent works in its own change set.",
+    intro: "A change set keeps your edits apart until you review and merge them. Each agent works in its own change set, or in yours when you ask it to help.",
     waiting: "Waiting for you",
     working: "In progress",
     done: "Done",
@@ -518,6 +518,21 @@ export const copy = {
   },
   // The bar every screen shows while a change set holds edits
   // (changesets/MergeBar).
+  // Handing a change set to an agent (changesets/AskAgent).
+  askAgent: {
+    button: "Agent",
+    label: "Ask an agent to help with this change set",
+    title: "Ask an agent to help",
+    how: "Paste this into your agent. It works in this change set beside you, finishes what it can, asks you what only you can answer, and leaves merging to you.",
+    request: (title: string, id: string) =>
+      `In Cartograph, help me finish my change set "${title}" (${id}). Meet every open check, ask me what only I can answer, and leave merging to me.`,
+    requestLabel: "Request to paste into your agent",
+    copy: "Copy",
+    copyLabel: "Copy the request",
+    copied: "Copied",
+    connect: "Connect",
+    connectLabel: "Connect an agent to Cartograph",
+  },
   mergeBar: {
     saved: (name: string) => `Saved to ${name}`,
     changes: (n: number) => (n === 1 ? "1 record changed" : `${n} records changed`),

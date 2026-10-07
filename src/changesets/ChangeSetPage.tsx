@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed
 
 import { useSession } from "@/access/access";
 import { useClient } from "@/client/context";
+import { AskAgent } from "./AskAgent";
 import { MergeDialog, checkText } from "./MergeBar";
 import { ClientError, type ChangeSetItem, type ChangeSetReview } from "@/client/port";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +70,11 @@ function Review({ review }: { review: ChangeSetReview }) {
           <Badge variant={cs.status === "proposed" ? "default" : "outline"} className="font-normal">
             {cc.status[cs.status] ?? cs.status}
           </Badge>
+          {mine && cs.status === "open" ? (
+            <span className="ml-auto">
+              <AskAgent set={cs.id} title={cs.title} />
+            </span>
+          ) : null}
         </div>
         <p className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
           {cs.agent ? (
