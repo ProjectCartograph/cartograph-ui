@@ -602,3 +602,15 @@
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-changed) 55%, transparent);
     background-color: color-mix(in oklab, var(--color-changed) 7%, transparent);
 }
+
+/* The place a check's Fix brought into view, marked for a moment. */
+[data-flash] {
+    animation: cartograph-flash 1.6s var(--ease-standard, ease) 1;
+}
+@keyframes cartograph-flash {
+    0%, 60% { box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-warning) 60%, transparent); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+    [data-flash] { animation: none; box-shadow: 0 0 0 2px var(--color-warning); }
+}

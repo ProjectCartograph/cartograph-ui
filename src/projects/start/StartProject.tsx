@@ -301,7 +301,7 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
                   autoFocus
                 />
               </div>
-              <Summary chosen={chosen} newIds={newIds} />
+              <Summary chosen={chosen} newIds={newIds} team={team} />
               {failed ? <p className="text-sm text-destructive" role="alert">{sc.failed}</p> : null}
             </WalkerQuestion>
           )}
@@ -500,7 +500,8 @@ function PickOutcomes({
       <Suggested kind="Goal" level="outcome" selected={selected} onPick={toggle} />
       <div className="flex flex-col gap-2">
         <p className="text-xs text-muted-foreground">{sc.all}</p>
-        <ChipPicker items={chips} selected={selected} onToggle={toggle} placeholder={sc.searchPlaceholder} empty={sc.none(sc.words.goals)} slot="start-goals" />
+        {/* Everything else: what the gaps named is listed above, once. */}
+        <ChipPicker items={chips.filter((c) => !named.has(c.id))} selected={selected} onToggle={toggle} placeholder={sc.searchPlaceholder} empty={sc.none(sc.words.goals)} slot="start-goals" />
       </div>
     </Choose>
     </>
@@ -606,7 +607,8 @@ function NameNew({ label, onAdd, kind, level, onUse }: { label: string; onAdd: (
 }
 
 /** What has been chosen, by name, before the project is started. */
-function Summary({ chosen, newIds }: { chosen: { gaps: readonly string[]; goals: readonly string[]; groups: readonly string[] }; newIds: Set<string> }) {
+function Summary({ chosen, newIds, team }: { chosen: { gaps: readonly string[]; goals: readonly string[]; groups: readonly string[] }; newIds: Set<string>; team?: string }) {
+  const teams = useReferenceOptions("Team");
   const gaps = useReferenceOptions("Gap");
   const groups = useReferenceOptions("BeneficiaryGroup");
   const goals = useReferenceOptions("Goal");
@@ -628,6 +630,12 @@ function Summary({ chosen, newIds }: { chosen: { gaps: readonly string[]; goals:
           </dd>
         </div>
       ))}
+      {team ? (
+        <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+          <dt className="w-24 shrink-0 text-muted-foreground">{sc.chosenTeam}</dt>
+          <dd>{teams.data?.names.get(team) ?? team}</dd>
+        </div>
+      ) : null}
     </dl>
   );
 }

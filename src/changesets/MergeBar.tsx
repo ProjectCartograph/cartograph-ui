@@ -62,7 +62,8 @@ export function MergeBar() {
   // started with, so the list of change sets can be told apart.
   const client = useClient();
   const queryClient = useQueryClient();
-  const firstName = review.data?.items[0]?.name || review.data?.items[0]?.id;
+  const first = review.data?.items[0];
+  const firstName = first ? first.name || copy.workingIn.aRecord(copy.sheets.kindsSingular[first.kind] ?? first.kind) : undefined;
   const title = review.data?.changeSet.title;
   useEffect(() => {
     if (!active || !firstName || title !== copy.workingIn.startTitle) return;
@@ -127,6 +128,9 @@ type Item = Review["items"][number];
 type ItemCheck = Item["checks"][number];
 
 const isRequired = (k: ItemCheck) => k.id.startsWith("required:");
+// What the engine says of a field the schema requires and the record
+// lacks; anything else it says is shown as it says it.
+const MISSING = "Needed before this can be merged.";
 
 // The steps each kind's editor has a route for, by the section names its
 // checks use.
@@ -203,7 +207,7 @@ function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
                     className="min-w-0 flex-1 text-muted-foreground hover:text-foreground hover:underline"
                     onClick={onGo}
                   >
-                    {required && check.path ? c.required(fieldName(check.path)) : check.message}
+                    {required && check.path && check.message === MISSING ? c.required(fieldName(check.path)) : check.message}
                     {required && check.path && titleOf(check.path) ? <span className="ml-1.5 text-xs text-muted-foreground/80">{titleOf(check.path)}</span> : null}
                   </Link>
                 </li>
@@ -219,7 +223,7 @@ function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
 /** A field's own name, from the last part of its pointer. */
 function fieldName(path: string): string {
   const key = path.split("/").filter((p) => p && !/^\d+$/.test(p)).pop() ?? "";
-  return c.fields[key] ?? key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+  return c.fields[key] ?? `the ${key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase()}`;
 }
 
 /**
@@ -253,7 +257,7 @@ export function MergeDialog({ set, open: shown, onOpenChange, onMerged }: { set:
       onOpenChange(false);
       setWhy("");
       setFailed(undefined);
-      if (activeChangeSet.get() === set) activeChangeSet.set(undefined);
+      if (activeChangeSet.get() === set) activeChangeSet.merged();
       onMerged?.();
       void queryClient.invalidateQueries();
     },
@@ -282,7 +286,8 @@ export function MergeDialog({ set, open: shown, onOpenChange, onMerged }: { set:
         {asks ? (
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="merge-why">{c.whyLabel}</Label>
-            <Textarea id="merge-why" value={why} onChange={(e) => setWhy(e.target.value)} rows={2} />
+            <Textarea id="merge-why" value={why} onChange={(e) => setWhy(e.target.value)} rows={2} aria-describedby="merge-why-hint" />
+            <p id="merge-why-hint" className="text-xs text-muted-foreground">{c.whyHint}</p>
           </div>
         ) : null}
         {failed ? <p className="text-sm text-destructive">{failed}</p> : null}

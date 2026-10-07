@@ -161,7 +161,9 @@ export function ResourcesSection() {
   function addFunding() {
     store.updateSpec((s) => ({
       ...s,
-      funding: [...(s.funding ?? []), { amount: 0, currency: "", source: "", status: "requested" }],
+      // Nothing written for them: an amount of 0 was typed after ("012000"),
+      // and an empty source named a source that does not exist.
+      funding: [...(s.funding ?? []), { currency: "", status: "requested" } as FundingLine],
     }));
   }
   function removeFunding(idx: number) {
@@ -254,8 +256,8 @@ export function ResourcesSection() {
                 <Input
                   data-cartograph-field={`/spec/funding/${idx}/amount`}
                   type="number"
-                  value={f.amount}
-                  onChange={(e) => updateFunding(idx, { amount: Number(e.target.value) })}
+                  value={f.amount ?? ""}
+                  onChange={(e) => updateFunding(idx, { amount: e.target.value === "" ? undefined : Number(e.target.value) } as Partial<FundingLine>)}
                   placeholder="0"
                   aria-label={pc.amountLabel}
                   className="w-32 shrink-0"

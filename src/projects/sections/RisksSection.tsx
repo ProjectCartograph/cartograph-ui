@@ -1,12 +1,5 @@
 import { useState } from "react";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { copy } from "@/copy";
 import { ContextRecap } from "../ContextRecap";
 import { RiskList } from "../RiskList";
@@ -25,6 +18,9 @@ export function RisksSection() {
   const roles = roleOptions(store.spec.resources ?? [], resourceName);
   const risks = store.spec.risks ?? [];
   const [gridPick, setGridPick] = useState<number | null>(null);
+  // The risk in hand: the one picked, else the first not yet placed.
+  const firstUnplaced = risks.findIndex((r) => !(r.impact && r.likelihood));
+  const pick = gridPick ?? (firstUnplaced >= 0 ? firstUnplaced : null);
 
   function updateRisks(next: Risk[]) {
     store.updateSpec((s) => ({ ...s, risks: next }));
@@ -46,26 +42,18 @@ export function RisksSection() {
       <div className="flex flex-col items-start gap-3" data-cartograph-region="risk-placing">
         <RiskMatrix
           risks={risks}
-          selected={gridPick}
+          selected={pick}
           onPlace={(impact, likelihood) => {
-            if (gridPick === null) return;
-            place(gridPick, { impact, likelihood });
+            if (pick === null) return;
+            place(pick, { impact, likelihood });
+            // On to the next risk not yet placed, if there is one.
+            const next = risks.findIndex((r, i) => i !== pick && !(r.impact && r.likelihood));
+            setGridPick(next >= 0 ? next : null);
           }}
         />
-        {risks.length > 0 ? (
-          <Select value={gridPick === null ? "" : String(gridPick)} onValueChange={(v) => setGridPick(Number(v))}>
-            <SelectTrigger className="w-72" aria-label={rc.placePrompt}>
-              <SelectValue placeholder={rc.placePrompt} />
-            </SelectTrigger>
-            <SelectContent>
-              {risks.map((r, idx) => (
-                <SelectItem key={r.id} value={String(idx)}>
-                  {r.description || `#${idx + 1}`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {pick !== null && risks[pick] ? rc.placeNow(risks[pick].description || `#${pick + 1}`) : risks.length > 0 ? rc.placeHow : null}
+        </p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -74,6 +62,8 @@ export function RisksSection() {
           phases={store.spec.timeline?.phases ?? []}
           roles={roles}
           onChange={updateRisks}
+          placing={pick}
+          onPlace={setGridPick}
         />
       </div>
     </div>

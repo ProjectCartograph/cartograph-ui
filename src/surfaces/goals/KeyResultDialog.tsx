@@ -248,9 +248,21 @@ export function KeyResultDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[88vh] overflow-y-auto sm:max-w-xl" data-cartograph-region="key-result-dialog">
+      <DialogContent
+        className="max-h-[88vh] overflow-y-auto sm:max-w-xl"
+        data-cartograph-region="key-result-dialog"
+        // Escape and a click outside close a dropdown inside it, never the
+        // dialog with everything typed: Cancel does that.
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>{existing ? c.editTitle : c.addTitle}</DialogTitle>
+          {/* An example for the kind of number chosen, beside the fields
+              rather than inside them, where it read as a value. */}
+          <p className="text-sm text-muted-foreground" data-slot="key-result-example">
+            {c.exampleLine(example.metric, example.baseline, example.target)}
+          </p>
         </DialogHeader>
 
         <div className="flex flex-col gap-5">
@@ -291,7 +303,6 @@ export function KeyResultDialog({
                   data-cartograph-field={at("/target/value")}
                   value={form.targetValue}
                   onChange={(e) => set("targetValue", e.target.value)}
-                  placeholder={example.target}
                   aria-label={c.targetValueLabel}
                   autoFocus
                 />
@@ -304,7 +315,6 @@ export function KeyResultDialog({
                   data-cartograph-field={at("/unit")}
                   value={form.unit}
                   onChange={(e) => set("unit", e.target.value)}
-                  placeholder={example.unit || c.unitLabel}
                   aria-label={c.unitLabel}
                   aria-invalid={refused && unitMissing}
                 />
@@ -330,7 +340,6 @@ export function KeyResultDialog({
               <InputGroupInput
                 value={form.outcome}
                 onChange={(e) => set("outcome", e.target.value)}
-                placeholder={needsUnit ? example.outcome : example.metric}
                 aria-label={needsUnit ? c.stepMetric : c.stepMetricWhole}
                 aria-invalid={refused && outcomeMissing}
               />
@@ -371,7 +380,6 @@ export function KeyResultDialog({
                     data-cartograph-field={at("/baseline/value")}
                     value={form.baselineValue}
                     onChange={(e) => set("baselineValue", e.target.value)}
-                    placeholder={example.baseline}
                     aria-label={c.baselineValueLabel}
                   />
                   {suffix.trim() ? (
@@ -392,7 +400,6 @@ export function KeyResultDialog({
                   value={form.unknownReason}
                   data-cartograph-field={at("/baseline/unknownReason")}
                   onChange={(e) => set("unknownReason", e.target.value)}
-                  placeholder={c.unknownReasonPlaceholder}
                   aria-label={c.unknownReasonLabel}
                   aria-invalid={refused && reasonMissing}
                 />
@@ -400,7 +407,6 @@ export function KeyResultDialog({
                   value={form.expectedBy}
                   data-cartograph-field={at("/baseline/expectedBy")}
                   onChange={(v) => set("expectedBy", v)}
-                  placeholder={c.expectedByLabel}
                   className="max-w-48"
                   aria-label={c.expectedByLabel}
                 />
@@ -415,7 +421,6 @@ export function KeyResultDialog({
                 value={form.source || undefined}
                 data-cartograph-field={at("/source")}
                 onChange={(v) => set("source", v ?? "")}
-                placeholder={c.sourcePlaceholder}
                 addLabel={c.addSource}
               />
             </Step>

@@ -49,8 +49,6 @@ export function Scrubber({
   label: string;
 }) {
   const c = copy.flow;
-  const here = stages.find((s) => s.key === stage);
-  const hereStep = here?.steps.find((s) => s.key === step);
   return (
     <nav aria-label={label} data-slot="scrubber" className="flex flex-col gap-2">
       <div className="-mx-1 overflow-x-auto px-1 pb-1">
@@ -95,12 +93,6 @@ export function Scrubber({
           })}
         </ol>
       </div>
-      {here && hereStep ? (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          <span className="font-medium text-foreground">{here.label}</span>
-          {hereStep.label !== here.label ? <> · {hereStep.label}</> : null}
-        </p>
-      ) : null}
     </nav>
   );
 }

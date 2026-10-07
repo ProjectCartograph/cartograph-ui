@@ -10,6 +10,9 @@ let current: string | undefined = read();
 // Seeing the record as it is, for a moment, without leaving the change
 // set: reads leave it out; edits still go into it.
 let asItIs = false;
+// Set when the change set in hand was merged: what is worked on next
+// starts a change set of its own rather than picking up an older one.
+let mergedLast = false;
 const listeners = new Set<() => void>();
 const touched = new Set<() => void>();
 
@@ -57,6 +60,17 @@ export const activeChangeSet = {
   },
   /** Says a record was just put in the change set, for what shows its
    * contents to read it again. */
+  /** Marks the active change set merged and leaves it. */
+  merged() {
+    mergedLast = true;
+    this.set(undefined);
+  },
+  /** Whether the last change set was merged, and so the next is new. */
+  takeMerged(): boolean {
+    const was = mergedLast;
+    mergedLast = false;
+    return was;
+  },
   touch() {
     for (const l of touched) l();
   },

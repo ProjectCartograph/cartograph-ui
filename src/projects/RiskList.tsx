@@ -1,4 +1,4 @@
-import { Plus, X } from "lucide-react";
+import { Grid3x3, Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,7 +42,13 @@ export function RiskList({
   roles,
   onChange,
   field = "/spec/risks",
+  placing,
+  onPlace,
 }: {
+  /** The risk being placed on the impact and likelihood grid, if any. */
+  placing?: number | null;
+  /** Picks a risk to place on the grid; left out, no grid is shown. */
+  onPlace?: (idx: number) => void;
   /** The list's own pointer; each risk is named under it. */
   field?: string;
   risks: Risk[];
@@ -96,6 +102,20 @@ export function RiskList({
             maxLength={160}
             className="flex-1"
           />
+          {onPlace ? (
+            <Button
+              type="button"
+              variant={placing === idx ? "secondary" : "outline"}
+              size="sm"
+              aria-pressed={placing === idx}
+              onClick={() => onPlace(idx)}
+              aria-label={rc.placeOnGrid(r.description || `#${idx + 1}`)}
+              title={rc.placeOnGrid(r.description || `#${idx + 1}`)}
+            >
+              <Grid3x3 />
+              {r.impact && r.likelihood ? rc.moveShort : rc.placeShort}
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="ghost"

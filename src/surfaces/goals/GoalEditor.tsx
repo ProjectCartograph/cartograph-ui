@@ -661,7 +661,7 @@ export function GoalEditor({ id, fix }: { id: string; fix?: string }) {
                       <TooltipContent>{a.name}</TooltipContent>
                     </Tooltip>
                     <Badge variant="secondary" className="shrink-0">
-                      {a.kind}
+                      {copy.sheets.kindsSingular[a.kind] ?? a.kind}
                     </Badge>
                   </li>
                 ))}

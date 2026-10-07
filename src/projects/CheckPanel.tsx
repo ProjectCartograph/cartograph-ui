@@ -23,6 +23,11 @@ function iconFor(state: string) {
  * checks about it) or to a phase (Closing, Landing). Every fix link
  * navigates straight to the section that owns the problem.
  */
+// Where a check is fixed, when it is narrower than its step.
+const PLACE: Record<string, string> = {
+  "problem-groups-match-gaps": '[data-cartograph-region="problem-map"]',
+};
+
 export function CheckPanel({
   id,
   draft,
@@ -48,7 +53,16 @@ export function CheckPanel({
     return true;
   });
 
-  function goToFix(phase: string, section: string) {
+  function goToFix(phase: string, section: string, check?: string) {
+    // On the step already, navigating changes nothing: bring the place
+    // into view and mark it for a moment.
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(PLACE[check ?? ""] ?? `#step-${section}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.setAttribute("data-flash", "");
+      setTimeout(() => el.removeAttribute("data-flash"), 1600);
+    }, 120);
     const entry = ALL_SECTIONS.find((s) => s.phase === phase && s.section === section);
     if (entry) {
       // ALL_SECTIONS.path is assembled generically from a fixed, known set
@@ -77,7 +91,7 @@ export function CheckPanel({
               type="button"
               variant="link"
               className="ml-1 h-auto p-0 text-sm"
-              onClick={() => goToFix(item.fix!.phase, item.fix!.section)}
+              onClick={() => goToFix(item.fix!.phase, item.fix!.section, item.id)}
             >
               {cc.fix}
             </Button>

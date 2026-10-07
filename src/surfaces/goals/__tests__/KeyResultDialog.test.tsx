@@ -65,14 +65,13 @@ describe("KeyResultDialog", () => {
 
     // Count is the default: a finite thing, with the word for one of them.
     // The metric field asks only for the outcome half.
-    expect(screen.getByPlaceholderText("published")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("process maps")).toBeInTheDocument();
+    // The example sits beside the fields, never inside them as a value.
+    expect(screen.getByText(c.exampleLine("process maps published", "0", "5"))).toBeInTheDocument();
+    expect(document.querySelectorAll("[data-cartograph-region=key-result-dialog] [placeholder]")).toHaveLength(0);
 
     await user.click(screen.getByRole("radio", { name: "Percent" }));
 
-    expect(screen.getByPlaceholderText("support tickets resolved on first contact")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("95")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("62")).toBeInTheDocument();
+    expect(screen.getByText(c.exampleLine("support tickets resolved on first contact", "62", "95"))).toBeInTheDocument();
     // A percent needs no unit, so the unit field is gone.
     expect(screen.queryByLabelText("Unit")).not.toBeInTheDocument();
   });
