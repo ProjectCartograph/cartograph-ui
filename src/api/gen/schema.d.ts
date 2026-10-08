@@ -453,6 +453,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/semantic-layer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The KPIs as a semantic layer, in a tool's syntax
+         * @description Every KPI with a metric, and every data source one measures from, written as a semantic layer (TAXONOMY.md D57): dbt's semantic models and metrics today, for an analytics engineer to put in a dbt project. Read as the change set reads the workspace. The notes say what the record leaves to defaults. Formats lists the syntaxes this deployment writes; none when the export is off.
+         */
+        get: operations["exportSemanticLayer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/structure": {
         parameters: {
             query?: never;
@@ -2209,6 +2229,15 @@ export interface components {
             /** @description Its row in the column, centred on 0. */
             y: number;
         };
+        SemanticExport: {
+            format: string;
+            formats: string[];
+            files: {
+                path: string;
+                content: string;
+            }[];
+            notes: string[];
+        };
         StructuredPiece: {
             name: string;
             /** @description Goal, Operation, Portfolio, Programme, Project, Deliverable or ScopeOut. */
@@ -3265,6 +3294,42 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    exportSemanticLayer: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+                /** @description The syntax, such as dbt; the first the deployment writes when left out. */
+                format?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SemanticExport"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            /** @description No exporter writes that format, or the export is off. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Problem"];
+                };
+            };
         };
     };
     structureQuestions: {
