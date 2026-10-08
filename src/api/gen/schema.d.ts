@@ -433,6 +433,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lineage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * A project's data lineage, placed for drawing
+         * @description Where a project's data comes from and where it goes: the projects producing what it uses, the data sources it uses, the project, the data sources it produces into, and the KPIs and projects reading those. The project's own data is sent as it is being edited, so the lineage follows edits not saved yet; the rest is read as the change set reads the workspace. The engine places every node in its column, left to right as the data flows, so every interface draws it alike. Nothing is stored.
+         */
+        post: operations["getLineage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/structure": {
         parameters: {
             query?: never;
@@ -2173,16 +2193,36 @@ export interface components {
             changeOfItsOwn?: boolean;
             dependedOnBy?: string[];
         };
+        Lineage: {
+            nodes: components["schemas"]["LineageNode"][];
+            /** @description Each in the direction the data flows. */
+            edges: components["schemas"]["GraphEdge"][];
+        };
+        LineageNode: {
+            kind: string;
+            id: string;
+            name: string;
+            /** @enum {string} */
+            role: "upstream" | "source" | "project" | "output" | "downstream";
+            /** @description Its column, 0 to 4, left to right as the data flows. */
+            x: number;
+            /** @description Its row in the column, centred on 0. */
+            y: number;
+        };
         StructuredPiece: {
             name: string;
             /** @description Goal, Operation, Portfolio, Programme, Project, Deliverable or ScopeOut. */
             kind: string;
             where: string;
+            /** @description Kind/id, with a generated id, for a piece that is a record of its own. */
+            record?: string;
             of?: string[];
         };
         Structure: {
             pieces: components["schemas"]["StructuredPiece"][];
             order: string[];
+            /** @description Every record to write, as Kind/id, in the order to write them. */
+            work?: string[];
             problems?: string[];
             next: string;
         };
@@ -3184,6 +3224,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Understanding"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    getLineage: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @description The project's id. */
+                    project: string;
+                    name?: string;
+                    /** @description The ids of the data sources it uses. */
+                    uses: string[];
+                    /** @description The ids of the data sources it produces into. */
+                    produces: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lineage"];
                 };
             };
             401: components["responses"]["Unauthenticated"];
