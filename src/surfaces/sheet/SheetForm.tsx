@@ -33,6 +33,7 @@ import { Help } from "@/components/guidance";
 import { useClient } from "@/client/context";
 import { ClientError, Conflict } from "@/client/port";
 import type { components } from "@/api/gen/schema";
+import { SemanticModelEditor, type SemanticModel } from "@/semantic/SemanticModelEditor";
 import { copy } from "@/copy";
 import { ReferenceField } from "./ReferenceField";
 import { BodyUses } from "./BodyUses";
@@ -400,6 +401,23 @@ function SheetFormField({
     required: field.required,
     ...(field.kind === "string" && field.maxLength ? { maxLength: field.maxLength } : {}),
   };
+
+  // Where a data source sits in the warehouse: an object of its own,
+  // edited as one (engine TAXONOMY.md D57).
+  if (kind === "DataSource" && field.name === "semanticModel") {
+    return (
+      <FormField
+        control={control}
+        name={field.name}
+        render={({ field: rhf }) => (
+          <FormItem>
+            {heading}
+            <SemanticModelEditor value={rhf.value as SemanticModel | ""} onChange={(next) => rhf.onChange(next ?? "")} />
+          </FormItem>
+        )}
+      />
+    );
+  }
 
   if (field.kind === "ref" || field.kind === "ref-array") {
     return (

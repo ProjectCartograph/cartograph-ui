@@ -1,4 +1,4 @@
-import { Gauge, LineChart } from "lucide-react";
+import { Gauge, LineChart, Sigma } from "lucide-react";
 
 import type { DefinitionStep } from "@/definition/Shell";
 import type { Reading } from "./periods";
@@ -42,6 +42,32 @@ export interface KPIDefinitionSpec {
   goals?: string[];
   resultLevel?: string;
   disaggregations?: string[];
+  /** How it is computed, in the dbt semantic layer's terms (TAXONOMY.md D57). */
+  metric?: KPIMetric;
+}
+
+/** An aggregation over one data source's rows (dbt's measure). */
+export interface KPIMeasure {
+  source: string;
+  agg: MeasureAgg;
+  expr?: string;
+}
+
+export const MEASURE_AGGS = ["count", "sum", "count_distinct", "average", "min", "max", "median", "sum_boolean"] as const;
+export type MeasureAgg = (typeof MEASURE_AGGS)[number];
+
+export const METRIC_TYPES = ["simple", "ratio", "cumulative", "derived"] as const;
+export type MetricType = (typeof METRIC_TYPES)[number];
+
+export interface KPIMetric {
+  type: MetricType;
+  measure?: KPIMeasure;
+  numerator?: KPIMeasure;
+  denominator?: KPIMeasure;
+  window?: string;
+  expr?: string;
+  uses?: string[];
+  filter?: string;
 }
 
 export function blankKPISpec(): KPIDefinitionSpec {
@@ -52,5 +78,6 @@ export function blankKPISpec(): KPIDefinitionSpec {
  * because every reading is read against it. */
 export const KPI_STEPS: DefinitionStep[] = [
   { section: "definition", label: "Definition", to: "/kpis/$id/definition", icon: Gauge },
+  { section: "metric", label: "Metric", to: "/kpis/$id/metric", icon: Sigma },
   { section: "readings", label: "Actuals", to: "/kpis/$id/readings", icon: LineChart },
 ];

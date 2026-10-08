@@ -295,6 +295,11 @@ export function httpClient(
     linkCandidates: (link, from, problem) =>
       answer(wire.GET("/links/{link}/candidates", { params: { path: { link }, query: { from, ...(problem ? { problem } : {}), ...preview() } } })),
     components: () => answer(wire.GET("/components", { params: { query: { ...preview() } } })),
+    semanticLayer: async (format) => {
+      const r = await wire.GET("/semantic-layer", { params: { query: { ...preview(), ...(format ? { format } : {}) } } });
+      if (r.response.status === 404) return undefined;
+      return answer(Promise.resolve(r));
+    },
     lineage: (project, name, uses, produces) => answer(wire.POST("/lineage", { params: { query: preview() }, body: { project, name, uses, produces } })),
     structureQuestions: async () => (await answer(wire.GET("/structure"))).questions,
     schedule: (id) => answer(wire.GET("/manifests/Project/{id}/schedule", { params: { path: { id }, query: { ...preview() } } })),

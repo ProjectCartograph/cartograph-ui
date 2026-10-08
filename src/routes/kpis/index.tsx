@@ -7,6 +7,7 @@ import { Explorer } from "@/components/explorer/Explorer";
 import { useKPIRows } from "@/components/explorer/registers";
 import { copy, plusNoun } from "@/copy";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
+import { ExportSemantic } from "@/semantic/ExportSemantic";
 
 export const Route = createFileRoute("/kpis/")({
   component: Page,
@@ -33,10 +34,13 @@ function Page() {
         loading={loading}
         route="/kpis/$id"
         action={
-          <Button type="button" onClick={() => setAdding(true)} aria-label={copy.kpis.newLink}>
-            <Plus />
-            {plusNoun(copy.kpis.newLink)}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportSemantic />
+            <Button type="button" onClick={() => setAdding(true)} aria-label={copy.kpis.newLink}>
+              <Plus />
+              {plusNoun(copy.kpis.newLink)}
+            </Button>
+          </div>
         }
       />
       <KPIAddDialog open={adding} onOpenChange={setAdding} initialName={arrived.name} onAdded={(id) => void navigate({ to: "/kpis/$id", params: { id } })} />

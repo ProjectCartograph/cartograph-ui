@@ -25,6 +25,7 @@ export type LinkCandidate = Schemas["LinkCandidate"];
 export type ComponentGraph = Schemas["ComponentGraph"];
 export type StructureQuestion = Schemas["StructureQuestion"];
 export type Lineage = Schemas["Lineage"];
+export type SemanticExport = Schemas["SemanticExport"];
 export type LineageNode = Schemas["LineageNode"];
 export type ComponentNode = Schemas["ComponentNode"];
 export type WorkRef = Schemas["WorkRef"];
@@ -463,6 +464,9 @@ export interface Client {
   components(): Promise<ComponentGraph>;
   /** The questions that decide what a piece of work is (engine TAXONOMY.md D56). */
   structureQuestions(): Promise<StructureQuestion[]>;
+  /** The KPIs as a semantic layer in a syntax, dbt's by default (engine
+   * TAXONOMY.md D57); undefined when the deployment has the export off. */
+  semanticLayer(format?: string): Promise<SemanticExport | undefined>;
   /** A project's data lineage from its data as being edited: where it
    * comes from and what reads what it produces, placed by the engine. */
   lineage(project: string, name: string, uses: string[], produces: string[]): Promise<Lineage>;

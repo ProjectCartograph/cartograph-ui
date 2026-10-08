@@ -55,6 +55,7 @@ import { Route as GapsIdScopeRouteImport } from './routes/gaps/$id/scope'
 import { Route as GapsIdShortfallRouteImport } from './routes/gaps/$id/shortfall'
 import { Route as KpisIdIndexRouteImport } from './routes/kpis/$id/index'
 import { Route as KpisIdDefinitionRouteImport } from './routes/kpis/$id/definition'
+import { Route as KpisIdMetricRouteImport } from './routes/kpis/$id/metric'
 import { Route as KpisIdReadingsRouteImport } from './routes/kpis/$id/readings'
 import { Route as OperationsIdIndexRouteImport } from './routes/operations/$id/index'
 import { Route as OperationsIdAlignmentRouteImport } from './routes/operations/$id/alignment'
@@ -328,6 +329,11 @@ const KpisIdDefinitionRoute = KpisIdDefinitionRouteImport.update({
   path: '/definition',
   getParentRoute: () => KpisIdRoute,
 } as any)
+const KpisIdMetricRoute = KpisIdMetricRouteImport.update({
+  id: '/metric',
+  path: '/metric',
+  getParentRoute: () => KpisIdRoute,
+} as any)
 const KpisIdReadingsRoute = KpisIdReadingsRouteImport.update({
   id: '/readings',
   path: '/readings',
@@ -598,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/gaps/$id/scope': typeof GapsIdScopeRoute
   '/gaps/$id/shortfall': typeof GapsIdShortfallRoute
   '/kpis/$id/definition': typeof KpisIdDefinitionRoute
+  '/kpis/$id/metric': typeof KpisIdMetricRoute
   '/kpis/$id/readings': typeof KpisIdReadingsRoute
   '/operations/$id/alignment': typeof OperationsIdAlignmentRoute
   '/operations/$id/charter': typeof OperationsIdCharterRoute
@@ -682,6 +689,7 @@ export interface FileRoutesByTo {
   '/gaps/$id/scope': typeof GapsIdScopeRoute
   '/gaps/$id/shortfall': typeof GapsIdShortfallRoute
   '/kpis/$id/definition': typeof KpisIdDefinitionRoute
+  '/kpis/$id/metric': typeof KpisIdMetricRoute
   '/kpis/$id/readings': typeof KpisIdReadingsRoute
   '/operations/$id/alignment': typeof OperationsIdAlignmentRoute
   '/operations/$id/charter': typeof OperationsIdCharterRoute
@@ -773,6 +781,7 @@ export interface FileRoutesById {
   '/gaps/$id/scope': typeof GapsIdScopeRoute
   '/gaps/$id/shortfall': typeof GapsIdShortfallRoute
   '/kpis/$id/definition': typeof KpisIdDefinitionRoute
+  '/kpis/$id/metric': typeof KpisIdMetricRoute
   '/kpis/$id/readings': typeof KpisIdReadingsRoute
   '/operations/$id/alignment': typeof OperationsIdAlignmentRoute
   '/operations/$id/charter': typeof OperationsIdCharterRoute
@@ -865,6 +874,7 @@ export interface FileRouteTypes {
     | '/gaps/$id/scope'
     | '/gaps/$id/shortfall'
     | '/kpis/$id/definition'
+    | '/kpis/$id/metric'
     | '/kpis/$id/readings'
     | '/operations/$id/alignment'
     | '/operations/$id/charter'
@@ -949,6 +959,7 @@ export interface FileRouteTypes {
     | '/gaps/$id/scope'
     | '/gaps/$id/shortfall'
     | '/kpis/$id/definition'
+    | '/kpis/$id/metric'
     | '/kpis/$id/readings'
     | '/operations/$id/alignment'
     | '/operations/$id/charter'
@@ -1039,6 +1050,7 @@ export interface FileRouteTypes {
     | '/gaps/$id/scope'
     | '/gaps/$id/shortfall'
     | '/kpis/$id/definition'
+    | '/kpis/$id/metric'
     | '/kpis/$id/readings'
     | '/operations/$id/alignment'
     | '/operations/$id/charter'
@@ -1452,6 +1464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KpisIdDefinitionRouteImport
       parentRoute: typeof KpisIdRoute
     }
+    '/kpis/$id/metric': {
+      id: '/kpis/$id/metric'
+      path: '/metric'
+      fullPath: '/kpis/$id/metric'
+      preLoaderRoute: typeof KpisIdMetricRouteImport
+      parentRoute: typeof KpisIdRoute
+    }
     '/kpis/$id/readings': {
       id: '/kpis/$id/readings'
       path: '/readings'
@@ -1768,12 +1787,14 @@ const GapsIdRouteWithChildren =
 
 interface KpisIdRouteChildren {
   KpisIdDefinitionRoute: typeof KpisIdDefinitionRoute
+  KpisIdMetricRoute: typeof KpisIdMetricRoute
   KpisIdReadingsRoute: typeof KpisIdReadingsRoute
   KpisIdIndexRoute: typeof KpisIdIndexRoute
 }
 
 const KpisIdRouteChildren: KpisIdRouteChildren = {
   KpisIdDefinitionRoute: KpisIdDefinitionRoute,
+  KpisIdMetricRoute: KpisIdMetricRoute,
   KpisIdReadingsRoute: KpisIdReadingsRoute,
   KpisIdIndexRoute: KpisIdIndexRoute,
 }
