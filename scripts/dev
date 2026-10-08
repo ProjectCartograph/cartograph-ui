@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Run a command in the test environment, inside this repository's flake:
+# scripts/dev just test (docs/CONTAINERS.md). The host needs Docker or
+# Podman, with compose, and nothing else; the engine need not be beside
+# it.
+#
+# The environment never makes a change: the repository is read-only in
+# it, and each command first syncs it into the container's own copy,
+# then runs there. Commit, describe and push on the host.
+#
+# The container starts on first use and keeps running, so a server a
+# command starts outlives the command; scripts/dev --down stops it.
+set -euo pipefail
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+runtime=${CARTOGRAPH_RUNTIME:-$(command -v docker || command -v podman)}
+compose=("$runtime" compose -f "$root/compose.dev.yaml")
+
+export CARTOGRAPH_UID=$(id -u) CARTOGRAPH_GID=$(id -g)
+
+if [ "${1:-}" = "--down" ]; then
+  exec "${compose[@]}" down
+fi
+
+# A store in a directory (CARTOGRAPH_NIX_STORE, as CI keeps it) starts as
+# a copy of the image's own /nix, as a new volume does.
+if [ -n "${CARTOGRAPH_NIX_STORE:-}" ] && [ ! -e "$CARTOGRAPH_NIX_STORE/var/nix/db" ]; then
+  mkdir -p "$CARTOGRAPH_NIX_STORE"
+  "${compose[@]}" build --quiet dev
+  "$runtime" run --rm --user 0 -v "$CARTOGRAPH_NIX_STORE:/seed" cartograph-ui-dev:local cp -a /nix/. /seed/
+fi
+
+"${compose[@]}" up -d --build --quiet-pull dev >/dev/null 2>&1 || "${compose[@]}" up -d --build dev
+# The container's volumes belong to whoever runs in it: the host user.
+for vol in /nix /home/dev /workspace; do
+  if [ "$("${compose[@]}" exec -T --user 0 dev stat -c %u "$vol")" != "$CARTOGRAPH_UID" ]; then
+    echo "dev: giving $vol to uid $CARTOGRAPH_UID (once)" >&2
+    "${compose[@]}" exec -T --user 0 dev chown -R "$CARTOGRAPH_UID:$CARTOGRAPH_GID" "$vol"
+  fi
+done
+
+# A name for the host user inside, which some tools ask for.
+"${compose[@]}" exec -T --user 0 dev sh -c "grep -q '^[^:]*:[^:]*:$CARTOGRAPH_UID:' /etc/passwd || echo 'dev:x:$CARTOGRAPH_UID:$CARTOGRAPH_GID:dev:/home/dev:/bin/sh' >> /etc/passwd"
+
+# The same directory in the copy, when the caller is in the repository.
+here=$(pwd)
+case "$here" in
+  "$root"/*) wd="/workspace/cartograph-ui${here#"$root"}" ;;
+  *) wd=/workspace/cartograph-ui ;;
+esac
+tty=(-T)
+[ -t 0 ] && [ -t 1 ] && tty=(-it)
+
+[ $# -gt 0 ] || set -- bash
+exec "${compose[@]}" exec "${tty[@]}" -w /workspace dev sh -c '
+  set -e
+  # The repository, as it stands on the host, into the copy. What the
+  # copy installed or built (node_modules, dist) stays.
+  nix develop /src/cartograph-ui --command rsync -a --delete \
+    --exclude /.jj --exclude /node_modules --exclude /dist --exclude /result \
+    /src/cartograph-ui/ /workspace/cartograph-ui/
+  cd "'"$wd"'" 2>/dev/null || cd /workspace/cartograph-ui
+  exec nix develop /workspace/cartograph-ui --command "$@"
+' dev "$@"
