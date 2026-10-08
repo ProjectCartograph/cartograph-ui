@@ -71,6 +71,27 @@ describe("the plan's registers", () => {
     expect(spec.milestones?.map((m) => m.timing.date)).toEqual(["2025-11", "2026-05"]);
   });
 
+  // The timeline is worked on in place (Notion's timeline): the last row
+  // adds a milestone at the month clicked and opens it to name, and a
+  // diamond dragged along moves its date, the day kept.
+  it("adds and moves milestones on the timeline", async () => {
+    mount({ milestones: [{ id: "m1", name: "Kick-off", timing: { form: "date", date: "2026-01-15" } }, { id: "m2", name: "Close", timing: { form: "date", date: "2026-12" } }] }, <MilestonesSection />);
+    const chart = (await screen.findByRole("group", { name: copy.projects.milestones.chartLabel })) as unknown as SVGSVGElement;
+    // The box on screen is the size it is drawn at.
+    const w = Number(chart.getAttribute("width"));
+    chart.getBoundingClientRect = () => ({ left: 0, top: 0, width: w, height: 3 * 30 + 34, right: w, bottom: 124, x: 0, y: 0, toJSON: () => ({}) });
+    // Months 2025-12 to 2027-01, 14 across the plot after the names.
+    const xOf = (i: number) => 190 + ((i + 0.5) / 14) * (w - 190 - 16);
+    fireEvent.pointerUp(chart, { clientX: xOf(7), clientY: 24 + 2 * 30 + 15 });
+    expect(spec.milestones?.[2]).toMatchObject({ id: "m3", timing: { form: "date", date: "2026-07" } });
+    expect(screen.getByLabelText(copy.projects.milestones.name)).toHaveValue("");
+    const diamond = chart.querySelector('[data-schedule="m1"] [data-cartograph-action="milestone-move"]')!;
+    fireEvent.pointerDown(diamond, { clientX: xOf(2), clientY: 39 });
+    fireEvent.pointerMove(chart, { clientX: xOf(4), clientY: 39 });
+    fireEvent.pointerUp(chart, { clientX: xOf(4), clientY: 39 });
+    expect(spec.milestones?.[0].timing.date).toBe("2026-04-15");
+  });
+
   // A milestone may wait on a milestone of a project linked by components
   // (engine TAXONOMY.md D47): the picker offers theirs, and keeps the
   // choice as the project and the item.
