@@ -433,6 +433,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/structure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The questions that decide what each piece of work is
+         * @description Asked of every piece of work a document or a person names, in order; the first yes decides (TAXONOMY.md D56). The same questions guide a person starting something new and an agent porting a document, so the structure is Cartograph's, not the document's.
+         */
+        get: operations["structureQuestions"];
+        put?: never;
+        /**
+         * What each piece of work is, where it goes, and the order to write it in
+         * @description From the answers to the structure questions for each piece: its kind (or a deliverable, or a scope-out line), what it belongs to, the order to write the records in (goals, operations, projects with those depended on first, programmes, portfolios) and any answers that contradict each other. Nothing is stored.
+         */
+        post: operations["classifyStructure"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/relevant": {
         parameters: {
             query?: never;
@@ -2131,6 +2155,37 @@ export interface components {
             kind: "Project" | "Programme";
             id: string;
         };
+        StructureQuestion: {
+            /** @description The answer this question sets on a StructurePiece; empty for the last, which applies when none does. */
+            field: string;
+            question: string;
+            then: string;
+        };
+        StructurePiece: {
+            name: string;
+            outOfScope?: boolean;
+            policy?: boolean;
+            ongoing?: boolean;
+            runsToday?: boolean;
+            groupsForFunding?: boolean;
+            coordinatesProjects?: boolean;
+            outputOf?: string;
+            changeOfItsOwn?: boolean;
+            dependedOnBy?: string[];
+        };
+        StructuredPiece: {
+            name: string;
+            /** @description Goal, Operation, Portfolio, Programme, Project, Deliverable or ScopeOut. */
+            kind: string;
+            where: string;
+            of?: string[];
+        };
+        Structure: {
+            pieces: components["schemas"]["StructuredPiece"][];
+            order: string[];
+            problems?: string[];
+            next: string;
+        };
         ComponentNode: {
             /** @enum {string} */
             kind: "Project" | "Programme";
@@ -3133,6 +3188,56 @@ export interface operations {
             };
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
+        };
+    };
+    structureQuestions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        questions: components["schemas"]["StructureQuestion"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+        };
+    };
+    classifyStructure: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    pieces: components["schemas"]["StructurePiece"][];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Structure"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
         };
     };
     relevant: {
