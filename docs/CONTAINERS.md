@@ -35,7 +35,7 @@ toolchain; later ones start in seconds.
 |---|---|
 | `/src/cartograph-ui` | This repository, read-only. |
 | `/workspace` (volume `cartograph-ui-workspace`) | The copy each command runs in, synced from `/src` before it. `node_modules` and `dist` stay here. |
-| `/nix` (volume `cartograph-nix`) | The Nix store, the same volume the engine's environment uses: what either fetches, both use. `CARTOGRAPH_NIX_STORE` names a directory to use instead. |
+| `/nix` (volume `cartograph-nix`) | The Nix store, the same volume the engine's environment uses: what either fetches, both use. |
 | `/home/dev` (volume `cartograph-home`) | Caches the tools keep. |
 
 Commands run as your user. To start again from nothing:

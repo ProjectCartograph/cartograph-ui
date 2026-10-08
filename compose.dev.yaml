@@ -13,8 +13,7 @@
 #
 # /nix is the cartograph-nix volume, the one the engine's environment
 # uses too: every instance and run of either shares it, and nothing is
-# fetched twice. Where CARTOGRAPH_NIX_STORE names a directory, /nix is
-# that directory instead. /tmp is a tmpfs. Host networking lets a
+# fetched twice. /tmp is a tmpfs. Host networking lets a
 # browser on the host reach a server started inside.
 
 name: cartograph-ui-dev
@@ -32,7 +31,7 @@ services:
     volumes:
       - .:/src/cartograph-ui:ro
       - cartograph-ui-workspace:/workspace
-      - ${CARTOGRAPH_NIX_STORE:-cartograph-nix}:/nix
+      - cartograph-nix:/nix
       - cartograph-home:/home/dev
     tmpfs:
       - /tmp:exec,mode=1777
