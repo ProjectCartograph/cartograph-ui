@@ -147,6 +147,7 @@ export function httpClient(
       : answer(wire.GET("/manifests/{kind}/{id}/document", { params: { path: { kind, id } } }));
   };
   const presenceDocument = () => answer(wire.GET("/presence"));
+  const recordPresence = (kind: string, id: string) => answer(wire.GET("/presence", { params: { query: { kind, id } } }));
   const agentFeed = (person?: string) => answer(wire.GET("/agents/feed", { params: { query: person ? { person } : {} } }));
 
   // The collaboration side, made once and on first use: Automerge and its
@@ -155,7 +156,7 @@ export function httpClient(
   let live: Promise<Live> | undefined;
   function collaboration(): Promise<Live> {
     live ??= import("./browser-live").then((m) =>
-      m.browserLive(baseUrl, { locate: sharedDocument, presenceDocument, agentFeed, session }),
+      m.browserLive(baseUrl, { locate: sharedDocument, presenceDocument, recordPresence, agentFeed, session }),
     );
     return live;
   }

@@ -27,9 +27,11 @@ export interface PresenceMessage {
   at: number;
   leaving?: boolean;
   agent?: PresenceAgent;
+  /** The change set the session works in, if any. */
+  changeSet?: string;
 }
 
-const TOP = new Set(["v", "session", "actor", "name", "color", "route", "focus", "caret", "pointer", "at", "leaving", "agent"]);
+const TOP = new Set(["v", "session", "actor", "name", "color", "route", "focus", "caret", "pointer", "at", "leaving", "agent", "changeSet"]);
 const STEPS = ["guide", "read", "draft", "checks", "propose"];
 const AGENT = ["for", "seq", "step", "kind", "id", "name", "fields", "met", "open", "proposal", "parts", "changeSet"];
 
@@ -96,6 +98,7 @@ export function isPresenceMessage(m: unknown): m is PresenceMessage {
   if (typeof m.at !== "number" || !Number.isInteger(m.at) || m.at < 0) return false;
   if (m.leaving !== undefined && typeof m.leaving !== "boolean") return false;
   if (m.agent !== undefined && !validAgent(m.agent)) return false;
+  if (m.changeSet !== undefined && !str(m.changeSet, 64)) return false;
   return true;
 }
 
@@ -154,6 +157,7 @@ export function messageFor(me: Sender, state: PresenceState, at: number, leaving
     pointer: state.pointer ?? null,
     at: Math.max(0, Math.floor(at)),
     ...(leaving ? { leaving: true } : {}),
+    ...(state.changeSet ? { changeSet: state.changeSet } : {}),
   };
 }
 
@@ -186,6 +190,7 @@ export class PeerSet {
       caret: m.caret ?? null,
       pointer: m.pointer ?? null,
       ...(m.agent ? { agent: m.agent } : {}),
+      ...(m.changeSet ? { changeSet: m.changeSet } : {}),
       heard: now,
       at: m.at,
     });

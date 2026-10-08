@@ -7,7 +7,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
+import { activeChangeSet } from "@/client/active";
 import { ClientProvider } from "@/client/context";
+import { isPresenceMessage, messageFor, PeerSet } from "@/client/presence";
 import type { Peer, PresenceState, SharedDraft } from "@/client/port";
 import { fakeClient } from "@/client/fake";
 import { sessions } from "@/client/testing";
@@ -101,6 +103,45 @@ describe("the people on this screen", () => {
     drawn({ peers: [] });
     expect(screen.queryByRole("list", { name: copy.collab.peopleHere })).toBeNull();
     expect(overlay()).toBeNull();
+  });
+});
+
+describe("someone on this record in another change set", () => {
+  // Presence rides the record's own document, so two people meet whatever
+  // change set each is in; joining takes one press.
+  it("shows them with a way to join their change set", () => {
+    activeChangeSet.set("cs-mine");
+    try {
+      drawn({ peers: [peer({ session: "s-bea-0001", actor: "bea", name: "Bea Kim", changeSet: "cs-theirs" })] });
+      const join = screen.getByRole("button", { name: copy.collab.join("Bea Kim") });
+      fireEvent.click(join);
+      expect(activeChangeSet.get()).toBe("cs-theirs");
+    } finally {
+      activeChangeSet.set(undefined);
+    }
+  });
+
+  it("is a plain avatar once both are in the same change set", () => {
+    activeChangeSet.set("cs-theirs");
+    try {
+      drawn({ peers: [peer({ session: "s-bea-0001", actor: "bea", name: "Bea Kim", changeSet: "cs-theirs" })] });
+      expect(screen.queryByRole("button", { name: copy.collab.join("Bea Kim") })).not.toBeInTheDocument();
+      expect(screen.getByRole("img", { name: "Bea Kim" })).toBeInTheDocument();
+    } finally {
+      activeChangeSet.set(undefined);
+    }
+  });
+});
+
+describe("the presence message", () => {
+  it("carries the change set, and a receiver keeps it", () => {
+    const me = { session: "s-ada-0001", actor: "ada", color: "#db2777" };
+    const m = messageFor(me, { route: "/projects/p1", changeSet: "cs-1" }, 5);
+    expect(m.changeSet).toBe("cs-1");
+    expect(isPresenceMessage(m)).toBe(true);
+    const set = new PeerSet("s-other-001");
+    set.receive(m, 10);
+    expect(set.list()[0].changeSet).toBe("cs-1");
   });
 });
 

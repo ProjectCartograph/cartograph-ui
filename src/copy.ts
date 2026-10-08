@@ -141,6 +141,9 @@ export const copy = {
     conflictKeep: "Keep",
     blankValue: "Empty",
     editing: (name: string) => `${name} is editing`,
+    // Someone on this record in another change set (engine presence).
+    elsewhere: (name: string) => `${name} is working in another change set`,
+    join: (name: string) => `Join ${name}'s change set to edit together`,
   },
   // Who may sign in and what they hold (docs/adr/0011 in cartograph-engine).
   access: {

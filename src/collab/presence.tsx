@@ -5,6 +5,7 @@
 
 import { createElement, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { useActiveChangeSet } from "@/changesets/useActive";
 import { useClient } from "@/client/context";
 import type { Peer, PresenceChannel, PresenceScreen, SharedDraft } from "@/client/port";
 import { openDraft } from "./draft";
@@ -85,6 +86,7 @@ export function PresenceProvider({ screen, route, children }: { screen: Presence
   // Other people's agents on this draft, unless the viewer chose to see
   // them; their own always show.
   const { othersOnDrafts, me } = useFollow();
+  const mine = useActiveChangeSet();
   const shown = othersOnDrafts ? peers : peers.filter((p) => !p.agent || p.agent.for === me);
   // Only those on this very view are drawn over it. A manifest's other
   // sections show who is on them in its step list; the list screens share
@@ -94,7 +96,10 @@ export function PresenceProvider({ screen, route, children }: { screen: Presence
   // A walk is each person's own (collab/walkers): inside one, nobody is
   // drawn; those walking are shown as walking, wherever the others are.
   const walking = shown.filter((p) => !p.agent && walkerOf(p.route) !== undefined);
-  const here = walkerOf(route) ? [] : shown.filter((p) => p.agent || (sameView(p.route, route) && !walkerOf(p.route)));
+  // A caret, focus or pointer points into one draft: drawn only for those
+  // in the same change set; others on the record are shown, not drawn.
+  const sameDraft = (p: Peer) => Boolean(p.agent) || (p.changeSet ?? "") === (mine ?? "");
+  const here = walkerOf(route) ? [] : shown.filter((p) => p.agent || (sameView(p.route, route) && !walkerOf(p.route) && sameDraft(p)));
   const hereRef = useRef(here);
   hereRef.current = here;
   const pointerSent = useRef(false);

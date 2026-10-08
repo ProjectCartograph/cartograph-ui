@@ -175,6 +175,8 @@ export interface PresencePointer {
 /** What a screen publishes about itself; each call merges into the last. */
 export interface PresenceState {
   route?: string;
+  /** The change set this session works in; set by the client as it sends. */
+  changeSet?: string;
   focus?: PresenceFocus | null;
   caret?: PresenceCaret | null;
   pointer?: PresencePointer | null;
@@ -209,6 +211,8 @@ export interface Peer {
   route?: string;
   /** Present when the session is an agent. */
   agent?: PresenceAgent;
+  /** The change set the session works in, if any. */
+  changeSet?: string;
   focus: PresenceFocus | null;
   caret: PresenceCaret | null;
   pointer: PresencePointer | null;

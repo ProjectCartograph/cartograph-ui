@@ -55,6 +55,9 @@ export interface LiveOptions {
   locate: (kind: string, id: string) => Promise<SharedDocument>;
   /** The presence document (GET /presence). */
   presenceDocument: () => Promise<SharedDocument>;
+  /** A record's presence document, the same in every change set (engine
+   * GET /presence?kind&id); without it, presence rides the draft. */
+  recordPresence?: (kind: string, id: string) => Promise<SharedDocument>;
   /** The document a person's agents announce their steps on. */
   agentFeed?: (person?: string) => Promise<SharedDocument>;
   /** Who this session is (GET /session). */
@@ -569,7 +572,8 @@ class Channel implements PresenceChannel {
     this.lastPointerSent = now;
     // A send carries everything, so it is a heartbeat too.
     try {
-      this.handle.broadcast(messageFor(this.me, this.state, now, leaving));
+      const changeSet = activeChangeSet.get();
+      this.handle.broadcast(messageFor(this.me, changeSet ? { ...this.state, changeSet } : this.state, now, leaving));
     } catch {
       // A handle that is not ready yet drops this one; the heartbeat repeats it.
     }
@@ -674,7 +678,20 @@ export function createLive(opts: LiveOptions): Live {
       const who = await sender();
       let handle: DocHandle<unknown> | undefined;
       try {
-        const url = screen ? await locate(screen.kind, screen.id) : (await opts.presenceDocument()).url;
+        // On a record, its own presence document, so people in different
+        // change sets meet; a record not saved yet has none, and rides its
+        // draft.
+        const record = async (kind: string, id: string) => {
+          if (opts.recordPresence) {
+            try {
+              return (await opts.recordPresence(kind, id)).url;
+            } catch {
+              // Not saved yet, or an engine from before 2.10: the draft.
+            }
+          }
+          return locate(kind, id);
+        };
+        const url = screen ? await record(screen.kind, screen.id) : (await opts.presenceDocument()).url;
         handle = await find<unknown>(url);
       } catch {
         // No document to travel on (offline, or not found): a channel that
