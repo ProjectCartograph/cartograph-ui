@@ -2546,6 +2546,7 @@ export const copy = {
     back: "Back",
     next: "Next",
     nextTo: (label: string) => `Next: ${label.toLowerCase()}`,
+    stepsOfStage: "Steps of this stage",
     checks: {
       // Read out for the mark at the end of a rail row, where the state
       // is a picture and not a sentence.

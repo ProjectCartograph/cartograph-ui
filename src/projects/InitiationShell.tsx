@@ -24,7 +24,7 @@ import { CharterView } from "@/charter/CharterView";
 import { useProjectStore } from "./store";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
-import { STAGE_ICON } from "./steps";
+import { STAGE_ICON, STEP_ICON } from "./steps";
 
 const pc = copy.projects;
 
@@ -72,11 +72,57 @@ export function ProjectScrubber({ id, section }: { id: string; section?: Initiat
 /** Back and Next, as real buttons: Back a quiet outline, Next the primary
  * action naming the stage it goes to, so a stage always has one obvious
  * way forward. After the last stage, the closing page. */
-export function InitiationBackNext({ id, stage }: { id: string; stage: Stage }) {
+export function InitiationBackNext({ id, stage, section }: { id: string; stage: Stage; section?: InitiationSection }) {
   const idx = STAGES.indexOf(stage);
   const prev = idx > 0 ? stepsOfStage(STAGES[idx - 1])[0] : undefined;
   const nextStage = idx < STAGES.length - 1 ? STAGES[idx + 1] : undefined;
   const next = nextStage ? stepsOfStage(nextStage)[0] : undefined;
+  // A stage walked one step at a time moves step by step inside it first.
+  const steps = stepsOfStage(stage);
+  const at = section ? steps.findIndex((s) => s.section === section) : -1;
+  if (STEPWISE.has(stage) && at >= 0) {
+    const before = at > 0 ? steps[at - 1] : prev;
+    const after = at < steps.length - 1 ? steps[at + 1] : undefined;
+    return (
+      <FlowNav>
+        <FlowBack
+          label={pc.back}
+          link={(c) =>
+            before ? (
+              <Link to={`/projects/$id${before.path}`} params={{ id }}>
+                {c}
+              </Link>
+            ) : (
+              <Link to="/projects/$id" params={{ id }}>
+                {c}
+              </Link>
+            )
+          }
+        />
+        {after ? (
+          <FlowNext
+            label={pc.nextTo(SECTION_VIEW[after.section].heading)}
+            icon={STEP_ICON[after.section]}
+            link={(c) => (
+              <Link to={`/projects/$id${after.path}`} params={{ id }}>
+                {c}
+              </Link>
+            )}
+          />
+        ) : next && nextStage ? (
+          <FlowNext
+            label={pc.nextTo(pc.stages[nextStage])}
+            icon={STAGE_ICON[nextStage]}
+            link={(c) => (
+              <Link to={`/projects/$id${next.path}`} params={{ id }}>
+                {c}
+              </Link>
+            )}
+          />
+        ) : null}
+      </FlowNav>
+    );
+  }
 
   return (
     <FlowNav>
@@ -118,6 +164,10 @@ export function InitiationBackNext({ id, stage }: { id: string; stage: Stage }) 
   );
 }
 
+/** Stages walked one step at a time, each step its own screen: a plan's
+ * milestones grow long, and data and risks must not sit below them. */
+const STEPWISE = new Set<Stage>(["plan"]);
+
 /**
  * One stage of the walk on one screen: its steps one after another, each
  * under its own heading, with the checks of all of them beside (TAXONOMY.md
@@ -138,7 +188,9 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
   ]
     .filter((x): x is string => typeof x === "string" && x.trim() !== "")
     .join(". ");
-  const steps = stepsOfStage(stage);
+  const allSteps = stepsOfStage(stage);
+  const stepwise = STEPWISE.has(stage);
+  const steps = stepwise ? allSteps.filter((s) => s.section === section) : allSteps;
   // Every role the project names can be picked where a role is asked for
   // (who verifies, who owns a risk): a role is picked by its id, so one
   // named without an id is given one, once.
@@ -216,12 +268,13 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
           ) : (
             // The stage arrives from the side the walk is heading (engine
             // DESIGN_RULES "The interface answers").
-            <div key={stage} className="flex flex-col gap-10 animate-in fade-in slide-in-from-right-3 duration-250 ease-enter">
+            <div key={stepwise ? section : stage} className="flex flex-col gap-10 animate-in fade-in slide-in-from-right-3 duration-250 ease-enter">
+              {stepwise ? <StepTabs id={id} steps={allSteps} section={section} /> : null}
               {steps.map((step) => {
                 const { heading, subtitle, View } = SECTION_VIEW[step.section];
                 return (
                   <section key={step.section} id={`step-${step.section}`} data-cartograph-step={step.section} className="flex scroll-mt-4 flex-col gap-4" aria-labelledby={`step-${step.section}-heading`}>
-                    {steps.length > 1 ? (
+                    {steps.length > 1 || stepwise ? (
                       <div>
                         <h2 id={`step-${step.section}-heading`} className="text-lg font-semibold tracking-tight">
                           {heading}
@@ -240,10 +293,10 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
               })}
             </div>
           )}
-          <InitiationBackNext id={id} stage={stage} />
+          <InitiationBackNext id={id} stage={stage} section={section} />
         </div>
         {paneOpen ? (
-          <SidePane id={id} onClose={() => setPane(false)} checks={<CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(STAGE_ALSO_CHECKS[stage] ?? [])]} />} />
+          <SidePane id={id} onClose={() => setPane(false)} checks={<CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(stepwise ? [] : (STAGE_ALSO_CHECKS[stage] ?? []))]} />} />
         ) : null}
       </div>
     </div>
@@ -393,4 +446,29 @@ function setAt(spec: ProjectSpec, pointer: string, value: string): ProjectSpec {
     at = container[k] as Record<string, unknown>;
   });
   return root as unknown as ProjectSpec;
+}
+
+/** The steps of a stage walked one at a time, as tabs with their marks:
+ * each its own screen, so the last is never a long scroll away. */
+function StepTabs({ id, steps, section }: { id: string; steps: ReturnType<typeof stepsOfStage>; section: InitiationSection }) {
+  return (
+    <nav aria-label={pc.stepsOfStage} className="flex flex-wrap gap-1.5" data-cartograph-region="step-tabs">
+      {steps.map((st) => {
+        const Icon = STEP_ICON[st.section];
+        const on = st.section === section;
+        return (
+          <Link
+            key={st.section}
+            to={`/projects/$id${st.path}`}
+            params={{ id }}
+            aria-current={on ? "step" : undefined}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm ring-1 transition-colors ${on ? "bg-primary text-primary-foreground ring-primary" : "ring-foreground/15 hover:bg-muted"}`}
+          >
+            {Icon ? <Icon className="size-3.5" aria-hidden="true" /> : null}
+            {SECTION_VIEW[st.section].heading}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
