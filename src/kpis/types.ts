@@ -44,6 +44,10 @@ export interface KPIDefinitionSpec {
   disaggregations?: string[];
   /** How it is computed, in the dbt semantic layer's terms (TAXONOMY.md D57). */
   metric?: KPIMetric;
+  /** The values a reading must stay within (TAXONOMY.md D58). */
+  specLimits?: { lower?: number; upper?: number };
+  /** What is done when a reading signals trouble. */
+  response?: { trigger: string; action: string; by?: { kind?: string; id?: string }; withinDays?: number };
 }
 
 /** An aggregation over one data source's rows (dbt's measure). */

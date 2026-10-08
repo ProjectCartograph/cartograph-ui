@@ -26,6 +26,8 @@ export type ComponentGraph = Schemas["ComponentGraph"];
 export type StructureQuestion = Schemas["StructureQuestion"];
 export type Lineage = Schemas["Lineage"];
 export type SemanticExport = Schemas["SemanticExport"];
+export type DMAIC = Schemas["DMAIC"];
+export type ControlChart = Schemas["ControlChart"];
 export type LineageNode = Schemas["LineageNode"];
 export type ComponentNode = Schemas["ComponentNode"];
 export type WorkRef = Schemas["WorkRef"];
@@ -464,6 +466,11 @@ export interface Client {
   components(): Promise<ComponentGraph>;
   /** The questions that decide what a piece of work is (engine TAXONOMY.md D56). */
   structureQuestions(): Promise<StructureQuestion[]>;
+  /** Whether a project can be taken through DMAIC, phase by phase
+   * (engine TAXONOMY.md D58). */
+  dmaic(project: string): Promise<DMAIC>;
+  /** A KPI's readings as a control chart, with its capability. */
+  controlChart(kpi: string): Promise<ControlChart>;
   /** The KPIs as a semantic layer in a syntax, dbt's by default (engine
    * TAXONOMY.md D57); undefined when the deployment has the export off. */
   semanticLayer(format?: string): Promise<SemanticExport | undefined>;

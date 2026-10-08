@@ -144,6 +144,27 @@ export function RiskList({
           aria-label={rc.mitigationLabel}
           maxLength={160}
         />
+        {/* How likely it is to be caught in time (FMEA, engine TAXONOMY.md
+            D58): with impact and likelihood, its risk priority. */}
+        <div className="flex items-center gap-2" data-cartograph-field={at(r, idx, "detection")}>
+          <Label className="w-24 shrink-0 text-muted-foreground" title={rc.detectionHint}>
+            {rc.detectionLabel}
+          </Label>
+          {(["low", "medium", "high"] as const).map((d) => (
+            <Button
+              key={d}
+              type="button"
+              size="sm"
+              variant={r.detection === d ? "secondary" : "outline"}
+              aria-pressed={r.detection === d}
+              onClick={() => update(idx, { detection: r.detection === d ? undefined : d })}
+              aria-label={`${rc.detectionLabel}: ${rc.detection[d]}`}
+              title={rc.detectionHint}
+            >
+              {rc.detection[d]}
+            </Button>
+          ))}
+        </div>
         {/* Who manages it day to day (TAXONOMY.md D41): a role on the
             work, a governance body, or, where the work names no roles, an
             entry in the catalogue. A high-impact risk without one warns. */}

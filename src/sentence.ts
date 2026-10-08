@@ -18,6 +18,8 @@
 export interface ProblemStatement {
   situation?: string;
   cause?: string;
+  /** What analysis found behind it, with evidence (engine TAXONOMY.md D58). */
+  causes?: { id?: string; cause: string; evidence?: string; verified?: boolean }[];
 }
 
 export interface ChangeStatement {

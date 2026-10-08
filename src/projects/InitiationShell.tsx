@@ -8,7 +8,7 @@ import { sameView } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 import { Scrubber, type ScrubStage } from "@/components/Scrubber";
 import { Button } from "@/components/ui/button";
-import { FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
+import { Activity, FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
 
 
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
@@ -24,6 +24,7 @@ import { CharterView } from "@/charter/CharterView";
 import { useProjectStore } from "./store";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
+import { DMAICPanel } from "@/dmaic/DMAICPanel";
 import { STAGE_ICON, STEP_ICON } from "./steps";
 
 const pc = copy.projects;
@@ -315,9 +316,9 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
   const navigate = useNavigate();
   const drawer = useRecordDrawer();
   const mc = copy.projectMap;
-  const [tab, setTab] = useState<"map" | "charter" | "checks">(() => {
+  const [tab, setTab] = useState<"map" | "charter" | "checks" | "dmaic">(() => {
     try {
-      return (localStorage.getItem("cartograph.sidePane") as "map" | "charter" | "checks") || "map";
+      return (localStorage.getItem("cartograph.sidePane") as "map" | "charter" | "checks" | "dmaic") || "map";
     } catch {
       return "map";
     }
@@ -370,7 +371,7 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
   return (
     <div ref={pane} className="relative flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
       <div role="tablist" aria-label={mc.tabsLabel} className="flex items-center gap-0.5 self-start rounded-md bg-muted p-0.5">
-        {(["map", "charter", "checks"] as const).map((t) => (
+        {(["map", "charter", "checks", "dmaic"] as const).map((t) => (
           <button
             key={t}
             type="button"
@@ -379,7 +380,15 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
             onClick={() => pick(t)}
             className={`flex items-center gap-1.5 rounded px-3 py-1 text-sm transition-colors duration-150 ${tab === t ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
           >
-            {t === "map" ? <Waypoints className="size-3.5" aria-hidden="true" /> : t === "charter" ? <FileText className="size-3.5" aria-hidden="true" /> : <ListChecks className="size-3.5" aria-hidden="true" />}
+            {t === "map" ? (
+              <Waypoints className="size-3.5" aria-hidden="true" />
+            ) : t === "charter" ? (
+              <FileText className="size-3.5" aria-hidden="true" />
+            ) : t === "checks" ? (
+              <ListChecks className="size-3.5" aria-hidden="true" />
+            ) : (
+              <Activity className="size-3.5" aria-hidden="true" />
+            )}
             {mc.tabs[t]}
           </button>
         ))}
@@ -414,6 +423,8 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
               }}
             />
           </div>
+        ) : tab === "dmaic" ? (
+          <DMAICPanel id={id} />
         ) : (
           checks
         )}

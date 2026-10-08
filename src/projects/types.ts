@@ -375,6 +375,8 @@ export interface Risk {
   depends?: DependencyEdge;
   impact?: ImpactLikelihood;
   likelihood?: ImpactLikelihood;
+  /** How likely it is to be caught in time (FMEA, engine TAXONOMY.md D58). */
+  detection?: ImpactLikelihood;
   mitigation?: string;
   /** The role that manages it day to day (TAXONOMY.md D41); unowned, the
    * manager answers for it. Not who it escalates to. */

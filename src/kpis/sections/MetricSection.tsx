@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { copy } from "@/copy";
 import { useDefinitionStore, useSectionAutosave } from "@/definition/store";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
+import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { MEASURE_AGGS, METRIC_TYPES, type KPIDefinitionSpec, type KPIMeasure, type KPIMetric, type MetricType } from "../types";
 
 const mc = copy.kpis.metric;
@@ -114,7 +115,75 @@ export function MetricSection() {
           {mc.clear}
         </Button>
       ) : null}
+      <HoldingTheGain />
     </div>
+  );
+}
+
+/** The values a reading must stay within, and what is done when one does
+ * not (engine TAXONOMY.md D58): the specification limits and response plan
+ * a DMAIC control plan asks for. */
+function HoldingTheGain() {
+  const store = useDefinitionStore<KPIDefinitionSpec>();
+  const spec = store.spec;
+  const hc = mc.hold;
+  const limits = spec.specLimits ?? {};
+  const setLimit = (k: "lower" | "upper", raw: string) => {
+    const next = { ...limits, [k]: raw === "" ? undefined : Number(raw) };
+    const empty = next.lower === undefined && next.upper === undefined;
+    store.updateSpec((s) => ({ ...s, specLimits: empty ? undefined : next }));
+  };
+  const response = spec.response ?? { trigger: "", action: "" };
+  const setResponse = (p: Partial<NonNullable<KPIDefinitionSpec["response"]>>) => {
+    const next = { ...response, ...p };
+    const empty = !next.trigger && !next.action && !next.by?.id && next.withinDays === undefined;
+    store.updateSpec((s) => ({ ...s, response: empty ? undefined : next }));
+  };
+  return (
+    <section className="flex flex-col gap-4 border-t pt-6" data-cartograph-region="kpi-hold">
+      <FieldHeading label={hc.title} hint={hc.hint} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground" title={hc.lowerHint}>
+          {hc.lower}
+          <Input type="number" value={limits.lower ?? ""} onChange={(e) => setLimit("lower", e.target.value)} aria-label={hc.lower} data-cartograph-field="/spec/specLimits/lower" />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground" title={hc.upperHint}>
+          {hc.upper}
+          <Input type="number" value={limits.upper ?? ""} onChange={(e) => setLimit("upper", e.target.value)} aria-label={hc.upper} data-cartograph-field="/spec/specLimits/upper" />
+        </label>
+      </div>
+      <label className="flex flex-col gap-1 text-xs text-muted-foreground" title={hc.triggerHint}>
+        {hc.trigger}
+        <Input value={response.trigger} onChange={(e) => setResponse({ trigger: e.target.value })} aria-label={hc.trigger} data-cartograph-field="/spec/response/trigger" />
+      </label>
+      <label className="flex flex-col gap-1 text-xs text-muted-foreground" title={hc.actionHint}>
+        {hc.action}
+        <Input value={response.action} onChange={(e) => setResponse({ action: e.target.value })} aria-label={hc.action} data-cartograph-field="/spec/response/action" />
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+          {hc.by}
+          <ReferencePicker
+            data-cartograph-field="/spec/response/by"
+            refKind="Resource"
+            value={response.by?.id}
+            onChange={(v) => setResponse({ by: v ? { kind: "Resource", id: v } : undefined })}
+            label={hc.by}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+          {hc.within}
+          <Input
+            type="number"
+            min={0}
+            value={response.withinDays ?? ""}
+            onChange={(e) => setResponse({ withinDays: e.target.value === "" ? undefined : Number(e.target.value) })}
+            aria-label={hc.within}
+            data-cartograph-field="/spec/response/withinDays"
+          />
+        </label>
+      </div>
+    </section>
   );
 }
 

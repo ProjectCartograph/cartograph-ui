@@ -11,6 +11,8 @@ import { ReadingChart } from "@/kpis/ReadingChart";
 import { ReadingsTable } from "@/kpis/ReadingsTable";
 import { type KPIReadingsSpec, blankReadings, knownBaseline } from "@/kpis/types";
 import type { KPIDefinitionSpec } from "@/kpis/types";
+import { KPI_STEPS } from "@/kpis/types";
+import { ControlChartView } from "@/dmaic/ControlChartView";
 
 export const Route = createFileRoute("/kpis/$id/readings")({ component: Page });
 
@@ -22,15 +24,15 @@ function Page() {
   return (
     <DefinitionShell
       home="/kpis"
-      steps={[
-        { section: "definition", label: kc.sections.definition.heading, to: "/kpis/$id/definition" },
-        { section: "readings", label: c.heading, to: "/kpis/$id/readings" },
-      ]}
+      steps={KPI_STEPS}
       current="readings"
       heading={c.heading}
       subtitle={c.subtitle}
     >
-      <Readings kpiID={id} />
+      <div className="flex flex-col gap-6">
+        <Readings kpiID={id} />
+        <ControlChartView kpi={id} />
+      </div>
     </DefinitionShell>
   );
 }

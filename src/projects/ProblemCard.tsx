@@ -1,5 +1,6 @@
-import { ChevronDown, ChevronRight, Users, X } from "lucide-react";
+import { BadgeCheck, ChevronDown, ChevronRight, Plus, Users, X } from "lucide-react";
 
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ComboboxMultiple } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
@@ -132,6 +133,11 @@ export function ProblemCard({
               onChange={(e) => onChange({ problem: { ...line.problem, cause: e.target.value || undefined } as ProblemLine["problem"] })}
             />
           </Lead>
+          <CausesFound
+            field={`${field}/problem/causes`}
+            causes={line.problem?.causes ?? []}
+            onChange={(causes) => onChange({ problem: { ...line.problem, causes: causes.length > 0 ? causes : undefined } as ProblemLine["problem"] })}
+          />
           <Lead text={ac.statement.gaps}>
             <GapCitations
               data-cartograph-field={`${field}/gaps`}
@@ -199,6 +205,49 @@ function Lead({ text, children }: { text: string; children: React.ReactNode }) {
     <div className="flex flex-col gap-1.5">
       <p className="text-sm text-muted-foreground">{text}</p>
       {children}
+    </div>
+  );
+}
+
+/** What analysis found behind the problem, each cause with its evidence
+ * and whether the evidence confirms it (engine TAXONOMY.md D58): the
+ * charter's one line says what is suspected; these say what is known. */
+function CausesFound({ field, causes, onChange }: { field: string; causes: NonNullable<ProblemLine["problem"]["causes"]>; onChange: (next: NonNullable<ProblemLine["problem"]["causes"]>) => void }) {
+  const cc = copy.projects.aim.causes;
+  const patch = (i: number, p: Partial<(typeof causes)[number]>) => onChange(causes.map((c, j) => (j === i ? { ...c, ...p } : c)));
+  return (
+    <div className="flex flex-col gap-2" data-cartograph-field={field}>
+      <p className="text-sm text-muted-foreground" title={cc.hint}>
+        {cc.title}
+      </p>
+      {causes.map((c, i) => (
+        <div key={c.id ?? i} className="flex flex-col gap-1.5 rounded-lg p-2 ring-1 ring-foreground/10">
+          <div className="flex items-center gap-2">
+            <Input value={c.cause} onChange={(e) => patch(i, { cause: e.target.value.slice(0, 200) })} aria-label={cc.cause} maxLength={200} className="flex-1" data-cartograph-field={`${field}/${i}/cause`} />
+            <Button
+              type="button"
+              variant={c.verified ? "secondary" : "outline"}
+              size="sm"
+              aria-pressed={!!c.verified}
+              onClick={() => patch(i, { verified: !c.verified || undefined })}
+              aria-label={c.verified ? cc.verifiedHint : cc.verifyHint}
+              title={c.verified ? cc.verifiedHint : cc.verifyHint}
+              data-cartograph-field={`${field}/${i}/verified`}
+            >
+              <BadgeCheck />
+              {c.verified ? cc.verified : cc.verify}
+            </Button>
+            <Button type="button" variant="ghost" size="icon-sm" onClick={() => onChange(causes.filter((_, j) => j !== i))} aria-label={copy.projects.common.remove} title={copy.projects.common.remove}>
+              <X />
+            </Button>
+          </div>
+          <Input value={c.evidence ?? ""} onChange={(e) => patch(i, { evidence: e.target.value.slice(0, 300) || undefined })} aria-label={cc.evidence} title={cc.evidenceHint} maxLength={300} data-cartograph-field={`${field}/${i}/evidence`} />
+        </div>
+      ))}
+      <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => onChange([...causes, { cause: "" }])} aria-label={cc.addHint} title={cc.addHint}>
+        <Plus />
+        {cc.add}
+      </Button>
     </div>
   );
 }
