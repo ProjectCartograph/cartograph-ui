@@ -136,12 +136,14 @@ export function DataSection() {
           </Label>
           <Help label={dc.usesTitle} hint={dc.usesHint} />
         </div>
+        {/* Never what the project already names, used or produced: the
+            model finds a project's own outputs most relevant of all, but
+            what is there is no longer a suggestion. */}
         <Suggested
           kind="DataSource"
-          selected={consumes.map((c) => c.source).filter(Boolean)}
-          onPick={(id) =>
-            updateConsumes(consumes.some((c) => c.source === id) ? consumes.filter((c) => c.source !== id) : [...consumes, { source: id, purpose: "" }])
-          }
+          selected={[]}
+          exclude={(m) => consumes.some((c) => c.source === m.id) || produces.some((p) => p.sink === m.id)}
+          onPick={(id) => updateConsumes([...consumes, { source: id, purpose: "" }])}
         />
         {consumes.length === 0 ? <p className="text-sm text-muted-foreground">{dc.usesEmpty}</p> : null}
         {consumes.map((c, idx) => (
