@@ -2971,6 +2971,12 @@ export const copy = {
       // The section is about the project's two-way relationship with
       // data, not a register of files (Programme Lead, 2026-09-27).
       subtitle: "",
+      lineage: {
+        label: "Where this project's data comes from and what reads what it produces",
+        columns: ["Produced by", "Reads", "This project", "Writes to", "Read by"],
+        addUse: "Source",
+        addOutput: "Output",
+      },
       usesTitle: "Data used",
       usesHint: "Add the data this project reads but never writes back to.",
       producesTitle: "Data produced",

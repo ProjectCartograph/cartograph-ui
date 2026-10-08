@@ -61,6 +61,7 @@ const every: Record<keyof Client, true> = {
   linkCandidates: true,
   components: true,
   structureQuestions: true,
+  lineage: true,
   schedule: true,
   dropChangeSetItem: true,
   getGuide: true,

@@ -15,6 +15,7 @@ import { FieldHeading, Help } from "@/components/guidance";
 import { copy, plusNoun } from "@/copy";
 import { VocabOption } from "@/components/vocab";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
+import { LineageGraph } from "./LineageGraph";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { DataConsumeItem, DataOutput, DataProduceItem } from "../types";
 
@@ -127,7 +128,16 @@ export function DataSection() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+    <div className="flex flex-col gap-6">
+      <LineageGraph
+        project={store.id}
+        name={store.name}
+        uses={consumes.map((c) => c.source).filter(Boolean)}
+        produces={produces.map((p) => p.sink).filter(Boolean)}
+        onAddUse={() => updateConsumes([...consumes, { source: "", purpose: "" }])}
+        onAddOutput={() => updateProduces([...produces, { output: "recordsInExistingSource", sink: "", purpose: "", personalData: "none" }])}
+      />
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
       <div className="flex flex-col gap-3" data-cartograph-region="data-uses">
         <div className="flex items-center gap-1">
           <Label className="flex items-center gap-2">
@@ -288,6 +298,7 @@ export function DataSection() {
           <Plus />
           {plusNoun(dc.addOutput)}
         </Button>
+      </div>
       </div>
     </div>
   );
