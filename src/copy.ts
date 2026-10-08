@@ -480,6 +480,18 @@ export const copy = {
     work: "Work",
     strategy: "Strategy and evidence",
     kinds: { Project: "Project", Programme: "Programme", Portfolio: "Portfolio", Operation: "Service", Goal: "Goal", Gap: "Gap", KPI: "Indicator" } as Record<string, string>,
+    which: "Not sure which?",
+    whichLabel: "Answer which describes it, and start the right kind",
+  },
+  // Which kind a piece of work is (components/WhichKind; engine TAXONOMY.md D56).
+  whichKind: {
+    title: "Which describes it best?",
+    hint: "Read from the top and pick the first that fits. What your documents call it does not decide.",
+    pick: { outOfScope: "Run by another body", policy: "A standing policy", ongoing: "A service", groupsForFunding: "A portfolio", coordinatesProjects: "A programme", outputOf: "A deliverable", changeOfItsOwn: "A component project", "": "A project" } as Record<string, string>,
+    start: (kind: string) => `Start the ${kind.toLowerCase()}`,
+    openProjects: "Open the project it belongs to",
+    back: "Back",
+    loading: "Loading the questions",
   },
   // Defining a record without leaving a walk (records/RecordDrawer).
   recordDrawer: {

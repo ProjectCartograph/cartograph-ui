@@ -40,6 +40,12 @@ function renderNew(order: Order) {
   const client = fakeClient({
     order: async () => order,
     glossary: async () => [{ key: "purpose", kind: "Purpose", summary: "Why your organisation exists.", example: "A fair living." }],
+    structureQuestions: async () => [
+      { field: "ongoing", question: "Does it keep running with no end date?", then: "An Operation." },
+      { field: "outputOf", question: "Is it an output another piece of work hands over?", then: "A deliverable of that piece of work." },
+      { field: "changeOfItsOwn", question: "Does it bring about a change of its own that other work depends on?", then: "A Project of its own, listed as a component." },
+      { field: "", question: "None of these:", then: "A Project." },
+    ],
   });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const { container } = render(
@@ -67,21 +73,11 @@ describe("New, in the order of work", () => {
     const goals = container.querySelector('[data-cartograph-stage="goal"]')!;
     expect(goals.getAttribute("data-state")).toBe("waiting");
     expect(within(goals as HTMLElement).queryByRole("link")).toBeNull();
-    // Work that finishes does not wait for the strategy: a project's own
-    // start walk names the outcome it serves, and the aims above it, in
-    // place.
+    // The work can be started whatever the strategy holds: what it is
+    // is asked right away.
     const work = container.querySelector('[data-cartograph-region="new-work"]') as HTMLElement;
-    fireEvent.click(within(work).getAllByRole("radio")[0]);
-    for (const radio of within(work).getAllByRole("radio").slice(2)) {
-      expect((radio as HTMLButtonElement).disabled).toBe(false);
-    }
-    // A service waits on nothing: one running today can be recorded first,
-    // and a new one is recorded as planned (TAXONOMY.md D30).
-    fireEvent.click(within(work).getAllByRole("radio")[1]);
-    fireEvent.click(within(work).getAllByRole("radio")[3]);
-    const verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
-    expect(verdict.textContent).toContain(copy.newWork.verdict.service);
-    expect((within(verdict).getByRole("button", { name: new RegExp(copy.newWork.start.service) }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(await within(work).findByRole("button", { name: /keep running with no end date/ }));
+    expect(within(work).getByRole("button", { name: new RegExp(copy.whichKind.start(copy.createMenu.kinds.Operation)) })).toBeTruthy();
   });
 
   it("lists the strategy top-down, each stage after what it names", async () => {
@@ -92,42 +88,16 @@ describe("New, in the order of work", () => {
     expect(container.querySelector('[data-cartograph-stage="outcome"]')!.getAttribute("data-state")).toBe("next");
   });
 
-  it("opens the work once there is an outcome to serve, one yes or no at a time", async () => {
+  // What the work is, by the engine's questions (TAXONOMY.md D56): one
+  // ordered choice, the first that fits, never what a document calls it.
+  it("asks what the work is by the engine's questions, and says what follows", async () => {
     const container = renderNew(orderWith(5));
-    await screen.findByText("Purpose");
     const work = container.querySelector('[data-cartograph-region="new-work"]') as HTMLElement;
-    const radios = () => within(work).getAllByRole("radio");
-    fireEvent.click(radios()[0]);
-    // Not one person in charge with one budget: several projects, told
-    // apart by why they are together, never by being grouped (D32).
-    fireEvent.click(radios()[3]);
-    expect(container.querySelector('[data-cartograph-region="new-verdict"]')).toBeNull();
-    // Each needs the others for one change: a programme, which answers a
-    // gap; none is written yet, so it leads there.
-    fireEvent.click(radios()[4]);
-    let verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
-    expect(verdict.textContent).toContain(copy.newWork.verdict.programme);
-    expect(within(verdict).getByRole("link").getAttribute("href")).toBe("/gaps/new");
-    // They stand apart: are they grouped to decide what to fund?
-    fireEvent.click(radios()[5]);
-    expect(container.querySelector('[data-cartograph-region="new-funds"]')).not.toBeNull();
-    fireEvent.click(radios()[6]);
-    verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
-    expect(verdict.textContent).toContain(copy.newWork.verdict.portfolio);
-    expect(within(verdict).getByRole("button", { name: new RegExp(copy.newWork.start.portfolio) })).toBeTruthy();
-    // Neither: a collection, which is not a kind and starts nothing.
-    fireEvent.click(radios()[7]);
-    verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
-    expect(verdict.textContent).toContain(copy.newWork.verdict.collection);
-    // One person in charge: then whether it is a part of a bigger project.
-    fireEvent.click(radios()[2]);
-    expect(container.querySelector('[data-cartograph-region="new-verdict"]')).toBeNull();
-    expect(container.querySelector('[data-cartograph-region="new-part-of"]')).not.toBeNull();
-    fireEvent.click(radios()[4]);
-    verdict = container.querySelector('[data-cartograph-region="new-verdict"]') as HTMLElement;
-    expect(verdict.textContent).toContain(copy.newWork.verdict.project);
-    expect((within(verdict).getByRole("button", { name: new RegExp(copy.newWork.start.project) }) as HTMLButtonElement).disabled).toBe(false);
-    fireEvent.click(radios()[5]);
-    expect(container.querySelector('[data-cartograph-region="new-verdict"]')!.textContent).toContain(copy.newWork.verdict.component);
+    fireEvent.click(await within(work).findByRole("button", { name: /Does it bring about a change of its own/ }));
+    expect(within(work).getByText("A Project of its own, listed as a component.")).toBeTruthy();
+    expect(within(work).getByRole("button", { name: new RegExp(copy.whichKind.start("Project")) })).toBeTruthy();
+    fireEvent.click(within(work).getByRole("button", { name: copy.whichKind.back }));
+    fireEvent.click(within(work).getByRole("button", { name: /an output another piece of work hands over/ }));
+    expect(within(work).getByRole("button", { name: copy.whichKind.openProjects })).toBeTruthy();
   });
 });

@@ -23,6 +23,7 @@ export type GoalTree = Schemas["GoalTree"];
 export type LinkKind = Schemas["LinkKind"];
 export type LinkCandidate = Schemas["LinkCandidate"];
 export type ComponentGraph = Schemas["ComponentGraph"];
+export type StructureQuestion = Schemas["StructureQuestion"];
 export type ComponentNode = Schemas["ComponentNode"];
 export type WorkRef = Schemas["WorkRef"];
 export type ScheduleItem = Schemas["ScheduleItem"];
@@ -458,6 +459,8 @@ export interface Client {
    * critical path and how much work depends on each (engine TAXONOMY.md
    * D46). */
   components(): Promise<ComponentGraph>;
+  /** The questions that decide what a piece of work is (engine TAXONOMY.md D56). */
+  structureQuestions(): Promise<StructureQuestion[]>;
   /** A project's milestones placed on time (engine TAXONOMY.md D48). */
   schedule(project: string): Promise<ScheduleItem[]>;
   changeSet(id: string): Promise<ChangeSetReview>;

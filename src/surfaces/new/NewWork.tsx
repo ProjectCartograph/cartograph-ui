@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Boxes, Check, Circle, CircleDot, Flag, FolderKanban, Hourglass, Layers, Lock, Plus, Repeat, Settings2, BriefcaseBusiness, Folders } from "lucide-react";
+import { Check, Circle, CircleDot, Lock, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useClient } from "@/client/context";
@@ -9,8 +9,7 @@ import type { OrderStage } from "@/client/port";
 import { copy } from "@/copy";
 import { entryFor, useGlossary } from "@/components/glossary";
 import { Term } from "@/components/Term";
-import { kindOf, type Ends, type InCharge, type NewKind as Kind, type PartOf, type Today, type YesNo } from "@/definition/kindOf";
-import { ChoiceCard } from "@/components/ChoiceCard";
+import { WhichKindChoice } from "@/components/WhichKind";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
 
 const nc = copy.newWork;
@@ -26,27 +25,6 @@ const WHERE: Record<string, string> = {
   outcome: "/goals",
   gap: "/gaps/new",
   assumption: "/sheets/Assumption",
-};
-
-/** The work stage each answer makes, and the word the glossary defines
- * it by. */
-const STAGE_OF: Record<Kind, string> = {
-  project: "project",
-  component: "project",
-  programme: "programme",
-  portfolio: "portfolio",
-  collection: "project",
-  operation: "operation",
-  service: "operation",
-};
-const TERM_OF: Record<Kind, string> = {
-  project: "project",
-  component: "component",
-  programme: "programme",
-  portfolio: "portfolio",
-  collection: "project",
-  operation: "operation",
-  service: "operation",
 };
 
 /**
@@ -84,7 +62,13 @@ export function NewWork() {
           ))}
         </ol>
       </section>
-      <WorkQuestions stages={stages} next={order.data?.next} loaded={!!order.data} />
+      {/* What the work is, by Cartograph's questions rather than by what a
+          document calls it (engine TAXONOMY.md D56). */}
+      <section className="flex flex-col gap-3" aria-label={nc.work} data-cartograph-region="new-work">
+        <h2 className="text-base font-medium">{nc.work}</h2>
+        <p className="text-sm text-muted-foreground">{copy.whichKind.hint}</p>
+        <WhichKindChoice />
+      </section>
     </div>
   );
 }
@@ -162,176 +146,5 @@ function StageRow({ stage, n, next }: { stage: OrderStage; n: number; next: bool
         </Button>
       ) : null}
     </li>
-  );
-}
-
-function WorkQuestions({ stages, next, loaded }: { stages: Map<string, OrderStage>; next?: string; loaded: boolean }) {
-  const navigate = useNavigate();
-  const [ends, setEnds] = useState<Ends | null>(null);
-  const [answer, setAnswer] = useState<InCharge | Today | null>(null);
-  const [partOf, setPartOf] = useState<PartOf | null>(null);
-  const [together, setTogether] = useState<YesNo | null>(null);
-  const [funds, setFunds] = useState<YesNo | null>(null);
-  // Work that finishes serves an outcome, and where the strategy has none
-  // yet, the project's own start walk names one, with the aims above it,
-  // in place: nothing waits on the strategy page first.
-  const finishWaits = !loaded;
-  const kind =
-    ends === "finishes" && finishWaits
-      ? null
-      : ends === "runs"
-        ? kindOf({ ends, today: answer as Today | null })
-        : kindOf({ ends, inCharge: answer as InCharge | null, partOf, together, funds });
-  const stage = kind ? stages.get(STAGE_OF[kind]) : undefined;
-  const kindWaits = stage?.state === "waiting";
-  const nextName = next ? (nc.stage[next] ?? next) : "";
-
-  function go() {
-    if (kind === "operation") void navigate({ to: "/operations/new", search: {} });
-    else if (kind === "service") void navigate({ to: "/operations/new", search: { status: "planned" } });
-    else if (kind === "programme") void navigate({ to: "/programmes/prepare" });
-    else if (kind === "portfolio") void navigate({ to: "/portfolios/prepare" });
-    else if (kind === "collection") void navigate({ to: "/projects" });
-    // A project starts by preparing what its walk picks from
-    // (TAXONOMY.md D34); it can be started from there at any point.
-    else if (kind === "component") void navigate({ to: "/projects/prepare", search: { partOf: true } });
-    // A project starts in four guided questions, each thing it names
-    // picked or named in place.
-    else if (kind === "project") void navigate({ to: "/projects/start" });
-  }
-  function pickEnds(next: Ends) {
-    setEnds(next);
-    setAnswer(null);
-    setPartOf(null);
-    setTogether(null);
-    setFunds(null);
-  }
-  function pickInCharge(next: InCharge) {
-    setAnswer(next);
-    setPartOf(null);
-    setTogether(null);
-    setFunds(null);
-  }
-
-  return (
-    <section className="flex flex-col gap-6" aria-label={nc.work} data-cartograph-region="new-work">
-      <h2 className="text-base font-medium">{nc.work}</h2>
-      <Question label={nc.endsQuestion} region="new-ends">
-        <ChoiceCard icon={Flag} title={nc.finishes} detail={nc.finishesDetail} picked={ends === "finishes"} onPick={() => pickEnds("finishes")} />
-        <ChoiceCard icon={Repeat} title={nc.runs} detail={nc.runsDetail} picked={ends === "runs"} onPick={() => pickEnds("runs")} />
-      </Question>
-
-      {ends === "runs" ? (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-250 ease-enter">
-          <Question label={nc.todayQuestion} region="new-today">
-            <ChoiceCard icon={Settings2} title={nc.today} detail={nc.todayDetail} picked={answer === "today"} onPick={() => setAnswer("today")} />
-            <ChoiceCard icon={Hourglass} title={nc.isNew} detail={nc.isNewDetail} picked={answer === "new"} onPick={() => setAnswer("new")} />
-          </Question>
-        </div>
-      ) : null}
-
-      {ends === "finishes" && finishWaits && loaded ? (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
-          <Lock className="size-4 shrink-0" aria-hidden="true" />
-          {nc.workWaits(nextName)}
-        </p>
-      ) : null}
-
-      {ends === "finishes" ? (
-        <div className={`animate-in fade-in slide-in-from-top-2 duration-250 ease-enter ${finishWaits ? "opacity-60" : ""}`}>
-          <Question label={nc.inChargeQuestion} region="new-in-charge">
-            <ChoiceCard icon={FolderKanban} title={nc.one} detail={nc.oneDetail} picked={answer === "one"} disabled={finishWaits} onPick={() => pickInCharge("one")} />
-            <ChoiceCard icon={Layers} title={nc.many} detail={nc.manyDetail} picked={answer === "many"} disabled={finishWaits} onPick={() => pickInCharge("many")} />
-          </Question>
-        </div>
-      ) : null}
-
-      {ends === "finishes" && answer === "one" && !finishWaits ? (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-250 ease-enter">
-          <Question label={nc.partOfQuestion} region="new-part-of">
-            <ChoiceCard icon={FolderKanban} title={nc.own} detail={nc.ownDetail} picked={partOf === "own"} onPick={() => setPartOf("own")} />
-            <ChoiceCard icon={Boxes} title={nc.part} detail={nc.partDetail} picked={partOf === "part"} onPick={() => setPartOf("part")} />
-          </Question>
-        </div>
-      ) : null}
-
-      {ends === "finishes" && answer === "many" && !finishWaits ? (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-250 ease-enter">
-          <Question label={nc.togetherQuestion} region="new-together">
-            <ChoiceCard icon={Layers} title={nc.together} detail={nc.togetherDetail} picked={together === "yes"} onPick={() => (setTogether("yes"), setFunds(null))} />
-            <ChoiceCard icon={Folders} title={nc.apart} detail={nc.apartDetail} picked={together === "no"} onPick={() => setTogether("no")} />
-          </Question>
-        </div>
-      ) : null}
-
-      {ends === "finishes" && answer === "many" && together === "no" && !finishWaits ? (
-        <div className="animate-in fade-in slide-in-from-top-2 duration-250 ease-enter">
-          <Question label={nc.fundsQuestion} region="new-funds">
-            <ChoiceCard icon={BriefcaseBusiness} title={nc.funds} detail={nc.fundsDetail} picked={funds === "yes"} onPick={() => setFunds("yes")} />
-            <ChoiceCard icon={Folders} title={nc.loose} detail={nc.looseDetail} picked={funds === "no"} onPick={() => setFunds("no")} />
-          </Question>
-        </div>
-      ) : null}
-
-      {kind ? (
-        <div
-          className="flex flex-col gap-3 rounded-xl bg-primary/5 p-4 ring-1 ring-primary/20 animate-in fade-in zoom-in-95 duration-250 ease-enter"
-          data-slot="new-verdict"
-          data-cartograph-region="new-verdict"
-          role="status"
-        >
-          <p className="flex items-center gap-2 font-medium">
-            <KindMark kind={kind} />
-            {nc.verdict[kind]}
-            <Term word={TERM_OF[kind]} />
-          </p>
-          <p className="text-sm text-muted-foreground">{nc.because[kind]}</p>
-          {kindWaits && stage ? (
-            <p className="text-sm text-muted-foreground">
-              {nc.after((stage.waiting ?? []).map((k) => nc.stage[k] ?? k).join(", "))}
-            </p>
-          ) : null}
-          <div>
-            {kindWaits && stage?.waiting?.[0] && WHERE[stage.waiting[0]] ? (
-              <Button asChild>
-                <Link to={WHERE[stage.waiting[0]]}>
-                  {nc.goTo(nc.stage[stage.waiting[0]] ?? stage.waiting[0])}
-                  <ArrowRight />
-                </Link>
-              </Button>
-            ) : (
-              <Button type="button" onClick={go} disabled={kindWaits}>
-                {nc.start[kind]}
-                <ArrowRight />
-              </Button>
-            )}
-          </div>
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-function KindMark({ kind }: { kind: Kind }) {
-  const Icon = {
-    project: FolderKanban,
-    component: Boxes,
-    programme: Layers,
-    portfolio: BriefcaseBusiness,
-    collection: Folders,
-    operation: Settings2,
-    service: Hourglass,
-  }[kind];
-  return <Icon className="size-5 text-primary" aria-hidden="true" />;
-}
-
-/** A question answered by picking, its choices one per line so each reads
- * in full. */
-function Question({ label, region, children }: { label: string; region: string; children: React.ReactNode }) {
-  return (
-    <fieldset className="flex flex-col gap-3" data-cartograph-region={region}>
-      <legend className="mb-3 text-base font-medium">{label}</legend>
-      <div className="flex flex-col gap-2">{children}</div>
-    </fieldset>
   );
 }
