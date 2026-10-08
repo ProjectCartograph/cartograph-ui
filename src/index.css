@@ -575,13 +575,18 @@
 
 /* What a definition cannot leave out (components/RequiredMarks): a soft
    border around the control, in the advising tone, the same in every
-   flow; firmer once it was left empty, with the reason under it. */
+   flow; firmer once it was left empty, with the reason under it; gone
+   once it is filled. */
 [data-required] {
     border-radius: var(--radius-md);
     box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-warning) 45%, transparent);
 }
 [data-required][data-required-missing] {
     box-shadow: 0 0 0 2px var(--color-warning);
+}
+/* Filled: done, so no mark at all. */
+[data-required][data-required-filled]:not([data-required-missing]) {
+    box-shadow: none;
 }
 
 /* Working in a change set: a soft frame around the workspace, so the

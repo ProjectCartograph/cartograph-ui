@@ -37,9 +37,12 @@ export function RequiredMarks({ kind, level }: { kind: string; level?: string })
     };
     const mark = () => {
       for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-cartograph-field]"))) {
-        if (el.hasAttribute("data-required") || !reasonOf(el)) continue;
-        el.setAttribute("data-required", "");
-        el.setAttribute("aria-required", "true");
+        if (!el.hasAttribute("data-required")) {
+          if (!reasonOf(el)) continue;
+          el.setAttribute("data-required", "");
+          el.setAttribute("aria-required", "true");
+        }
+        showFilled(el);
       }
     };
     // The marked field an event happened in, whether on the control or
@@ -50,6 +53,12 @@ export function RequiredMarks({ kind, level }: { kind: string; level?: string })
       const el = fieldOf(e.target);
       const reason = el && reasonOf(el);
       if (el && reason) explain(el, reason, valueOf(el)?.trim() !== "");
+      if (el) showFilled(el);
+    };
+    // A picker or toggle settles after the click that changed it.
+    const onPick = (e: Event) => {
+      const el = fieldOf(e.target);
+      setTimeout(() => (el ? showFilled(el) : mark()), 0);
     };
     const onLeave = (e: Event) => {
       const el = fieldOf(e.target);
@@ -62,13 +71,38 @@ export function RequiredMarks({ kind, level }: { kind: string; level?: string })
     watch.observe(document.body, { childList: true, subtree: true });
     document.addEventListener("input", onInput, true);
     document.addEventListener("focusout", onLeave, true);
+    document.addEventListener("click", onPick, true);
     return () => {
       watch.disconnect();
       document.removeEventListener("input", onInput, true);
       document.removeEventListener("focusout", onLeave, true);
+      document.removeEventListener("click", onPick, true);
     };
   }, [reasons]);
   return null;
+}
+
+/**
+ * Whether a required control holds something: text in a box, a choice in
+ * a picker (a Radix select drops data-placeholder once chosen), a pressed
+ * toggle or a checked box. undefined when it cannot be read, and then the
+ * mark stays.
+ */
+function isFilled(el: HTMLElement): boolean | undefined {
+  const text = valueOf(el);
+  if (text !== undefined) return text.trim() !== "";
+  const picker = el.matches('[role="combobox"]') ? el : el.querySelector<HTMLElement>('[role="combobox"]');
+  if (picker) return !picker.hasAttribute("data-placeholder");
+  if (el.querySelector('[aria-pressed="true"], [data-state="on"], [data-state="checked"], [aria-checked="true"]')) return true;
+  if (el.querySelector('[aria-pressed], [data-state], [aria-checked]')) return false;
+  return undefined;
+}
+
+/** Once a required control is filled it is no longer marked (index.css):
+ * the mark is for what is still to do, not for what is done. */
+function showFilled(el: HTMLElement) {
+  if (isFilled(el)) el.setAttribute("data-required-filled", "");
+  else el.removeAttribute("data-required-filled");
 }
 
 /** The value a required control holds, as text, or undefined when it is

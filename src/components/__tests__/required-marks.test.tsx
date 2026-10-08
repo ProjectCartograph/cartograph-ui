@@ -52,7 +52,23 @@ describe("required fields", () => {
     await userEvent.click(screen.getByLabelText("description"));
     expect(await screen.findByText(copy.required.because)).toBeInTheDocument();
     expect(screen.getByLabelText("name")).toHaveAttribute("data-required-missing");
+    expect(screen.getByLabelText("name")).not.toHaveAttribute("data-required-filled");
     await userEvent.type(screen.getByLabelText("name"), "Grading manual");
     expect(screen.queryByText(copy.required.because)).not.toBeInTheDocument();
+    // Filled, it is no longer marked.
+    expect(screen.getByLabelText("name")).toHaveAttribute("data-required-filled");
+  });
+
+  it("are not marked when they arrive already filled", async () => {
+    const getGuide = vi.fn().mockResolvedValue({ steps: [{ key: "deliverables", fields: [{ path: "/spec/deliverables/-/name", control: "text", required: true }] }] });
+    render(
+      <ClientProvider client={fakeClient({ getGuide })}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <RequiredMarks kind="Project" />
+          <input aria-label="name" data-cartograph-field="/spec/deliverables/{d-1}/name" defaultValue="Grading manual" />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByLabelText("name")).toHaveAttribute("data-required-filled"));
   });
 });
