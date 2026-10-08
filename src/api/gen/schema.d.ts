@@ -271,6 +271,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/Project/{id}/dmaic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether a project can be taken through DMAIC, phase by phase
+         * @description Lean Six Sigma's Define, Measure, Analyze, Improve and Control (TAXONOMY.md D58): each phase's tollgate deliverables, whether the project and the records it names hold them, where each is held, and what is lacking. Advisory: nothing is asked of a project that is not being improved this way.
+         */
+        get: operations["getProjectDMAIC"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/manifests/KPI/{id}/control": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A KPI's readings as a control chart, with its capability
+         * @description The individuals and moving range chart of a KPI's readings (TAXONOMY.md D58): the centre line and natural process limits, the readings that signal a change (beyond a limit, a run of eight on one side, a trend of six), and, with the KPI's specification limits, the process capability (Cp, Cpk) and sigma level.
+         */
+        get: operations["getKPIControlChart"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/Project/{id}/state": {
         parameters: {
             query?: never;
@@ -2212,6 +2252,8 @@ export interface components {
             outputOf?: string;
             changeOfItsOwn?: boolean;
             dependedOnBy?: string[];
+            /** @description Every question was asked and none is yes. A piece says it, or answers; among several, a piece with neither is a problem. */
+            none?: boolean;
         };
         Lineage: {
             nodes: components["schemas"]["LineageNode"][];
@@ -2237,6 +2279,45 @@ export interface components {
                 content: string;
             }[];
             notes: string[];
+        };
+        DMAIC: {
+            project: string;
+            phases: {
+                /** @enum {string} */
+                phase: "define" | "measure" | "analyze" | "improve" | "control";
+                met: number;
+                of: number;
+                items: {
+                    phase: string;
+                    key: string;
+                    met: boolean;
+                    says: string;
+                    field: string;
+                    lacking?: string;
+                }[];
+            }[];
+        };
+        ControlChart: {
+            kpi: string;
+            points: {
+                period: string;
+                value: number;
+                signals?: ("beyond" | "run" | "trend")[];
+                provisional?: boolean;
+            }[];
+            centre: number;
+            lower: number;
+            upper: number;
+            sigma: number;
+            stable: boolean;
+            /** @description Twenty readings or more, the fewest the limits are usually trusted from. */
+            enough: boolean;
+            specLower?: number;
+            specUpper?: number;
+            cp?: number;
+            cpk?: number;
+            sigmaLevel?: number;
+            note?: string;
         };
         StructuredPiece: {
             name: string;
@@ -2906,6 +2987,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProjectChecks"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getProjectDMAIC: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DMAIC"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getKPIControlChart: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ControlChart"];
                 };
             };
             401: components["responses"]["Unauthenticated"];
