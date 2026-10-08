@@ -13,7 +13,7 @@
         let haveChromium = pkgs.stdenv.hostPlatform.isLinux; in {
           default = pkgs.mkShell {
             name = "cartograph-ui";
-            packages = with pkgs; [ nodejs_24 just bashInteractive coreutils gnugrep gnused curl git gnutar gzip ]
+            packages = with pkgs; [ nodejs_24 just bashInteractive coreutils gnugrep gnused curl git jujutsu gnutar gzip ]
               ++ pkgs.lib.optionals haveChromium [ chromium ];
             shellHook = ''
               ${pkgs.lib.optionalString haveChromium ''export CHROMIUM="${pkgs.chromium}/bin/chromium"''}

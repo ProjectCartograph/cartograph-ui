@@ -30,6 +30,8 @@ aarch64. Nix is required (`docs/SETUP.md`); there is no Makefile.
 
 ## Rules that are not negotiable
 
+- **Everything runs through the flake, agents included.** Every command is a `just` recipe or runs inside `nix develop` (or is a `nix build` or `nix run` of the flake): never a system binary, never a tool installed on the machine, never a Makefile (`just` is this repository's one task runner). This holds for an agent as much as a person, and for anything an agent starts: a server under evaluation is a `nix build` of a pinned commit, served from the Nix store, so a run is never touched by code changing beside it, and every environment is the same as every other.
+- **Version control is jujutsu, colocated with git.** Every clone is a colocated `jj` repository (`jj git init --colocate` once in a plain git clone), and an agent makes every change with `jj` from the flake: `jj new -m` before a piece of work, `jj describe`, `jj bookmark set`, `jj git push`. Never `git commit`, `git push`, `git rebase` or `git checkout`. The read-only git queries a recipe shares with CI (whose checkouts are plain git) stay as they are.
 - **The contract is the engine's.** `contract/` and `examples/` here are synced copies at a pinned engine version (`ENGINE_VERSION`). Never edit them; change them in cartograph-engine and sync.
 - **No component talks to a wire.** Code depends on the `Client` interface; the HTTP adapter behind it is the one place a path appears, generated from the contract. A terminal interface runs in-process with no server at all.
 - **Fields are named by path.** Every control carries `data-cartograph-field` with the manifest's JSON pointer. Tests find controls by that, by step key, or by accessible name; never by visible text or placeholder.
