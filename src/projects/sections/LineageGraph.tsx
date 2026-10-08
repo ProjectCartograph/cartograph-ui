@@ -77,13 +77,14 @@ export function LineageGraph({
       className="overflow-x-auto rounded-xl bg-background ring-1 ring-foreground/10"
       data-slot="lineage"
     >
+      {/* Fitted to the pane it sits in, down to seven tenths of its size
+          so the names stay legible, and scrolled beyond that. */}
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        width={width}
-        height={height}
         role="group"
         aria-label={lc.label}
-        className="block"
+        className="block h-auto w-full"
+        style={{ maxWidth: width, minWidth: Math.round(width * 0.7) }}
       >
         <defs>
           <marker
