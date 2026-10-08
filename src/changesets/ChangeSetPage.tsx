@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed
 import { useSession } from "@/access/access";
 import { useClient } from "@/client/context";
 import { AskAgent } from "./AskAgent";
+import { DiscardButton } from "./Discard";
 import { MergeDialog, checkText } from "./MergeBar";
 import { ClientError, type ChangeSetItem, type ChangeSetReview } from "@/client/port";
 import { Badge } from "@/components/ui/badge";
@@ -124,7 +125,7 @@ function Review({ review }: { review: ChangeSetReview }) {
         </section>
       ))}
 
-      {mine ? <Decide set={cs.id} status={cs.status} included={included.length} all={review.items.length} /> : null}
+      {mine ? <Decide set={cs.id} title={cs.title} status={cs.status} included={included.length} all={review.items.length} /> : null}
     </>
   );
 }
@@ -218,7 +219,7 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
   );
 }
 
-function Decide({ set, status, included, all }: { set: string; status: string; included: number; all: number }) {
+function Decide({ set, title, status, included, all }: { set: string; title: string; status: string; included: number; all: number }) {
   const client = useClient();
   const queries = useQueryClient();
   const [said, setSaid] = useState<string | undefined>(undefined);
@@ -226,17 +227,14 @@ function Decide({ set, status, included, all }: { set: string; status: string; i
   const fail = (e: unknown) => setSaid(e instanceof ClientError && e.status === 409 ? cc.staleRefused : cc.failed);
   const [merging, setMerging] = useState(false);
   const reopen = useMutation({ mutationFn: () => client.reopenChangeSet(set), onSuccess: () => void refresh(), onError: fail });
-  const close = useMutation({ mutationFn: () => client.closeChangeSet(set), onSuccess: () => { setSaid(cc.closed); void refresh(); }, onError: fail });
-  const busy = reopen.isPending || close.isPending;
+  const busy = reopen.isPending;
   if (status !== "open" && status !== "proposed") return said ? <p className="text-sm text-muted-foreground">{said}</p> : null;
   return (
     <section className="sticky bottom-0 flex flex-col gap-2 border-t bg-background/95 py-3 backdrop-blur" data-cartograph-region="change-set-decide">
       {status === "proposed" && included === 0 ? <p className="text-sm text-muted-foreground">{cc.nothingIncluded}</p> : null}
       <div className="flex flex-wrap items-center justify-end gap-2">
         <span className="mr-auto text-sm text-muted-foreground">{cc.included(included, all)}</span>
-        <Button variant="ghost" disabled={busy} onClick={() => close.mutate()}>
-          {cc.close}
-        </Button>
+        <DiscardButton set={set} title={title} onDiscarded={() => setSaid(cc.closed)} />
         {status === "proposed" ? (
           <Button variant="outline" disabled={busy} onClick={() => reopen.mutate()}>
             {cc.askForChanges}

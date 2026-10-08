@@ -370,6 +370,18 @@ export const copy = {
     summary: "What it contains",
     nothingIncluded: "Nothing is included. Include at least one record to accept.",
   },
+  // Discarding a change set (changesets/Discard).
+  discard: {
+    button: "Discard",
+    label: "Discard this change set without saving any of it",
+    title: (name: string) => `Discard "${name}"?`,
+    body: "Nothing in it is saved, and the records stay as they are. This cannot be undone.",
+    keep: "Keep it",
+    confirm: "Discard",
+    confirmLabel: "Discard the change set",
+    reason: "Discarded",
+    failed: "That did not work. Try again.",
+  },
   // A change as a person reads it (changesets/ChangeView): where it is
   // and what it was and is, in words, never as data.
   changeWords: {

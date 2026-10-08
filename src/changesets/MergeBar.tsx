@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { manifestLink } from "@/proposals/links";
 import { AskAgent } from "./AskAgent";
+import { DiscardButton } from "./Discard";
 import { mergeChangeSet } from "./merge";
 import { useActiveChangeSet } from "./useActive";
 
@@ -106,6 +107,7 @@ export function MergeBar() {
           </p>
         </div>
         <AskAgent set={active} title={review.data?.changeSet.title ?? ""} />
+        <DiscardButton set={active} title={review.data?.changeSet.title ?? ""} size="icon" />
         <Button asChild variant="outline" size="sm">
           <Link to="/changesets/$id" params={{ id: active }} aria-label={c.reviewLabel} title={c.reviewLabel}>
             <Eye />

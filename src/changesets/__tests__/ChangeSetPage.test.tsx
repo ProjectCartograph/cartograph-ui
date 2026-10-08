@@ -94,4 +94,13 @@ describe("a change set's review", () => {
     await screen.findByRole("heading", { name: "Define the bruising gap" });
     expect(screen.queryByRole("button", { name: copy.askAgent.label })).not.toBeInTheDocument();
   });
+
+  it("discards an open change set after asking once", async () => {
+    const closeChangeSet = vi.fn(async () => ({ ...review.changeSet, status: "closed" }) as never);
+    mount({ changeSet: async () => ({ ...review, changeSet: { ...review.changeSet, status: "open", agent: undefined } }), closeChangeSet });
+    fireEvent.click(await screen.findByRole("button", { name: copy.discard.label }));
+    expect(await screen.findByText(copy.discard.title("Define the bruising gap"))).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: copy.discard.confirmLabel }));
+    await waitFor(() => expect(closeChangeSet).toHaveBeenCalledWith("cs1", copy.discard.reason));
+  });
 });

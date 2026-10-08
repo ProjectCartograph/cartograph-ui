@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Eye, EyeOff, GitBranch, GitPullRequest, LogOut, Pencil, Plus } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, GitBranch, GitPullRequest, LogOut, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { activeChangeSet } from "@/client/active";
 import { useClient } from "@/client/context";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { copy } from "@/copy";
+import { DiscardDialog } from "./Discard";
 import { useActiveChangeSet, useAsItIs } from "./useActive";
 
 const c = copy.workingIn;
@@ -35,6 +36,7 @@ export function WorkingIn() {
   const active = useActiveChangeSet();
   const asItIs = useAsItIs();
   const [renaming, setRenaming] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
   const [title, setTitle] = useState("");
 
   const review = useQuery({
@@ -132,6 +134,10 @@ export function WorkingIn() {
                 <LogOut />
                 {c.leave}
               </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onSelect={() => setDiscarding(true)} title={copy.discard.label}>
+                <Trash2 />
+                {copy.discard.button}
+              </DropdownMenuItem>
             </>
           ) : (
             <DropdownMenuLabel className="font-normal text-muted-foreground">{c.none}</DropdownMenuLabel>
@@ -176,6 +182,7 @@ export function WorkingIn() {
           </form>
         </DialogContent>
       </Dialog>
+      {active ? <DiscardDialog set={active} title={name ?? c.label} open={discarding} onOpenChange={setDiscarding} /> : null}
     </>
   );
 }

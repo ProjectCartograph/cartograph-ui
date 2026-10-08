@@ -5,6 +5,7 @@ import { Bot, GitPullRequest } from "lucide-react";
 import { useClient } from "@/client/context";
 import type { ChangeSet } from "@/client/port";
 import { Badge } from "@/components/ui/badge";
+import { DiscardButton } from "./Discard";
 import { copy } from "@/copy";
 
 const cc = copy.changeSets;
@@ -50,11 +51,11 @@ function Group({ title, sets, empty, muted }: { title: string; sets: ChangeSet[]
       {sets.length === 0 && empty ? <p className="text-sm text-muted-foreground">{empty}</p> : null}
       <ul className="divide-y rounded-lg border">
         {sets.map((c) => (
-          <li key={c.id}>
+          <li key={c.id} className="flex items-center">
             <Link
               to="/changesets/$id"
               params={{ id: c.id }}
-              className={`flex items-start gap-3 p-3 hover:bg-accent ${muted ? "text-muted-foreground" : ""}`}
+              className={`flex min-w-0 flex-1 items-start gap-3 p-3 hover:bg-accent ${muted ? "text-muted-foreground" : ""}`}
               data-cartograph-change-set={c.id}
             >
               <GitPullRequest className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -74,6 +75,11 @@ function Group({ title, sets, empty, muted }: { title: string; sets: ChangeSet[]
                 {cc.status[c.status] ?? c.status}
               </Badge>
             </Link>
+            {c.status === "open" || c.status === "proposed" ? (
+              <span className="pr-2">
+                <DiscardButton set={c.id} title={c.title} size="icon" />
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>
