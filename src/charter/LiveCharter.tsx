@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { ProposedMark } from "@/changesets/ProposedMark";
+import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
 import { copy } from "@/copy";
 
 const lc = copy.charter.live;
@@ -46,6 +48,7 @@ export function LiveCharter({
   onField,
   valueOf,
   checksOf,
+  routeOf,
 }: {
   id: string;
   /** Changes whenever the draft does, to read the parts again. */
@@ -58,10 +61,21 @@ export function LiveCharter({
   valueOf: (path: string) => string;
   /** The open checks a step's fields answer, in words. */
   checksOf: (step: string) => string[];
+  /** The route of a step, where the people on it are seen. */
+  routeOf?: (step: string) => string | undefined;
 }) {
   const client = useClient();
   const queries = useQueryClient();
   const parts = useQuery({ queryKey: ["charter-parts", id], queryFn: () => client.charterParts(id) });
+  // The record's parts, beside the change set's: what the change set adds
+  // or changes is marked where it shows (engine docs/adr/0024).
+  const record = useQuery({ queryKey: ["charter-parts", id, "record"], queryFn: () => client.charterParts(id, { record: true }) });
+  const proposedOf = (part: CharterPart): "new" | "changed" | undefined => {
+    if (!record.data || part.empty) return undefined;
+    const was = record.data.find((r) => r.title === part.title && r.step === part.step);
+    if (!was || was.empty) return "new";
+    return was.html !== part.html ? "changed" : undefined;
+  };
   // Read again a moment after the draft changes, for everyone in the
   // change set: their edits and this person's alike.
   useEffect(() => {
@@ -87,6 +101,8 @@ export function LiveCharter({
         <Part
           key={`${part.title}-${i}`}
           part={part}
+          proposed={proposedOf(part)}
+          route={part.step ? routeOf?.(part.step) : undefined}
           current={!!step && part.step === step}
           menuOpen={menu === i}
           onMenu={(open) => setMenu(open ? i : null)}
@@ -118,6 +134,8 @@ export function LiveCharter({
 
 function Part({
   part,
+  proposed,
+  route,
   current,
   menuOpen,
   onMenu,
@@ -128,6 +146,9 @@ function Part({
   panel,
 }: {
   part: CharterPart;
+  proposed: "new" | "changed" | undefined;
+  /** The route of its step, where the people on it are seen. */
+  route?: string;
   current: boolean;
   menuOpen: boolean;
   onMenu: (open: boolean) => void;
@@ -138,6 +159,7 @@ function Part({
   panel: React.ReactNode;
 }) {
   const fields = useMemo(() => fieldsOf(part), [part]);
+  const peers = usePeersOn(route ?? "");
   return (
     <article
       ref={refBlock}
@@ -145,6 +167,8 @@ function Part({
       aria-label={part.title}
       data-part-step={part.step}
       data-part-empty={part.empty || undefined}
+      data-proposed={proposed}
+      style={sectionRing(peers)}
       onContextMenu={(e) => {
         e.preventDefault();
         onMenu(true);
@@ -159,7 +183,11 @@ function Part({
       className={`group rounded-lg border bg-card p-3 outline-none transition-shadow duration-150 focus-visible:ring-2 focus-visible:ring-ring ${current ? "ring-2 ring-primary/40" : ""} ${part.empty ? "border-dashed" : ""}`}
     >
       <header className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{part.title}</h3>
+        <h3 className="flex min-w-0 flex-1 items-center gap-1.5 text-sm font-semibold">
+          <ProposedMark proposed={proposed} />
+          {part.title}
+          <SectionPeers peers={peers} />
+        </h3>
         <DropdownMenu open={menuOpen} onOpenChange={onMenu}>
           <DropdownMenuTrigger asChild>
             <Button type="button" variant="ghost" size="icon-sm" aria-label={lc.menu(part.title)} title={lc.menu(part.title)}>

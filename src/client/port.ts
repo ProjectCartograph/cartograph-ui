@@ -507,7 +507,7 @@ export interface Client {
   affects(project: string, item: string): Promise<WaitsNode[]>;
   /** A project's charter as its parts, each with the fields it holds
    * (engine TAXONOMY.md D55). */
-  charterParts(project: string): Promise<CharterPart[]>;
+  charterParts(project: string, opts?: { record?: boolean }): Promise<CharterPart[]>;
   changeSet(id: string): Promise<ChangeSetReview>;
   /** Include an item in the next acceptance, or trim it from it. */
   includeChangeSetItem(set: string, kind: string, id: string, included: boolean): Promise<void>;

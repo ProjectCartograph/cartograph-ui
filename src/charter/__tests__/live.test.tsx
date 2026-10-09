@@ -84,3 +84,22 @@ describe("the live charter", () => {
     await waitFor(() => expect(scrolled).toHaveBeenCalled());
   });
 });
+
+// What the change set adds or changes is marked on its part, against the
+// record (engine docs/adr/0024).
+describe("the live charter in a change set", () => {
+  it("marks a part the change set adds, and one it changes", async () => {
+    const drafted: CharterPart[] = [...parts, { title: "Deliverables", step: "deliverables", anchor: "s3", html: "<ul><li>Training pack</li></ul>", fields: [], empty: false }];
+    const recorded: CharterPart[] = [{ ...parts[0], html: '<dl><dt>Problem</dt><dd data-field="/spec/summary/problems/0/problem/situation">Depots differ</dd></dl>' }, parts[1]];
+    render(
+      <ClientProvider client={fakeClient({ charterParts: async (_id: string, opts?: { record?: boolean }) => (opts?.record ? recorded : drafted) })}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <LiveCharter id="p1" version={1} onStep={() => {}} onField={() => {}} valueOf={() => ""} checksOf={() => []} />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole("article", { name: "Problem statement" })).toHaveAttribute("data-proposed", "changed"));
+    expect(screen.getByRole("article", { name: "Deliverables" })).toHaveAttribute("data-proposed", "new");
+    expect(screen.getByRole("article", { name: "Stakeholders" })).not.toHaveAttribute("data-proposed");
+  });
+});

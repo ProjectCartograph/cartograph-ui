@@ -436,6 +436,10 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
                   onField={(pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value))}
                   valueOf={(pointer) => getAt(store.spec, pointer)}
                   checksOf={(step) => (checksQuery.data?.items ?? []).filter((c) => c.section === step && c.state !== "ok").map((c) => c.message)}
+                  routeOf={(step) => {
+                    const path = pathOfStep(step);
+                    return path ? `/projects/${id}${path}` : undefined;
+                  }}
                 />
               }
             />
