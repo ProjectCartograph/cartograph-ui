@@ -5,10 +5,16 @@ on:
     branches: [main]
   pull_request:
 
+# The Nix caches, each its own switch, so both may be on: the Actions
+# cache (repository variable CARTOGRAPH_CACHE_GHA, on unless set to off)
+# and Cachix (CARTOGRAPH_CACHIX, a cache name, with the secret
+# CACHIX_AUTH_TOKEN; off unless set).
+env:
+  CARTOGRAPH_CACHE_GHA: ${{ vars.CARTOGRAPH_CACHE_GHA || 'on' }}
+  CARTOGRAPH_CACHIX: ${{ vars.CARTOGRAPH_CACHIX }}
+
 permissions:
   contents: read
-  # cache-nix-action purges its own old entries.
-  actions: write
 
 jobs:
   ci:
@@ -27,18 +33,21 @@ jobs:
           extra-conf: |
             keep-outputs = true
             keep-env-derivations = true
-      # The Nix store in the GitHub Actions cache, as one entry (no
-      # per-path requests to be rate-limited).
-      - uses: nix-community/cache-nix-action@v7
+      # Every store path built here, by its own hash: in the Actions cache
+      # (magic-nix-cache) and, where one is named, in Cachix; each fetched
+      # by the next run instead of built.
+      - if: env.CARTOGRAPH_CACHE_GHA == 'on'
+        uses: DeterminateSystems/magic-nix-cache-action@main
         with:
-          primary-key: nix-devshell-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'package-lock.json') }}
-          restore-prefixes-first-match: nix-devshell-${{ runner.os }}-${{ runner.arch }}-
-          gc-max-store-size-linux: 4G
-          purge: true
-          purge-prefixes: nix-devshell-${{ runner.os }}-${{ runner.arch }}-
-          purge-created: 0
-          purge-last-accessed: P1DT12H
-          purge-primary-key: never
+          # The Actions cache only: FlakeHub needs an account this
+          # organisation does not have, and asking for it logs an error.
+          use-flakehub: false
+          use-gha-cache: true
+      - if: env.CARTOGRAPH_CACHIX != ''
+        uses: cachix/cachix-action@v15
+        with:
+          name: ${{ env.CARTOGRAPH_CACHIX }}
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix develop --command just ci
       - run: nix develop --command just dist-tarball
       - uses: actions/upload-artifact@v4
@@ -60,11 +69,19 @@ jobs:
           extra-conf: |
             keep-outputs = true
             keep-env-derivations = true
-      # The Nix store in the GitHub Actions cache, as one entry (no
-      # per-path requests to be rate-limited).
-      - uses: nix-community/cache-nix-action@v7
+      # Every store path built here, by its own hash: in the Actions cache
+      # (magic-nix-cache) and, where one is named, in Cachix; each fetched
+      # by the next run instead of built.
+      - if: env.CARTOGRAPH_CACHE_GHA == 'on'
+        uses: DeterminateSystems/magic-nix-cache-action@main
         with:
-          primary-key: nix-devshell-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock', 'package-lock.json') }}
-          restore-prefixes-first-match: nix-devshell-${{ runner.os }}-${{ runner.arch }}-
-          save: false
+          # The Actions cache only: FlakeHub needs an account this
+          # organisation does not have, and asking for it logs an error.
+          use-flakehub: false
+          use-gha-cache: true
+      - if: env.CARTOGRAPH_CACHIX != ''
+        uses: cachix/cachix-action@v15
+        with:
+          name: ${{ env.CARTOGRAPH_CACHIX }}
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - run: nix develop --command just commit-check origin/${{ github.base_ref }}
