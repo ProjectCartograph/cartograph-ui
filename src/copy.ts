@@ -3530,6 +3530,16 @@ export const copy = {
       record: "Record what happened and what follows from it",
       recordShort: "Record",
     },
+    // A success criterion judged at closing or landing
+    // (projects/CriterionResult).
+    criterionResult: {
+      label: (statement: string) => `Result of: ${statement}`,
+      judged: "Whether it was met",
+      value: "Value measured",
+      date: "When it was judged",
+      record: (statement: string) => `Record the result of: ${statement}`,
+      recordShort: "Record",
+    },
     // Approval: conditions, sign-off and the record
     // (projects/sections/ApprovalSection).
     approval: {
@@ -3548,6 +3558,7 @@ export const copy = {
       metOn: (date: string) => `Met on ${date}`,
       signOff: "Sign-off",
       signOffHint: "The roles that sign this charter, at definition, closure and handover. Signing is recorded with who signed and when.",
+      signOffStageHint: "Who signs this stage, and when they did.",
       signOffLine: "Sign-off line",
       addSignOff: "Add a line to sign",
       stage: "Stage",

@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { copy } from "@/copy";
 import { roleOptions, roleRefLabel, useResourceNames } from "../RoleRefPicker";
 import { CriteriaSlice } from "./SuccessSection";
+import { SignOffs } from "./ApprovalSection";
 import { useSectionAutosave, useProjectStore } from "../store";
 
 const cl = copy.projects.closing;
@@ -109,6 +110,7 @@ export function ClosingSection({ id }: { id: string }) {
           <CriteriaSlice id={id} whens={["atClosing"]} />
         )}
       </section>
+      <SignOffs stage="closing" />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { copy } from "@/copy";
 import { CriteriaSlice } from "./SuccessSection";
+import { SignOffs } from "./ApprovalSection";
 import { useProjectStore } from "../store";
 
 const lc = copy.projects.landingCriteria;
@@ -41,6 +42,7 @@ export function LandingSection({ id }: { id: string }) {
       ) : (
         <CriteriaSlice id={id} whens={["atLanding", "postClosingCycle"]} />
       )}
+      <SignOffs stage="handover" />
     </div>
   );
 }
