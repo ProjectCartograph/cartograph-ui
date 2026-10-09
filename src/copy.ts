@@ -562,6 +562,34 @@ export const copy = {
     tabsLabel: "Side panel",
     closePane: "Close the side panel",
     openPane: "Open the side panel",
+    waitsLens: "Waits",
+    waits: {
+      unplaced: "No month yet",
+      somethingElse: "something else",
+      ready: "When its last milestone falls",
+      window: (from: string, to: string) => (from && to ? `Between ${from} and ${to}` : from ? `Not before ${from}` : `By ${to}`),
+      after: (months: number, days: number, what: string) => {
+        const lag = [months ? `${months} month${months === 1 ? "" : "s"}` : "", days ? `${days} day${days === 1 ? "" : "s"}` : ""].filter(Boolean).join(" and ");
+        return lag ? `${lag} after ${what}` : `After ${what}`;
+      },
+      when: (what: string, by: string) => (by ? `Set when ${what} happens, expected by ${by}` : `Set when ${what} happens`),
+      kinds: {
+        milestone: "Milestone",
+        deliverable: "Deliverable",
+        condition: "Condition",
+        purchase: "Purchase",
+        dependency: "Dependency",
+        target: "Target",
+        baseline: "Baseline",
+        ready: "Ready",
+      } as Record<string, string>,
+      critical: "On the chain that decides the last date",
+      movedBy: (risks: string) => `Could be moved by: ${risks}`,
+      conflict: "Does not fit its own date, or what it needs is ready after it",
+      late: "Expected earlier, and not set yet",
+      empty: "No dated items yet. Give a milestone, a deliverable or a dependency a timing to see what it waits on.",
+      connectHint: "Drag from one milestone to another to make the second wait on the first.",
+    },
   },
   // An address that is not a page (routes/__root).
   notFound: {

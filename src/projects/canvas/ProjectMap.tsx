@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Blocks, Hand, Link2, ListTree, Maximize, Minus, MousePointer2, Plus, RefreshCcw, Share2, Timer } from "lucide-react";
+import { Blocks, CalendarClock, CalendarX, Hand, Link2, ListTree, Maximize, Minus, MousePointer2, Plus, RefreshCcw, Share2, Timer, TriangleAlert } from "lucide-react";
 
 import { useClient } from "@/client/context";
-import type { LinkCandidate } from "@/client/port";
+import type { LinkCandidate, WaitsNode } from "@/client/port";
 import { Button } from "@/components/ui/button";
 import { kindIcon } from "@/components/vocab";
 import { copy } from "@/copy";
@@ -12,6 +12,7 @@ import type { ProjectSpec } from "../types";
 import { useComponentGraph } from "../components/ComponentsTable";
 import { dependencyRows, type Tone, type WorkNode } from "./dependencies";
 import { linkFor, linksFrom, setLink, type MapNode } from "./links";
+import { timingWords, waitsMap } from "./waits";
 
 const mc = copy.projectMap;
 const cc = copy.projects.components;
@@ -19,7 +20,7 @@ const cc = copy.projects.components;
 type Mode = "select" | "connect" | "move";
 /** What the map shows: the project's results chain, or the projects and
  * programmes it depends on and that depend on it. */
-type Lens = "chain" | "deps";
+type Lens = "chain" | "deps" | "waits";
 
 // The project's results chain, top to bottom, which suits a pane taller
 // than it is wide: the strategy it serves, the evidence, its problems,
@@ -35,6 +36,8 @@ interface Placed extends MapNode {
   x: number;
   y: number;
   marks?: WorkNode["marks"];
+  /** A dated item, on the waits view. */
+  waits?: WaitsNode;
 }
 
 interface Edge {
@@ -226,7 +229,26 @@ export function ProjectMap({
     const lines = order.map((r, line) => ({ row: r, y: line * (H + GAP_Y) }));
     return { nodes: [...placed.values()], edges: out, lines };
   }, [graph.data, spec, id]);
-  const { nodes, edges, lines } = lens === "deps" ? depsMap : chainMap;
+  // What the project's dated items wait on, across kinds, as the engine
+  // works it out and lays it out (engine TAXONOMY.md D47, D48).
+  const waits = useQuery({ queryKey: ["waits", id], queryFn: () => client.waits(id), enabled: lens === "waits" });
+  const waitsView = useMemo(() => waitsMap(waits.data), [waits.data]);
+  const { nodes, edges, lines } = lens === "waits" ? (waitsView as { nodes: Placed[]; edges: Edge[]; lines: { row: number; y: number; label?: string }[] }) : lens === "deps" ? depsMap : chainMap;
+  // On the waits view a drag joins two of this project's milestones: the
+  // one dropped on waits on the one dragged from.
+  const ownMilestone = (n: Placed) => lens === "waits" && n.kind === "Project" && n.id === id && !!n.item?.startsWith("milestones/");
+  const canDraw = (n: Placed) => (lens === "waits" ? ownMilestone(n) : linksFrom(n, lens).length > 0);
+  function waitOn(from: Placed, to: Placed) {
+    const before = from.item!.slice("milestones/".length);
+    const after = to.item!.slice("milestones/".length);
+    updateSpec((s) => ({
+      ...s,
+      milestones: (s.milestones ?? []).map((m) =>
+        m.id !== after || (m.waitsOn ?? []).some((w) => "local" in w.on && w.on.id === before) ? m : { ...m, waitsOn: [...(m.waitsOn ?? []), { on: { local: "milestones", id: before } }] },
+      ),
+    }));
+    void queryClient.invalidateQueries({ queryKey: ["waits", id] });
+  }
 
   // The view: pan and zoom, fitted to the map when it first draws.
   const box = useRef<HTMLDivElement>(null);
@@ -275,7 +297,7 @@ export function ProjectMap({
   // Drawing a link: what it starts from, where the pointer is, and what
   // the engine says each other node may be.
   const [drawing, setDrawing] = useState<{ from: Placed; at: { x: number; y: number } } | null>(null);
-  const starts = drawing ? linksFrom(drawing.from, lens) : [];
+  const starts = drawing && lens !== "waits" ? linksFrom(drawing.from, lens) : [];
   const offers = useQueries({
     queries: starts.map((s) => ({
       queryKey: ["link-candidates", s.link, drawing?.from.kind === "Problem" ? id : drawing?.from.id, drawing?.from.problem],
@@ -286,6 +308,16 @@ export function ProjectMap({
   offers.forEach((q, i) => {
     for (const c of q.data ?? []) if (starts[i].target === "*" || c.kind === starts[i].target) verdict.set(`${c.kind}/${c.id}`, c);
   });
+  // On the waits view, any other milestone of this project may wait on the
+  // one dragged from, unless it already does.
+  if (drawing && lens === "waits") {
+    const from = drawing.from.item?.slice("milestones/".length);
+    for (const n of nodes) {
+      if (!ownMilestone(n) || n.key === drawing.from.key) continue;
+      const linked = (spec.milestones ?? []).some((m) => `milestones/${m.id}` === n.item && (m.waitsOn ?? []).some((w) => "local" in w.on && w.on.id === from));
+      verdict.set(n.key, { kind: n.kind, id: n.id, name: n.name, allowed: !linked, linked });
+    }
+  }
   const problemIndex = (key: string) => {
     const list = spec.summary.problems ?? [];
     if (key.startsWith("#")) return Number(key.slice(1));
@@ -327,7 +359,10 @@ export function ProjectMap({
     const el = document.elementFromPoint?.(e.clientX, e.clientY)?.closest<HTMLElement>("[data-map-node]");
     const to = el ? nodes.find((n) => n.key === el.dataset.mapNode) : undefined;
     const v = to ? verdict.get(to.key) : undefined;
-    if (to && v?.allowed) void link(drawing.from, to, true);
+    if (to && v?.allowed) {
+      if (lens === "waits") waitOn(drawing.from, to);
+      else void link(drawing.from, to, true);
+    }
     setDrawing(null);
   }
   function onWheel(e: React.WheelEvent) {
@@ -365,6 +400,7 @@ export function ProjectMap({
             [
               ["chain", ListTree, mc.chain],
               ["deps", Blocks, mc.deps],
+              ["waits", CalendarClock, mc.waitsLens],
             ] as const
           ).map(([l, Icon, label]) => (
             <button
@@ -406,7 +442,7 @@ export function ProjectMap({
           ))}
         </div>
         <span className="ml-1 hidden min-w-0 flex-1 truncate text-xs text-muted-foreground sm:inline">
-          {mode === "select" ? mc.selectHint : mode === "connect" ? mc.connectHint : mc.moveHint}
+          {mode === "select" ? mc.selectHint : mode === "connect" ? (lens === "waits" ? mc.waits.connectHint : mc.connectHint) : mc.moveHint}
         </span>
         <div className="ml-auto flex items-center gap-0.5">
           <Button type="button" variant="ghost" size="icon" className="size-7" onClick={() => zoom(0.85)} aria-label={mc.zoomOut} title={mc.zoomOut}>
@@ -430,7 +466,7 @@ export function ProjectMap({
         onWheel={onWheel}
         data-slot="map-ground"
       >
-        {graph.isLoading ? <p className="p-4 text-sm text-muted-foreground">{mc.loading}</p> : null}
+        {(lens === "waits" ? waits.isLoading : graph.isLoading) ? <p className="p-4 text-sm text-muted-foreground">{mc.loading}</p> : null}
         <div className="absolute left-0 top-0 origin-top-left" style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` }}>
           <svg className="pointer-events-none absolute left-0 top-0 overflow-visible" width={1} height={1} aria-hidden="true">
             {edges.map((ed) => {
@@ -498,7 +534,7 @@ export function ProjectMap({
                 aria-label={why ? `${n.name}: ${why}` : n.name}
                 title={why}
                 onPointerDown={(e) => {
-                  if (mode !== "connect" || linksFrom(n, lens).length === 0) return;
+                  if (mode !== "connect" || !canDraw(n)) return;
                   e.stopPropagation();
                   e.preventDefault();
                   (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
@@ -511,12 +547,20 @@ export function ProjectMap({
                   setSelected(n.key);
                   onSelect?.(n);
                 }}
-                className={`absolute flex items-center gap-2 rounded-lg border bg-card px-2.5 text-sm shadow-sm transition-[opacity,box-shadow] duration-150 ${dim || (focus && !near.has(n.key)) ? "opacity-30" : ""} ${v?.allowed ? "ring-2 ring-primary" : ""} ${selected === n.key ? "ring-2 ring-foreground" : ""} ${mode === "connect" && linksFrom(n, lens).length > 0 ? "cursor-crosshair" : "cursor-pointer"} ${lens === "deps" && n.kind === "Project" && n.id === id ? "border-foreground" : ""}`}
+                className={`absolute flex items-center gap-2 rounded-lg border bg-card px-2.5 text-sm shadow-sm transition-[opacity,box-shadow] duration-150 ${dim || (focus && !near.has(n.key)) ? "opacity-30" : ""} ${v?.allowed ? "ring-2 ring-primary" : ""} ${selected === n.key ? "ring-2 ring-foreground" : ""} ${mode === "connect" && canDraw(n) ? "cursor-crosshair" : "cursor-pointer"} ${lens === "deps" && n.kind === "Project" && n.id === id ? "border-foreground" : ""} ${n.waits?.conflict || n.waits?.late ? "border-destructive" : ""}`}
                 style={{ left: n.x, top: n.y, width: W, height: H }}
               >
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: n.kind === "Problem" ? "var(--color-warning)" : colorOf(n.kind) }} aria-hidden="true" />
                 {Icon ? <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
-                <span className="line-clamp-2 min-w-0 flex-1 leading-tight">{n.name}</span>
+                {n.waits ? (
+                  <span className="flex min-w-0 flex-1 flex-col leading-tight" data-waits-kind={n.waits.kind}>
+                    <span className="truncate">{n.name}</span>
+                    <span className="truncate text-xs text-muted-foreground">{timingWords(n.waits) || mc.waits.kinds[n.waits.kind]}</span>
+                  </span>
+                ) : (
+                  <span className="line-clamp-2 min-w-0 flex-1 leading-tight">{n.name}</span>
+                )}
+                {n.waits ? <WaitsMarks n={n.waits} /> : null}
                 {n.marks ? (
                   <span className="flex shrink-0 flex-col items-center gap-0.5">
                     {n.marks.inLoop ? <RefreshCcw className="size-3.5 text-destructive" role="img" aria-label={cc.inLoop} data-mark="loop"><title>{cc.inLoop}</title></RefreshCcw> : null}
@@ -528,7 +572,11 @@ export function ProjectMap({
             );
           })}
         </div>
-        {nodes.length <= 1 && !graph.isLoading ? <p className="absolute inset-x-0 bottom-4 text-center text-sm text-muted-foreground">{mc.empty}</p> : null}
+        {lens === "waits" ? (
+          nodes.length === 0 && !waits.isLoading ? <p className="absolute inset-x-0 bottom-4 text-center text-sm text-muted-foreground">{mc.waits.empty}</p> : null
+        ) : nodes.length <= 1 && !graph.isLoading ? (
+          <p className="absolute inset-x-0 bottom-4 text-center text-sm text-muted-foreground">{mc.empty}</p>
+        ) : null}
       </div>
       {lens === "deps" && components.data ? <DependencyFacts graph={components.data} /> : null}
       {sel ? (
@@ -563,5 +611,30 @@ function DependencyFacts({ graph }: { graph: NonNullable<ReturnType<typeof useCo
         <li className="text-muted-foreground">{graph.edges.length === 0 ? mc.noDependencies : mc.noCriticalPath}</li>
       ) : null}
     </ul>
+  );
+}
+
+/** What the engine marks on a dated item: the chain that decides the last
+ * date, the risks that could move it, and what does not fit or is late. */
+function WaitsMarks({ n }: { n: WaitsNode }) {
+  const wm = mc.waits;
+  return (
+    <span className="flex shrink-0 flex-col items-center gap-0.5">
+      {n.critical ? (
+        <Timer className="size-3.5 text-warning" role="img" aria-label={wm.critical} data-mark="critical">
+          <title>{wm.critical}</title>
+        </Timer>
+      ) : null}
+      {n.risks?.length ? (
+        <TriangleAlert className="size-3.5 text-warning" role="img" aria-label={wm.movedBy(n.risks.join("; "))} data-mark="risk">
+          <title>{wm.movedBy(n.risks.join("; "))}</title>
+        </TriangleAlert>
+      ) : null}
+      {n.conflict || n.late ? (
+        <CalendarX className="size-3.5 text-destructive" role="img" aria-label={n.conflict ? wm.conflict : wm.late} data-mark={n.conflict ? "conflict" : "late"}>
+          <title>{n.conflict ? wm.conflict : wm.late}</title>
+        </CalendarX>
+      ) : null}
+    </span>
   );
 }

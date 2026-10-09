@@ -13,6 +13,9 @@ export interface MapNode {
   level?: string;
   /** For a problem: its id, or "#n" for its position. */
   problem?: string;
+  /** For a dated item of a record: its list and id, such as
+   * milestones/start (engine TAXONOMY.md D48). */
+  item?: string;
 }
 
 /** The link a drag from one kind to another makes, if any. */

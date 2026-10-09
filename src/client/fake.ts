@@ -68,6 +68,7 @@ const every: Record<keyof Client, true> = {
   constraints: true,
   controlChart: true,
   schedule: true,
+  waits: true,
   dropChangeSetItem: true,
   getGuide: true,
   acceptProposal: true,

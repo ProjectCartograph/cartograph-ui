@@ -36,6 +36,8 @@ export type LineageNode = Schemas["LineageNode"];
 export type ComponentNode = Schemas["ComponentNode"];
 export type WorkRef = Schemas["WorkRef"];
 export type ScheduleItem = Schemas["ScheduleItem"];
+export type Waits = Schemas["Waits"];
+export type WaitsNode = Schemas["WaitsNode"];
 export type Graph = Schemas["Graph"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
@@ -493,6 +495,9 @@ export interface Client {
   lineage(project: string, name: string, uses: string[], produces: string[]): Promise<Lineage>;
   /** A project's milestones placed on time (engine TAXONOMY.md D48). */
   schedule(project: string): Promise<ScheduleItem[]>;
+  /** What a project's dated items wait on, across kinds, laid out by the
+   * engine (engine TAXONOMY.md D47, D48). */
+  waits(project: string): Promise<Waits>;
   changeSet(id: string): Promise<ChangeSetReview>;
   /** Include an item in the next acceptance, or trim it from it. */
   includeChangeSetItem(set: string, kind: string, id: string, included: boolean): Promise<void>;

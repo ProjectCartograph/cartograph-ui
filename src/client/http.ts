@@ -328,6 +328,7 @@ export function httpClient(
     lineage: (project, name, uses, produces) => answer(wire.POST("/lineage", { params: { query: preview() }, body: { project, name, uses, produces } })),
     structureQuestions: async () => (await answer(wire.GET("/structure"))).questions,
     schedule: (id) => answer(wire.GET("/manifests/Project/{id}/schedule", { params: { path: { id }, query: { ...preview() } } })),
+    waits: (id) => answer(wire.GET("/manifests/Project/{id}/waits", { params: { path: { id }, query: { ...preview() } } })),
     proposeChangeSet: (set, reason, openChecks) =>
       answer(wire.POST("/changesets/{set}/propose", { params: { path: { set } }, body: { ...(reason ? { reason } : {}), ...(openChecks ? { openChecks } : {}) } })),
     dropChangeSetItem: (set, kind, id) => done(wire.DELETE("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } })),

@@ -405,7 +405,13 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
             spec={store.spec}
             updateSpec={store.updateSpec}
             onSelect={(n) => {
-              if (drawer && (n.kind === "Goal" || n.kind === "Gap" || n.kind === "KPI" || n.kind === "Operation")) drawer.open(n.kind, n.id);
+              if (drawer && (n.kind === "Goal" || n.kind === "Gap" || n.kind === "KPI" || n.kind === "Operation")) return drawer.open(n.kind, n.id);
+              // A dated item opens where it is written: this project's
+              // step for its list, or the other project it belongs to.
+              if (n.kind !== "Project" || !n.item) return;
+              if (n.id !== id) return void navigate({ to: "/projects/$id", params: { id: n.id } } as never);
+              const path = pathOfStep(ITEM_STEP[n.item.split("/")[0]] ?? "");
+              if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
             }}
           />
         ) : tab === "charter" ? (
@@ -436,6 +442,9 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
 }
 
 /** The route of a step of the walk, by its section key. */
+/** The step each dated list of a project is written in. */
+const ITEM_STEP: Record<string, string> = { milestones: "timeline", deliverables: "deliverables", conditions: "approval", procurement: "resources", risks: "risks" };
+
 function pathOfStep(step: string): string | undefined {
   for (const stage of STAGES) for (const st of stepsOfStage(stage)) if (st.section === step) return st.path;
   return undefined;
