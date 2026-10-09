@@ -2,13 +2,15 @@
 
 import * as React from "react"
 import { cn } from "cn"
+import { tracePicker } from "@/trace"
 import { Select as SelectPrimitive } from "radix-ui"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
 function Select({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+  return <SelectPrimitive.Root data-slot="select" onOpenChange={tracePicker(onOpenChange)} {...props} />
 }
 
 function SelectGroup({

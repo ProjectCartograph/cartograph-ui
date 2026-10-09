@@ -1,12 +1,14 @@
 import * as React from "react"
 import { cn } from "cn"
+import { tracePicker } from "@/trace"
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
 import { CheckIcon, ChevronRightIcon } from "lucide-react"
 
 function DropdownMenu({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" onOpenChange={tracePicker(onOpenChange)} {...props} />
 }
 
 function DropdownMenuPortal({

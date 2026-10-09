@@ -1,3 +1,4 @@
+import { useFlowTrace } from "@/trace/useFlowTrace";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { createElement, useEffect, useRef, useState } from "react";
 import { FromIdeaProvider } from "@/components/FromIdea";
@@ -59,6 +60,7 @@ export function ProjectScrubber({ id, section }: { id: string; section?: Initiat
   // segment of the same scrubber rather than a bar of its own.
   stages.push({ key: "closing", label: pc.stepper.closing, steps: [{ key: "closing", label: pc.stepper.closing, state: bySection.get("closing") }] });
   const pathOf = new Map<string, string>([...STAGES.flatMap((stage) => stepsOfStage(stage).map((st) => [st.section, st.path] as const)), ["closing", "/closing"]]);
+  useFlowTrace("Project", id, section ?? "", [...pathOf.keys()].indexOf(section ?? ""));
   return (
     <Scrubber
       stages={stages}

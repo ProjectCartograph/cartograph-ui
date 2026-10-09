@@ -38,6 +38,7 @@ const every: Record<keyof Client, true> = {
   charter: true,
   charterLink: true,
   session: true,
+  recordEvents: true,
   sharedDocument: true,
   presenceDocument: true,
   openDraft: true,

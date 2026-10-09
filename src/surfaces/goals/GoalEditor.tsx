@@ -1,3 +1,4 @@
+import { useFlowTrace } from "@/trace/useFlowTrace";
 import { useEffect, useMemo, useState } from "react";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -155,6 +156,8 @@ export function GoalEditor({ id, fix, embedded = false }: { id: string; fix?: st
   const [saving, setSaving] = useState(false);
   const [showPassed, setShowPassed] = useState(false);
   const [step, setStep] = useState("aim");
+  // The walk's steps in order, for telling a step back from one forward.
+  useFlowTrace("Goal", id, step, ["aim", "measures", "timing", "why", "links", "review"].indexOf(step));
 
   const level = manifest?.spec.level ?? "goal";
   // The engine's guide for this level: what the statement must say, with
