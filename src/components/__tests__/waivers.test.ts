@@ -29,4 +29,14 @@ describe("checks left for the person", () => {
       ["The second target waits.", 2],
     ]);
   });
+
+  it("carry what the person was asked about each fact", () => {
+    const asked = "Asked the 2026 target; it is set at the board's December meeting";
+    const facts = byReason([
+      { on: "KPI/k", check: "kpi-target", message: "No target.", reason: "Set in December.", asked },
+      { on: "Goal/g", check: "smart-measurable", message: "Measurable.", reason: "Set in December." },
+      { on: "Project/p", check: "resources-funding", message: "No funding.", reason: "Budget to be confirmed.", asked: "not available" },
+    ]);
+    expect(facts.map((f) => f.asked)).toEqual([asked, "not available"]);
+  });
 });

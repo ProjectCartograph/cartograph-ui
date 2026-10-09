@@ -675,6 +675,8 @@ export const copy = {
     heading: "Still to fill in",
     count: (facts: number, checks: number) =>
       `${facts} answer${facts === 1 ? "" : "s"} missing, leaving ${checks} check${checks === 1 ? "" : "s"} open`,
+    asked: (what: string) => `You were asked: ${what}`,
+    notAsked: "Left open without asking you: the agent worked from the document alone.",
   },
   rail: {
     graph: "Graph",
