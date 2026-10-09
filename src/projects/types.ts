@@ -236,6 +236,8 @@ export interface ProjectEvent {
   value?: number;
   decision?: "approve" | "approveWithConditions" | "reject";
   recordedBy?: string;
+  /** The event this one follows from (engine TAXONOMY.md D59). */
+  cause?: string;
 }
 
 export interface Deliverable {

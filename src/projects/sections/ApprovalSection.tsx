@@ -9,6 +9,7 @@ import { copy } from "@/copy";
 import { RoleRefPicker, roleOptions, useResourceNames, roleRefLabel } from "../RoleRefPicker";
 import { EventPicker, TimingField } from "../TimingField";
 import { Labelled } from "../Labelled";
+import { WhatHappened } from "../WhatHappened";
 import { useProjectStore, useSectionAutosave } from "../store";
 import type { Condition, ProjectEvent, SignOff } from "../types";
 
@@ -318,6 +319,7 @@ function Record() {
   return (
     <section className="flex flex-col gap-3" data-cartograph-field="/spec/events">
       <Heading icon={History} title={ac.record} hint={ac.recordHint} />
+      <WhatHappened />
       <div className="flex flex-wrap items-end gap-2 rounded-xl p-3 ring-1 ring-foreground/10" data-slot="record-event">
         <Select
           value={on}

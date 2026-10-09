@@ -3508,6 +3508,28 @@ export const copy = {
       empty: "No success criterion is set for handover.",
       editOnSuccess: "Edit success criteria",
     },
+    // Something happened, in the person's words, and what it reaches
+    // (projects/WhatHappened).
+    whatHappened: {
+      title: "Something happened",
+      textLabel: "What happened, in your words",
+      find: "Find the item it happened to",
+      findShort: "Find",
+      itemLabel: "The item it happened to",
+      ranked: "The likeliest first. Pick the one it happened to.",
+      unranked: "No decision model is on, so nothing is ranked. Pick the item it happened to.",
+      none: "Nothing in this project seems to be about that. Record it below by hand.",
+      kinds: { milestone: "Milestone", deliverable: "Deliverable", condition: "Condition", risk: "Risk", dependency: "Dependency", criterion: "Success criterion" } as Record<string, string>,
+      dateLabel: "When it happened",
+      reaches: (n: number) => `It reaches ${n} item${n === 1 ? "" : "s"}, marked on the Waits map too. Record what follows from it for any of them.`,
+      reachesNothing: "Nothing waits on it.",
+      reachLabel: "What it reaches",
+      followLabel: (name: string) => `What follows for ${name}`,
+      followNone: "Nothing to record",
+      changeThere: "Change it in its own record",
+      record: "Record what happened and what follows from it",
+      recordShort: "Record",
+    },
     // Approval: conditions, sign-off and the record
     // (projects/sections/ApprovalSection).
     approval: {

@@ -13,6 +13,7 @@ import { useComponentGraph } from "../components/ComponentsTable";
 import { dependencyRows, type Tone, type WorkNode } from "./dependencies";
 import { linkFor, linksFrom, setLink, type MapNode } from "./links";
 import { timingWords, waitsMap } from "./waits";
+import { reachKey } from "../WhatHappened";
 
 const mc = copy.projectMap;
 const cc = copy.projects.components;
@@ -233,6 +234,9 @@ export function ProjectMap({
   // works it out and lays it out (engine TAXONOMY.md D47, D48).
   const waits = useQuery({ queryKey: ["waits", id], queryFn: () => client.waits(id), enabled: lens === "waits" });
   const waitsView = useMemo(() => waitsMap(waits.data), [waits.data]);
+  // What a trigger recorded beside the walk reaches (WhatHappened).
+  const reached = useQuery<string[]>({ queryKey: ["waits-reach", id], queryFn: () => [], enabled: false, initialData: [] });
+  const reachedSet = new Set(reached.data ?? []);
   const { nodes, edges, lines } = lens === "waits" ? (waitsView as { nodes: Placed[]; edges: Edge[]; lines: { row: number; y: number; label?: string }[] }) : lens === "deps" ? depsMap : chainMap;
   // On the waits view a drag joins two of this project's milestones: the
   // one dropped on waits on the one dragged from.
@@ -547,7 +551,7 @@ export function ProjectMap({
                   setSelected(n.key);
                   onSelect?.(n);
                 }}
-                className={`absolute flex items-center gap-2 rounded-lg border bg-card px-2.5 text-sm shadow-sm transition-[opacity,box-shadow] duration-150 ${dim || (focus && !near.has(n.key)) ? "opacity-30" : ""} ${v?.allowed ? "ring-2 ring-primary" : ""} ${selected === n.key ? "ring-2 ring-foreground" : ""} ${mode === "connect" && canDraw(n) ? "cursor-crosshair" : "cursor-pointer"} ${lens === "deps" && n.kind === "Project" && n.id === id ? "border-foreground" : ""} ${n.waits?.conflict || n.waits?.late ? "border-destructive" : ""}`}
+                className={`absolute flex items-center gap-2 rounded-lg border bg-card px-2.5 text-sm shadow-sm transition-[opacity,box-shadow] duration-150 ${dim || (focus && !near.has(n.key)) ? "opacity-30" : ""} ${v?.allowed ? "ring-2 ring-primary" : ""} ${selected === n.key ? "ring-2 ring-foreground" : ""} ${mode === "connect" && canDraw(n) ? "cursor-crosshair" : "cursor-pointer"} ${lens === "deps" && n.kind === "Project" && n.id === id ? "border-foreground" : ""} ${n.waits?.conflict || n.waits?.late ? "border-destructive" : ""} ${n.waits && reachedSet.has(reachKey(n.waits)) ? "ring-2 ring-warning" : ""}`}
                 style={{ left: n.x, top: n.y, width: W, height: H }}
               >
                 <span className="size-2.5 shrink-0 rounded-full" style={{ background: n.kind === "Problem" ? "var(--color-warning)" : colorOf(n.kind) }} aria-hidden="true" />

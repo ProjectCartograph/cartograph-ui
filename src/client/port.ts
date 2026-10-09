@@ -38,6 +38,7 @@ export type WorkRef = Schemas["WorkRef"];
 export type ScheduleItem = Schemas["ScheduleItem"];
 export type Waits = Schemas["Waits"];
 export type WaitsNode = Schemas["WaitsNode"];
+export type Happened = Schemas["Happened"];
 export type Graph = Schemas["Graph"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
@@ -498,6 +499,11 @@ export interface Client {
   /** What a project's dated items wait on, across kinds, laid out by the
    * engine (engine TAXONOMY.md D47, D48). */
   waits(project: string): Promise<Waits>;
+  /** The items of a project what a person says happened is about, ranked
+   * by the decision model where one answers (engine TAXONOMY.md D59). */
+  whatHappened(project: string, text: string): Promise<Happened>;
+  /** Every item a trigger on item (list/id) reaches. */
+  affects(project: string, item: string): Promise<WaitsNode[]>;
   changeSet(id: string): Promise<ChangeSetReview>;
   /** Include an item in the next acceptance, or trim it from it. */
   includeChangeSetItem(set: string, kind: string, id: string, included: boolean): Promise<void>;

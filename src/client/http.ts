@@ -329,6 +329,8 @@ export function httpClient(
     structureQuestions: async () => (await answer(wire.GET("/structure"))).questions,
     schedule: (id) => answer(wire.GET("/manifests/Project/{id}/schedule", { params: { path: { id }, query: { ...preview() } } })),
     waits: (id) => answer(wire.GET("/manifests/Project/{id}/waits", { params: { path: { id }, query: { ...preview() } } })),
+    whatHappened: (id, text) => answer(wire.POST("/manifests/Project/{id}/happened", { params: { path: { id }, query: { ...preview() } }, body: { text } })),
+    affects: (id, item) => answer(wire.GET("/manifests/Project/{id}/affects", { params: { path: { id }, query: { item, ...preview() } } })),
     proposeChangeSet: (set, reason, openChecks) =>
       answer(wire.POST("/changesets/{set}/propose", { params: { path: { set } }, body: { ...(reason ? { reason } : {}), ...(openChecks ? { openChecks } : {}) } })),
     dropChangeSetItem: (set, kind, id) => done(wire.DELETE("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } })),
