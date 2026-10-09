@@ -1479,6 +1479,8 @@ export interface components {
         DecisionModel: {
             configured: boolean;
             ready: boolean;
+            /** @description While no model answers, what is not judged meanwhile, in plain words (docs/adr/0030). */
+            off?: string[];
         };
         Route: {
             /** @description The stage of the order of work (GET /order). */
@@ -2252,6 +2254,8 @@ export interface components {
             outputOf?: string;
             changeOfItsOwn?: boolean;
             dependedOnBy?: string[];
+            /** @description For a change of its own, what it changes that the work depending on it needs; required with changeOfItsOwn. */
+            change?: string;
             /** @description Every question was asked and none is yes. A piece says it, or answers; among several, a piece with neither is a problem. */
             none?: boolean;
         };
