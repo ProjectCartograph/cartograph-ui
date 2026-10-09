@@ -103,4 +103,33 @@ describe("a change set's review", () => {
     fireEvent.click(screen.getByRole("button", { name: copy.discard.confirmLabel }));
     await waitFor(() => expect(closeChangeSet).toHaveBeenCalledWith("cs1", copy.discard.reason));
   });
+
+  it("keeps what the agent decided for you apart, each leading to its change", async () => {
+    const decidedReview: ChangeSetReview = {
+      ...review,
+      changeSet: {
+        ...review.changeSet,
+        assumptions: [
+          { on: "Gap/gap-bruise", field: "/spec/current", took: "One crate in five", why: "The review gives no figure" },
+          { on: "Goal/o-sound", field: "/spec/objective/text", took: "Worded as an outcome", why: "The review gives a heading only" },
+        ],
+      },
+    };
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    mount({ changeSet: async () => decidedReview });
+    const panel = await screen.findByRole("region", { name: cc.decided.heading });
+    expect(within(panel).getByText(cc.decided.count(2))).toBeInTheDocument();
+    // Each record with a decision is marked where it is listed.
+    expect(screen.getAllByRole("img", { name: cc.decided.mark })).toHaveLength(2);
+    // Going to a decision opens its record and rings the change it made,
+    // the longest change path its field starts with.
+    fireEvent.click(within(panel).getByRole("button", { name: cc.decided.goToLabel("Worded as an outcome") }));
+    const goals = screen.getByRole("region", { name: copy.graph.kind.Goal });
+    await waitFor(() => expect(goals.querySelector('[data-cartograph-change="/spec/objective"]')).toHaveAttribute("data-focused", "true"));
+    await waitFor(() => expect(scrolled).toHaveBeenCalled());
+    // Next steps on to the other, round the list.
+    fireEvent.click(within(panel).getByRole("button", { name: cc.decided.next }));
+    expect(within(panel).getByText(cc.decided.position(1, 2))).toBeInTheDocument();
+  });
 });

@@ -363,6 +363,18 @@ export const copy = {
     level: { goal: "Goal", objective: "Objective", outcome: "Outcome" } as Record<string, string>,
   },
   changeSets: {
+    decided: {
+      heading: "Decided for you",
+      intro: "The agent decided these without a document or your answer. Check each one before you accept.",
+      count: (n: number) => `${n} decision${n === 1 ? "" : "s"}`,
+      why: "Why",
+      goTo: "Go to the change",
+      goToLabel: (what: string) => `Go to the change: ${what}`,
+      previous: "Previous decision",
+      next: "Next decision",
+      position: (at: number, of: number) => `${at} of ${of}`,
+      mark: "Has decisions made for you",
+    },
     title: "Change sets",
     rail: "Change sets",
     intro: "A change set keeps your edits apart until you review and merge them. Each agent works in its own change set, or in yours when you ask it to help.",

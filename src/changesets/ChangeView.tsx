@@ -110,9 +110,24 @@ export function Value({ v, names }: { v: unknown; names: Map<string, string> }):
 }
 
 /** One change: where it is, and what it was and is, in words. */
-export function ChangeRow({ change, names, removedText }: { change: { path: string; op: string; from?: unknown; to?: unknown }; names: Map<string, string>; removedText?: string }) {
+export function ChangeRow({
+  change,
+  names,
+  removedText,
+  focused,
+}: {
+  change: { path: string; op: string; from?: unknown; to?: unknown };
+  names: Map<string, string>;
+  removedText?: string;
+  /** Rung as the change a decision made for the person leads to. */
+  focused?: boolean;
+}) {
   return (
-    <div className="grid gap-1.5 p-2.5 sm:grid-cols-[14rem_1fr]" data-cartograph-change={change.path}>
+    <div
+      className={`grid gap-1.5 p-2.5 sm:grid-cols-[14rem_1fr] ${focused ? "rounded-md bg-primary/5 ring-2 ring-primary/60" : ""}`}
+      data-cartograph-change={change.path}
+      data-focused={focused || undefined}
+    >
       <dt className="text-sm font-medium">{changePlace(change.path)}</dt>
       <dd className="flex flex-col gap-1.5 text-sm">
         {change.op !== "add" && change.from !== undefined ? (

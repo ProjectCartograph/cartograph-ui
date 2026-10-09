@@ -40,6 +40,7 @@ export type Waits = Schemas["Waits"];
 export type WaitsNode = Schemas["WaitsNode"];
 export type Happened = Schemas["Happened"];
 export type CharterPart = Schemas["CharterPart"];
+export type Assumption = Schemas["Assumption"];
 export type Graph = Schemas["Graph"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
