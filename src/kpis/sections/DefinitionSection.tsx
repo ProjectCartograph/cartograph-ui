@@ -21,7 +21,8 @@ import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useState } from "react";
 
 import { CycleSignature } from "../CycleSignature";
-import { knownBaseline, type KPIBaseline, type KPIDefinitionSpec } from "../types";
+import { knownBaseline, type KPIBaseline, type KPIDefinitionSpec, type KPITarget } from "../types";
+import { MonthPicker } from "@/components/ui/date-picker";
 
 const kc = copy.kpis.definition;
 
@@ -35,6 +36,7 @@ function ValueAndDate({
   onChange,
   idPrefix,
   "data-cartograph-field": field,
+  bare,
 }: {
   label: string;
   hint: string;
@@ -43,10 +45,12 @@ function ValueAndDate({
   idPrefix: string;
   /** The manifest field this edits, by JSON pointer. */
   "data-cartograph-field": string;
+  /** Without its own heading, inside a control that has one. */
+  bare?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <FieldHeading label={label} hint={hint} />
+      {bare ? null : <FieldHeading label={label} hint={hint} />}
       <div className="flex items-center gap-2">
         <Input
           id={`${idPrefix}-value`}
@@ -75,6 +79,109 @@ function ValueAndDate({
           }
         />
       </div>
+    </div>
+  );
+}
+
+type TargetMode = "date" | "window" | "when";
+
+/** The target, in the three shapes the engine takes (TAXONOMY.md D47): a
+ * value by a month, a value due in a window, or a value set when something
+ * happens, by the month it is expected. */
+function Target({ value, onChange }: { value?: KPITarget; onChange: (next: KPITarget | undefined) => void }) {
+  const mode: TargetMode = !value || "date" in value ? "date" : "due" in value ? "window" : "when";
+  const figure = value && "value" in value ? value.value : undefined;
+  const tt = kc.target;
+  return (
+    <div className="flex flex-col gap-2" data-cartograph-field="/spec/target">
+      <FieldHeading label={kc.targetLabel} hint={kc.targetHint} />
+      <ToggleGroup
+        type="single"
+        size="sm"
+        variant="outline"
+        value={mode}
+        aria-label={tt.modeLabel}
+        onValueChange={(v) => {
+          if (v === "date") onChange(figure !== undefined ? { value: figure, date: "" } : undefined);
+          else if (v === "window") onChange({ value: figure ?? 0, due: { form: "window" } });
+          else if (v === "when") onChange({ setWhen: { form: "when" } });
+        }}
+        className="self-start"
+      >
+        <ToggleGroupItem value="date">{tt.modes.date}</ToggleGroupItem>
+        <ToggleGroupItem value="window">{tt.modes.window}</ToggleGroupItem>
+        <ToggleGroupItem value="when">{tt.modes.when}</ToggleGroupItem>
+      </ToggleGroup>
+      {mode === "date" ? (
+        <ValueAndDate
+          label={kc.targetLabel}
+          hint={kc.targetHint}
+          value={value && "date" in value ? value : undefined}
+          onChange={onChange}
+          idPrefix="kpi-target"
+          data-cartograph-field="/spec/target"
+          bare
+        />
+      ) : null}
+      {mode === "window" && value && "due" in value ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="number"
+            className="w-32"
+            data-cartograph-field="/spec/target/value"
+            aria-label={`${kc.targetLabel} ${kc.valueLabel}`}
+            value={value.value}
+            onChange={(e) => onChange({ ...value, value: Number(e.target.value) })}
+          />
+          <span className="text-xs text-muted-foreground">{tt.notBefore}</span>
+          <MonthPicker
+            value={value.due.notBefore}
+            onChange={(v) => onChange({ ...value, due: { ...value.due, notBefore: v || undefined } })}
+            aria-label={tt.notBefore}
+            data-cartograph-field="/spec/target/due/notBefore"
+          />
+          <span className="text-xs text-muted-foreground">{tt.notAfter}</span>
+          <MonthPicker
+            value={value.due.notAfter}
+            onChange={(v) => onChange({ ...value, due: { ...value.due, notAfter: v || undefined } })}
+            aria-label={tt.notAfter}
+            data-cartograph-field="/spec/target/due/notAfter"
+          />
+        </div>
+      ) : null}
+      {mode === "when" && value && "setWhen" in value ? (
+        <div className="flex flex-col gap-2">
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            {tt.event}
+            <Input
+              data-cartograph-field="/spec/target/setWhen/event/on/external"
+              value={value.setWhen.event?.on.external ?? ""}
+              maxLength={160}
+              onChange={(e) =>
+                onChange({ ...value, setWhen: { ...value.setWhen, event: e.target.value ? { on: { external: e.target.value.slice(0, 160) } } : undefined } })
+              }
+            />
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">{tt.expectedBy}</span>
+            <MonthPicker
+              value={value.setWhen.expectedBy}
+              onChange={(v) => onChange({ ...value, setWhen: { ...value.setWhen, expectedBy: v || undefined } })}
+              aria-label={tt.expectedBy}
+              data-cartograph-field="/spec/target/setWhen/expectedBy"
+            />
+          </div>
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            {tt.direction}
+            <Input
+              data-cartograph-field="/spec/target/direction"
+              value={value.direction ?? ""}
+              maxLength={160}
+              onChange={(e) => onChange({ ...value, direction: e.target.value ? e.target.value.slice(0, 160) : undefined })}
+            />
+          </label>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -199,14 +306,7 @@ export function DefinitionSection() {
 
       <div className="flex flex-wrap gap-8">
         <Baseline value={spec.baseline} onChange={(v) => set({ baseline: v })} />
-        <ValueAndDate
-          label={kc.targetLabel}
-          hint={kc.targetHint}
-          value={spec.target}
-          onChange={(v) => set({ target: v })}
-          idPrefix="kpi-target"
-          data-cartograph-field="/spec/target"
-        />
+        <Target value={spec.target} onChange={(v) => set({ target: v })} />
       </div>
 
       <div className="flex flex-col gap-2">

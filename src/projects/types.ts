@@ -365,6 +365,8 @@ export interface DependencyEdge {
   on: Ref;
   /** The id of the phase in this project's timeline it must land by. */
   needBy?: string;
+  /** When the work needs it, as a timing (engine TAXONOMY.md D47). */
+  needed?: Timing;
 }
 
 export interface Risk {

@@ -1,4 +1,4 @@
-import { ArrowRightToLine, CalendarDays, CalendarRange, Hourglass, Sun } from "lucide-react";
+import { ArrowRightToLine, CalendarDays, CalendarRange, Hourglass, Sun, TriangleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useQueries } from "@tanstack/react-query";
 
@@ -90,10 +90,70 @@ export function TimingField({
               aria-label={tc.lagLabel}
             />
             {tc.months}
+            <Input
+              type="number"
+              min={0}
+              max={366}
+              className="h-8 w-20"
+              value={value?.lagDays ?? ""}
+              onChange={(e) => set({ lagDays: e.target.value === "" ? undefined : Math.max(0, Math.min(366, Number(e.target.value))) })}
+              aria-label={tc.lagDaysLabel}
+            />
+            {tc.days}
           </label>
         </div>
       ) : null}
       {form === "when" ? <SetWhen value={value!} set={set} exclude={exclude} /> : null}
+      {form ? <MovedBy value={value!} set={set} /> : null}
+    </div>
+  );
+}
+
+/** What could move a timing (engine TAXONOMY.md D47): the project's risks
+ * that name it, recorded and shown, never simulated; and a note. */
+function MovedBy({ value, set }: { value: Timing; set: (patch: Partial<Timing>) => void }) {
+  const store = useProjectStore();
+  const risks = (store.spec.risks ?? []).filter((r): r is typeof r & { id: string } => !!r.id);
+  const chosen = new Set(value.risks ?? []);
+  const toggle = (id: string) => {
+    const next = new Set(chosen);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    set({ risks: next.size ? [...next].sort() : undefined });
+  };
+  return (
+    <div className="flex flex-col gap-2">
+      {risks.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={tc.movedBy}>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <TriangleAlert className="size-3.5" aria-hidden="true" />
+            {tc.movedBy}
+          </span>
+          {risks.map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              role="checkbox"
+              aria-checked={chosen.has(r.id)}
+              onClick={() => toggle(r.id)}
+              title={r.description}
+              className={`max-w-56 truncate rounded-full border px-2 py-0.5 text-xs transition-colors duration-150 ${chosen.has(r.id) ? "border-amber-500 bg-amber-50 text-amber-900 dark:bg-amber-950 dark:text-amber-100" : "text-muted-foreground hover:text-foreground"}`}
+              data-timing-risk={r.id}
+            >
+              {r.description || r.id}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        {tc.noteLabel}
+        <Input
+          className="h-8"
+          value={value.note ?? ""}
+          onChange={(e) => set({ note: e.target.value ? e.target.value.slice(0, 240) : undefined })}
+          maxLength={240}
+        />
+      </label>
     </div>
   );
 }

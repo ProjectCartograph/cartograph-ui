@@ -41,6 +41,7 @@ function randomSuffix(): string {
 export function RiskList({
   risks,
   phases,
+  scheduled,
   roles,
   onChange,
   field = "/spec/risks",
@@ -59,6 +60,9 @@ export function RiskList({
   field?: string;
   risks: Risk[];
   phases: TimelinePhase[];
+  /** Whether the work is scheduled by milestones, so a dependency says
+   * when it is needed as a timing: a project does, a programme not. */
+  scheduled?: boolean;
   /** The roles a decision can be handed up to. A programme names none, so
    * it writes who decides in words. */
   roles?: RoleOption[];
@@ -139,6 +143,7 @@ export function RiskList({
             data-cartograph-field={at(r, idx, "depends")}
             value={r.depends}
             phases={phases}
+            scheduled={scheduled}
             onChange={(depends) => update(idx, { depends })}
           />
         ) : null}

@@ -66,6 +66,7 @@ export function RisksSection() {
         <RiskList
           risks={risks}
           phases={store.spec.timeline?.phases ?? []}
+          scheduled
           roles={roles}
           onChange={updateRisks}
           placing={pick}

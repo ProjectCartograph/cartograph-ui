@@ -9,7 +9,7 @@ import { readingsID, useCycle, useCyclePeriods } from "@/kpis/api";
 import { readingSlots, readingSpan } from "@/kpis/periods";
 import { ReadingChart } from "@/kpis/ReadingChart";
 import { ReadingsTable } from "@/kpis/ReadingsTable";
-import { type KPIReadingsSpec, blankReadings, knownBaseline } from "@/kpis/types";
+import { type KPIReadingsSpec, blankReadings, knownBaseline, targetFigure } from "@/kpis/types";
 import type { KPIDefinitionSpec } from "@/kpis/types";
 import { KPI_STEPS } from "@/kpis/types";
 import { ControlChartView } from "@/dmaic/ControlChartView";
@@ -64,7 +64,7 @@ function Series({ kpiID, spec }: { kpiID: string; spec: KPIDefinitionSpec }) {
   const cycle = useCycle(spec.cycle);
 
   const readings = store.spec.readings ?? [];
-  const span = readingSpan(readings, knownBaseline(spec.baseline)?.date, spec.target?.date);
+  const span = readingSpan(readings, knownBaseline(spec.baseline)?.date, targetFigure(spec.target)?.date);
   const periods = useCyclePeriods(spec.cycle, span);
   const slots = cycle.data ? readingSlots(periods.data ?? [], readings) : [];
 
@@ -94,7 +94,7 @@ function Series({ kpiID, spec }: { kpiID: string; spec: KPIDefinitionSpec }) {
         <ReadingChart
           slots={slots}
           unit={spec.unit ?? ""}
-          target={spec.target}
+          target={targetFigure(spec.target)}
           baseline={knownBaseline(spec.baseline)}
           direction={spec.direction}
         />

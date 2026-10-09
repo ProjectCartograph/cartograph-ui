@@ -11,6 +11,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { copy } from "@/copy";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import type { DependencyDirection, DependencyEdge, Ref, RefKind, TimelinePhase } from "./types";
+import { TimingField } from "./TimingField";
 
 const rc = copy.projects.risks;
 
@@ -39,6 +40,7 @@ const DIRECTIONS: DependencyDirection[] = ["needs", "neededBy"];
 export function DependencyEdgeEditor({
   value,
   phases,
+  scheduled,
   onChange,
   "data-cartograph-field": field,
 }: {
@@ -49,6 +51,9 @@ export function DependencyEdgeEditor({
    * schedules nothing, where the control is left out rather than shown
    * with nothing in it. */
   phases: TimelinePhase[];
+  /** Whether the work is scheduled by milestones: then it says when it is
+   * needed as a timing. */
+  scheduled?: boolean;
   onChange: (next: DependencyEdge | undefined) => void;
 }) {
   const direction = value?.direction ?? "needs";
@@ -122,15 +127,16 @@ export function DependencyEdgeEditor({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Label className="text-xs text-muted-foreground">{rc.dependsNeedByLabel}</Label>
-        {phases.length === 0 ? (
-          <span className="text-xs text-muted-foreground">{rc.dependsNoPhases}</span>
-        ) : (
-          <Select
-            value={value?.needBy ?? ""}
-            onValueChange={(v) => set({ needBy: v || undefined })}
-          >
+      {scheduled ? (
+        <TimingField value={value?.needed} onChange={(needed) => set({ needed })} field={`${field ?? ""}/needed`} label={rc.dependsNeededLabel} />
+      ) : null}
+
+      {/* A phase a project saved before milestones carried its schedule:
+          still read by the engine, shown until it is cleared. */}
+      {value?.needBy && phases.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Label className="text-xs text-muted-foreground">{rc.dependsNeedByLabel}</Label>
+          <Select value={value.needBy} onValueChange={(v) => set({ needBy: v || undefined })}>
             <SelectTrigger className="w-56" aria-label={rc.dependsNeedByLabel} data-cartograph-field={field && `${field}/needBy`}>
               <SelectValue placeholder={rc.dependsNeedByPlaceholder} />
             </SelectTrigger>
@@ -144,8 +150,8 @@ export function DependencyEdgeEditor({
                 ))}
             </SelectContent>
           </Select>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }
