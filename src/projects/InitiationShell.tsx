@@ -22,6 +22,7 @@ import { ProjectHeaderBar } from "./Chrome";
 import { ProjectMap } from "./canvas/ProjectMap";
 import { useRecordDrawer } from "@/records/RecordDrawer";
 import { CharterView } from "@/charter/CharterView";
+import { LiveCharter } from "@/charter/LiveCharter";
 import { useProjectStore } from "./store";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
@@ -299,7 +300,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
           <InitiationBackNext id={id} stage={stage} section={section} />
         </div>
         {paneOpen ? (
-          <SidePane id={id} onClose={() => setPane(false)} checks={<CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(stepwise ? [] : (STAGE_ALSO_CHECKS[stage] ?? []))]} />} />
+          <SidePane id={id} section={section} onClose={() => setPane(false)} checks={<CheckPanel id={id} draft scopeSections={[...steps.map((s) => s.section), ...(stepwise ? [] : (STAGE_ALSO_CHECKS[stage] ?? []))]} />} />
         ) : null}
       </div>
     </div>
@@ -313,8 +314,9 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
  * charter as it reads now, or the checks on this stage. The map is the
  * default: what the steps define appears there as it is defined.
  */
-function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode; onClose: () => void }) {
+function SidePane({ id, section, checks, onClose }: { id: string; section?: string; checks: React.ReactNode; onClose: () => void }) {
   const store = useProjectStore();
+  const checksQuery = useProjectChecks(id, true);
   const navigate = useNavigate();
   const drawer = useRecordDrawer();
   const mc = copy.projectMap;
@@ -422,13 +424,20 @@ function SidePane({ id, checks, onClose }: { id: string; checks: React.ReactNode
               working
               fileName={id}
               empty={copy.charter.empty}
-              editable={{
-                onStep: (step) => {
-                  const path = pathOfStep(step);
-                  if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
-                },
-                onField: (pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value)),
-              }}
+              live={
+                <LiveCharter
+                  id={id}
+                  version={store.spec}
+                  step={section}
+                  onStep={(step) => {
+                    const path = pathOfStep(step);
+                    if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
+                  }}
+                  onField={(pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value))}
+                  valueOf={(pointer) => getAt(store.spec, pointer)}
+                  checksOf={(step) => (checksQuery.data?.items ?? []).filter((c) => c.section === step && c.state !== "ok").map((c) => c.message)}
+                />
+              }
             />
           </div>
         ) : tab === "dmaic" ? (
@@ -452,6 +461,13 @@ function pathOfStep(step: string): string | undefined {
 
 /** Sets one text value in the spec by its JSON pointer, as the charter
  * names it ("/spec/summary/problems/0/problem/situation"). */
+/** The text at a JSON pointer in the spec, as the charter names it. */
+function getAt(spec: ProjectSpec, pointer: string): string {
+  let at: unknown = spec;
+  for (const key of pointer.split("/").filter(Boolean).slice(1)) at = at && typeof at === "object" ? (at as Record<string, unknown>)[key] : undefined;
+  return typeof at === "string" ? at : "";
+}
+
 function setAt(spec: ProjectSpec, pointer: string, value: string): ProjectSpec {
   const parts = pointer.split("/").filter(Boolean).slice(1);
   const copyOf = (v: unknown): unknown => (Array.isArray(v) ? [...v] : v && typeof v === "object" ? { ...(v as object) } : {});

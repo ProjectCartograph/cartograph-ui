@@ -1687,8 +1687,6 @@ export const copy = {
     placeholder: "",
   },
   charter: {
-    openStep: "Open this section's step",
-    editHere: "Click to edit. Enter to save, Escape to cancel.",
     title: "Charter",
     subtitle: "",
     back: "Back",
@@ -1696,6 +1694,18 @@ export const copy = {
     pdf: "Download PDF",
     openTab: "Open in a tab",
     empty: "Nothing to show yet. The charter fills in as you complete the steps.",
+    live: {
+      menu: (part: string) => `What can be done in ${part}`,
+      openStep: "Open its step",
+      edit: (field: string) => `Edit ${field}`,
+      nothing: "Nothing to edit here",
+      placeholder: "Nothing here yet. Open its step to say what belongs here.",
+      panel: (field: string) => `Editing ${field}`,
+      checks: "What its step still needs",
+      save: (field: string) => `Save ${field}`,
+      saveShort: "Save",
+      cancel: "Cancel",
+    },
   },
   framework: {
     title: "Results framework",
