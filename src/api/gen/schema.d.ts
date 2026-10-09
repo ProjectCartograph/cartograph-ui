@@ -78,6 +78,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/Project/{id}/waits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a project's dated items wait on, across kinds, laid out
+         * @description Every item of the project that says when it falls (a milestone, a deliverable, a condition, a purchase, a dependency on another project), a KPI's target or baseline set when one of them happens, and another project's item one waits on, each placed on time, with an edge from what comes first to what waits on it (TAXONOMY.md D47, D48). Marked: the chain that decides the last date, what no longer fits its own date or what it needs, what is late, and the risks that could move each. Laid out by the engine, a column to a month; an interface draws it. Nothing is rescheduled.
+         */
+        get: operations["getProjectWaits"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/manifests/Project/{id}/happened": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The items of a project what a person says happened is about
+         * @description What happened, in the person's own words, matched to the project's triggerables (its milestones, deliverables, conditions, risks, dependencies and success criteria) by the decision model, likeliest first, with what can be recorded as happening to each (TAXONOMY.md D59). Without a model nothing is judged (docs/adr/0030): every triggerable is returned, unranked, and available is false.
+         */
+        post: operations["matchWhatHappened"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/manifests/Project/{id}/affects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every item a trigger on one of a project's items reaches
+         * @description From the item (milestones/start, risks/r1), everything that waits on it, directly or through others, and for a risk every item whose timing names it and what waits on those (TAXONOMY.md D59), as the project's waits place them. Nothing is rescheduled.
+         */
+        get: operations["getWhatATriggerReaches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/components": {
         parameters: {
             query?: never;
@@ -338,6 +398,26 @@ export interface paths {
         };
         /** Project charter rendered as HTML from the latest snapshot (or working copy with ?working=true). */
         get: operations["getProjectCharterHtml"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/manifests/Project/{id}/charter/parts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A project's charter as its parts, as the change set reads it
+         * @description Each section the charter renderer writes, in order: its title, the step of the walk it is written in, the HTML written under its heading (escaped as the charter is), and the JSON pointers of the fields it holds as typed, each editable in place. A section the renderer started with nothing to write under it is an empty part, what still belongs there. From the same renderer as charter.html and charter.pdf, so the screen and the paper never differ (TAXONOMY.md D55).
+         */
+        get: operations["getProjectCharterParts"];
         put?: never;
         post?: never;
         delete?: never;
@@ -844,6 +924,26 @@ export interface paths {
         get: operations["getSession"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Keep what an interface saw a person do, by its shape
+         * @description An interface's own acts (a step entered, a press, a picker opened and closed, how long a press took to answer), kept on the people's trace (docs/adr/0034) for docs/EVALUATING_PEOPLE.md. Every field is a token, a route pattern or a JSON pointer, so nothing a person wrote fits; a batch with any act that does not is refused whole. Not found when the deployment keeps no trace (CARTOGRAPH_UI_TRACE off, the default): an interface reads traceOn from the session and sends nothing then.
+         */
+        post: operations["recordEvents"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1715,6 +1815,44 @@ export interface components {
             access?: components["schemas"]["SessionAccess"];
             /** @description Whether agents may act for this principal here: the deployment serves MCP and, with an access list, the principal's roles allow one. An interface shows Proposals when it is true. */
             agents?: boolean;
+            /** @description Whether the deployment keeps the people's trace (docs/adr/0034). An interface sends its acts to POST /events only when it is true. */
+            traceOn?: boolean;
+        };
+        /** @description One window's acts, sent together. The session groups them; the person is who the request runs as. */
+        EventBatch: {
+            /** @description A token the interface makes for one window, never a name. */
+            session: string;
+            /** @description Which interface sent them (web, terminal). */
+            interface?: string;
+            events: components["schemas"]["InterfaceEvent"][];
+        };
+        /** @description One act an interface saw, by its shape: docs/EVALUATING_PEOPLE.md says what each name means. */
+        InterfaceEvent: {
+            /** @enum {string} */
+            name: "screen.show" | "screen.deadend" | "flow.open" | "step.enter" | "step.back" | "field.set" | "guide.open" | "picker.open" | "picker.close" | "press" | "request" | "find.open" | "find.pick" | "find.close" | "changeset.switch";
+            /**
+             * Format: date-time
+             * @description When it happened, by the interface's clock; the server's time when absent.
+             */
+            at?: string;
+            /** @description The screen as its route pattern (goals/$id), never its address. */
+            surface?: string;
+            kind?: string;
+            /** @description The record's id; ids are generated, never names. */
+            record?: string;
+            /** @description The flow step's key. */
+            step?: string;
+            /** @description The field's JSON pointer, list items by key in braces. */
+            field?: string;
+            changeSet?: string;
+            /** @enum {string} */
+            target?: "new" | "existing" | "action" | "none" | "chosen";
+            /** @enum {string} */
+            outcome?: "ok" | "refused" | "failed";
+            /** @description How long it took, in milliseconds. */
+            millis?: number;
+            /** @description Whether a wait showed it was waiting (a skeleton or a count). */
+            sign?: boolean;
         };
         /** @description What the access list gives the principal (docs/adr/0011), present when the deployment keeps one. An interface offers editing from it; the engine decides again on every write. */
         SessionAccess: {
@@ -1876,6 +2014,8 @@ export interface components {
             message: string;
             /** @description Why the agent left it open. */
             reason: string;
+            /** @description What the person was asked about it and what they answered, or "not available" when the agent worked without them (docs/adr/0032). */
+            asked?: string;
         };
         /** @description One thing a manifest still needs, as every kind reports it: met (ok), advice (warn), or a block on a handoff (block). */
         ManifestCheck: {
@@ -2231,6 +2371,77 @@ export interface components {
             critical: boolean;
             /** @description It follows something outside the project, or a loop, so no month can be worked out. */
             unplaced: boolean;
+        };
+        Waits: {
+            nodes: components["schemas"]["WaitsNode"][];
+            edges: {
+                /** @description The index in nodes of what comes first. */
+                from: number;
+                /** @description The index in nodes of what waits on it. */
+                to: number;
+            }[];
+        };
+        CharterPart: {
+            title: string;
+            /** @description The step of the project's walk the section is written in. */
+            step?: string;
+            /** @description The section's id in the charter's HTML; absent for an empty part. */
+            anchor?: string;
+            /** @description What the renderer wrote under the heading, escaped as the charter is. */
+            html: string;
+            /** @description The JSON pointers of the fields written in it as typed, each editable in place. */
+            fields: string[];
+            /** @description Nothing is written in it yet; what belongs there is still to say. */
+            empty: boolean;
+        };
+        Happened: {
+            /** @description Whether the decision model ranked the matches; false, every triggerable as listed. */
+            available: boolean;
+            matches: {
+                /** @description The item, as list/id. */
+                item: string;
+                /** @enum {string} */
+                kind: "milestone" | "deliverable" | "condition" | "risk" | "dependency" | "criterion";
+                name: string;
+                /** @description What can be recorded as happening to it, as the event log names it. */
+                happens: string[];
+                likelihood?: number;
+            }[];
+        };
+        WaitsNode: {
+            /**
+             * @description What it is; ready is when another project is ready, for a dependency on it.
+             * @enum {string}
+             */
+            kind: "milestone" | "deliverable" | "condition" | "purchase" | "dependency" | "target" | "baseline" | "ready";
+            /** @description The record it is in, to open. */
+            record: {
+                /** @enum {string} */
+                kind: "Project" | "KPI";
+                id: string;
+            };
+            /** @description Its place in the record, list/id, such as milestones/start. */
+            item?: string;
+            name: string;
+            /** @description Its timing as written (common.schema.json Timing), for the words an interface says it in. */
+            timing?: {
+                [key: string]: unknown;
+            };
+            /** @description The name of what it follows or is set by. */
+            follows?: string;
+            /** @description The month it falls in as far as its timing says, YYYY-MM. */
+            month?: string;
+            /** @description The risks the timing says could move it, by description; recorded, never simulated. */
+            risks?: string[];
+            /** @description On the chain that decides the last date. */
+            critical: boolean;
+            /** @description What it waits on puts it after its own date or window, or what it needs is ready after it. */
+            conflict: boolean;
+            /** @description Set once something happens, past the month it was expected by. */
+            late: boolean;
+            unplaced: boolean;
+            x: number;
+            y: number;
         };
         WorkRef: {
             /** @enum {string} */
@@ -2678,6 +2889,98 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScheduleItem"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getProjectWaits: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Waits"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    matchWhatHappened: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    text: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Happened"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getWhatATriggerReaches: {
+        parameters: {
+            query: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+                /** @description The item, as list/id. */
+                item: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitsNode"][];
                 };
             };
             401: components["responses"]["Unauthenticated"];
@@ -3133,6 +3436,34 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getProjectCharterParts: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CharterPart"][];
                 };
             };
             401: components["responses"]["Unauthenticated"];
@@ -3992,6 +4323,36 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthenticated"];
+        };
+    };
+    recordEvents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventBatch"];
+            };
+        };
+        responses: {
+            /** @description Kept */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description How many acts were kept. */
+                        kept: number;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthenticated"];
+            404: components["responses"]["NotFound"];
         };
     };
     listAgentGrants: {
