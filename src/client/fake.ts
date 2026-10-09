@@ -72,6 +72,7 @@ const every: Record<keyof Client, true> = {
   whatHappened: true,
   affects: true,
   charterParts: true,
+  changeSetCharter: true,
   dropChangeSetItem: true,
   getGuide: true,
   acceptProposal: true,

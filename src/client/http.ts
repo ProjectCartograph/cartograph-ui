@@ -333,6 +333,7 @@ export function httpClient(
     affects: (id, item) => answer(wire.GET("/manifests/Project/{id}/affects", { params: { path: { id }, query: { item, ...preview() } } })),
     // As the active change set has it, or, with record, as the record does.
     charterParts: (id, opts) => answer(wire.GET("/manifests/Project/{id}/charter/parts", { params: { path: { id }, query: opts?.record ? {} : { ...preview() } } })),
+    changeSetCharter: (set, id) => answer(wire.GET("/changesets/{set}/items/Project/{id}/charter", { params: { path: { set, id } } })),
     proposeChangeSet: (set, reason, openChecks) =>
       answer(wire.POST("/changesets/{set}/propose", { params: { path: { set } }, body: { ...(reason ? { reason } : {}), ...(openChecks ? { openChecks } : {}) } })),
     dropChangeSetItem: (set, kind, id) => done(wire.DELETE("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } })),

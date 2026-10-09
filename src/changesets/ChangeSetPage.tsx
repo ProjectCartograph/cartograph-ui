@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed
 import { useSession } from "@/access/access";
 import { useClient } from "@/client/context";
 import { AskAgent } from "./AskAgent";
+import { CharterPreview } from "./CharterPreview";
 import { Decided, type DecisionFocus } from "./Decided";
 import { DiscardButton } from "./Discard";
 import { MergeDialog, checkText } from "./MergeBar";
@@ -66,6 +67,7 @@ function Review({ review }: { review: ChangeSetReview }) {
   const decided = cs.assumptions ?? [];
   const [focus, setFocus] = useState<DecisionFocus | undefined>(undefined);
   const recordNames = new Map(review.items.map((i) => [`${i.kind}/${i.id}`, i.name ?? i.id]));
+  const projects = review.items.filter((i) => i.kind === "Project").map((i) => ({ id: i.id, name: i.name ?? i.id }));
   return (
     <>
       <header className="flex flex-col gap-2">
@@ -137,6 +139,8 @@ function Review({ review }: { review: ChangeSetReview }) {
           </ul>
         </section>
       ))}
+
+      <CharterPreview set={cs.id} projects={projects} />
 
       {mine ? <Decide set={cs.id} title={cs.title} status={cs.status} included={included.length} all={review.items.length} /> : null}
     </>
