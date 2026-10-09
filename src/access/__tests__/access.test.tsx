@@ -10,6 +10,13 @@ import { fakeClient } from "@/client/fake";
 import type { Client, Person, Session } from "@/client/port";
 import { copy } from "@/copy";
 
+// The change-control section an administrator sees is a definition store,
+// which asks the router to hold navigation while it saves.
+vi.mock("@tanstack/react-router", () => ({
+  useBlocker: () => undefined,
+  Link: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
+}));
+
 import { mayWrite } from "../access";
 import { AccessPage } from "../AccessPage";
 import { WriteGate } from "../WriteGate";

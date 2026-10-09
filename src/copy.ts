@@ -195,6 +195,32 @@ export const copy = {
       email
         ? `You signed in as ${email}, but only the people an administrator lists can see this. Ask one to add you.`
         : "Only the people an administrator lists can see this. Ask one to add you.",
+    changeControl: {
+      title: "Change control",
+      intro:
+        "How the record may change, for people and agents alike. A change set is a piece of work kept apart from the record until someone rolls it in.",
+      loadFailed: "The workspace's settings could not be read.",
+      staged: "Changed in your change set. It takes effect once the change set is rolled in.",
+      inForce: "In force now.",
+      policy: {
+        changeSetsRequired: {
+          name: "Every change goes through a change set",
+          does: "Saving straight to the record is refused; each change is made in a change set and rolled in.",
+        },
+        checksMet: {
+          name: "Every check is met before rolling in",
+          does: "A change set with a check nobody met, or said why it is not met, cannot be rolled in.",
+        },
+        nothingLeftOpen: {
+          name: "Nothing is left open before rolling in",
+          does: "A change set with a check left open or waived, even with a reason, cannot be rolled in.",
+        },
+        secondReviewer: {
+          name: "Someone other than its author rolls it in",
+          does: "The person a change set is for cannot roll it in; another person reviews it and rolls it in with their own access.",
+        },
+      },
+    },
   },
   proposals: {
     title: "Proposals",
