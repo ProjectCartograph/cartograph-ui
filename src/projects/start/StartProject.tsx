@@ -133,11 +133,12 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
   // What was named in passing and is still chosen is filled in before
   // the project is named: naming it is the commit, and comes last.
   const toFill = created.filter((c) => c.kind !== "Team" && (c.kind === "Gap" ? gaps : c.kind === "Goal" ? goals : groups).includes(c.id) && !filled.has(c.id));
-  useEffect(() => {
-    if (step !== "ready" || suggested) return;
+  // Set while rendering, not in an effect, so the step never shows an
+  // empty box for a render before the suggestion arrives.
+  if (step === "ready" && !suggested) {
     setSuggested(true);
     if (!name.trim()) setName(nameFrom(about));
-  }, [step, suggested, name, about]);
+  }
   const STEPS = ALL_STEPS.filter((s) => s !== "details" || toFill.length > 0 || step === "details");
   const at = STEPS.indexOf(step);
   const go = (to: Step) => {
