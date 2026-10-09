@@ -28,6 +28,10 @@
 // (Tab from Arrange to the first "New objective" button, Enter reveals its
 // inline input, Escape closes it).
 //
+// Last, an answers pass: the browser's Event Timing API measures every real
+// interaction the passes made, from the input to the next frame drawn, and
+// any over 100 ms fails (engine DESIGN_RULES.md, "The interface answers").
+//
 // Controls are found the way the interface's own tests find them: by
 // data-cartograph-field (the manifest's JSON pointer), by a step's key, or
 // by accessible name; never by visible text or placeholder where a field
@@ -2358,6 +2362,41 @@ async function bootstrapFlow(conn) {
 
 /** Prints a flow's problems, or its line of success; returns whether it
  * failed. */
+
+// Every press, click and key a person makes is answered on the next frame
+// the browser draws, within 100 ms (engine DESIGN_RULES.md, "The interface
+// answers", rule 1). The browser's Event Timing API measures each real
+// interaction from the input to that frame; this script, added to every
+// page before it loads, keeps the count and the ones over budget in the
+// tab's session storage, which outlives each navigation.
+const ANSWER_BUDGET_MS = 100;
+const ANSWERS_KEY = "cartograph-smoke-answers";
+const answersObserver = `
+(() => {
+  const key = ${JSON.stringify(ANSWERS_KEY)};
+  const interactions = new Set(["pointerdown", "pointerup", "click", "keydown", "keyup"]);
+  try {
+    new PerformanceObserver((list) => {
+      let kept;
+      try { kept = JSON.parse(sessionStorage.getItem(key) || '{"n":0,"slow":[]}'); } catch { kept = { n: 0, slow: [] }; }
+      for (const e of list.getEntries()) {
+        if (!interactions.has(e.name) || !e.interactionId) continue;
+        kept.n++;
+        if (e.duration > ${ANSWER_BUDGET_MS} && kept.slow.length < 50) kept.slow.push({ name: e.name, ms: Math.round(e.duration), at: location.pathname });
+      }
+      sessionStorage.setItem(key, JSON.stringify(kept));
+    }).observe({ type: "event", durationThreshold: 16, buffered: true });
+  } catch {}
+})();
+`;
+
+/** Every interaction the passes made, and those answered over budget. */
+async function answersPass(conn) {
+  const kept = await evalJS(conn, `JSON.parse(sessionStorage.getItem(${JSON.stringify(ANSWERS_KEY)}) || '{"n":0,"slow":[]}')`);
+  const problems = (kept?.slow ?? []).map((s) => `${s.name} on ${s.at} answered in ${s.ms} ms, over ${ANSWER_BUDGET_MS} ms`);
+  if ((kept?.n ?? 0) === 0) problems.push("no interaction was measured: the Event Timing API saw nothing");
+  return { problems, measured: kept?.n ?? 0 };
+}
 function report(label, result, okLine) {
   if (result.problems.length > 0) {
     console.error(`smoke: ${label} had problems:`);
@@ -2387,6 +2426,7 @@ async function main() {
     await send(pageConn, "Runtime.enable");
     await send(pageConn, "Log.enable");
     await send(pageConn, "Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await send(pageConn, "Page.addScriptToEvaluateOnNewDocument", { source: answersObserver });
 
     let failed = false;
     const finish = async () => {
@@ -2519,6 +2559,10 @@ async function main() {
     failed =
       report("keyboard pass", await keyboardPass(pageConn), 'keyboard pass ok, Tab reached "New objective", Enter revealed its inline input, Escape closed it') ||
       failed;
+
+    console.log("smoke: answers pass: every interaction the passes made, answered within 100 ms");
+    const answers = await answersPass(pageConn);
+    failed = report("answers pass", answers, `answers pass ok, ${answers.measured} interactions, each answered within 100 ms`) || failed;
 
     await finish();
   } catch (err) {
