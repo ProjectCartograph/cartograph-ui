@@ -66,6 +66,7 @@ const every: Record<keyof Client, true> = {
   semanticLayer: true,
   dmaic: true,
   constraints: true,
+  round: true,
   controlChart: true,
   schedule: true,
   waits: true,

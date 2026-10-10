@@ -30,6 +30,8 @@ export type DMAIC = Schemas["DMAIC"];
 /** A project's triple constraint: each side's stance, risks and exposure
  * (engine TAXONOMY.md D60). */
 export type TripleConstraint = Schemas["TripleConstraint"];
+export type ProjectRound = Schemas["ProjectRound"];
+export type RoundTask = Schemas["RoundTask"];
 export type ConstraintSide = Schemas["ConstraintSide"];
 export type ControlChart = Schemas["ControlChart"];
 export type LineageNode = Schemas["LineageNode"];
@@ -489,6 +491,9 @@ export interface Client {
   dmaic(project: string): Promise<DMAIC>;
   /** A project's triple constraint, as the engine weighs it (D60). */
   constraints(project: string): Promise<TripleConstraint>;
+  /** What a project's walk can decide now, in the order an agent is
+   * asked it (engine docs/adr/0032). */
+  round(project: string): Promise<ProjectRound>;
   /** A KPI's readings as a control chart, with its capability. */
   controlChart(kpi: string): Promise<ControlChart>;
   /** The KPIs as a semantic layer in a syntax, dbt's by default (engine

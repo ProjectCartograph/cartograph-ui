@@ -29,6 +29,7 @@ import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type Proj
 import { DMAICPanel } from "@/dmaic/DMAICPanel";
 import { STAGE_ICON, STEP_ICON } from "./steps";
 import { SectionOutline } from "./SectionOutline";
+import { NextToDecide } from "./NextToDecide";
 
 const pc = copy.projects;
 
@@ -266,6 +267,7 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
         </div>
       </div>
       <ProjectScrubber id={id} section={section} />
+      <NextToDecide id={id} section={section} />
       <RequiredMarks kind="Project" />
       <div className={`grid grid-cols-1 gap-6 ${paneOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
         <div ref={card} className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
