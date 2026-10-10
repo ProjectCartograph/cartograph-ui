@@ -40,6 +40,8 @@ export type Waits = Schemas["Waits"];
 export type WaitsNode = Schemas["WaitsNode"];
 export type Happened = Schemas["Happened"];
 export type CharterPart = Schemas["CharterPart"];
+export type CharterPartDiff = Schemas["CharterPartDiff"];
+export type Assumption = Schemas["Assumption"];
 export type Graph = Schemas["Graph"];
 export type GraphNode = Schemas["GraphNode"];
 export type GraphEdge = Schemas["GraphEdge"];
@@ -508,6 +510,9 @@ export interface Client {
   /** A project's charter as its parts, each with the fields it holds
    * (engine TAXONOMY.md D55). */
   charterParts(project: string, opts?: { record?: boolean }): Promise<CharterPart[]>;
+  /** The charter a change set leaves a project with, against the record,
+   * part by part and line by line (engine issue 30). */
+  changeSetCharter(set: string, project: string): Promise<CharterPartDiff[]>;
   changeSet(id: string): Promise<ChangeSetReview>;
   /** Include an item in the next acceptance, or trim it from it. */
   includeChangeSetItem(set: string, kind: string, id: string, included: boolean): Promise<void>;

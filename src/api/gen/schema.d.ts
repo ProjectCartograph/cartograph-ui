@@ -1112,6 +1112,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/changesets/{set}/items/Project/{id}/charter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The charter a change set leaves a project with, against the record
+         * @description The project's charter as the change set reads it, part by part against the record, from the same renderer as charter.html: each part same, added, removed or changed, and its lines, one a paragraph, list item, value or table row, each same, added or removed. A project new in the change set is added whole. For a person reviewing the change set in the document it adds up to.
+         */
+        get: operations["getChangeSetCharter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/changesets/{set}/items/{kind}/{id}/removal": {
         parameters: {
             query?: never;
@@ -2077,6 +2097,30 @@ export interface components {
             /** @description What the person was asked about it and what they answered, or "not available" when the agent worked without them (docs/adr/0032). */
             asked?: string;
         };
+        /** @description One part of a charter as a change set leaves it, against the record. */
+        CharterPartDiff: {
+            title: string;
+            /** @description The step of the project's walk the part is written in. */
+            step?: string;
+            /** @enum {string} */
+            state: "same" | "added" | "removed" | "changed";
+            lines: {
+                /** @enum {string} */
+                op: "same" | "added" | "removed";
+                text: string;
+            }[];
+        };
+        /** @description A decision an agent took for its person with no document and no answer behind it (docs/adr/0033). */
+        Assumption: {
+            /** @description The record it is on, as Kind/id. */
+            on: string;
+            /** @description The field it wrote, as a JSON pointer. */
+            field?: string;
+            /** @description What the agent decided. */
+            took: string;
+            /** @description Why it decided without asking. */
+            why: string;
+        };
         /** @description One thing a manifest still needs, as every kind reports it: met (ok), advice (warn), or a block on a handoff (block). */
         ManifestCheck: {
             id: string;
@@ -2217,6 +2261,8 @@ export interface components {
             /** @description What proposing it said. */
             reason?: string;
             waivers?: components["schemas"]["Waiver"][];
+            /** @description What the agent decided on its person's behalf, with no document and no answer behind it, as it declared them (docs/adr/0033): each for the person to review. */
+            assumptions?: components["schemas"]["Assumption"][];
             /** Format: date-time */
             at: string;
             /** Format: date-time */
@@ -4733,6 +4779,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SharedDocument"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getChangeSetCharter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A change set's id. */
+                set: components["parameters"]["ChangeSetParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CharterPartDiff"][];
                 };
             };
             401: components["responses"]["Unauthenticated"];

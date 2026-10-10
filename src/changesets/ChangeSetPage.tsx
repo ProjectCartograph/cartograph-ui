@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed, GitMerge, GitPullRequest } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed, GitMerge, GitPullRequest, UserCheck } from "lucide-react";
 
 import { useSession } from "@/access/access";
 import { useClient } from "@/client/context";
 import { AskAgent } from "./AskAgent";
+import { CharterPreview } from "./CharterPreview";
+import { Decided, type DecisionFocus } from "./Decided";
 import { DiscardButton } from "./Discard";
 import { MergeDialog, checkText } from "./MergeBar";
-import { ClientError, type ChangeSetItem, type ChangeSetReview } from "@/client/port";
+import { ClientError, type Assumption, type ChangeSetItem, type ChangeSetReview } from "@/client/port";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -62,6 +64,10 @@ function Review({ review }: { review: ChangeSetReview }) {
   const byKind = new Map<string, ChangeSetItem[]>();
   for (const it of review.items) byKind.set(it.kind, [...(byKind.get(it.kind) ?? []), it]);
   const editable = cs.status === "open" || cs.status === "proposed";
+  const decided = cs.assumptions ?? [];
+  const [focus, setFocus] = useState<DecisionFocus | undefined>(undefined);
+  const recordNames = new Map(review.items.map((i) => [`${i.kind}/${i.id}`, i.name ?? i.id]));
+  const projects = review.items.filter((i) => i.kind === "Project").map((i) => ({ id: i.id, name: i.name ?? i.id }));
   return (
     <>
       <header className="flex flex-col gap-2">
@@ -95,6 +101,8 @@ function Review({ review }: { review: ChangeSetReview }) {
         ) : null}
       </header>
 
+      <Decided decided={decided} names={recordNames} onFocus={setFocus} />
+
       {cs.waivers && cs.waivers.length > 0 ? <LeftOpen left={cs.waivers} /> : null}
 
       <section aria-label={cc.summary} className="flex flex-wrap gap-2" data-cartograph-region="change-set-summary">
@@ -119,21 +127,69 @@ function Review({ review }: { review: ChangeSetReview }) {
           </h2>
           <ul className="flex flex-col gap-2">
             {items.map((it) => (
-              <Item key={`${it.kind}/${it.id}`} set={cs.id} item={it} editable={editable && mine} />
+              <Item
+                key={`${it.kind}/${it.id}`}
+                set={cs.id}
+                item={it}
+                editable={editable && mine}
+                decided={decided.filter((a) => a.on === `${it.kind}/${it.id}`)}
+                focus={focus && focus.kind === it.kind && focus.id === it.id ? focus : undefined}
+              />
             ))}
           </ul>
         </section>
       ))}
+
+      <CharterPreview set={cs.id} projects={projects} />
 
       {mine ? <Decide set={cs.id} title={cs.title} status={cs.status} included={included.length} all={review.items.length} /> : null}
     </>
   );
 }
 
-function Item({ set, item, editable }: { set: string; item: ChangeSetItem; editable: boolean }) {
+/** The change row that holds a field: the one whose path is the longest
+ * that the field starts with. */
+export function rowFor(paths: string[], field?: string): string | undefined {
+  if (!field) return undefined;
+  let best: string | undefined;
+  for (const p of paths) {
+    if ((field === p || field.startsWith(`${p}/`)) && (!best || p.length > best.length)) best = p;
+  }
+  return best;
+}
+
+function Item({
+  set,
+  item,
+  editable,
+  decided,
+  focus,
+}: {
+  set: string;
+  item: ChangeSetItem;
+  editable: boolean;
+  decided: Assumption[];
+  focus?: DecisionFocus;
+}) {
   const client = useClient();
   const queries = useQueryClient();
   const [open, setOpen] = useState(false);
+  const self = useRef<HTMLLIElement>(null);
+  const changes = readableChanges(item.changes);
+  const ringed = rowFor(
+    changes.map((c) => c.path),
+    focus?.field,
+  );
+  // A decision jumped to opens its record and brings the change into view.
+  useEffect(() => {
+    if (!focus) return;
+    setOpen(true);
+    const t = setTimeout(() => {
+      const row = ringed ? self.current?.querySelector(`[data-cartograph-change="${CSS.escape(ringed)}"]`) : null;
+      (row ?? self.current)?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, [focus, ringed]);
   const include = useMutation({
     mutationFn: (on: boolean) => client.includeChangeSetItem(set, item.kind, item.id, on),
     onSuccess: () => queries.invalidateQueries({ queryKey: ["changesets", set] }),
@@ -148,6 +204,7 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
   return (
     <li
       className={`rounded-lg border ${item.included ? "" : "border-dashed opacity-70"}`}
+      ref={self}
       id={`item-${item.kind}-${item.id}`}
       data-cartograph-item={`${item.kind}/${item.id}`}
     >
@@ -165,7 +222,14 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
           <ChevronRight className={`mt-1 size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} aria-hidden="true" />
           {Icon ? <Icon className="mt-1 size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
           <span className="min-w-0 flex-1">
-            <span className="block font-medium">{item.name ?? item.id}</span>
+            <span className="flex items-center gap-1.5 font-medium">
+              {item.name ?? item.id}
+              {decided.length > 0 ? (
+                <UserCheck className="size-3.5 text-primary" role="img" aria-label={cc.decided.mark} data-slot="decided-mark">
+                  <title>{cc.decided.mark}</title>
+                </UserCheck>
+              ) : null}
+            </span>
             <span className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
               {isNew ? <span>{cc.isNew}</span> : <span>{cc.changed(item.changes.length)}</span>}
               {openChecks.length > 0 ? (
@@ -187,8 +251,8 @@ function Item({ set, item, editable }: { set: string; item: ChangeSetItem; edita
       {open ? (
         <div className="space-y-4 border-t p-3 animate-in fade-in duration-150">
           <dl className="divide-y rounded-md border">
-            {readableChanges(item.changes).map((c) => (
-              <ChangeRow key={c.path} change={c} names={names} removedText={copy.proposals.removed} />
+            {changes.map((c) => (
+              <ChangeRow key={c.path} change={c} names={names} removedText={copy.proposals.removed} focused={c.path === ringed} />
             ))}
           </dl>
           {openChecks.length > 0 ? (

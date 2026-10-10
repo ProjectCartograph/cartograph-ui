@@ -103,4 +103,56 @@ describe("a change set's review", () => {
     fireEvent.click(screen.getByRole("button", { name: copy.discard.confirmLabel }));
     await waitFor(() => expect(closeChangeSet).toHaveBeenCalledWith("cs1", copy.discard.reason));
   });
+
+  it("keeps what the agent decided for you apart, each leading to its change", async () => {
+    const decidedReview: ChangeSetReview = {
+      ...review,
+      changeSet: {
+        ...review.changeSet,
+        assumptions: [
+          { on: "Gap/gap-bruise", field: "/spec/current", took: "One crate in five", why: "The review gives no figure" },
+          { on: "Goal/o-sound", field: "/spec/objective/text", took: "Worded as an outcome", why: "The review gives a heading only" },
+        ],
+      },
+    };
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    mount({ changeSet: async () => decidedReview });
+    const panel = await screen.findByRole("region", { name: cc.decided.heading });
+    expect(within(panel).getByText(cc.decided.count(2))).toBeInTheDocument();
+    // Each record with a decision is marked where it is listed.
+    expect(screen.getAllByRole("img", { name: cc.decided.mark })).toHaveLength(2);
+    // Going to a decision opens its record and rings the change it made,
+    // the longest change path its field starts with.
+    fireEvent.click(within(panel).getByRole("button", { name: cc.decided.goToLabel("Worded as an outcome") }));
+    const goals = screen.getByRole("region", { name: copy.graph.kind.Goal });
+    await waitFor(() => expect(goals.querySelector('[data-cartograph-change="/spec/objective"]')).toHaveAttribute("data-focused", "true"));
+    await waitFor(() => expect(scrolled).toHaveBeenCalled());
+    // Next steps on to the other, round the list.
+    fireEvent.click(within(panel).getByRole("button", { name: cc.decided.next }));
+    expect(within(panel).getByText(cc.decided.position(1, 2))).toBeInTheDocument();
+  });
+
+  it("previews each project's charter, coloured by what the change set does to it", async () => {
+    const withProject: ChangeSetReview = {
+      ...review,
+      items: [...review.items, { kind: "Project", id: "p1", name: "Depot checks", base: 3, included: true, changes: [], checks: [] }],
+    };
+    mount({
+      changeSet: async () => withProject,
+      changeSetCharter: async () => [
+        { title: "Problem", step: "aim", state: "changed", lines: [{ op: "removed", text: "Depots differ" }, { op: "added", text: "Depots grade the same crates differently" }] },
+        { title: "Budget", step: "costs", state: "removed", lines: [{ op: "removed", text: "To be confirmed" }] },
+        { title: "Scope", step: "scope", state: "same", lines: [{ op: "same", text: "Six depots" }] },
+      ],
+    });
+    const preview = await screen.findByRole("region", { name: cc.preview.heading });
+    await waitFor(() => expect(within(preview).getByText("Depots grade the same crates differently").closest("[data-line-op]")).toHaveAttribute("data-line-op", "added"));
+    expect(within(preview).getByText("Depots differ").closest("[data-line-op]")).toHaveAttribute("data-line-op", "removed");
+    expect(within(preview).getByRole("article", { name: "Budget" })).toHaveAttribute("data-part-state", "removed");
+    // A part the change set leaves alone is folded away until asked for.
+    expect(within(preview).queryByText("Six depots")).toBeNull();
+    fireEvent.click(within(preview).getByRole("button", { name: cc.preview.showSame }));
+    expect(within(preview).getByText("Six depots")).toBeInTheDocument();
+  });
 });
