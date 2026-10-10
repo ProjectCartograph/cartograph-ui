@@ -321,7 +321,6 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
  */
 function SidePane({ id, section, checks, onClose }: { id: string; section?: string; checks: React.ReactNode; onClose: () => void }) {
   const store = useProjectStore();
-  const checksQuery = useProjectChecks(id, true);
   const navigate = useNavigate();
   const drawer = useRecordDrawer();
   const mc = copy.projectMap;
@@ -429,24 +428,7 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
               working
               fileName={id}
               empty={copy.charter.empty}
-              live={
-                <LiveCharter
-                  id={id}
-                  version={store.spec}
-                  step={section}
-                  onStep={(step) => {
-                    const path = pathOfStep(step);
-                    if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
-                  }}
-                  onField={(pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value))}
-                  valueOf={(pointer) => getAt(store.spec, pointer)}
-                  checksOf={(step) => (checksQuery.data?.items ?? []).filter((c) => c.section === step && c.state !== "ok").map((c) => c.message)}
-                  routeOf={(step) => {
-                    const path = pathOfStep(step);
-                    return path ? `/projects/${id}${path}` : undefined;
-                  }}
-                />
-              }
+              live={<ProjectLiveCharter id={id} section={section} />}
             />
           </div>
         ) : tab === "dmaic" ? (
@@ -459,10 +441,38 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
   );
 }
 
-/** The route of a step of the walk, by its section key. */
+/**
+ * A project's charter as a document of parts, each field edited in place
+ * where it is printed (#38): beside the walk, and as the charter page.
+ */
+export function ProjectLiveCharter({ id, section }: { id: string; section?: string }) {
+  const store = useProjectStore();
+  const navigate = useNavigate();
+  const checksQuery = useProjectChecks(id, true);
+  return (
+    <LiveCharter
+      id={id}
+      version={store.spec}
+      step={section}
+      onStep={(step) => {
+        const path = pathOfStep(step);
+        if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
+      }}
+      onField={(pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value))}
+      valueOf={(pointer) => getAt(store.spec, pointer)}
+      checksOf={(step) => (checksQuery.data?.items ?? []).filter((c) => c.section === step && c.state !== "ok").map((c) => c.message)}
+      routeOf={(step) => {
+        const path = pathOfStep(step);
+        return path ? `/projects/${id}${path}` : undefined;
+      }}
+    />
+  );
+}
+
 /** The step each dated list of a project is written in. */
 const ITEM_STEP: Record<string, string> = { milestones: "timeline", deliverables: "deliverables", conditions: "approval", procurement: "resources", risks: "risks" };
 
+/** The route of a step of the walk, by its section key. */
 function pathOfStep(step: string): string | undefined {
   for (const stage of STAGES) for (const st of stepsOfStage(stage)) if (st.section === step) return st.path;
   return undefined;
