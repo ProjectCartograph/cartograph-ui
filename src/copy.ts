@@ -3295,6 +3295,17 @@ export const copy = {
     // The triple constraint (engine TAXONOMY.md D60): scope, schedule and
     // cost, how the project holds each, and the risks that would move it.
     triangle: {
+      promptCount: (n: number) => `${n} risk${n === 1 ? "" : "s"} here`,
+      promptLikelihood: "How likely",
+      promptImpact: (side: string) => `Impact on ${side.toLowerCase()}`,
+      askMissed: "What happens if this milestone is missed?",
+      askCreep: "How could the scope creep across this line, and what do you assume keeps it from doing so?",
+      askDeliverable: "What could keep this from being delivered as defined?",
+      askCost: "What could make this cost more than planned?",
+      shortMissed: "If missed",
+      shortCreep: "Creep risk",
+      shortDeliverable: "Delivery risk",
+      shortCost: "Overrun risk",
       sides: { scope: "Scope", schedule: "Schedule", cost: "Cost" } as Record<string, string>,
       sideHint: { scope: "What is delivered", schedule: "When it lands", cost: "What it takes" } as Record<string, string>,
       stances: { hold: "Hold", adjust: "Adjust", concede: "Concede" } as Record<string, string>,

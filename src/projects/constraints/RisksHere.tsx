@@ -9,6 +9,7 @@ import { copy, plusNoun } from "@/copy";
 import { useProjectStore } from "../store";
 import type { Constraint, ImpactLikelihood } from "../types";
 import { bearsOnOf, newRiskOn, risksOn } from "./triangle";
+import { MiniTriangle } from "./Overview";
 
 const tc = copy.projects.triangle;
 const rc = copy.projects.risks;
@@ -71,6 +72,7 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
           </Link>
         </Button>
       </div>
+      <MiniTriangle />
       {here.length === 0 ? (
         <p className="text-sm text-muted-foreground">{tc.hereEmpty}</p>
       ) : (

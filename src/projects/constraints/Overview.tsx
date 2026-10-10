@@ -79,12 +79,32 @@ export function TriangleOverview() {
   );
 }
 
-function TriangleDrawing({ data }: { data: TripleConstraint }) {
+/**
+ * The triangle at a glance, beside each section's risks (#59): which side
+ * carries most of the weighted risk, read where the side is decided
+ * rather than only on the risks step.
+ */
+export function MiniTriangle() {
+  const store = useProjectStore();
+  const client = useClient();
+  const spec = store.spec;
+  const key = JSON.stringify({ r: spec.risks ?? [], c: spec.constraints ?? {}, m: (spec.milestones ?? []).map((m) => m.id) });
+  const { data } = useQuery({
+    queryKey: ["constraints", store.id, key],
+    queryFn: () => client.constraints(store.id),
+    enabled: store.loaded,
+    placeholderData: (previous) => previous,
+  });
+  if (!data || !data.sides.some((s) => s.risks.length > 0)) return null;
+  return <TriangleDrawing data={data} className="w-40" />;
+}
+
+function TriangleDrawing({ data, className = "w-full max-w-[22rem]" }: { data: TripleConstraint; className?: string }) {
   const at = (s: ConstraintSide) => AT[s.constraint as Constraint];
   const [a, b, c] = [AT.scope, AT.schedule, AT.cost];
   return (
     <figure className="m-0">
-      <svg viewBox="0 0 400 320" className="w-full max-w-[22rem]" role="img" aria-label={tc.overviewLabel}>
+      <svg viewBox="0 0 400 320" className={className} role="img" aria-label={tc.overviewLabel}>
         <path d={`M${a[0]},${a[1]} L${b[0]},${b[1]} L${c[0]},${c[1]} Z`} className="fill-none stroke-border" strokeWidth={1.5} />
         {data.sides.map((s) => {
           const [x, y] = at(s);

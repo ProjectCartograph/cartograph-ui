@@ -10,6 +10,7 @@ import { copy } from "@/copy";
 import { RoleRefPicker, roleOptions, useResourceNames } from "../RoleRefPicker";
 import { TimingField } from "../TimingField";
 import { useProjectStore, useSectionAutosave } from "../store";
+import { RiskPrompt } from "../constraints/RiskPrompt";
 import { addTimelineMonths, type Milestone } from "../types";
 
 const mc = copy.projects.milestones;
@@ -226,6 +227,8 @@ function MilestoneEditor({ m, i, patch, remove, autoFocus }: { m: Milestone; i: 
           })}
         </div>
       ) : null}
+      {/* What happens if it is missed (#59). */}
+      <RiskPrompt side="schedule" on={m.id} question={copy.projects.triangle.askMissed} short={copy.projects.triangle.shortMissed} />
     </div>
   );
 }
