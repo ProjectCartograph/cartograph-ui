@@ -3103,7 +3103,7 @@ export const copy = {
       requiredHint: "Name a sponsor and a project manager.",
       requiredHintComponent: "Name a project manager; the sponsor is the parent project's.",
       fundingTitle: "Approved funding",
-      fundingHint: "Add one line per currency.",
+      fundingHint: "The money for this project: how much, in which currency, whether it is approved yet, and the budget it comes from. One line per currency.",
       fundingEmpty: "No funding line yet.",
       addFunding: "Add a funding line",
       amountLabel: "Amount",
@@ -3111,7 +3111,7 @@ export const copy = {
       currencySearchPlaceholder: "Search by code",
       currencyEmpty: "No such currency code.",
       fundingStatusLabel: "Status",
-      fundingSourceLabel: "Budget",
+      fundingSourceLabel: "From the budget",
       fundingSourcePlaceholder: "",
       fundingStatus: {
         approved: "Approved",
