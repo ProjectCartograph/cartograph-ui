@@ -9,7 +9,7 @@ import { sameView } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 import { Scrubber, type ScrubStage } from "@/components/Scrubber";
 import { Button } from "@/components/ui/button";
-import { Activity, FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
+import { Activity, ChevronRight, FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
 
 
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
@@ -490,27 +490,31 @@ function setAt(spec: ProjectSpec, pointer: string, value: string): ProjectSpec {
   return root as unknown as ProjectSpec;
 }
 
-/** The steps of a stage walked one at a time, as tabs with their marks:
- * each its own screen, so the last is never a long scroll away. */
+/** The steps of a stage walked one at a time, as a numbered sequence: each
+ * its own screen, so the last is never a long scroll away. Numbered and
+ * joined, they read as an order to follow, not as choices (#36). */
 function StepTabs({ id, steps, section }: { id: string; steps: ReturnType<typeof stepsOfStage>; section: InitiationSection }) {
   return (
-    <nav aria-label={pc.stepsOfStage} className="flex flex-wrap gap-1.5" data-cartograph-region="step-tabs">
-      {steps.map((st) => {
-        const Icon = STEP_ICON[st.section];
-        const on = st.section === section;
-        return (
-          <Link
-            key={st.section}
-            to={`/projects/$id${st.path}`}
-            params={{ id }}
-            aria-current={on ? "step" : undefined}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm ring-1 transition-colors ${on ? "bg-primary text-primary-foreground ring-primary" : "ring-foreground/15 hover:bg-muted"}`}
-          >
-            {Icon ? <Icon className="size-3.5" aria-hidden="true" /> : null}
-            {SECTION_VIEW[st.section].heading}
-          </Link>
-        );
-      })}
+    <nav aria-label={pc.stepsOfStage} data-cartograph-region="step-tabs">
+      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
+        {steps.map((st, i) => {
+          const on = st.section === section;
+          return (
+            <li key={st.section} className="flex items-center gap-1">
+              {i > 0 ? <ChevronRight className="size-3.5 text-muted-foreground" aria-hidden="true" /> : null}
+              <Link
+                to={`/projects/$id${st.path}`}
+                params={{ id }}
+                aria-current={on ? "step" : undefined}
+                className={`inline-flex items-center gap-1.5 px-1 py-0.5 underline-offset-4 ${on ? "font-medium underline decoration-2" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <span className="tabular-nums">{i + 1}</span>
+                {SECTION_VIEW[st.section].heading}
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 }
