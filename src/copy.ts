@@ -543,6 +543,28 @@ export const copy = {
     back: "Back",
     loading: "Loading the questions",
   },
+  // A record read in place, beside a list to choose from (records/RecordPreview).
+  recordPreview: {
+    label: (name: string) => `Preview of ${name}`,
+    open: "Open",
+    openLabel: (name: string) => `Open ${name} in a new tab`,
+    nothingYet: "Nothing written yet beyond its name.",
+    unavailable: "This record could not be read.",
+  },
+  // Choosing records, each readable first (records/PickerDialog).
+  recordPicker: {
+    hintOne: "Read each in the preview, then choose one.",
+    hintMany: "Read each in the preview, then choose as many as apply. Space chooses, Enter is done.",
+    search: "Search by name",
+    loading: "Loading",
+    empty: "None recorded yet.",
+    noMatch: "Nothing matches.",
+    previewEmpty: "Move to a record to read it here.",
+    chosen: (n: number) => `${n} chosen`,
+    cancel: "Cancel",
+    done: "Done",
+    browseLabel: (kind: string) => `Browse ${kind.toLowerCase()} records with a preview`,
+  },
   // Defining a record without leaving a walk (records/RecordDrawer).
   recordDrawer: {
     title: (kind: string) => `Define the ${kind.toLowerCase()}`,

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import type { RefOption } from "@/surfaces/sheet/useReferenceOptions";
 import { GapCitations } from "./GapCitations";
+import { BrowseButton } from "@/records/PickerDialog";
 import { ProblemMap } from "./ProblemMap";
 import { seg } from "./field";
 import type { ProblemLine } from "./types";
@@ -149,16 +150,29 @@ export function ProblemCard({
             {groupOptions.length === 0 ? (
               <p className="text-sm text-muted-foreground">{ac.problemGroupsNone}</p>
             ) : (
-              <ComboboxMultiple
-                options={groupOptions}
-                value={groups}
-                onValueChange={(next) => onChange({ groups: next })}
-                placeholder={ac.problemGroupsPlaceholder}
-                emptyText={copy.sheets.dialog.noMatches}
-                removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
-                aria-label={ac.problemGroupsLabel}
-                data-cartograph-field={`${field}/groups`}
-              />
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <ComboboxMultiple
+                    options={groupOptions}
+                    value={groups}
+                    onValueChange={(next) => onChange({ groups: next })}
+                    placeholder={ac.problemGroupsPlaceholder}
+                    emptyText={copy.sheets.dialog.noMatches}
+                    removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+                    aria-label={ac.problemGroupsLabel}
+                    data-cartograph-field={`${field}/groups`}
+                  />
+                </div>
+                {/* Only the project's own groups, each readable first (#28). */}
+                <BrowseButton
+                  kind="BeneficiaryGroup"
+                  title={ac.problemGroupsLabel}
+                  multiple
+                  selected={groups}
+                  onChange={(next) => onChange({ groups: next })}
+                  only={new Set(groupOptions.map((o) => o.value))}
+                />
+              </div>
             )}
           </Lead>
           <Lead text={ac.statement.change}>
