@@ -2706,7 +2706,7 @@ export const copy = {
       problem: "Problem",
       objectives: "Objectives",
       governance: "Governance",
-      scope: "Scope",
+      scope: "Scope and Deliverables",
       plan: "Plan",
       handover: "Success and handover",
       approval: "Approval",
