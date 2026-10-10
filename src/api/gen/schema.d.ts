@@ -371,6 +371,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/Project/{id}/round": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The decisions a project's walk can settle now, in the order agents are asked them
+         * @description The frontier of the project's open checks (docs/adr/0032): what the documents state (settle), what is the person's to decide (ask), and the records to write next (write), each with the step and the field that answer it and the id of its question; and how many wait behind them. The same tree the MCP server hands an agent, so a person and an agent walk a definition alike (#60).
+         */
+        get: operations["getProjectRound"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/KPI/{id}/control": {
         parameters: {
             query?: never;
@@ -2554,6 +2574,32 @@ export interface components {
             kind: "Project" | "Programme";
             id: string;
         };
+        RoundTask: {
+            kind: string;
+            id: string;
+            name?: string;
+            check: string;
+            state: string;
+            message: string;
+            /** @description The step of the walk that settles it. */
+            step?: string;
+            /** @description What the guidance says to do about it. */
+            do?: string;
+            /** @description The field that settles it, as a JSON pointer, where one field does. */
+            field?: string;
+            /** @description The id a round gives it, which an answer left with it names. */
+            question?: string;
+        };
+        ProjectRound: {
+            /** @description What the documents themselves state. */
+            settle: components["schemas"]["RoundTask"][];
+            /** @description The person's decisions, every one answerable now. */
+            ask: components["schemas"]["RoundTask"][];
+            /** @description Records to write next, each settling a link. */
+            write: components["schemas"]["RoundTask"][];
+            /** @description Open checks behind this round, asked once its answers are given. */
+            waiting: number;
+        };
         StructureQuestion: {
             /** @description The answer this question sets on a StructurePiece; empty for the last, which applies when none does. */
             field: string;
@@ -3459,6 +3505,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TripleConstraint"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getProjectRound: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRound"];
                 };
             };
             401: components["responses"]["Unauthenticated"];
