@@ -635,11 +635,11 @@ function RootLayout() {
             </Breadcrumb>
             <CreateMenu />
             <WorkingIn />
+            {unlisted ? null : <MergeBar />}
             <PeopleHere />
           </header>
           <main className="min-w-0 flex-1 p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
             {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
-            {unlisted ? null : <MergeBar />}
           </main>
         </SidebarInset>
       </TourProvider>

@@ -81,7 +81,7 @@ export function MergeBar() {
   // opens next.
   if (merged) {
     return (
-      <div role="status" className="sticky bottom-3 z-10 mx-auto mt-10 mb-1 flex w-fit max-w-[min(42rem,100%)] items-center gap-2 rounded-lg border bg-background/95 px-4 py-3 text-sm backdrop-blur" data-cartograph-region="merge-bar">
+      <div role="status" className="flex shrink-0 items-center gap-1.5 text-sm" data-cartograph-region="merge-bar">
         <CheckCircle2 className="size-4 text-success" aria-hidden="true" />
         {c.merged}
       </div>
@@ -94,24 +94,19 @@ export function MergeBar() {
 
   return (
     <>
-      <div
-        className="sticky bottom-3 z-10 mx-auto mt-10 mb-1 flex w-fit max-w-[min(42rem,100%)] flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border bg-background/95 px-4 py-3 shadow-sm backdrop-blur"
-        data-cartograph-region="merge-bar"
-      >
-        <div className="min-w-0 flex-[1_1_14rem] text-sm">
-          <p className="truncate font-medium">{c.saved(review.data?.changeSet.title ?? "")}</p>
-          <p className="text-xs text-muted-foreground">
-            {c.changes(items.length)}
-            {needed > 0 ? <span className="text-destructive"> · {c.needed(needed)}</span> : null}
-            {open > 0 ? <span className="text-warning"> · {c.open(open)}</span> : null}
-          </p>
-        </div>
+      {/* In the top bar, beside the change set it merges: never over the
+          buttons at the bottom of a screen (#33). */}
+      <div className="flex shrink-0 items-center gap-1.5" data-cartograph-region="merge-bar">
+        <p className="hidden text-xs text-muted-foreground lg:block" title={c.saved(review.data?.changeSet.title ?? "")}>
+          {needed > 0 ? <span className="text-destructive">{c.needed(needed)}</span> : null}
+          {needed > 0 && open > 0 ? " · " : null}
+          {open > 0 ? <span className="text-warning">{c.open(open)}</span> : null}
+        </p>
         <AskAgent set={active} title={review.data?.changeSet.title ?? ""} />
         <DiscardButton set={active} title={review.data?.changeSet.title ?? ""} size="icon" />
-        <Button asChild variant="outline" size="sm">
+        <Button asChild variant="outline" size="icon-sm">
           <Link to="/changesets/$id" params={{ id: active }} aria-label={c.reviewLabel} title={c.reviewLabel}>
             <Eye />
-            {c.review}
           </Link>
         </Button>
         <Button type="button" size="sm" onClick={() => setConfirming(true)} aria-label={c.mergeLabel} title={c.mergeLabel}>
