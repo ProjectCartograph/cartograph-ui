@@ -17,6 +17,8 @@ import { ScopeSection } from "./ScopeSection";
 import { StakeholdersSection } from "./StakeholdersSection";
 import { SuccessSection } from "./SuccessSection";
 import { MilestonesSection } from "./MilestonesSection";
+import { ConstraintStances } from "../constraints/Stances";
+import { SideRisks } from "../constraints/RisksHere";
 
 const pc = copy.projects;
 
@@ -38,15 +40,43 @@ export const SECTION_VIEW: Record<InitiationSection, { heading: string; subtitle
         <RaciEditor />
         <CostsEditor />
         <ProcurementEditor />
+        <SideRisks side="cost" />
       </div>
     ),
   },
   stakeholders: { ...pc.stakeholdersStep, View: StakeholdersSection },
-  scope: { ...pc.scope, View: ScopeSection },
-  deliverables: { ...pc.deliverables, View: DeliverablesSection },
+  // How the work holds scope, schedule and cost comes first, then where
+  // it starts and stops, then what would move the scope (D60).
+  scope: {
+    ...pc.scope,
+    View: () => (
+      <div className="flex flex-col gap-6">
+        <ConstraintStances />
+        <ScopeSection />
+        <SideRisks side="scope" />
+      </div>
+    ),
+  },
+  deliverables: {
+    ...pc.deliverables,
+    View: () => (
+      <div className="flex flex-col gap-6">
+        <DeliverablesSection />
+        <SideRisks side="scope" />
+      </div>
+    ),
+  },
   // Milestones carry the schedule (engine TAXONOMY.md D48); phases from
   // before them convert in one step.
-  timeline: { ...pc.timeline, View: MilestonesSection },
+  timeline: {
+    ...pc.timeline,
+    View: () => (
+      <div className="flex flex-col gap-6">
+        <MilestonesSection />
+        <SideRisks side="schedule" />
+      </div>
+    ),
+  },
   data: { ...pc.data, View: DataSection },
   risks: { ...pc.risks, View: RisksSection },
   success: { ...pc.success, View: SuccessSection },

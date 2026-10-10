@@ -17,7 +17,9 @@ import { DependencyEdgeEditor } from "./DependencyEdgeEditor";
 import { seg } from "./field";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { RoleRefPicker, type RoleOption } from "./RoleRefPicker";
-import { retypeRisk, type Risk, type RiskType, type TimelinePhase } from "./types";
+import { AffectsEditor } from "./constraints/AffectsEditor";
+import type { BearsOn } from "./constraints/RisksHere";
+import { retypeRisk, type Constraint, type Risk, type RiskType, type TimelinePhase } from "./types";
 
 const rc = copy.projects.risks;
 
@@ -44,7 +46,11 @@ export function RiskList({
   field = "/spec/risks",
   placing,
   onPlace,
+  triangle,
 }: {
+  /** What each side's risks can bear on, for a project: the risk row
+   * then places itself on scope, schedule and cost (D60). */
+  triangle?: Partial<Record<Constraint, readonly BearsOn[]>>;
   /** The risk being placed on the impact and likelihood grid, if any. */
   placing?: number | null;
   /** Picks a risk to place on the grid; left out, no grid is shown. */
@@ -144,6 +150,11 @@ export function RiskList({
           aria-label={rc.mitigationLabel}
           maxLength={160}
         />
+        {/* Its place on the triple constraint (engine TAXONOMY.md D60),
+            for a project; a programme has no triangle. */}
+        {triangle && r.type !== "dependency" ? (
+          <AffectsEditor risk={r} index={idx} items={triangle} onChange={(next) => replace(idx, next)} />
+        ) : null}
         {/* How likely it is to be caught in time (FMEA, engine TAXONOMY.md
             D58): with impact and likelihood, its risk priority. */}
         <div className="flex items-center gap-2" data-cartograph-field={at(r, idx, "detection")}>

@@ -5,6 +5,7 @@ import { ContextRecap } from "../ContextRecap";
 import { RiskList } from "../RiskList";
 import { roleOptions, useResourceNames } from "../RoleRefPicker";
 import { RiskMatrix } from "../RiskMatrix";
+import { bearsOnOf } from "../constraints/triangle";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { Risk } from "../types";
 
@@ -64,6 +65,7 @@ export function RisksSection() {
           onChange={updateRisks}
           placing={pick}
           onPlace={setGridPick}
+          triangle={bearsOnOf(store.spec)}
         />
       </div>
     </div>
