@@ -56,7 +56,7 @@ export function TriangleOverview() {
         <h3 className="text-sm font-medium">{tc.overviewHeading}</h3>
         <p className="text-sm text-muted-foreground text-pretty">{tc.overviewLead}</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-[minmax(0,22rem)_1fr] md:items-start">
+      <div className="flex flex-col gap-4">
         <TriangleDrawing data={data} />
         <div className="flex flex-col gap-4">
           {data.sides.map((s) => (

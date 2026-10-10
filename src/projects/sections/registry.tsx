@@ -46,14 +46,14 @@ export const SECTION_VIEW: Record<InitiationSection, { heading: string; subtitle
   },
   stakeholders: { ...pc.stakeholdersStep, View: StakeholdersSection },
   // How the work holds scope, schedule and cost comes first, then where
-  // it starts and stops, then what would move the scope (D60).
+  // it starts and stops. What would move the scope follows the
+  // deliverables, in the same stage, where a risk can name one (D60).
   scope: {
     ...pc.scope,
     View: () => (
       <div className="flex flex-col gap-6">
         <ConstraintStances />
         <ScopeSection />
-        <SideRisks side="scope" />
       </div>
     ),
   },

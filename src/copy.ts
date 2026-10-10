@@ -3200,6 +3200,7 @@ export const copy = {
         accept: "Accept: carry it as it is",
       } as Record<string, string>,
       spendsLabel: "The response spends",
+      spendsShort: "Spends",
       spendsNone: "Nothing said",
       on: (name: string) => `on ${name}`,
       overviewHeading: "Scope, schedule and cost",
