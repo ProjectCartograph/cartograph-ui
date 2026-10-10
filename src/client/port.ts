@@ -27,6 +27,10 @@ export type StructureQuestion = Schemas["StructureQuestion"];
 export type Lineage = Schemas["Lineage"];
 export type SemanticExport = Schemas["SemanticExport"];
 export type DMAIC = Schemas["DMAIC"];
+/** A project's triple constraint: each side's stance, risks and exposure
+ * (engine TAXONOMY.md D60). */
+export type TripleConstraint = Schemas["TripleConstraint"];
+export type ConstraintSide = Schemas["ConstraintSide"];
 export type ControlChart = Schemas["ControlChart"];
 export type LineageNode = Schemas["LineageNode"];
 export type ComponentNode = Schemas["ComponentNode"];
@@ -477,6 +481,8 @@ export interface Client {
   /** Whether a project can be taken through DMAIC, phase by phase
    * (engine TAXONOMY.md D58). */
   dmaic(project: string): Promise<DMAIC>;
+  /** A project's triple constraint, as the engine weighs it (D60). */
+  constraints(project: string): Promise<TripleConstraint>;
   /** A KPI's readings as a control chart, with its capability. */
   controlChart(kpi: string): Promise<ControlChart>;
   /** The KPIs as a semantic layer in a syntax, dbt's by default (engine

@@ -65,6 +65,7 @@ const every: Record<keyof Client, true> = {
   lineage: true,
   semanticLayer: true,
   dmaic: true,
+  constraints: true,
   controlChart: true,
   schedule: true,
   dropChangeSetItem: true,

@@ -351,6 +351,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/Project/{id}/constraints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A project's triple constraint, and how exposed each side is to its risks
+         * @description Scope, schedule and cost (TAXONOMY.md D60): the stance the project takes on each, the risks that would move it with each one's weight (likelihood times impact on that side, low 1, medium 2, high 3), the sum and share of each side, and the most constrained side. A milestone whose timing names a risk counts as that risk on the schedule there. Every interface draws the triangle from this.
+         */
+        get: operations["getProjectConstraints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/KPI/{id}/control": {
         parameters: {
             query?: never;
@@ -1854,6 +1874,46 @@ export interface components {
             /** @description Whether a wait showed it was waiting (a skeleton or a count). */
             sign?: boolean;
         };
+        TripleConstraint: {
+            /** @description Scope, schedule and cost, in that order. */
+            sides: components["schemas"]["ConstraintSide"][];
+            /** @description The side with the most weighted risk; absent when none carries any or two lead together. */
+            mostConstrained?: string;
+            /** @description The ids of risks and issues that name no side. */
+            unplaced?: string[];
+        };
+        ConstraintSide: {
+            /** @enum {string} */
+            constraint: "scope" | "schedule" | "cost";
+            /**
+             * @description Absent when the project has not said.
+             * @enum {string}
+             */
+            stance?: "hold" | "adjust" | "concede";
+            /** @description The sum over its risks of likelihood times impact on this side. */
+            exposure: number;
+            /** @description This side's part of the exposure of all three, from 0 to 1. */
+            share: number;
+            risks: components["schemas"]["ConstraintRisk"][];
+            /** @description Its risks with no likelihood or no impact on it. */
+            unweighed: number;
+            /** @description Its risks with neither a response nor a mitigation. */
+            unanswered: number;
+        };
+        ConstraintRisk: {
+            id: string;
+            type: string;
+            impact?: string;
+            likelihood?: string;
+            /** @description Likelihood times impact on this side; 0 when either is missing. */
+            weight: number;
+            /** @description The deliverable, milestone or cost line it bears on. */
+            on?: string;
+            response?: string;
+            spends?: string;
+            /** @description Placed on the schedule by a milestone whose timing names it, not by the risk itself. */
+            implied?: boolean;
+        };
         /** @description What the access list gives the principal (docs/adr/0011), present when the deployment keeps one. An interface offers editing from it; the engine decides again on every write. */
         SessionAccess: {
             /** @description Whether the principal is on the access list. Someone who is not may sign in to the proxy but sees nothing. */
@@ -3322,6 +3382,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DMAIC"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getProjectConstraints: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TripleConstraint"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

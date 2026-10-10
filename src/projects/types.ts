@@ -382,6 +382,30 @@ export interface Risk {
    * manager answers for it. Not who it escalates to. */
   owner?: Ref;
   escalate?: RiskEscalate;
+  /** Which of scope, schedule and cost it would move, how far, and what it
+   * bears on (engine TAXONOMY.md D60). */
+  affects?: RiskAffects[];
+  /** How the project answers it; escalating is escalate. */
+  response?: RiskResponse;
+  /** The side the response draws on. */
+  spends?: Constraint;
+}
+
+/** A side of the triple constraint (engine TAXONOMY.md D60). */
+export type Constraint = "scope" | "schedule" | "cost";
+export const CONSTRAINTS: readonly Constraint[] = ["scope", "schedule", "cost"];
+/** How a project holds a side when something has to give. */
+export type Stance = "hold" | "adjust" | "concede";
+export const STANCES: readonly Stance[] = ["hold", "adjust", "concede"];
+export type RiskResponse = "avoid" | "mitigate" | "transfer" | "accept";
+export const RESPONSES: readonly RiskResponse[] = ["avoid", "mitigate", "transfer", "accept"];
+
+/** One side a risk would move. */
+export interface RiskAffects {
+  constraint: Constraint;
+  impact?: ImpactLikelihood;
+  /** The id of the deliverable, milestone or cost line it bears on. */
+  on?: string;
 }
 
 /**
@@ -577,6 +601,9 @@ export interface ProjectSpec {
   data?: DataUse;
   timeline?: Timeline;
   risks?: Risk[];
+  /** How the project holds scope, schedule and cost (engine TAXONOMY.md
+   * D60): the project flexibility matrix. */
+  constraints?: Partial<Record<Constraint, Stance>>;
   compliance?: ComplianceItem[];
   resources?: ProjectRole[];
   /** A note per step of the walk, keyed by the step's own name. */
