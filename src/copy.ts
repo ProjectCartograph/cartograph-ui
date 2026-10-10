@@ -2722,6 +2722,12 @@ export const copy = {
     },
     // Named for what each stage holds (LSS_REVIEW.md, D20). The ids stay
     // as they were; only the words people read changed.
+    // Moving through a long stage (projects/SectionOutline).
+    outline: {
+      label: "Sections of this stage",
+      onThisPage: "On this page:",
+      keys: "Alt+Down and Alt+Up move a section, J and K when not typing. Ctrl+Enter takes the next step.",
+    },
     // The seven stages of the walk (engine TAXONOMY.md D33), each named
     // for what it settles, with the sentence that says so.
     stages: {
