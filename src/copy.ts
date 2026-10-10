@@ -3149,6 +3149,7 @@ export const copy = {
       gridPickLabel: "Place",
       influenceLabel: "Influence",
       interestLabel: "Interest",
+      levels: { 1: "Low", 2: "Medium", 3: "High" } as Record<number, string>,
       gridQuadrant: {
         keepSatisfied: "Keep satisfied",
         manageClosely: "Manage closely",
