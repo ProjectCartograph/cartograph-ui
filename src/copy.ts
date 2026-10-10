@@ -546,6 +546,7 @@ export const copy = {
   // A record read in place, beside a list to choose from (records/RecordPreview).
   recordPreview: {
     label: (name: string) => `Preview of ${name}`,
+    short: "Preview",
     open: "Open",
     openLabel: (name: string) => `Open ${name} in a new tab`,
     nothingYet: "Nothing written yet beyond its name.",

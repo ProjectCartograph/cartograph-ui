@@ -168,3 +168,19 @@ describe("ChipPicker", () => {
     expect(onAdd).toHaveBeenCalled();
   });
 });
+
+// A long register reads as its headings: a branch opens when it holds a
+// pick, when searched, or by hand (#29).
+describe("a long register", () => {
+  it("starts with only the branches that hold a pick open", async () => {
+    const items = Array.from({ length: 12 }, (_, i) => ({ id: `g${i}`, label: `Outcome ${i}`, group: i < 6 ? "Pillar A" : "Pillar B", tag: "Area" }));
+    render(<ChipPicker items={items} selected={["g7"]} onToggle={() => {}} placeholder="Search" empty="None" />);
+    const a = screen.getByRole("button", { name: /Pillar A/ });
+    const b = screen.getByRole("button", { name: /Pillar B/ });
+    expect(a).toHaveAttribute("aria-expanded", "false");
+    expect(b).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByText("Outcome 0")).toBeNull();
+    await userEvent.click(a);
+    expect(screen.getByText("Outcome 0")).toBeInTheDocument();
+  });
+});

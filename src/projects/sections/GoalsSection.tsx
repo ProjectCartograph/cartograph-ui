@@ -416,6 +416,7 @@ export function AlignmentSection() {
                 empty={gc.noGoalsInProgramme}
                 groupIcon={<VocabMark vocab="goalLevel" value="goal" className="size-3.5" decorative />}
                 areaIcon={<VocabMark vocab="goalLevel" value="objective" className="size-3.5" decorative />}
+                previewKind="Goal"
               />
             </div>
           ) : null}
@@ -437,6 +438,7 @@ export function AlignmentSection() {
               empty={gc.noGoalsMatch}
               groupIcon={<VocabMark vocab="goalLevel" value="goal" className="size-3.5" decorative />}
               areaIcon={<VocabMark vocab="goalLevel" value="objective" className="size-3.5" decorative />}
+              previewKind="Goal"
             />
           </div>
         </div>
