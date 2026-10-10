@@ -318,6 +318,7 @@ export function httpClient(
       answer(wire.GET("/links/{link}/candidates", { params: { path: { link }, query: { from, ...(problem ? { problem } : {}), ...preview() } } })),
     components: () => answer(wire.GET("/components", { params: { query: { ...preview() } } })),
     dmaic: (id) => answer(wire.GET("/manifests/Project/{id}/dmaic", { params: { path: { id }, query: preview() } })),
+    constraints: (id) => answer(wire.GET("/manifests/Project/{id}/constraints", { params: { path: { id }, query: preview() } })),
     controlChart: (id) => answer(wire.GET("/manifests/KPI/{id}/control", { params: { path: { id }, query: preview() } })),
     semanticLayer: async (format) => {
       const r = await wire.GET("/semantic-layer", { params: { query: { ...preview(), ...(format ? { format } : {}) } } });
