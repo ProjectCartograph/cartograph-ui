@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "cn"
+import { tracePicker } from "@/trace"
 import { CheckIcon, PlusIcon, ChevronDownIcon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -233,7 +234,7 @@ function Combobox({
   const picked = value ? (options.find((o) => o.value === value) ?? { value, label: value }) : null
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={tracePicker(setOpen)}>
       <Trigger
         aria-expanded={open}
         aria-label={ariaLabel}
@@ -319,7 +320,7 @@ function ComboboxMultiple({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={tracePicker(setOpen)}>
       <Trigger
         aria-expanded={open}
         aria-label={ariaLabel}

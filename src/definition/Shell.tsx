@@ -21,6 +21,7 @@ import { sectionRing } from "@/collab/SectionPeers";
 import { ShowInGraph } from "@/graph/ShowInGraph";
 import { useDefinitionStore } from "./store";
 import { RecordBlocks } from "@/changesets/RecordBlocks";
+import { useFlowTrace } from "@/trace/useFlowTrace";
 
 export interface DefinitionStep {
   /** The section's own id, matched against the route's `current`. */
@@ -92,6 +93,7 @@ export function DefinitionShell({
 }) {
   const store = useDefinitionStore();
   const idx = steps.findIndex((s) => s.section === current);
+  useFlowTrace(store.kind, store.id, current, idx);
 
   // The same two things the project flow shows: each step's state on the
   // rail, and the outline of what is being built (LSS_REVIEW.md, D22).

@@ -27,6 +27,10 @@ export type StructureQuestion = Schemas["StructureQuestion"];
 export type Lineage = Schemas["Lineage"];
 export type SemanticExport = Schemas["SemanticExport"];
 export type DMAIC = Schemas["DMAIC"];
+/** A project's triple constraint: each side's stance, risks and exposure
+ * (engine TAXONOMY.md D60). */
+export type TripleConstraint = Schemas["TripleConstraint"];
+export type ConstraintSide = Schemas["ConstraintSide"];
 export type ControlChart = Schemas["ControlChart"];
 export type LineageNode = Schemas["LineageNode"];
 export type ComponentNode = Schemas["ComponentNode"];
@@ -59,6 +63,10 @@ export type Session = Schemas["Session"];
 /** What the access list gives the session's principal (docs/adr/0011 in
  * cartograph-engine), when the deployment keeps one. */
 export type SessionAccess = Schemas["SessionAccess"];
+/** One act an interface saw, by its shape (engine docs/adr/0034). */
+export type InterfaceEvent = Schemas["InterfaceEvent"];
+/** A window's acts, sent together. */
+export type EventBatch = Schemas["EventBatch"];
 /** One entry on the access list: someone who may sign in, never a manifest. */
 export type Person = Schemas["Person"];
 /** A role on the access list. */
@@ -416,6 +424,10 @@ export interface Client {
   // Working together (docs/adr/0007).
   /** Who this interface acts as, and whether it may write. */
   session(): Promise<Session>;
+  /** Keeps a batch of the interface's own acts on the people's trace
+   * (engine docs/EVALUATING_PEOPLE.md). Send only while the session says
+   * traceOn; the engine refuses a batch that could carry a value. */
+  recordEvents(batch: EventBatch): Promise<void>;
   /** The id of a manifest's shared draft. */
   sharedDocument(kind: string, id: string): Promise<SharedDocument>;
   /** The id of the document presence travels on away from a manifest. */
@@ -469,6 +481,8 @@ export interface Client {
   /** Whether a project can be taken through DMAIC, phase by phase
    * (engine TAXONOMY.md D58). */
   dmaic(project: string): Promise<DMAIC>;
+  /** A project's triple constraint, as the engine weighs it (D60). */
+  constraints(project: string): Promise<TripleConstraint>;
   /** A KPI's readings as a control chart, with its capability. */
   controlChart(kpi: string): Promise<ControlChart>;
   /** The KPIs as a semantic layer in a syntax, dbt's by default (engine

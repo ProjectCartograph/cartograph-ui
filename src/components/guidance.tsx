@@ -38,6 +38,7 @@ export function Examples({
           size={compact ? "icon-sm" : "xs"}
           className="text-muted-foreground"
           aria-label={compact ? reading : undefined}
+          data-slot="field-examples"
           title={compact ? reading : undefined}
         >
           <Lightbulb />

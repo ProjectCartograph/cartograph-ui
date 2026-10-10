@@ -1,5 +1,6 @@
 import { VaultExamplesProvider } from "@/components/examples";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { act } from "@/trace";
 import {
   createRootRoute,
   Link,
@@ -652,6 +653,8 @@ function RootLayout() {
 
 /** An address that is not a page: said plainly, with the way home. */
 function PageNotFound() {
+  // A screen with nothing to do here: a dead end, on the people's trace.
+  useEffect(() => act({ name: "screen.deadend" }), []);
   return (
     <div className="flex flex-col items-start gap-3" data-cartograph-region="not-found">
       <h1 className="text-2xl font-semibold tracking-tight">{copy.notFound.title}</h1>

@@ -67,10 +67,30 @@ async function done(call: Promise<Answer<unknown>>): Promise<void> {
 /** Pass `fetch` to run the adapter against something other than the
  * browser's own (a test's). */
 export function httpClient(
-  opts: { baseUrl?: string; fetch?: (input: Request) => Promise<Response> } = {},
+  opts: {
+    baseUrl?: string;
+    fetch?: (input: Request) => Promise<Response>;
+    /** Told when a request starts; what it returns is told the answer's
+     * status, or nothing when there was none (the people's trace). */
+    onRequest?: (url: string) => (status: number | undefined) => void;
+  } = {},
 ): Client {
   const baseUrl = opts.baseUrl ?? API_BASE;
-  const wire = createClient<paths>({ baseUrl, ...(opts.fetch ? { fetch: opts.fetch } : {}) });
+  const base = opts.fetch ?? ((input: Request) => fetch(input));
+  const timed = opts.onRequest
+    ? async (input: Request) => {
+        const finish = opts.onRequest!(input.url);
+        try {
+          const res = await base(input);
+          finish(res.status);
+          return res;
+        } catch (err) {
+          finish(undefined);
+          throw err;
+        }
+      }
+    : opts.fetch;
+  const wire = createClient<paths>({ baseUrl, ...(timed ? { fetch: timed } : {}) });
 
   function checks(kind: string, id: string) {
     const params = { params: { path: { id }, query: preview() } };
@@ -176,6 +196,8 @@ export function httpClient(
 
   return {
     session,
+    // keepalive, so a batch sent as the page hides still arrives.
+    recordEvents: (batch) => done(wire.POST("/events", { body: batch, keepalive: true })),
     sharedDocument,
     presenceDocument,
     openDraft: async (kind, id) => (await collaboration()).openDraft(kind, id),
@@ -296,6 +318,7 @@ export function httpClient(
       answer(wire.GET("/links/{link}/candidates", { params: { path: { link }, query: { from, ...(problem ? { problem } : {}), ...preview() } } })),
     components: () => answer(wire.GET("/components", { params: { query: { ...preview() } } })),
     dmaic: (id) => answer(wire.GET("/manifests/Project/{id}/dmaic", { params: { path: { id }, query: preview() } })),
+    constraints: (id) => answer(wire.GET("/manifests/Project/{id}/constraints", { params: { path: { id }, query: preview() } })),
     controlChart: (id) => answer(wire.GET("/manifests/KPI/{id}/control", { params: { path: { id }, query: preview() } })),
     semanticLayer: async (format) => {
       const r = await wire.GET("/semantic-layer", { params: { query: { ...preview(), ...(format ? { format } : {}) } } });
