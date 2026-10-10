@@ -515,6 +515,7 @@ export function MeasuresSection() {
         <ObjectiveEditor
           data-cartograph-field={`/spec/objectives/${seg(store.spec.objectives?.[0], 0)}/objective`}
           objective={objective.objective}
+          about={store.spec.summary?.about}
           alignedGoals={parent ? 1 : goals.length}
           onChange={(next) => updateObjective({ objective: next })}
         />
