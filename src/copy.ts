@@ -2955,7 +2955,7 @@ export const copy = {
       programmePlaceholder: "Choose a programme",
       objectiveTitle: "Objective",
       objectiveStepOutcome: "Objective",
-      objectiveStepOutcomeHint: "What the project changes, and how. Put numbers in the key results.",
+      objectiveStepOutcomeHint: "Objectives are a qualitative description of what the project sets out to achieve; key results are the quantitative (numerical) measures of how you progress towards that outcome.",
       objectiveBy: "by",
       objectiveExamples: [
         "Improve customer retention by adapting services to changing workplace needs.",
