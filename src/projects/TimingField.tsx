@@ -1,5 +1,6 @@
 import { ArrowRightToLine, CalendarDays, CalendarRange, Hourglass, Sun, TriangleAlert } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 
 import { useClient } from "@/client/context";
@@ -204,6 +205,7 @@ function When({ value, onChange, label }: { value: string | undefined; onChange:
 }
 
 const EXTERNAL = "__external__";
+const NEW_MILESTONE = "__new_milestone__";
 
 /** What an event happens to: this project's milestones, deliverables and
  * conditions, or something outside it, in words. */
@@ -239,6 +241,8 @@ export function EventPicker({ value, onChange, exclude }: { value: PlanEvent | u
   const store = useProjectStore();
   const s = store.spec;
   const others = useLinkedMilestones(store.id).filter((o) => o.milestones.length > 0);
+  // A milestone made here, while it is being named.
+  const [naming, setNaming] = useState<string | undefined>(undefined);
   const groups: { list: "milestones" | "deliverables" | "conditions"; label: string; items: { id: string; name: string }[] }[] = [
     { list: "milestones", label: tc.milestones, items: (s.milestones ?? []).map((m) => ({ id: m.id, name: m.name })) },
     { list: "deliverables", label: tc.deliverables, items: (s.deliverables ?? []).map((d) => ({ id: d.id, name: d.name })) },
@@ -259,6 +263,18 @@ export function EventPicker({ value, onChange, exclude }: { value: PlanEvent | u
         value={current}
         onValueChange={(v) => {
           if (v === EXTERNAL) return onChange({ on: { external: on && "external" in on && on.external ? on.external : "" } });
+          if (v === NEW_MILESTONE) {
+            // Milestones are scheduled in the plan, after the
+            // deliverables: one named here is made in the plan, to be
+            // dated there, so nothing waits for a later step (#39).
+            const list = s.milestones ?? [];
+            let n = list.length + 1;
+            while (list.some((m) => m.id === `m${n}`)) n++;
+            const id = `m${n}`;
+            store.updateSpec((sp) => ({ ...sp, milestones: [...(sp.milestones ?? []), { id, name: "", timing: { form: "date" } }] }));
+            setNaming(id);
+            return onChange({ on: { local: "milestones", id } });
+          }
           if (v.startsWith("project:")) {
             const [, project, item] = v.split(":");
             return onChange({ on: { kind: "Project", id: project }, item });
@@ -296,10 +312,24 @@ export function EventPicker({ value, onChange, exclude }: { value: PlanEvent | u
             </SelectGroup>
           ))}
           <SelectGroup>
+            <SelectItem value={NEW_MILESTONE}>{tc.newMilestone}</SelectItem>
             <SelectItem value={EXTERNAL}>{tc.somethingElse}</SelectItem>
           </SelectGroup>
         </SelectContent>
       </Select>
+      {naming && on && "local" in on && on.id === naming ? (
+        <Input
+          className="h-8 w-64"
+          autoFocus
+          value={(s.milestones ?? []).find((m) => m.id === naming)?.name ?? ""}
+          onChange={(e) => {
+            const name = e.target.value.slice(0, 120);
+            store.updateSpec((sp) => ({ ...sp, milestones: (sp.milestones ?? []).map((m) => (m.id === naming ? { ...m, name } : m)) }));
+          }}
+          aria-label={tc.newMilestoneName}
+          title={tc.newMilestoneHint}
+        />
+      ) : null}
       {current === EXTERNAL ? (
         <Input
           className="h-8 w-64"
