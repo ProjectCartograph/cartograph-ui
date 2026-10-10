@@ -106,6 +106,7 @@ export function AffectsEditor({
               ))}
             </SelectContent>
           </Select>
+          <span className="text-xs text-muted-foreground">{tc.spendsShort}</span>
           <Select
             value={risk.spends ?? NONE}
             onValueChange={(v) => {
@@ -113,14 +114,14 @@ export function AffectsEditor({
               onChange(v === NONE ? rest : { ...rest, spends: v as Constraint });
             }}
           >
-            <SelectTrigger className="w-44" aria-label={tc.spendsLabel} data-cartograph-field={`${base}/spends`}>
+            <SelectTrigger className="w-36" aria-label={tc.spendsLabel} data-cartograph-field={`${base}/spends`}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>{tc.spendsNone}</SelectItem>
               {CONSTRAINTS.map((c) => (
                 <SelectItem key={c} value={c}>
-                  {`${tc.spendsLabel}: ${tc.sides[c]}`}
+                  {tc.sides[c]}
                 </SelectItem>
               ))}
             </SelectContent>
