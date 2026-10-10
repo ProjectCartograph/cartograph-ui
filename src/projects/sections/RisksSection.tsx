@@ -6,6 +6,7 @@ import { RiskList } from "../RiskList";
 import { roleOptions, useResourceNames } from "../RoleRefPicker";
 import { RiskMatrix } from "../RiskMatrix";
 import { bearsOnOf } from "../constraints/triangle";
+import { TriangleOverview } from "../constraints/Overview";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { Risk } from "../types";
 
@@ -39,6 +40,10 @@ export function RisksSection() {
           go wrong. A definition picked up after a week is the case this
           step was hardest in (Programme Lead, 2026-09-27). */}
       <ContextRecap omit={["risks"]} />
+
+      {/* Where the risks fall on scope, schedule and cost, as the engine
+          weighs them: the overview of the register below (D60). */}
+      <TriangleOverview />
 
       <div className="flex flex-col items-start gap-3" data-cartograph-region="risk-placing">
         <RiskMatrix
