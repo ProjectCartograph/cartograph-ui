@@ -13,6 +13,7 @@ import { useSectionAutosave, useProjectStore } from "../store";
 import type { Deliverable } from "../types";
 import { RoleRefPicker, roleOptions, useResourceNames } from "../RoleRefPicker";
 import { TimingField } from "../TimingField";
+import { RiskPrompt } from "../constraints/RiskPrompt";
 import { Labelled } from "../Labelled";
 import { seg } from "../field";
 
@@ -153,6 +154,13 @@ export function DeliverablesSection() {
             />
             <p className="self-end text-xs text-muted-foreground">{240 - (d.description ?? "").length} left</p>
           </div>
+
+          {/* What could keep it from being delivered as defined (#59). */}
+          {d.id ? (
+            <div className="pl-9">
+              <RiskPrompt side="scope" on={d.id} question={copy.projects.triangle.askDeliverable} short={copy.projects.triangle.shortDeliverable} />
+            </div>
+          ) : null}
         </div>
       ))}
 

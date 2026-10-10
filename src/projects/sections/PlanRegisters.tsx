@@ -13,6 +13,7 @@ import { TimingField } from "../TimingField";
 import { useProjectStore } from "../store";
 import { Labelled } from "../Labelled";
 import { CURRENCY_OPTIONS } from "../currencies";
+import { RiskPrompt } from "../constraints/RiskPrompt";
 import type { CostLine, ProcurementItem, Ref, Responsibility } from "../types";
 
 const rc = copy.projects.registers;
@@ -306,6 +307,8 @@ export function CostsEditor() {
               <Input value={c.period ?? ""} onChange={(e) => patch(i, { period: e.target.value.slice(0, 40) || undefined })} maxLength={40} aria-label={rc.period} />
             </Labelled>
           </div>
+          {/* What could make it cost more than planned (#59). */}
+          <RiskPrompt side="cost" on={c.id} question={copy.projects.triangle.askCost} short={copy.projects.triangle.shortCost} />
           {c.status === "unfunded" || c.status === "beingCosted" ? (
             <Labelled label={rc.condition}>
               <Select value={c.condition ?? ""} onValueChange={(v) => patch(i, { condition: v || undefined })}>
