@@ -91,17 +91,6 @@ const routes = [
   "/snapshots",
 ];
 
-// Mirrors src/surfaces/sheet/schema.ts's slugify: kept in sync by hand
-// since it is a three-line, unlikely-to-drift rule, and duplicating it here
-// avoids importing frontend source into this plain Node script.
-function slugify(name) {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64);
-}
 
 async function waitForHTTP(url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
@@ -618,6 +607,18 @@ async function getJSON(url, opts) {
   return res.json();
 }
 
+// idOf finds a record the test created by its name: ids are generated,
+// never derived from names, so the test reads them back from the engine.
+async function idOf(kind, name) {
+  for (let i = 0; i < 15; i++) {
+    const raw = await getJSON(`${baseUrl}/api/v1/manifests/${kind}`);
+    const found = (Array.isArray(raw) ? raw : (raw.items ?? [])).find((m) => (m.name ?? m.metadata?.name) === name);
+    if (found) return found.id ?? found.metadata?.id;
+    await sleep(200);
+  }
+  return "";
+}
+
 async function listIds(kind) {
   const raw = await getJSON(`${baseUrl}/api/v1/manifests/${kind}`);
   return (Array.isArray(raw) ? raw : (raw.items ?? [])).map((m) => m.id);
@@ -660,7 +661,7 @@ async function resourceCreateEditFlow(conn) {
   }
 
   // Create.
-  await clickNamed(conn, "Add", { within: "main" });
+  await clickNamed(conn, "Add resource", { within: "main" });
   await sleep(300);
   // The person never says who they are: there is no actor picker, and the
   // only picker in the dialog is the category.
@@ -812,7 +813,7 @@ async function addStrategicGoalAndKeyResultFlow(conn) {
   }
 
   const strategicGoalName = `Smoke Strategic Goal ${Date.now()}`;
-  const newGoalId = slugify(strategicGoalName);
+  const newGoalId = (await idOf("Goal", strategicGoalName));
   await inlineAddGoal(conn, pillar.id, "objective", strategicGoalName);
   if (!(await goalShown(conn, newGoalId))) {
     problems.push(`created goal "${strategicGoalName}" did not appear after Enter`);
@@ -822,7 +823,7 @@ async function addStrategicGoalAndKeyResultFlow(conn) {
 
   const functionalGoalName = `Smoke Functional Goal ${Date.now()}`;
   await inlineAddGoal(conn, newGoalId, "outcome", functionalGoalName);
-  if (!(await goalShown(conn, slugify(functionalGoalName)))) {
+  if (!(await goalShown(conn, (await idOf("Goal", functionalGoalName))))) {
     problems.push(`created outcome "${functionalGoalName}" did not appear after Enter`);
     detach();
     return { problems };
@@ -1950,8 +1951,8 @@ async function goalsMutabilityPass(conn, goalWithKRId) {
     // 1: two pillars.
     const pillarAName = `Smoke Pillar A ${Date.now()}`;
     const pillarBName = `Smoke Pillar B ${Date.now()}`;
-    const pillarAId = slugify(pillarAName);
-    const pillarBId = slugify(pillarBName);
+    const pillarAId = (await idOf("Goal", pillarAName));
+    const pillarBId = (await idOf("Goal", pillarBName));
     for (const [name, pid] of [[pillarAName, pillarAId], [pillarBName, pillarBId]]) {
       await inlineAddPillar(conn, name);
       if (!(await goalShown(conn, pid))) problems.push(`pillar "${name}" did not appear after Enter`);
@@ -1960,8 +1961,8 @@ async function goalsMutabilityPass(conn, goalWithKRId) {
     // 2: two objectives under pillar A.
     const stratOneName = `Smoke Strategic One ${Date.now()}`;
     const stratTwoName = `Smoke Strategic Two ${Date.now()}`;
-    const stratOneId = slugify(stratOneName);
-    const stratTwoId = slugify(stratTwoName);
+    const stratOneId = (await idOf("Goal", stratOneName));
+    const stratTwoId = (await idOf("Goal", stratTwoName));
     await inlineAddGoal(conn, pillarAId, "objective", stratOneName);
     await inlineAddGoal(conn, pillarAId, "objective", stratTwoName);
     for (const [name, gid] of [[stratOneName, stratOneId], [stratTwoName, stratTwoId]]) {
@@ -2056,7 +2057,7 @@ async function goalsMutabilityPass(conn, goalWithKRId) {
     // new objective under pillar B; its card reads the same after.
     await navigateAndWait(conn, "/goals");
     const functionalGoalName = `Smoke Functional Goal ${Date.now()}`;
-    const functionalId = slugify(functionalGoalName);
+    const functionalId = (await idOf("Goal", functionalGoalName));
     const renamedFunctionalName = `${functionalGoalName} Renamed`;
     await inlineAddGoal(conn, stratOneId, "outcome", functionalGoalName);
     if (!(await goalShown(conn, functionalId))) problems.push(`outcome "${functionalGoalName}" did not appear after inline add`);
@@ -2065,7 +2066,7 @@ async function goalsMutabilityPass(conn, goalWithKRId) {
     if (beforeMove.text !== renamedFunctionalName) problems.push(`renamed outcome shows ${J(beforeMove.text)}`);
 
     const pillarBStrategicName = `Smoke Strategic B ${Date.now()}`;
-    const pillarBStrategicId = slugify(pillarBStrategicName);
+    const pillarBStrategicId = (await idOf("Goal", pillarBStrategicName));
     await inlineAddGoal(conn, pillarBId, "objective", pillarBStrategicName);
     if (!(await goalShown(conn, pillarBStrategicId))) problems.push(`objective "${pillarBStrategicName}" under pillar B did not appear`);
     await moveOnCard(conn, functionalId, pillarBStrategicName);
@@ -2090,7 +2091,7 @@ async function goalsMutabilityPass(conn, goalWithKRId) {
     // column. Its manifest keeps everything but its parent, and its card
     // keeps reading "1 key result".
     const pillarCName = `Smoke Pillar C ${Date.now()}`;
-    const pillarCId = slugify(pillarCName);
+    const pillarCId = (await idOf("Goal", pillarCName));
     await inlineAddPillar(conn, pillarCName);
     await navigateAndWait(conn, "/goals");
     if (!goalWithKRId) {
@@ -2330,7 +2331,7 @@ async function bootstrapFlow(conn) {
 
   await navigateAndWait(conn, "/sheets/Team");
   const teamName = `Bootstrap Team ${Date.now()}`;
-  await clickNamed(conn, "Add", { within: "main" });
+  await clickNamed(conn, "Add team", { within: "main" });
   await sleep(300);
   if (await evalJS(conn, `!!document.querySelector('[role="dialog"] [role="combobox"]:not([data-cartograph-field])')`)) {
     problems.push("Team create dialog showed a picker that edits no field (there is no actor in the interface)");
@@ -2346,15 +2347,15 @@ async function bootstrapFlow(conn) {
   await navigateAndWait(conn, "/goals");
   const pillarName = `Bootstrap Pillar ${Date.now()}`;
   await inlineAddPillar(conn, pillarName);
-  if (!(await goalShown(conn, slugify(pillarName)))) problems.push(`created pillar "${pillarName}" did not appear after Enter`);
+  if (!(await goalShown(conn, (await idOf("Goal", pillarName))))) problems.push(`created pillar "${pillarName}" did not appear after Enter`);
 
   const strategicName = `Bootstrap Strategic ${Date.now()}`;
-  await inlineAddGoal(conn, slugify(pillarName), "objective", strategicName);
-  if (!(await goalShown(conn, slugify(strategicName)))) problems.push(`created objective "${strategicName}" did not appear after Enter`);
+  await inlineAddGoal(conn, (await idOf("Goal", pillarName)), "objective", strategicName);
+  if (!(await goalShown(conn, (await idOf("Goal", strategicName))))) problems.push(`created objective "${strategicName}" did not appear after Enter`);
 
   const functionalName = `Bootstrap Functional ${Date.now()}`;
-  await inlineAddGoal(conn, slugify(strategicName), "outcome", functionalName);
-  if (!(await goalShown(conn, slugify(functionalName)))) problems.push(`created outcome "${functionalName}" did not appear after Enter`);
+  await inlineAddGoal(conn, (await idOf("Goal", strategicName)), "outcome", functionalName);
+  if (!(await goalShown(conn, (await idOf("Goal", functionalName))))) problems.push(`created outcome "${functionalName}" did not appear after Enter`);
 
   detach();
   return { problems, teamName, pillarName, strategicName, functionalName };
@@ -2467,7 +2468,7 @@ async function main() {
     const flow = await resourceCreateEditFlow(pageConn);
     failed = report("Resource create/edit flow", flow, "Resource create/edit flow ok, zero console errors") || failed;
     {
-      const id = slugify(flow.createdName);
+      const id = await idOf("Resource", flow.createdName);
       const res = await fetch(`${baseUrl}/api/v1/manifests/Resource/${id}`);
       if (!res.ok) {
         failed = true;
