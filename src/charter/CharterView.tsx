@@ -31,7 +31,7 @@ export function CharterView({
   working = false,
   fileName,
   empty,
-  editable,
+  live,
 }: {
   kind: CharterKind;
   id: string;
@@ -39,20 +39,45 @@ export function CharterView({
   working?: boolean;
   fileName?: string;
   empty: string;
-  /** Beside a walk: a section opens its step, and a value written as one
-   * field is edited in place. */
-  editable?: { onStep: (step: string) => void; onField: (path: string, value: string) => void };
+  /** The charter as a document of parts, drawn in place of the frame
+   * (LiveCharter); the PDF and the tab still print the same renderer. */
+  live?: React.ReactNode;
 }) {
   const client = useClient();
   const frame = useRef<HTMLIFrameElement>(null);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["charter", kind, id, working],
     queryFn: () => client.charter(kind, id, { working }),
+    enabled: !live,
   });
   const url = client.charterLink(kind, id, "html", { working });
   // The same charter printed to PDF by the server.
   const pdfUrl = client.charterLink(kind, id, "pdf", { working });
 
+  if (live) {
+    // The parts in place of the frame; the tab prints the renderer's HTML.
+    return (
+      <div className="flex flex-col gap-3" data-cartograph-region="charter">
+        <div className="flex justify-end gap-2">
+          {pdfUrl ? (
+            <Button asChild size="sm">
+              <a href={pdfUrl} download={`${fileName ?? "charter"}.pdf`}>
+                <Download />
+                {cc.pdf}
+              </a>
+            </Button>
+          ) : null}
+          <Button asChild variant="outline" size="sm">
+            <a href={url} target="_blank" rel="noreferrer">
+              <ExternalLink />
+              {cc.openTab}
+            </a>
+          </Button>
+        </div>
+        {live}
+      </div>
+    );
+  }
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (isError || !data) return <p className="text-sm text-muted-foreground">{empty}</p>;
 
@@ -90,56 +115,8 @@ export function CharterView({
         // Its own document, so the charter's styles stay inside it. No
         // scripts to run: the server writes prose and tables.
         sandbox="allow-same-origin allow-modals"
-        onLoad={() => editable && frame.current?.contentDocument && wire(frame.current.contentDocument, editable)}
         className="h-[calc(100vh-16rem)] w-full rounded-xl border bg-background"
       />
     </div>
   );
-}
-
-/**
- * Makes the charter's document answer the walk beside it: each section
- * heading opens the step that defines it, and each value printed as one
- * field's text is edited where it stands, saved as any edit is. Wired from
- * outside the frame, which runs no scripts of its own.
- */
-function wire(doc: Document, editable: { onStep: (step: string) => void; onField: (path: string, value: string) => void }) {
-  const style = doc.createElement("style");
-  style.textContent = `
-    h2[data-step] { cursor: pointer; border-radius: 6px; }
-    h2[data-step]:hover { background: color-mix(in oklab, currentColor 6%, transparent); }
-    dd[data-field] { cursor: text; border-radius: 4px; outline: 1px dashed transparent; outline-offset: 2px; }
-    dd[data-field]:hover { outline-color: color-mix(in oklab, currentColor 30%, transparent); }
-    dd[data-field][contenteditable="true"] { outline: 2px solid #3b82f6; background: color-mix(in oklab, #3b82f6 6%, transparent); }
-  `;
-  doc.head.appendChild(style);
-  for (const h of Array.from(doc.querySelectorAll<HTMLElement>("h2[data-step]"))) {
-    h.title = cc.openStep;
-    h.addEventListener("click", () => editable.onStep(h.dataset.step as string));
-  }
-  for (const dd of Array.from(doc.querySelectorAll<HTMLElement>("dd[data-field]"))) {
-    dd.title = cc.editHere;
-    dd.addEventListener("click", () => {
-      if (dd.isContentEditable) return;
-      const before = dd.textContent ?? "";
-      dd.contentEditable = "true";
-      dd.focus();
-      const done = () => {
-        dd.contentEditable = "false";
-        const after = (dd.textContent ?? "").trim();
-        if (after && after !== before.trim()) editable.onField(dd.dataset.field as string, after);
-      };
-      dd.addEventListener("blur", done, { once: true });
-      dd.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          dd.blur();
-        }
-        if (e.key === "Escape") {
-          dd.textContent = before;
-          dd.blur();
-        }
-      });
-    });
-  }
 }

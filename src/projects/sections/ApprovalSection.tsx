@@ -9,12 +9,13 @@ import { copy } from "@/copy";
 import { RoleRefPicker, roleOptions, useResourceNames, roleRefLabel } from "../RoleRefPicker";
 import { EventPicker, TimingField } from "../TimingField";
 import { Labelled } from "../Labelled";
+import { WhatHappened } from "../WhatHappened";
 import { useProjectStore, useSectionAutosave } from "../store";
 import type { Condition, ProjectEvent, SignOff } from "../types";
 
 const ac = copy.projects.approval;
 
-const today = () => new Date().toISOString().slice(0, 10);
+export const today = () => new Date().toISOString().slice(0, 10);
 
 function nextId(prefix: string, taken: { id: string }[]) {
   let n = taken.length + 1;
@@ -52,7 +53,7 @@ function Heading({ icon: Icon, title, hint }: { icon: typeof ListChecks; title: 
   );
 }
 
-function useEvents() {
+export function useEvents() {
   const store = useProjectStore();
   const events = store.spec.events ?? [];
   const record = (e: Omit<ProjectEvent, "id">) =>
@@ -153,7 +154,9 @@ function Conditions() {
 const STAGES: SignOff["stage"][] = ["definition", "closing", "handover"];
 const DECISIONS = ["approve", "approveWithConditions", "reject"] as const;
 
-function SignOffs() {
+/** The lines that sign the charter, with the stage given only those of
+ * that stage: closing signs where the work closes, handover where it lands. */
+export function SignOffs({ stage }: { stage?: SignOff["stage"] } = {}) {
   const store = useProjectStore();
   const names = useResourceNames();
   const roles = roleOptions(store.spec.resources ?? [], names);
@@ -164,8 +167,8 @@ function SignOffs() {
   const patch = (i: number, p: Partial<SignOff>) => set(list.map((c, j) => (j === i ? { ...c, ...p } : c)));
   return (
     <section className="flex flex-col gap-3" data-cartograph-field="/spec/signOffs">
-      <Heading icon={FileSignature} title={ac.signOff} hint={ac.signOffHint} />
-      {list.length > 0 ? (
+      <Heading icon={FileSignature} title={ac.signOff} hint={stage ? ac.signOffStageHint : ac.signOffHint} />
+      {list.some((so) => !stage || so.stage === stage) ? (
         <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
@@ -179,6 +182,7 @@ function SignOffs() {
             </thead>
             <tbody>
               {list.map((so, i) => {
+                if (stage && so.stage !== stage) return null;
                 const signed = last("signOffs", so.id);
                 return (
                   <tr key={so.id} className="border-t align-top" data-signoff={so.id}>
@@ -276,7 +280,7 @@ function SignOffs() {
         className="self-start"
         onClick={() => {
           const sponsor = (store.spec.resources ?? []).find((r) => r.role === "sponsor");
-          set([...list, { id: nextId("s", list), stage: "definition", role: sponsor?.id ? { local: "resources", id: sponsor.id } : { external: "" } }]);
+          set([...list, { id: nextId("s", list), stage: stage ?? "definition", role: sponsor?.id ? { local: "resources", id: sponsor.id } : { external: "" } }]);
         }}
         aria-label={ac.addSignOff}
         title={ac.addSignOff}
@@ -318,6 +322,7 @@ function Record() {
   return (
     <section className="flex flex-col gap-3" data-cartograph-field="/spec/events">
       <Heading icon={History} title={ac.record} hint={ac.recordHint} />
+      <WhatHappened />
       <div className="flex flex-wrap items-end gap-2 rounded-xl p-3 ring-1 ring-foreground/10" data-slot="record-event">
         <Select
           value={on}

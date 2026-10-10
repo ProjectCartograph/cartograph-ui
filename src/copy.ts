@@ -195,6 +195,32 @@ export const copy = {
       email
         ? `You signed in as ${email}, but only the people an administrator lists can see this. Ask one to add you.`
         : "Only the people an administrator lists can see this. Ask one to add you.",
+    changeControl: {
+      title: "Change control",
+      intro:
+        "How the record may change, for people and agents alike. A change set is a piece of work kept apart from the record until someone rolls it in.",
+      loadFailed: "The workspace's settings could not be read.",
+      staged: "Changed in your change set. It takes effect once the change set is rolled in.",
+      inForce: "In force now.",
+      policy: {
+        changeSetsRequired: {
+          name: "Every change goes through a change set",
+          does: "Saving straight to the record is refused; each change is made in a change set and rolled in.",
+        },
+        checksMet: {
+          name: "Every check is met before rolling in",
+          does: "A change set with a check nobody met, or said why it is not met, cannot be rolled in.",
+        },
+        nothingLeftOpen: {
+          name: "Nothing is left open before rolling in",
+          does: "A change set with a check left open or waived, even with a reason, cannot be rolled in.",
+        },
+        secondReviewer: {
+          name: "Someone other than its author rolls it in",
+          does: "The person a change set is for cannot roll it in; another person reviews it and rolls it in with their own access.",
+        },
+      },
+    },
   },
   proposals: {
     title: "Proposals",
@@ -536,6 +562,34 @@ export const copy = {
     tabsLabel: "Side panel",
     closePane: "Close the side panel",
     openPane: "Open the side panel",
+    waitsLens: "Waits",
+    waits: {
+      unplaced: "No month yet",
+      somethingElse: "something else",
+      ready: "When its last milestone falls",
+      window: (from: string, to: string) => (from && to ? `Between ${from} and ${to}` : from ? `Not before ${from}` : `By ${to}`),
+      after: (months: number, days: number, what: string) => {
+        const lag = [months ? `${months} month${months === 1 ? "" : "s"}` : "", days ? `${days} day${days === 1 ? "" : "s"}` : ""].filter(Boolean).join(" and ");
+        return lag ? `${lag} after ${what}` : `After ${what}`;
+      },
+      when: (what: string, by: string) => (by ? `Set when ${what} happens, expected by ${by}` : `Set when ${what} happens`),
+      kinds: {
+        milestone: "Milestone",
+        deliverable: "Deliverable",
+        condition: "Condition",
+        purchase: "Purchase",
+        dependency: "Dependency",
+        target: "Target",
+        baseline: "Baseline",
+        ready: "Ready",
+      } as Record<string, string>,
+      critical: "On the chain that decides the last date",
+      movedBy: (risks: string) => `Could be moved by: ${risks}`,
+      conflict: "Does not fit its own date, or what it needs is ready after it",
+      late: "Expected earlier, and not set yet",
+      empty: "No dated items yet. Give a milestone, a deliverable or a dependency a timing to see what it waits on.",
+      connectHint: "Drag from one milestone to another to make the second wait on the first.",
+    },
   },
   // An address that is not a page (routes/__root).
   notFound: {
@@ -621,6 +675,8 @@ export const copy = {
     heading: "Still to fill in",
     count: (facts: number, checks: number) =>
       `${facts} answer${facts === 1 ? "" : "s"} missing, leaving ${checks} check${checks === 1 ? "" : "s"} open`,
+    asked: (what: string) => `You were asked: ${what}`,
+    notAsked: "Left open without asking you: the agent worked from the document alone.",
   },
   rail: {
     graph: "Graph",
@@ -1633,8 +1689,6 @@ export const copy = {
     placeholder: "",
   },
   charter: {
-    openStep: "Open this section's step",
-    editHere: "Click to edit. Enter to save, Escape to cancel.",
     title: "Charter",
     subtitle: "",
     back: "Back",
@@ -1642,6 +1696,18 @@ export const copy = {
     pdf: "Download PDF",
     openTab: "Open in a tab",
     empty: "Nothing to show yet. The charter fills in as you complete the steps.",
+    live: {
+      menu: (part: string) => `What can be done in ${part}`,
+      openStep: "Open its step",
+      edit: (field: string) => `Edit ${field}`,
+      nothing: "Nothing to edit here",
+      placeholder: "Nothing here yet. Open its step to say what belongs here.",
+      panel: (field: string) => `Editing ${field}`,
+      checks: "What its step still needs",
+      save: (field: string) => `Save ${field}`,
+      saveShort: "Save",
+      cancel: "Cancel",
+    },
   },
   framework: {
     title: "Results framework",
@@ -1837,7 +1903,16 @@ export const copy = {
       unknownReasonLabel: "Why it is not known yet",
       expectedByLabel: "Known by",
       targetLabel: "Target",
-      targetHint: "Where it needs to get to, and the month it is due by.",
+      targetHint: "Where it needs to get to, and when: by a month, in a window, or set once something happens.",
+      target: {
+        modeLabel: "When the target is due",
+        modes: { date: "By a month", window: "In a window", when: "Set when something happens" },
+        notBefore: "Not before",
+        notAfter: "Not after",
+        event: "What sets it, in words",
+        expectedBy: "Expected by",
+        direction: "What is known of it already",
+      },
       sourceLabel: "Read from",
       sourceHint: "The systems or records this number is read from.",
       sourcePlaceholder: "Choose data sources",
@@ -3255,9 +3330,9 @@ export const copy = {
       dependsExternal: "Outside Cartograph",
       dependsExternalLabel: "Name",
       dependsExternalPlaceholder: "",
-      dependsNeedByLabel: "Needed by",
+      dependsNeedByLabel: "Needed by phase, from before milestones",
+      dependsNeededLabel: "Needed by",
       dependsNeedByPlaceholder: "Any phase",
-      dependsNoPhases: "Add a phase in Schedule to say when it is needed.",
       type: {
         risk: "Risk",
         issue: "Issue",
@@ -3445,6 +3520,38 @@ export const copy = {
       empty: "No success criterion is set for handover.",
       editOnSuccess: "Edit success criteria",
     },
+    // Something happened, in the person's words, and what it reaches
+    // (projects/WhatHappened).
+    whatHappened: {
+      title: "Something happened",
+      textLabel: "What happened, in your words",
+      find: "Find the item it happened to",
+      findShort: "Find",
+      itemLabel: "The item it happened to",
+      ranked: "The likeliest first. Pick the one it happened to.",
+      unranked: "No decision model is on, so nothing is ranked. Pick the item it happened to.",
+      none: "Nothing in this project seems to be about that. Record it below by hand.",
+      kinds: { milestone: "Milestone", deliverable: "Deliverable", condition: "Condition", risk: "Risk", dependency: "Dependency", criterion: "Success criterion" } as Record<string, string>,
+      dateLabel: "When it happened",
+      reaches: (n: number) => `It reaches ${n} item${n === 1 ? "" : "s"}, marked on the Waits map too. Record what follows from it for any of them.`,
+      reachesNothing: "Nothing waits on it.",
+      reachLabel: "What it reaches",
+      followLabel: (name: string) => `What follows for ${name}`,
+      followNone: "Nothing to record",
+      changeThere: "Change it in its own record",
+      record: "Record what happened and what follows from it",
+      recordShort: "Record",
+    },
+    // A success criterion judged at closing or landing
+    // (projects/CriterionResult).
+    criterionResult: {
+      label: (statement: string) => `Result of: ${statement}`,
+      judged: "Whether it was met",
+      value: "Value measured",
+      date: "When it was judged",
+      record: (statement: string) => `Record the result of: ${statement}`,
+      recordShort: "Record",
+    },
     // Approval: conditions, sign-off and the record
     // (projects/sections/ApprovalSection).
     approval: {
@@ -3463,6 +3570,7 @@ export const copy = {
       metOn: (date: string) => `Met on ${date}`,
       signOff: "Sign-off",
       signOffHint: "The roles that sign this charter, at definition, closure and handover. Signing is recorded with who signed and when.",
+      signOffStageHint: "Who signs this stage, and when they did.",
       signOffLine: "Sign-off line",
       addSignOff: "Add a line to sign",
       stage: "Stage",
@@ -3564,6 +3672,10 @@ export const copy = {
       lag: "plus",
       lagLabel: "Months after it",
       months: "months",
+      lagDaysLabel: "Days after it, besides the months",
+      days: "days",
+      movedBy: "Could move it",
+      noteLabel: "Note",
       expectedBy: "Expected by",
       decidedBy: "Set by",
       dayLabel: "Give a day, not only a month",

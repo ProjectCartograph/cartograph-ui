@@ -311,3 +311,28 @@ describe("the data section keeps the consume side read-only in shape", () => {
     expect(within(column).queryByRole("combobox", { name: dc.sourceLabel })).toBeNull();
   });
 });
+
+// A criterion judged at closing records its result there, as an event
+// (engine TAXONOMY.md D52), and closing signs only its own lines.
+describe("results and sign-off at closing", () => {
+  it("records a criterion's result and shows it", async () => {
+    const rc = copy.projects.criterionResult;
+    await mount(<ClosingSection id="p1" />);
+    const result = await screen.findByRole("group", { name: rc.label("The review is complete with no open actions") });
+    await userEvent.click(within(result).getByRole("radio", { name: copy.projects.approval.happenedWords.met }));
+    await userEvent.type(within(result).getByLabelText(rc.value), "12");
+    await userEvent.type(within(result).getByLabelText(copy.projects.approval.evidence), "the closure review");
+    await userEvent.click(within(result).getByRole("button", { name: rc.record("The review is complete with no open actions") }));
+    await waitFor(() => expect(spec.events).toHaveLength(1));
+    expect(spec.events?.[0]).toMatchObject({ on: { local: "successCriteria", id: "sc-1" }, happened: "met", value: 12, evidence: "the closure review" });
+    expect(await screen.findByText("(the closure review)")).toBeInTheDocument();
+  });
+
+  it("offers a sign-off line for closing, and only closing's", async () => {
+    const ac = copy.projects.approval;
+    await mount(<ClosingSection id="p1" />);
+    await userEvent.click(await screen.findByRole("button", { name: ac.addSignOff }));
+    await waitFor(() => expect(spec.signOffs).toHaveLength(1));
+    expect(spec.signOffs?.[0].stage).toBe("closing");
+  });
+});

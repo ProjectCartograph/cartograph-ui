@@ -27,12 +27,29 @@ export function knownBaseline(b: KPIBaseline | undefined): { value: number; date
   return b && "value" in b ? b : undefined;
 }
 
+/** A KPI's target (engine TAXONOMY.md D47): a value by a month, a value
+ * due in a window, or a value set when something happens, with the month
+ * it is expected by. */
+export type KPITarget =
+  | { value: number; date: string }
+  | { value: number; due: { form: "window"; notBefore?: string; notAfter?: string } }
+  | { setWhen: { form: "when"; event?: { on: { external: string } }; expectedBy?: string }; direction?: string };
+
+/** The target's figure and the month it is due by, where it has both: a
+ * window's last month; none for one set when something happens. */
+export function targetFigure(t: KPITarget | undefined): { value: number; date: string } | undefined {
+  if (!t || !("value" in t)) return undefined;
+  if ("date" in t) return t;
+  const month = t.due.notAfter ?? t.due.notBefore;
+  return month ? { value: t.value, date: month } : undefined;
+}
+
 export interface KPIDefinitionSpec {
   definition?: string;
   unit?: string;
   direction?: string;
   baseline?: KPIBaseline;
-  target?: { value: number; date: string };
+  target?: KPITarget;
   /** Deprecated: one data source, as saved before 2.7.0; read into sources. */
   source?: string;
   sources?: string[];

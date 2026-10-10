@@ -9,6 +9,7 @@ import { VocabMark } from "@/components/vocab";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { roleOptions, roleRefLabel, type RoleOption, useResourceNames } from "../RoleRefPicker";
 import { SuccessCriterionDialog } from "../SuccessCriterionDialog";
+import { CriterionResult } from "../CriterionResult";
 import { useSectionAutosave, useProjectStore } from "../store";
 import type { SuccessCriterion, SuccessCriterionWhen } from "../types";
 
@@ -219,13 +220,16 @@ export function CriteriaSlice({
   return (
     <div className="flex flex-col gap-3">
       {shown.map((k) => (
-        <CriterionCard
-          key={k.id}
-          criterion={k}
-          sourceName={k.source ? sources?.names.get(k.source) : undefined}
-          cycleName={k.cycle ? cycles?.names.get(k.cycle) : undefined}
-          roles={roles}
-        />
+        <div key={k.id} className="flex flex-col gap-2">
+          <CriterionCard
+            criterion={k}
+            sourceName={k.source ? sources?.names.get(k.source) : undefined}
+            cycleName={k.cycle ? cycles?.names.get(k.cycle) : undefined}
+            roles={roles}
+          />
+          {/* Judged here, at closing or landing. */}
+          <CriterionResult criterion={k} />
+        </div>
       ))}
     </div>
   );

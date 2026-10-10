@@ -22,6 +22,13 @@ export function LeftOpen({ left, heading: Heading = "h2" }: { left: LeftCheck[];
         {facts.map((f) => (
           <li key={f.reason} className="space-y-1">
             <p className="font-medium">{f.reason}</p>
+            {f.asked ? (
+              // What the person was asked and answered, so they read their
+              // own words, or that the agent worked without them.
+              <p className="text-muted-foreground" data-slot="left-asked">
+                {f.asked.toLowerCase() === "not available" ? c.notAsked : c.asked(f.asked)}
+              </p>
+            ) : null}
             <ul className="space-y-0.5 text-muted-foreground">
               {f.checks.map((w) => (
                 <li key={`${w.on ?? ""}-${w.check}`}>
