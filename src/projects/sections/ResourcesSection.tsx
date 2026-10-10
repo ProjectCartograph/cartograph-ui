@@ -252,7 +252,9 @@ export function ResourcesSection() {
           {funding.length === 0 ? <p className="text-sm text-muted-foreground">{pc.fundingEmpty}</p> : null}
           {funding.map((f, idx) => (
             <div key={idx} className="flex flex-col gap-2 rounded-lg border p-3" data-cartograph-region={`funding-${idx}`}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-end gap-2">
+                <div className="flex w-32 shrink-0 flex-col gap-1">
+                <span className="text-xs text-muted-foreground" aria-hidden="true">{pc.amountLabel}</span>
                 <Input
                   data-cartograph-field={`/spec/funding/${idx}/amount`}
                   type="number"
@@ -260,14 +262,15 @@ export function ResourcesSection() {
                   onChange={(e) => updateFunding(idx, { amount: e.target.value === "" ? undefined : Number(e.target.value) } as Partial<FundingLine>)}
                   
                   aria-label={pc.amountLabel}
-                  className="w-32 shrink-0"
                 />
+                </div>
                 {/* Picked, not typed: a box that takes any three capitals
                     takes a typo, and the list is a published standard. */}
                 {/* Wrapped rather than sized by its own className: the
                     combobox's trigger wrapper is w-full, so a width on the
                     trigger let it eat the row and squeeze Status to 20px. */}
-                <div className="w-28 shrink-0">
+                <div className="flex w-28 shrink-0 flex-col gap-1">
+                  <span className="text-xs text-muted-foreground" aria-hidden="true">{pc.currencyLabel}</span>
                   <Combobox
                     options={CURRENCY_OPTIONS}
                     value={f.currency || undefined}
@@ -279,11 +282,13 @@ export function ResourcesSection() {
                     data-cartograph-field={`/spec/funding/${idx}/currency`}
                   />
                 </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground" aria-hidden="true">{pc.fundingStatusLabel}</span>
                 <Select
                   value={f.status}
                   onValueChange={(v) => updateFunding(idx, { status: v as FundingLine["status"] })}
                 >
-                  <SelectTrigger className="min-w-0 flex-1" aria-label={pc.fundingStatusLabel} data-cartograph-field={`/spec/funding/${idx}/status`}>
+                  <SelectTrigger className="w-full" aria-label={pc.fundingStatusLabel} data-cartograph-field={`/spec/funding/${idx}/status`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -294,6 +299,7 @@ export function ResourcesSection() {
                     ))}
                   </SelectContent>
                 </Select>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
@@ -310,7 +316,8 @@ export function ResourcesSection() {
                   prose, one whose placeholder read like a ledger code
                   nobody could place. The budget is declared once now and
                   carries its own code. */}
-              <div className="pr-9">
+              <div className="flex flex-col gap-1 pr-9">
+                <span className="text-xs text-muted-foreground" aria-hidden="true">{pc.fundingSourceLabel}</span>
                 <ReferencePicker
                   data-cartograph-field={`/spec/funding/${idx}/source`}
                   refKind="FundingSource"
