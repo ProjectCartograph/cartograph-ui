@@ -7,6 +7,7 @@ import { ComboboxMultiple } from "@/components/ui/combobox";
 import { copy } from "@/copy";
 import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
+import { BrowseButton } from "@/records/PickerDialog";
 import { useQueries } from "@tanstack/react-query";
 import { useClient } from "@/client/context";
 import { orUndefined } from "@/client/port";
@@ -85,6 +86,8 @@ export function GapCitations({
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex items-start gap-2">
+      <div className="min-w-0 flex-1">
       <ComboboxMultiple
         options={gapOptions}
         value={cited}
@@ -99,6 +102,10 @@ export function GapCitations({
         onAdd={() => setAdding(true)}
         addLabel={ac.problemGapsAdd}
       />
+      </div>
+      {/* Each gap readable before it is cited (#28). */}
+      {gapOptions.length > 0 ? <BrowseButton kind="Gap" title={ac.problemGapsLabel} multiple selected={cited} onChange={setGaps} /> : null}
+      </div>
       <SheetAddDialog
         kind="Gap"
         open={adding}
