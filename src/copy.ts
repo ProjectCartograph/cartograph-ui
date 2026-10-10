@@ -2767,6 +2767,12 @@ export const copy = {
     },
     // Named for what each stage holds (LSS_REVIEW.md, D20). The ids stay
     // as they were; only the words people read changed.
+    // What the walk can decide now (projects/NextToDecide).
+    nextToDecide: {
+      label: "What can be decided now",
+      title: (n: number) => `${n} thing${n === 1 ? "" : "s"} to decide now`,
+      waiting: (n: number) => `${n} more after these`,
+    },
     // Moving through a long stage (projects/SectionOutline).
     outline: {
       label: "Sections of this stage",
