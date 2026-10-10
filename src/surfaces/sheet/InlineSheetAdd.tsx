@@ -7,6 +7,7 @@ import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 import { parseSpecFields, type SheetKind } from "./schema";
 import { SheetForm } from "./SheetForm";
+import { GapAddDialog } from "@/gaps/GapAddDialog";
 
 /**
  * Adds one entry to a directory without leaving the screen that needed it.
@@ -38,6 +39,9 @@ export function SheetAddDialog({
   });
   const fields = useMemo(() => parseSpecFields(schemaQuery.data), [schemaQuery.data]);
 
+  // A gap is recorded on its own compact screen, its shortfall drawn
+  // from now to where it should be (#31).
+  if (kind === "Gap" && !minimal) return <GapAddDialog open={open} onOpenChange={onOpenChange} onAdded={onAdded} preset={preset} />;
   return (
     <SheetForm
       kind={kind}

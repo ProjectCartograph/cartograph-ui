@@ -566,6 +566,23 @@ export const copy = {
     done: "Done",
     browseLabel: (kind: string) => `Browse ${kind.toLowerCase()} records with a preview`,
   },
+  // A gap recorded in one screen (gaps/GapAddDialog).
+  gapAdd: {
+    title: "Record a gap",
+    hint: "The distance between where things are and where they should be, and who it falls on.",
+    name: "Name",
+    nameHint: "The shortfall in a few words, such as \"Faults are found after dispatch\".",
+    current: "Where things are now",
+    desired: "Where they should be",
+    affects: "Who it falls on",
+    measure: "The indicator that shows it, if one does",
+    more: "Evidence",
+    statement: "The evidence in its own words",
+    source: "Where it is written down",
+    reason: "Recorded a gap",
+    cancel: "Cancel",
+    save: "Record",
+  },
   // Defining a record without leaving a walk (records/RecordDrawer).
   recordDrawer: {
     title: (kind: string) => `Define the ${kind.toLowerCase()}`,
