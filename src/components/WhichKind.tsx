@@ -170,7 +170,7 @@ export function WhichKindChoice({ onStart }: { onStart?: () => void }) {
                       {c.pick[q.field] ?? q.field}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {q.question}
+                      {q.person || q.question}
                     </span>
                   </span>
                 </button>
