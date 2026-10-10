@@ -529,7 +529,7 @@ export const copy = {
     label: "Create something new",
     work: "Work",
     strategy: "Strategy and evidence",
-    kinds: { Project: "Project", Programme: "Programme", Portfolio: "Portfolio", Operation: "Service", Goal: "Goal", Gap: "Gap", KPI: "Indicator" } as Record<string, string>,
+    kinds: { Project: "Project", Programme: "Programme", Portfolio: "Portfolio", Operation: "Operation", Goal: "Goal", Gap: "Gap", KPI: "Indicator" } as Record<string, string>,
     which: "Not sure which?",
     whichLabel: "Answer which describes it, and start the right kind",
   },
@@ -550,7 +550,7 @@ export const copy = {
     back: "Back",
     done: "Done",
     doneBack: "Done",
-    kinds: { Goal: "Aim", KPI: "Indicator", Operation: "Service", Gap: "Gap" } as Record<string, string>,
+    kinds: { Goal: "Aim", KPI: "Indicator", Operation: "Operation", Gap: "Gap" } as Record<string, string>,
   },
   // The map beside a project's walk (projects/canvas/ProjectMap).
   projectMap: {
@@ -901,7 +901,7 @@ export const copy = {
     // Singular, used in the Add dialog title ("Add Resource") and in prose.
     kindsSingular: {
       KPI: "Indicator",
-      Operation: "Service",
+      Operation: "Operation",
       Portfolio: "Portfolio",
       Team: "Team",
       BeneficiaryGroup: "Beneficiary group",
