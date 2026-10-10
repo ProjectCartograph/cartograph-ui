@@ -2557,8 +2557,11 @@ export interface components {
         StructureQuestion: {
             /** @description The answer this question sets on a StructurePiece; empty for the last, which applies when none does. */
             field: string;
+            /** @description The question as an agent is asked it, with what to send. */
             question: string;
             then: string;
+            /** @description The question as a person is asked it, in plain words. An interface shows this, never question. */
+            person?: string;
         };
         StructurePiece: {
             name: string;
