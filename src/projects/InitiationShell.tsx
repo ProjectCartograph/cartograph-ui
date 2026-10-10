@@ -28,6 +28,7 @@ import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
 import { DMAICPanel } from "@/dmaic/DMAICPanel";
 import { STAGE_ICON, STEP_ICON } from "./steps";
+import { SectionOutline } from "./SectionOutline";
 
 const pc = copy.projects;
 
@@ -215,6 +216,9 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
       return { ...s, resources: next };
     });
   }, [missingIds, store]);
+  // The editor card: its headings make the outline, and its Next button
+  // is what Ctrl+Enter presses (#32).
+  const card = useRef<HTMLDivElement>(null);
   // The side pane, open or closed, as the person last left it.
   const [paneOpen, setPaneOpen] = useState(() => {
     try {
@@ -264,7 +268,8 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
       <ProjectScrubber id={id} section={section} />
       <RequiredMarks kind="Project" />
       <div className={`grid grid-cols-1 gap-6 ${paneOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
-        <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
+        <div ref={card} className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
+          {store.loaded ? <SectionOutline root={card} onNext={() => card.current?.querySelector<HTMLElement>("[data-flow-next]")?.click()} /> : null}
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
           ) : !store.loaded ? (
