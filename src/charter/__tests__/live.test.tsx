@@ -79,8 +79,12 @@ describe("the live charter", () => {
     const scrolled = vi.fn();
     Element.prototype.scrollIntoView = scrolled;
     mount({ step: "stakeholders" });
-    fireEvent.click(await screen.findByText("Depots grade produce differently"));
-    expect(await screen.findByRole("group", { name: lc.panel("Problem") })).toBeInTheDocument();
+    const printed = await screen.findByText("Depots grade produce differently");
+    fireEvent.click(printed);
+    const panel = await screen.findByRole("group", { name: lc.panel("Problem") });
+    // In place of the text, as a document is edited (#38).
+    expect(printed).not.toBeVisible();
+    expect(printed.nextElementSibling?.contains(panel)).toBe(true);
     await waitFor(() => expect(scrolled).toHaveBeenCalled());
   });
 });

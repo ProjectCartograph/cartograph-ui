@@ -393,6 +393,9 @@ export interface Risk {
   response?: RiskResponse;
   /** The side the response draws on. */
   spends?: Constraint;
+  /** The line of the scope, in or out, it would move, word for word
+   * (engine TAXONOMY.md D62). */
+  scopeLine?: string;
 }
 
 /** A side of the triple constraint (engine TAXONOMY.md D60). */

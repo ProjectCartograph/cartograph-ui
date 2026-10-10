@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import type { RefOption } from "@/surfaces/sheet/useReferenceOptions";
 import { GapCitations } from "./GapCitations";
+import { BrowseButton } from "@/records/PickerDialog";
 import { ProblemMap } from "./ProblemMap";
 import { seg } from "./field";
 import type { ProblemLine } from "./types";
@@ -149,16 +150,29 @@ export function ProblemCard({
             {groupOptions.length === 0 ? (
               <p className="text-sm text-muted-foreground">{ac.problemGroupsNone}</p>
             ) : (
-              <ComboboxMultiple
-                options={groupOptions}
-                value={groups}
-                onValueChange={(next) => onChange({ groups: next })}
-                placeholder={ac.problemGroupsPlaceholder}
-                emptyText={copy.sheets.dialog.noMatches}
-                removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
-                aria-label={ac.problemGroupsLabel}
-                data-cartograph-field={`${field}/groups`}
-              />
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <ComboboxMultiple
+                    options={groupOptions}
+                    value={groups}
+                    onValueChange={(next) => onChange({ groups: next })}
+                    placeholder={ac.problemGroupsPlaceholder}
+                    emptyText={copy.sheets.dialog.noMatches}
+                    removeLabel={(name) => `${copy.projects.common.remove} ${name}`}
+                    aria-label={ac.problemGroupsLabel}
+                    data-cartograph-field={`${field}/groups`}
+                  />
+                </div>
+                {/* Only the project's own groups, each readable first (#28). */}
+                <BrowseButton
+                  kind="BeneficiaryGroup"
+                  title={ac.problemGroupsLabel}
+                  multiple
+                  selected={groups}
+                  onChange={(next) => onChange({ groups: next })}
+                  only={new Set(groupOptions.map((o) => o.value))}
+                />
+              </div>
             )}
           </Lead>
           <Lead text={ac.statement.change}>
@@ -212,38 +226,58 @@ function Lead({ text, children }: { text: string; children: React.ReactNode }) {
 /** What analysis found behind the problem, each cause with its evidence
  * and whether the evidence confirms it (engine TAXONOMY.md D58): the
  * charter's one line says what is suspected; these say what is known. */
-function CausesFound({ field, causes, onChange }: { field: string; causes: NonNullable<ProblemLine["problem"]["causes"]>; onChange: (next: NonNullable<ProblemLine["problem"]["causes"]>) => void }) {
+export function CausesFound({ field, causes, onChange }: { field: string; causes: NonNullable<ProblemLine["problem"]["causes"]>; onChange: (next: NonNullable<ProblemLine["problem"]["causes"]>) => void }) {
   const cc = copy.projects.aim.causes;
   const patch = (i: number, p: Partial<(typeof causes)[number]>) => onChange(causes.map((c, j) => (j === i ? { ...c, ...p } : c)));
   return (
     <div className="flex flex-col gap-2" data-cartograph-field={field}>
-      <p className="text-sm text-muted-foreground" title={cc.hint}>
-        {cc.title}
-      </p>
-      {causes.map((c, i) => (
-        <div key={c.id ?? i} className="flex flex-col gap-1.5 rounded-lg p-2 ring-1 ring-foreground/10">
-          <div className="flex items-center gap-2">
-            <Input value={c.cause} onChange={(e) => patch(i, { cause: e.target.value.slice(0, 200) })} aria-label={cc.cause} maxLength={200} className="flex-1" data-cartograph-field={`${field}/${i}/cause`} />
+      <div className="flex flex-col gap-0.5">
+        <p className="text-sm text-muted-foreground">{cc.title}</p>
+        <p className="text-xs text-muted-foreground text-pretty">{cc.hint}</p>
+      </div>
+      {causes.map((c, i) => {
+        const causeId = `${field}-${i}-cause`;
+        const evidenceId = `${field}-${i}-evidence`;
+        const hasEvidence = !!c.evidence?.trim();
+        return (
+          <div key={c.id ?? i} className="flex flex-col gap-2 rounded-lg p-2 ring-1 ring-foreground/10">
+            <div className="flex items-end gap-2">
+              <div className="flex flex-1 flex-col gap-1">
+                <label htmlFor={causeId} className="text-xs font-medium">
+                  {cc.cause}
+                </label>
+                <Input id={causeId} value={c.cause} onChange={(e) => patch(i, { cause: e.target.value.slice(0, 200) })} maxLength={200} data-cartograph-field={`${field}/${i}/cause`} />
+              </div>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => onChange(causes.filter((_, j) => j !== i))} aria-label={copy.projects.common.remove} title={copy.projects.common.remove}>
+                <X />
+              </Button>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor={evidenceId} className="text-xs font-medium">
+                {cc.evidence}
+              </label>
+              <Input id={evidenceId} value={c.evidence ?? ""} onChange={(e) => patch(i, { evidence: e.target.value.slice(0, 300) || undefined, ...(e.target.value.trim() ? {} : { verified: undefined }) })} maxLength={300} data-cartograph-field={`${field}/${i}/evidence`} />
+              <p className="text-xs text-muted-foreground">{cc.evidenceHint}</p>
+            </div>
+            {/* A cause is confirmed by its evidence: with none, there is nothing to confirm it by. */}
             <Button
               type="button"
               variant={c.verified ? "secondary" : "outline"}
               size="sm"
+              className="self-start"
+              disabled={!hasEvidence}
               aria-pressed={!!c.verified}
               onClick={() => patch(i, { verified: !c.verified || undefined })}
-              aria-label={c.verified ? cc.verifiedHint : cc.verifyHint}
-              title={c.verified ? cc.verifiedHint : cc.verifyHint}
+              aria-label={!hasEvidence ? cc.verifyNeedsEvidence : c.verified ? cc.verifiedHint : cc.verifyHint}
+              title={!hasEvidence ? cc.verifyNeedsEvidence : c.verified ? cc.verifiedHint : cc.verifyHint}
               data-cartograph-field={`${field}/${i}/verified`}
             >
               <BadgeCheck />
               {c.verified ? cc.verified : cc.verify}
             </Button>
-            <Button type="button" variant="ghost" size="icon-sm" onClick={() => onChange(causes.filter((_, j) => j !== i))} aria-label={copy.projects.common.remove} title={copy.projects.common.remove}>
-              <X />
-            </Button>
           </div>
-          <Input value={c.evidence ?? ""} onChange={(e) => patch(i, { evidence: e.target.value.slice(0, 300) || undefined })} aria-label={cc.evidence} title={cc.evidenceHint} maxLength={300} data-cartograph-field={`${field}/${i}/evidence`} />
-        </div>
-      ))}
+        );
+      })}
       <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => onChange([...causes, { cause: "" }])} aria-label={cc.addHint} title={cc.addHint}>
         <Plus />
         {cc.add}

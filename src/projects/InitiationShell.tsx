@@ -9,7 +9,7 @@ import { sameView } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 import { Scrubber, type ScrubStage } from "@/components/Scrubber";
 import { Button } from "@/components/ui/button";
-import { Activity, FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
+import { Activity, ChevronRight, FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
 
 
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
@@ -28,6 +28,8 @@ import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
 import { DMAICPanel } from "@/dmaic/DMAICPanel";
 import { STAGE_ICON, STEP_ICON } from "./steps";
+import { SectionOutline } from "./SectionOutline";
+import { NextToDecide } from "./NextToDecide";
 
 const pc = copy.projects;
 
@@ -215,6 +217,9 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
       return { ...s, resources: next };
     });
   }, [missingIds, store]);
+  // The editor card: its headings make the outline, and its Next button
+  // is what Ctrl+Enter presses (#32).
+  const card = useRef<HTMLDivElement>(null);
   // The side pane, open or closed, as the person last left it.
   const [paneOpen, setPaneOpen] = useState(() => {
     try {
@@ -262,9 +267,11 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
         </div>
       </div>
       <ProjectScrubber id={id} section={section} />
+      <NextToDecide id={id} section={section} />
       <RequiredMarks kind="Project" />
       <div className={`grid grid-cols-1 gap-6 ${paneOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
-        <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
+        <div ref={card} className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
+          {store.loaded ? <SectionOutline root={card} onNext={() => card.current?.querySelector<HTMLElement>("[data-flow-next]")?.click()} /> : null}
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
           ) : !store.loaded ? (
@@ -316,7 +323,6 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
  */
 function SidePane({ id, section, checks, onClose }: { id: string; section?: string; checks: React.ReactNode; onClose: () => void }) {
   const store = useProjectStore();
-  const checksQuery = useProjectChecks(id, true);
   const navigate = useNavigate();
   const drawer = useRecordDrawer();
   const mc = copy.projectMap;
@@ -424,24 +430,7 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
               working
               fileName={id}
               empty={copy.charter.empty}
-              live={
-                <LiveCharter
-                  id={id}
-                  version={store.spec}
-                  step={section}
-                  onStep={(step) => {
-                    const path = pathOfStep(step);
-                    if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
-                  }}
-                  onField={(pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value))}
-                  valueOf={(pointer) => getAt(store.spec, pointer)}
-                  checksOf={(step) => (checksQuery.data?.items ?? []).filter((c) => c.section === step && c.state !== "ok").map((c) => c.message)}
-                  routeOf={(step) => {
-                    const path = pathOfStep(step);
-                    return path ? `/projects/${id}${path}` : undefined;
-                  }}
-                />
-              }
+              live={<ProjectLiveCharter id={id} section={section} />}
             />
           </div>
         ) : tab === "dmaic" ? (
@@ -454,10 +443,38 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
   );
 }
 
-/** The route of a step of the walk, by its section key. */
+/**
+ * A project's charter as a document of parts, each field edited in place
+ * where it is printed (#38): beside the walk, and as the charter page.
+ */
+export function ProjectLiveCharter({ id, section }: { id: string; section?: string }) {
+  const store = useProjectStore();
+  const navigate = useNavigate();
+  const checksQuery = useProjectChecks(id, true);
+  return (
+    <LiveCharter
+      id={id}
+      version={store.spec}
+      step={section}
+      onStep={(step) => {
+        const path = pathOfStep(step);
+        if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
+      }}
+      onField={(pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value))}
+      valueOf={(pointer) => getAt(store.spec, pointer)}
+      checksOf={(step) => (checksQuery.data?.items ?? []).filter((c) => c.section === step && c.state !== "ok").map((c) => c.message)}
+      routeOf={(step) => {
+        const path = pathOfStep(step);
+        return path ? `/projects/${id}${path}` : undefined;
+      }}
+    />
+  );
+}
+
 /** The step each dated list of a project is written in. */
 const ITEM_STEP: Record<string, string> = { milestones: "timeline", deliverables: "deliverables", conditions: "approval", procurement: "resources", risks: "risks" };
 
+/** The route of a step of the walk, by its section key. */
 function pathOfStep(step: string): string | undefined {
   for (const stage of STAGES) for (const st of stepsOfStage(stage)) if (st.section === step) return st.path;
   return undefined;
@@ -490,27 +507,31 @@ function setAt(spec: ProjectSpec, pointer: string, value: string): ProjectSpec {
   return root as unknown as ProjectSpec;
 }
 
-/** The steps of a stage walked one at a time, as tabs with their marks:
- * each its own screen, so the last is never a long scroll away. */
+/** The steps of a stage walked one at a time, as a numbered sequence: each
+ * its own screen, so the last is never a long scroll away. Numbered and
+ * joined, they read as an order to follow, not as choices (#36). */
 function StepTabs({ id, steps, section }: { id: string; steps: ReturnType<typeof stepsOfStage>; section: InitiationSection }) {
   return (
-    <nav aria-label={pc.stepsOfStage} className="flex flex-wrap gap-1.5" data-cartograph-region="step-tabs">
-      {steps.map((st) => {
-        const Icon = STEP_ICON[st.section];
-        const on = st.section === section;
-        return (
-          <Link
-            key={st.section}
-            to={`/projects/$id${st.path}`}
-            params={{ id }}
-            aria-current={on ? "step" : undefined}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm ring-1 transition-colors ${on ? "bg-primary text-primary-foreground ring-primary" : "ring-foreground/15 hover:bg-muted"}`}
-          >
-            {Icon ? <Icon className="size-3.5" aria-hidden="true" /> : null}
-            {SECTION_VIEW[st.section].heading}
-          </Link>
-        );
-      })}
+    <nav aria-label={pc.stepsOfStage} data-cartograph-region="step-tabs">
+      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
+        {steps.map((st, i) => {
+          const on = st.section === section;
+          return (
+            <li key={st.section} className="flex items-center gap-1">
+              {i > 0 ? <ChevronRight className="size-3.5 text-muted-foreground" aria-hidden="true" /> : null}
+              <Link
+                to={`/projects/$id${st.path}`}
+                params={{ id }}
+                aria-current={on ? "step" : undefined}
+                className={`inline-flex items-center gap-1.5 px-1 py-0.5 underline-offset-4 ${on ? "font-medium underline decoration-2" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <span className="tabular-nums">{i + 1}</span>
+                {SECTION_VIEW[st.section].heading}
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 }

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, MoreHorizontal, PencilLine, Undo2 } from "lucide-react";
 
@@ -160,6 +161,25 @@ function Part({
 }) {
   const fields = useMemo(() => fieldsOf(part), [part]);
   const peers = usePeersOn(route ?? "");
+  // The field is edited where it is printed, in place of its text, as a
+  // document is (#38): a host beside the printed value takes the editor.
+  const content = useRef<HTMLDivElement>(null);
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const target = editing ? content.current?.querySelector<HTMLElement>(`[data-field="${CSS.escape(editing.path)}"]`) : null;
+    if (!target) {
+      setHost(null);
+      return;
+    }
+    const el = document.createElement("div");
+    target.after(el);
+    target.hidden = true;
+    setHost(el);
+    return () => {
+      target.hidden = false;
+      el.remove();
+    };
+  }, [editing, part.html]);
   return (
     <article
       ref={refBlock}
@@ -216,6 +236,7 @@ function Part({
         <p className="mt-1 text-sm text-muted-foreground">{lc.placeholder}</p>
       ) : (
         <div
+          ref={content}
           className="charter-part mt-2 text-sm [&_dd]:mb-2 [&_dt]:text-xs [&_dt]:text-muted-foreground [&_table]:w-full [&_td]:border-t [&_td]:p-1 [&_th]:p-1 [&_th]:text-left [&_th]:text-xs [&_[data-field]]:cursor-text [&_[data-field]]:rounded [&_[data-field]:hover]:bg-muted"
           // The engine writes this HTML, every value escaped, from the same
           // renderer as the charter's PDF (engine render/document.go).
@@ -227,7 +248,7 @@ function Part({
           }}
         />
       )}
-      {editing ? panel : null}
+      {editing ? (host ? createPortal(<div className="[&_label>span:first-child]:sr-only">{panel}</div>, host) : panel) : null}
     </article>
   );
 }
@@ -250,7 +271,7 @@ function FieldPanel({
   return (
     <div className="mt-3 flex flex-col gap-2 rounded-md bg-muted/40 p-2" role="group" aria-label={lc.panel(field.label)} data-field-panel={field.path}>
       <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-        {field.label}
+        <span>{field.label}</span>
         <Textarea
           autoFocus
           value={text}

@@ -416,6 +416,7 @@ export function AlignmentSection() {
                 empty={gc.noGoalsInProgramme}
                 groupIcon={<VocabMark vocab="goalLevel" value="goal" className="size-3.5" decorative />}
                 areaIcon={<VocabMark vocab="goalLevel" value="objective" className="size-3.5" decorative />}
+                previewKind="Goal"
               />
             </div>
           ) : null}
@@ -437,6 +438,7 @@ export function AlignmentSection() {
               empty={gc.noGoalsMatch}
               groupIcon={<VocabMark vocab="goalLevel" value="goal" className="size-3.5" decorative />}
               areaIcon={<VocabMark vocab="goalLevel" value="objective" className="size-3.5" decorative />}
+              previewKind="Goal"
             />
           </div>
         </div>
@@ -513,6 +515,7 @@ export function MeasuresSection() {
         <ObjectiveEditor
           data-cartograph-field={`/spec/objectives/${seg(store.spec.objectives?.[0], 0)}/objective`}
           objective={objective.objective}
+          about={store.spec.summary?.about}
           alignedGoals={parent ? 1 : goals.length}
           onChange={(next) => updateObjective({ objective: next })}
         />

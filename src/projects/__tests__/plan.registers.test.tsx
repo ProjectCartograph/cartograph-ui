@@ -1,6 +1,7 @@
 /// <reference types="@testing-library/jest-dom" />
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
@@ -45,16 +46,26 @@ describe("the plan's registers", () => {
   // A cell steps through R, A, C and I; a row has one accountable role, so
   // naming a second moves it (RACI, engine TAXONOMY.md D50).
   it("keeps one accountable role per row", async () => {
+    const user = userEvent.setup();
     mount({ resources, responsibilities: [{ id: "r1", item: "Approve the baseline" }] }, <RaciEditor />);
-    const row = (await screen.findByDisplayValue("Approve the baseline")).closest("tr") as HTMLElement;
-    const cells = within(row).getAllByRole("button").filter((b) => b.hasAttribute("data-raci-cell"));
-    fireEvent.click(cells[0]);
-    fireEvent.click(cells[0]);
+    const row = (await screen.findByDisplayValue("Approve the baseline")).closest("[data-raci]") as HTMLElement;
+    const cells = () => within(row).getAllByRole("combobox").filter((b) => b.hasAttribute("data-raci-cell"));
+    const choose = async (cell: HTMLElement, letter: string) => {
+      await user.click(cell);
+      await user.click(await screen.findByRole("option", { name: copy.projects.registers.letters[letter] }));
+    };
+    await choose(cells()[0], "A");
     expect(spec.responsibilities?.[0].accountable).toEqual({ local: "resources", id: "sponsor" });
-    fireEvent.click(cells[1]);
-    fireEvent.click(cells[1]);
+    await choose(cells()[1], "A");
     expect(spec.responsibilities?.[0].accountable).toEqual({ local: "resources", id: "lead" });
     expect(spec.responsibilities?.[0].responsible).toBeUndefined();
+  });
+
+  // Responsibilities are set for roles, so they wait for the roles; a
+  // deliverable is chosen, not typed (#35).
+  it("waits for roles, then names a deliverable from the project's own", async () => {
+    mount({ responsibilities: [] }, <RaciEditor />);
+    expect(await screen.findByText(copy.projects.registers.raciNeedsRoles)).toBeInTheDocument();
   });
 
   // Signing is an event on the line, kept in the record (TAXONOMY.md D52).

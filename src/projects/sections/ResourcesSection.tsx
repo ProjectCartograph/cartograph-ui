@@ -41,6 +41,10 @@ const ROLE_KINDS: ProjectRoleKind[] = [
   "serviceOwner",
 ];
 
+/** The roles a project holds once (engine TAXONOMY.md D61): offered only
+ * while no row holds them. */
+const SINGLE_ROLES = new Set<ProjectRoleKind>(["sponsor", "manager"]);
+
 /** The two roles a charter cannot be handed off without. */
 const REQUIRED_ROLES: { role: ProjectRoleKind; label: string }[] = [
   { role: "sponsor", label: pc.sponsorLabel },
@@ -55,11 +59,14 @@ const REQUIRED_ROLES: { role: ProjectRoleKind; label: string }[] = [
 function RoleRow({
   entry,
   index,
+  taken,
   onUpdate,
   onRemove,
 }: {
   entry: ProjectRole;
   index: number;
+  /** Single roles another row holds: not offered here. */
+  taken: ReadonlySet<ProjectRoleKind>;
   onUpdate: (patch: Partial<ProjectRole>) => void;
   onRemove: () => void;
 }) {
@@ -72,7 +79,7 @@ function RoleRow({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {ROLE_KINDS.map((k) => (
+            {ROLE_KINDS.filter((k) => k === entry.role || !taken.has(k)).map((k) => (
               <SelectItem key={k} value={k}>
                 {pc.roleKind[k] ?? k}
               </SelectItem>
@@ -147,8 +154,14 @@ export function ResourcesSection() {
   function removeAt(idx: number) {
     setResources(resources.filter((_, i) => i !== idx));
   }
+  // A sponsor and a project manager are held once: the add offers
+  // neither once a row holds it, and starts on the first role still free.
+  const takenBy = (except?: number) =>
+    new Set(roleRows.filter(({ r, idx }) => idx !== except && SINGLE_ROLES.has(r.role)).map(({ r }) => r.role));
+  const free = ROLE_KINDS.filter((k) => !takenBy().has(k));
+  const addAs = free.includes(nextRole) ? nextRole : free[0];
   function addRole() {
-    setResources([...resources, { role: nextRole }]);
+    setResources([...resources, { role: addAs }]);
   }
 
   function updateFunding(idx: number, patch: Partial<FundingLine>) {
@@ -203,18 +216,19 @@ export function ResourcesSection() {
             key={idx}
             entry={r}
             index={idx}
+            taken={takenBy(idx)}
             onUpdate={(patch) => updateAt(idx, patch)}
             onRemove={() => removeAt(idx)}
           />
         ))}
 
         <div className="flex items-center gap-2">
-          <Select value={nextRole} onValueChange={(v) => setNextRole(v as ProjectRoleKind)}>
+          <Select value={addAs} onValueChange={(v) => setNextRole(v as ProjectRoleKind)}>
             <SelectTrigger className="w-40" aria-label={pc.roleLabel}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {ROLE_KINDS.map((k) => (
+              {free.map((k) => (
                 <SelectItem key={k} value={k}>
                   {pc.roleKind[k] ?? k}
                 </SelectItem>
@@ -252,7 +266,9 @@ export function ResourcesSection() {
           {funding.length === 0 ? <p className="text-sm text-muted-foreground">{pc.fundingEmpty}</p> : null}
           {funding.map((f, idx) => (
             <div key={idx} className="flex flex-col gap-2 rounded-lg border p-3" data-cartograph-region={`funding-${idx}`}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-end gap-2">
+                <div className="flex w-32 shrink-0 flex-col gap-1">
+                <span className="text-xs text-muted-foreground" aria-hidden="true">{pc.amountLabel}</span>
                 <Input
                   data-cartograph-field={`/spec/funding/${idx}/amount`}
                   type="number"
@@ -260,14 +276,15 @@ export function ResourcesSection() {
                   onChange={(e) => updateFunding(idx, { amount: e.target.value === "" ? undefined : Number(e.target.value) } as Partial<FundingLine>)}
                   
                   aria-label={pc.amountLabel}
-                  className="w-32 shrink-0"
                 />
+                </div>
                 {/* Picked, not typed: a box that takes any three capitals
                     takes a typo, and the list is a published standard. */}
                 {/* Wrapped rather than sized by its own className: the
                     combobox's trigger wrapper is w-full, so a width on the
                     trigger let it eat the row and squeeze Status to 20px. */}
-                <div className="w-28 shrink-0">
+                <div className="flex w-28 shrink-0 flex-col gap-1">
+                  <span className="text-xs text-muted-foreground" aria-hidden="true">{pc.currencyLabel}</span>
                   <Combobox
                     options={CURRENCY_OPTIONS}
                     value={f.currency || undefined}
@@ -279,11 +296,13 @@ export function ResourcesSection() {
                     data-cartograph-field={`/spec/funding/${idx}/currency`}
                   />
                 </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="text-xs text-muted-foreground" aria-hidden="true">{pc.fundingStatusLabel}</span>
                 <Select
                   value={f.status}
                   onValueChange={(v) => updateFunding(idx, { status: v as FundingLine["status"] })}
                 >
-                  <SelectTrigger className="min-w-0 flex-1" aria-label={pc.fundingStatusLabel} data-cartograph-field={`/spec/funding/${idx}/status`}>
+                  <SelectTrigger className="w-full" aria-label={pc.fundingStatusLabel} data-cartograph-field={`/spec/funding/${idx}/status`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -294,6 +313,7 @@ export function ResourcesSection() {
                     ))}
                   </SelectContent>
                 </Select>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
@@ -310,7 +330,8 @@ export function ResourcesSection() {
                   prose, one whose placeholder read like a ledger code
                   nobody could place. The budget is declared once now and
                   carries its own code. */}
-              <div className="pr-9">
+              <div className="flex flex-col gap-1 pr-9">
+                <span className="text-xs text-muted-foreground" aria-hidden="true">{pc.fundingSourceLabel}</span>
                 <ReferencePicker
                   data-cartograph-field={`/spec/funding/${idx}/source`}
                   refKind="FundingSource"
