@@ -71,7 +71,21 @@ export interface KPIDefinitionSpec {
 export interface KPIMeasure {
   source: string;
   agg: MeasureAgg;
+  /** For an analyst: the column added up. */
   expr?: string;
+  /** What is counted or added up, in the definer's words (engine
+   * TAXONOMY.md D63). */
+  counts?: string;
+}
+
+export const WHERE_OPS = ["is", "isNot", "above", "below", "atLeast", "atMost", "oneOf"] as const;
+export type WhereOp = (typeof WHERE_OPS)[number];
+
+/** A condition built from named parts: which rows count. */
+export interface KPIWhere {
+  input: string;
+  op: WhereOp;
+  value: string;
 }
 
 export const MEASURE_AGGS = ["count", "sum", "count_distinct", "average", "min", "max", "median", "sum_boolean"] as const;
@@ -89,6 +103,7 @@ export interface KPIMetric {
   expr?: string;
   uses?: string[];
   filter?: string;
+  where?: KPIWhere[];
 }
 
 export function blankKPISpec(): KPIDefinitionSpec {
