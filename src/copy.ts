@@ -3076,7 +3076,6 @@ export const copy = {
       objectiveAboutUseShort: "Start from this",
       objectiveQualityTitle: "A strong objective",
       objectiveQuality: {
-        aligned: "Aligned",
         qualitative: "No numbers",
       } as Record<string, string>,
       keyResultsTitle: "Key results",

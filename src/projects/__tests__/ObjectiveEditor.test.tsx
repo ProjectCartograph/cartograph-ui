@@ -9,15 +9,19 @@ import { ObjectiveEditor } from "../ObjectiveEditor";
 
 const gc = copy.projects.goals;
 
-function Harness({ initial = "", aligned = 0, about }: { initial?: string; aligned?: number; about?: string }) {
+type Aim = { state: string; message: string; notJudged?: boolean };
+
+function Harness({ initial = "", aim, about }: { initial?: string; aim?: Aim; about?: string }) {
   const [objective, setObjective] = useState(initial);
-  return <ObjectiveEditor objective={objective} about={about} alignedGoals={aligned} onChange={setObjective} data-cartograph-field="/spec/objectives/0/objective" />;
+  return <ObjectiveEditor objective={objective} about={about} aim={aim} onChange={setObjective} data-cartograph-field="/spec/objectives/0/objective" />;
 }
 
 const met = (label: string) => screen.getByText(label).closest("[data-met]")?.getAttribute("data-met");
 
 // The objective is written whole, in the writer's own word order (engine
-// TAXONOMY.md D36), and a mark is met only by what is written.
+// TAXONOMY.md D36). Its one mark is the engine's judgement of the text,
+// shown with the engine's reason; what the project serves is a link, in
+// the checks panel, not a mark of the text (#69).
 describe("the objective", () => {
   it("meets no mark of its text while it is empty", () => {
     render(<Harness />);
@@ -25,17 +29,28 @@ describe("the objective", () => {
   });
 
   it("is one sentence, kept as typed, in any word order", async () => {
-    render(<Harness aligned={1} />);
+    render(<Harness aim={{ state: "ok", message: "Each objective says a change in words, not a figure to reach." }} />);
     const box = document.querySelector('[data-cartograph-field="/spec/objectives/0/objective"]') as HTMLTextAreaElement;
     await userEvent.type(box, "Jedes Depot prüft Lieferungen nach einem Standard, durch Schulung");
     expect(box.value).toBe("Jedes Depot prüft Lieferungen nach einem Standard, durch Schulung");
     expect(met(gc.objectiveQuality.qualitative)).toBe("true");
-    expect(met(gc.objectiveQuality.aligned)).toBe("true");
+    expect(screen.getByText("Each objective says a change in words, not a figure to reach.")).toBeInTheDocument();
   });
 
-  it("is told when it carries a number, which belongs to a key result", async () => {
-    render(<Harness initial="Cut losses to 5 percent" />);
+  it("is told, with the reason, when it reads as a target", () => {
+    const why = "Objective 1 likely reads as a target. Say the change the work makes in words, and put the figure in a key result.";
+    render(<Harness initial="Cut losses to 5 percent" aim={{ state: "warn", message: why }} />);
     expect(met(gc.objectiveQuality.qualitative)).toBe("false");
+    expect(screen.getByText(why)).toBeInTheDocument();
+  });
+
+  it("is neither met nor missed when the model did not judge it, and says why", () => {
+    const why = "Not judged: whether the objective reads as a target rather than a change in words is the decision model's to judge, and it is off (CARTOGRAPH_DECIDE=off).";
+    render(<Harness initial="Every delivery is checked" aim={{ state: "ok", message: why, notJudged: true }} />);
+    const mark = screen.getByText(gc.objectiveQuality.qualitative).closest("[data-met]");
+    expect(mark?.getAttribute("data-met")).toBe("false");
+    expect(mark?.hasAttribute("data-unjudged")).toBe(true);
+    expect(screen.getByText(why)).toBeInTheDocument();
   });
 });
 

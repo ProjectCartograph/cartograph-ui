@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, OctagonAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, CircleDashed, OctagonAlert } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,9 @@ import { ALL_SECTIONS } from "./types";
 
 const cc = copy.projects.checks;
 
-function iconFor(state: string) {
+function iconFor(state: string, neutral = false) {
+  // Advice, or a judgement not made: neither met nor missed.
+  if (neutral) return <CircleDashed className="mt-0.5 size-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />;
   if (state === "ok") return <CheckCircle2 className="cartograph-tick mt-0.5 size-4 shrink-0 text-success/70" />;
   if (state === "block") return <OctagonAlert className="mt-0.5 size-4 shrink-0 text-destructive" />;
   return <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />;
@@ -78,13 +80,20 @@ export function CheckPanel({
 
   const blocked = items.filter((i) => i.state === "block");
   const warned = items.filter((i) => i.state === "warn");
-  const passed = items.filter((i) => i.state === "ok");
+  // Advice from the decision model, and what it did not judge, stand apart
+  // from what is met: neither a fault nor a tick (engine #67).
+  const suggested = items.filter((i) => i.suggestion || i.notJudged);
+  const passed = items.filter((i) => i.state === "ok" && !i.suggestion && !i.notJudged);
   const [showPassed, setShowPassed] = useState(false);
 
   function Line({ item }: { item: (typeof items)[number] }) {
     return (
-      <li className="cartograph-arrive flex items-start gap-2 text-sm">
-        {iconFor(item.state)}
+      <li
+        className={`cartograph-arrive flex items-start gap-2 text-sm ${item.suggestion ? "rounded-md border border-dashed border-foreground/15 px-2 py-1.5 text-muted-foreground" : ""}`}
+        data-suggestion={item.suggestion || undefined}
+        data-not-judged={item.notJudged || undefined}
+      >
+        {iconFor(item.state, !!(item.suggestion || item.notJudged))}
         <span className="flex-1">
           {item.message}
           {item.state !== "ok" && item.fix ? (
@@ -140,6 +149,13 @@ export function CheckPanel({
         <p className="text-sm text-muted-foreground">{cc.none}</p>
       ) : (
         <>
+          {suggested.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {suggested.map((item) => (
+                <Line key={item.id} item={item} />
+              ))}
+            </ul>
+          ) : null}
           {blocked.length + warned.length === 0 ? (
             <p className="text-sm text-muted-foreground">{cc.allDone}</p>
           ) : (

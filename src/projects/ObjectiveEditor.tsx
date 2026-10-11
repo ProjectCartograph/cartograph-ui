@@ -21,7 +21,7 @@ const gc = copy.projects.goals;
 export function ObjectiveEditor({
   objective,
   about,
-  alignedGoals,
+  aim,
   onChange,
   "data-cartograph-field": field,
 }: {
@@ -31,8 +31,10 @@ export function ObjectiveEditor({
   /** What the project is about, from Context: usually the objective too,
    * so it is offered rather than typed again (#57). */
   about?: string;
-  /** How many goals this project serves, for the "Aligned" mark. */
-  alignedGoals: number;
+  /** The engine's judgement of the text (goals-objective-aim): whether it
+   * reads as a change in words rather than a figure, and why. Absent until
+   * there is an objective to judge. */
+  aim?: { state: string; message: string; notJudged?: boolean };
   onChange: (next: string) => void;
 }) {
   const examples = useExamples("objective", gc.objectiveExamples);
@@ -51,12 +53,17 @@ export function ObjectiveEditor({
       setTaken(true);
     }
   }, [written, fits, said, onChange]);
+  // Only what is judged of the text itself: whether it says a change in
+  // words, not a figure to reach, as the engine judges it, with its
+  // reason. What the project serves is a link, in the checks panel.
   const marks: QualityMark[] = [
-    { key: "aligned", label: gc.objectiveQuality.aligned, met: alignedGoals > 0 },
-    // The kind rule: an objective carrying a number is a key result
-    // wearing the wrong hat, and the server refuses it. An empty one has
-    // no numbers, and has nothing else yet either.
-    { key: "qualitative", label: gc.objectiveQuality.qualitative, met: written && !hasDigit(objective) },
+    {
+      key: "qualitative",
+      label: gc.objectiveQuality.qualitative,
+      met: written && aim?.state === "ok" && !aim.notJudged,
+      unjudged: written && !!aim?.notJudged,
+      why: written ? aim?.message : undefined,
+    },
   ];
   return (
     <div className="flex flex-col gap-3">

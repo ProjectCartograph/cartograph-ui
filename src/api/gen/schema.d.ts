@@ -2151,6 +2151,8 @@ export interface components {
             section?: string;
             /** @description The field it is about, as a JSON pointer, where it is one field: what the record must have before it can be merged. */
             path?: string;
+            /** @description True when this is a judgement of meaning the decision model did not make (it is off, or did not answer): the check passes, so it holds nothing up, and its message says why it was not judged. */
+            notJudged?: boolean;
         };
         /** @description A proposal as its person reviews it: every part, in the order they would be saved. A proposal on its own has one part; a set (a KPI, the gap it measures and the outcome that closes it) has one per manifest, accepted or declined together. */
         ProposalReview: {
@@ -2799,6 +2801,8 @@ export interface components {
              */
             state: "ok" | "warn";
             message: string;
+            /** @description True when this is a judgement of meaning the decision model did not make (it is off, or did not answer): the check passes, so it holds nothing up, and its message says why it was not judged. */
+            notJudged?: boolean;
         };
         GoalCheck: {
             id: string;
@@ -2806,6 +2810,8 @@ export interface components {
             state: "ok" | "warn";
             message: string;
             fix?: components["schemas"]["GoalCheckFix"];
+            /** @description True when this is a judgement of meaning the decision model did not make (it is off, or did not answer): the check passes, so it holds nothing up, and its message says why it was not judged. */
+            notJudged?: boolean;
         };
         /** @description Exactly one of yaml or manifest must be supplied. */
         ValidateRequest: {
@@ -2827,6 +2833,10 @@ export interface components {
             state: components["schemas"]["ProjectCheckState"];
             message: string;
             fix: components["schemas"]["ProjectCheckFix"];
+            /** @description True when this is advice from the decision model, offered and never required: the check passes, so it holds nothing up. A project's objective that may not work toward an outcome it serves is one (goals-outcome-fit). */
+            suggestion?: boolean;
+            /** @description True when this is a judgement of meaning the decision model did not make (it is off, or did not answer): the check passes, so it holds nothing up, and its message says why it was not judged. */
+            notJudged?: boolean;
         };
         ProjectChecks: {
             /** @description The end month derived from timeline.start plus every phase's months. */
