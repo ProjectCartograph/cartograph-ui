@@ -2409,6 +2409,8 @@ export const copy = {
     unplaced: "Not placed yet",
     none: (what: string) => `No ${what} yet. Name the first one below.`,
     nameNew: (what: string) => `Name a new ${what}`,
+    notAdded: "It was not added. Try again.",
+    notReached: "Cartograph could not be reached, so it was not added. Check the connection and try again.",
     add: "Add",
     words: { gaps: "gaps", goals: "outcomes", groups: "groups", gap: "gap", goal: "outcome", group: "group", teams: "teams", team: "team" } as Record<string, string>,
     // Part two: what was named in passing, filled in, one at a time.
