@@ -745,7 +745,6 @@ export const copy = {
   rail: {
     graph: "Graph",
     home: "Home",
-    new: "New",
     define: "Define",
     work: "Work",
     administration: "Administration",
