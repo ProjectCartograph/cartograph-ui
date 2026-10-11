@@ -34,6 +34,7 @@ import { Suggested } from "@/components/relevance";
 import { Textarea } from "@/components/ui/textarea";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { useSectionAutosave, useProjectStore } from "../store";
+import { useProjectChecks } from "../api";
 import { ComponentsTable, dependentsOf, KIND_ICON, Marks, useComponentGraph } from "../components/ComponentsTable";
 import { RelationRow } from "../components/Relations";
 import { seg } from "../field";
@@ -472,15 +473,13 @@ export function AlignmentSection() {
 export function MeasuresSection() {
   useSectionAutosave();
   const store = useProjectStore();
+  const checks = useProjectChecks(store.id, true);
   const { data: kpis } = useKPIList();
 
   const [krDialog, setKrDialog] = useState<{ open: boolean; existing?: KeyResult }>({ open: false });
   const [addKpi, setAddKpi] = useState(false);
   const [suggestedKpi, setSuggestedKpi] = useState<string | undefined>(undefined);
 
-  // How many goals this project aligned to, from the step before: the
-  // objective editor marks an objective that names none of them.
-  const goals = store.spec.alignment?.goals ?? [];
   const objective = store.spec.objectives?.[0] ?? { objective: "", keyResults: [] };
   const keyResults = objective.keyResults ?? [];
 
@@ -516,7 +515,7 @@ export function MeasuresSection() {
           data-cartograph-field={`/spec/objectives/${seg(store.spec.objectives?.[0], 0)}/objective`}
           objective={objective.objective}
           about={store.spec.summary?.about}
-          alignedGoals={parent ? 1 : goals.length}
+          aim={checks.data?.items.find((i) => i.id === "goals-objective-aim")}
           onChange={(next) => updateObjective({ objective: next })}
         />
       </Block>

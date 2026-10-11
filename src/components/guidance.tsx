@@ -1,5 +1,5 @@
 import { useExamples } from "@/components/examples";
-import { Check, CircleHelp, Lightbulb } from "lucide-react";
+import { Check, CircleHelp, Lightbulb, CircleDashed } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -164,6 +164,11 @@ export interface QualityMark {
   key: string;
   label: string;
   met: boolean;
+  /** Not judged (the decision model is off or did not answer): neither
+   * met nor missed. */
+  unjudged?: boolean;
+  /** Why it is met, missed or not judged, as the engine says. */
+  why?: string;
 }
 
 /**
@@ -178,17 +183,23 @@ export function QualityMarks({ title, marks }: { title: string; marks: QualityMa
     <div className="flex flex-wrap items-center gap-2 text-xs" data-slot="quality-marks">
       <span className="text-muted-foreground">{title}</span>
       {marks.map((m) => (
-        <span
-          key={m.key}
-          data-met={m.met}
-          className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${
-            m.met
-              ? "bg-success/12 text-success"
-              : "text-muted-foreground ring-1 ring-border"
-          }`}
-        >
-          {m.met ? <Check className="size-3" /> : null}
-          {m.label}
+        <span key={m.key} className="inline-flex items-center gap-2">
+          <span
+            data-met={m.met}
+            data-unjudged={m.unjudged || undefined}
+            className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ${
+              m.met
+                ? "bg-success/12 text-success"
+                : m.unjudged
+                  ? "border border-dashed border-border text-muted-foreground"
+                  : "text-muted-foreground ring-1 ring-border"
+            }`}
+          >
+            {m.met ? <Check className="size-3" /> : m.unjudged ? <CircleDashed className="size-3" aria-hidden="true" /> : null}
+            {m.label}
+          </span>
+          {/* Why, in the engine's words, so a mark is never a bare tick. */}
+          {m.why ? <span className="text-pretty text-muted-foreground" data-slot="quality-why">{m.why}</span> : null}
         </span>
       ))}
     </div>
