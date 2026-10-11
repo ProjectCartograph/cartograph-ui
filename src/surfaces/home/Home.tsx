@@ -90,7 +90,7 @@ export function Home() {
           {hc.reading}
         </p>
       ) : read.data ? (
-        <Answer key={read.submittedAt} u={read.data} name={nameFrom(read.variables ?? "")} order={order.data} />
+        <Answer key={read.submittedAt} u={read.data} text={read.variables ?? ""} name={nameFrom(read.variables ?? "")} order={order.data} />
       ) : next ? (
         <Link
           to="/new"
@@ -113,7 +113,7 @@ export function Home() {
 /** What already says it, and where to define it: the record that says
  * it, opened, or the flows likeliest to define it, each opening with what
  * was typed. The person chooses the flow; the model only orders them. */
-function Answer({ u, name, order }: { u: Understanding; name: string; order: Order | undefined }) {
+function Answer({ u, text, name, order }: { u: Understanding; text: string; name: string; order: Order | undefined }) {
   const strong = u.matches.find((m) => m.by === "model");
   const offered = u.routes.map((r) => r.key);
   const rest = FLOW_KEYS.filter((k) => !offered.includes(k));
@@ -161,7 +161,7 @@ function Answer({ u, name, order }: { u: Understanding; name: string; order: Ord
             ))}
           </ul>
         </div>
-        <Link to="/new" className="self-start text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+        <Link to="/new" search={{ text }} className="self-start text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
           {hc.notSure}
         </Link>
       </div>
