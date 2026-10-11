@@ -146,10 +146,10 @@ function SpecCell({
       );
     }
     default:
-      // A data source's semantic model reads as the dbt model it is on.
-      if (field.name === "semanticModel" && value && typeof value === "object") {
-        const model = (value as { model?: string }).model;
-        return model ? <code className="text-xs">{model}</code> : dash;
+      // A data source's metrics read as their names.
+      if (field.name === "metrics" && Array.isArray(value)) {
+        const names = (value as { name?: string }[]).map((m) => m.name).filter(Boolean);
+        return names.length ? <TruncatedText text={names.join(", ")} /> : dash;
       }
       return <TruncatedText text={typeof value === "string" ? value : value ? JSON.stringify(value) : ""} />;
   }

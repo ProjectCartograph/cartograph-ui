@@ -52,6 +52,9 @@ export type OrderStage = Schemas["OrderStage"];
 export type GlossaryEntry = Schemas["GlossaryEntry"];
 export type Understanding = Schemas["Understanding"];
 export type Match = Schemas["Match"];
+/** What a data source metric's aggregation reads as, or why it does not
+ * (engine TAXONOMY.md D64). */
+export type AggregationReading = Schemas["AggregationReading"];
 export type Relevance = Schemas["Relevance"];
 export type IdeaReading = Schemas["IdeaReading"];
 export type DecisionModel = Schemas["DecisionModel"];
@@ -398,6 +401,8 @@ export interface Client {
   decisionModel(): Promise<DecisionModel>;
   /** The existing records of a kind that say what a text says. */
   match(kind: string, text: string, level?: string): Promise<Match[]>;
+  /** What a data source metric's aggregation reads as, or why not. */
+  readAggregation(text: string): Promise<AggregationReading>;
   /** Which part of a gap each piece of work addresses. */
   gapCoverage(id: string): Promise<GapCoverage>;
   /** A reporting cycle's periods that overlap two months (YYYY-MM), as

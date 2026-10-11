@@ -285,6 +285,7 @@ export function httpClient(
     decisionModel: () => answer(wire.GET("/decision-model")),
     fromIdea: (kind, idea) => answer(wire.POST("/from-idea", { body: { kind, idea } })),
     match: (kind, text, level) => answer(wire.POST("/match", { body: { kind, text, ...(level ? { level } : {}) } })),
+    readAggregation: (text) => answer(wire.POST("/aggregations/read", { body: { text } })),
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
     cyclePeriods: (id, from, to) =>
       answer(wire.GET("/manifests/ReportingCycle/{id}/periods", { params: { path: { id }, query: { from, to } } })),

@@ -1027,7 +1027,8 @@ export const copy = {
         note: "Note",
       },
       DataSource: {
-        semanticModel: "In the warehouse",
+        records: "One entry is",
+        metrics: "Metrics",
         name: "Name",
         category: "Category",
         provenance: "Provenance",
@@ -1107,7 +1108,8 @@ export const copy = {
         note: "Anything else worth knowing about this budget.",
       },
       DataSource: {
-        semanticModel: "Where its rows are in the warehouse, as a dbt semantic model, so the KPIs read from it can be built as dbt metrics. Leave it empty if it is not in a warehouse.",
+        records: "Describe one entry of this source, so its metrics read clearly. For example: one delivery checked against the standard at a depot's intake.",
+        metrics: "List the numbers this source gives, so every indicator read from it counts the same way. Which warehouse model holds them is set outside Cartograph.",
         category: "What kind of source it is.",
         provenance: "Whether your organisation runs it or someone else does.",
         team: "Your team that uses it and is responsible for it.",
@@ -1848,26 +1850,21 @@ export const copy = {
     },
   },
   // A data source as a dbt semantic model (engine TAXONOMY.md D57).
-  semanticModel: {
-    model: "dbt model",
-    modelHint: "The dbt model its rows are in, as ref() names it.",
-    entity: "One row is",
-    entityHint: "What one row is, such as delivery_check.",
-    key: "Row key",
-    keyHint: "The column that identifies a row. Leave it empty when it has the entity's name.",
-    time: "Date column",
-    timeHint: "The column with the date each row is counted at.",
-    grain: "Finest by",
-    grains: { day: "Day", week: "Week", month: "Month", quarter: "Quarter", year: "Year" } as Record<string, string>,
-    dimensions: "Split by",
-    dimensionsHint: "The columns a KPI read from it may be split by.",
-    dimensionName: "Name",
-    dimensionColumn: "Column, when it differs",
-    dimensionSegment: "Segment",
-    noSegment: "No segment",
-    removeDimension: "Remove this split",
-    addDimension: "Split",
-    addDimensionHint: "Add a column it may be split by",
+  // A data source's metrics, each written as an aggregation (engine
+  // TAXONOMY.md D64).
+  sourceMetrics: {
+    name: "Name",
+    description: "What it is",
+    descriptionHint: "Describe the number in words, for whoever maps it to the warehouse.",
+    aggregation: "Aggregation",
+    aggregationHint:
+      "Write one aggregate over this source's own fields: COUNT(*) for every entry, COUNT(DISTINCT field), SUM(field), AVG(field), MIN(field) or MAX(field). Add WHERE and a condition when only some entries count, such as COUNT(*) WHERE passed = true. Name no table and no join: those belong to the warehouse.",
+    suggestions: "Suggestions",
+    remove: "Remove",
+    removeHint: (name: string) => `Remove ${name ? `the metric ${name}` : "this metric"}`,
+    add: "Metric",
+    addHint: "Add a number this source gives",
+    none: "No metrics yet.",
   },
   kpis: {
     // How a KPI is computed, in the dbt semantic layer's terms (engine
@@ -1875,8 +1872,16 @@ export const copy = {
     metric: {
       step: "Metric",
       heading: "How it is computed",
-      subtitle: "How the number is worked out from its sources, so an analytics engineer can build it in the warehouse as it is written here.",
+      subtitle: "Choose the metric its data source gives, or one out of another for a share. Each data source says how its metrics are counted.",
       noSources: "Add the data sources it is read from under Definition first: every count is made in one of them.",
+      // The source metrics it is computed from (engine TAXONOMY.md D64).
+      ofLabel: "Its number",
+      ofRatioLabel: "What is counted",
+      outOfLabel: "Out of",
+      sourceMetricHint: "Choose one of the metrics its data sources give. To count something they do not give yet, add it as a metric on the data source.",
+      chooseMetric: "Choose a metric",
+      noMetrics: (source: string) => `${source} gives no metrics yet: add them on the data source.`,
+      legacy: "This number was written in the warehouse's terms. Choose a metric from its data sources to replace it.",
       typeLabel: "Kind of number",
       typeHint: "Pick the shape of the number: a count, a share of something, a running total, or one worked out from other indicators.",
       types: {
