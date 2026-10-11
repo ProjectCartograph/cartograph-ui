@@ -24,14 +24,15 @@ function node(id: string, name: string, level: string, children: GoalTree["nodes
 function mount(level: "goal" | "objective" | "outcome", name: string, tree: GoalTree) {
   const saveVersion = vi.fn(async () => ({}) as never);
   const onDone = vi.fn();
+  const onParentAdded = vi.fn();
   render(
     <ClientProvider client={fakeClient({ saveVersion })}>
       <QueryClientProvider client={new QueryClient()}>
-        <PlaceGoal level={level} name={name} tree={tree} onDone={onDone} />
+        <PlaceGoal level={level} name={name} tree={tree} onDone={onDone} onParentAdded={onParentAdded} />
       </QueryClientProvider>
     </ClientProvider>,
   );
-  return { saveVersion, onDone };
+  return { saveVersion, onDone, onParentAdded };
 }
 
 const saved = (call: unknown[]) => {
@@ -65,6 +66,32 @@ describe("placing a goal from the home page", () => {
     await waitFor(() => expect(saveVersion).toHaveBeenCalledTimes(2));
     expect(saved(saveVersion.mock.calls[1])).toEqual({ id: "depot-staff-apply-the-standard-alike", name: "Depot staff apply the standard alike", level: "outcome", parent: "hold-every-depot-to-one-standard" });
     expect(onDone).toHaveBeenCalledWith("depot-staff-apply-the-standard-alike");
+  });
+
+  // The tree has objectives, but none is the right place: a new one is
+  // added, and under it a new goal, then the outcome under both (#62).
+  it("chains a new objective and a new goal above a new outcome", async () => {
+    const { saveVersion, onDone, onParentAdded } = mount("outcome", "Members are paid within a week", {
+      levels: ["Goal", "Objective", "Outcome"],
+      nodes: [node("raise-produce-quality", "Raise produce quality", "goal", [node("one-standard", "One standard", "objective")])],
+    });
+    fireEvent.click(screen.getByRole("button", { name: pc.newParent("Objective") }));
+    fireEvent.change(screen.getByLabelText(pc.name), { target: { value: "Pay members on time" } });
+    fireEvent.click(screen.getByRole("button", { name: pc.newParent("Goal") }));
+    fireEvent.change(screen.getByLabelText(pc.name), { target: { value: "Members earn a fair living" } });
+    fireEvent.click(screen.getByRole("button", { name: pc.add }));
+    await screen.findByText(pc.then("Pay members on time", "Goal"));
+    fireEvent.click(screen.getByRole("button", { name: pc.add }));
+    await screen.findByText(pc.title("Outcome"));
+    fireEvent.click(screen.getByRole("button", { name: pc.add }));
+    await waitFor(() => expect(saveVersion).toHaveBeenCalledTimes(3));
+    expect(saveVersion.mock.calls.map(saved)).toEqual([
+      { id: "members-earn-a-fair-living", name: "Members earn a fair living", level: "goal", parent: undefined },
+      { id: "pay-members-on-time", name: "Pay members on time", level: "objective", parent: "members-earn-a-fair-living" },
+      { id: "members-are-paid-within-a-week", name: "Members are paid within a week", level: "outcome", parent: "pay-members-on-time" },
+    ]);
+    expect(onParentAdded.mock.calls.map((c) => c[0].level)).toEqual(["goal", "objective"]);
+    expect(onDone).toHaveBeenCalledWith("members-are-paid-within-a-week");
   });
 
   it("lets the person change the level the model offered", async () => {

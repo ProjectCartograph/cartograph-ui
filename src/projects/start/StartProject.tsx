@@ -16,6 +16,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { useGoalTree } from "@/surfaces/goals/api";
 import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
+import { HorizonPicker } from "@/surfaces/goals/HorizonPicker";
+import { levelName } from "@/surfaces/goals/levels";
+import type { GoalLevel } from "@/surfaces/goals/types";
 import { FlowBack, FlowNav, FlowNext, WalkerProgress, WalkerQuestion, WalkerStep } from "@/components/walker";
 import { DidYouMean } from "@/components/DidYouMean";
 import { STEPS as TOUR_STEPS } from "@/tour/steps";
@@ -41,6 +44,8 @@ interface Created {
   kind: "Gap" | "Goal" | "BeneficiaryGroup" | "Team";
   id: string;
   name: string;
+  /** A goal's level: an objective or goal is added as a new outcome's parent. */
+  level?: GoalLevel;
 }
 
 const ALL_STEPS = ["about", "gaps", "goals", "groups", "team", "details", "ready"] as const;
@@ -133,7 +138,12 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
 
   // What was named in passing and is still chosen is filled in before
   // the project is named: naming it is the commit, and comes last.
-  const toFill = created.filter((c) => c.kind !== "Team" && (c.kind === "Gap" ? gaps : c.kind === "Goal" ? goals : groups).includes(c.id) && !filled.has(c.id));
+  // A new outcome's new objective or goal is filled in too: it is in the
+  // tree now, chosen or not (#62).
+  const isParent = (c: Created) => c.kind === "Goal" && !!c.level && c.level !== "outcome";
+  const toFill = created.filter(
+    (c) => c.kind !== "Team" && (isParent(c) || (c.kind === "Gap" ? gaps : c.kind === "Goal" ? goals : groups).includes(c.id)) && !filled.has(c.id),
+  );
   // Set while rendering, not in an effect, so the step never shows an
   // empty box for a render before the suggestion arrives.
   if (step === "ready" && !suggested) {
@@ -464,11 +474,12 @@ function PickOutcomes({
             fixedLevel
             name={placing}
             tree={tree.data}
+            onParentAdded={(p) => onCreated?.({ kind: "Goal", id: p.id, name: p.name, level: p.level })}
             onDone={(id) => {
               const named = placing;
               setPlacing(null);
               if (id) {
-                onCreated?.({ kind: "Goal", id, name: named ?? id });
+                onCreated?.({ kind: "Goal", id, name: named ?? id, level: "outcome" });
                 onChange([...selected, id]);
               }
             }}
@@ -690,6 +701,20 @@ function FillOne({ item, outcomes, last, onSaved }: { item: Created; outcomes: s
   const client = useClient();
   const queryClient = useQueryClient();
   const goalNames = useReferenceOptions("Goal");
+  const levels = useGoalTree().data?.levels;
+  const level: GoalLevel = item.level ?? "outcome";
+  // What the record still lacks, as the engine reads it through the change
+  // set: a horizon is asked only where nothing above it holds one, so a
+  // new goal is asked and an objective under it, once it has one, is not.
+  const checks = useQuery({
+    queryKey: ["start-fill-checks", item.id],
+    queryFn: () => client.checks("Goal", item.id),
+    enabled: item.kind === "Goal",
+    staleTime: 0,
+    retry: false,
+  });
+  const askHorizon = item.kind === "Goal" && !!checks.data?.some((c) => c.id === "horizon" && c.state === "warn");
+  const [horizon, setHorizon] = useState({ start: "", end: "" });
   const [a, setA] = useState("");
   const [b, setB] = useState("");
   const [closes, setCloses] = useState<string[]>(outcomes);
@@ -711,6 +736,7 @@ function FillOne({ item, outcomes, last, onSaved }: { item: Created; outcomes: s
         if (closes.length) spec.outcomes = closes;
       } else if (item.kind === "Goal") {
         spec.objective = a.trim();
+        if (askHorizon && horizon.start && horizon.end) spec.horizon = horizon;
       } else {
         spec.description = a.trim();
       }
@@ -738,7 +764,7 @@ function FillOne({ item, outcomes, last, onSaved }: { item: Created; outcomes: s
     <>
       <div className="flex flex-col gap-1">
         <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {sc.fillKind[item.kind]}
+          {item.kind === "Goal" ? levelName(level, levels) : sc.fillKind[item.kind]}
           <span className="cartograph-new inline-flex items-center gap-1 rounded-full px-2 py-0.5 normal-case tracking-normal text-foreground">
             <Sparkles className="size-3.5 text-new" aria-hidden="true" />
             {copy.common.isNew}
@@ -775,7 +801,16 @@ function FillOne({ item, outcomes, last, onSaved }: { item: Created; outcomes: s
           ) : null}
         </>
       ) : item.kind === "Goal" ? (
-        field("fill-outcome", sc.outcomeStatement, sc.outcomeHint, a, setA, 120, true)
+        <>
+          {field("fill-outcome", sc.statement[level], sc.statementHint[level], a, setA, 120, true)}
+          {askHorizon ? (
+            <div className="flex flex-col gap-2" data-slot="fill-horizon">
+              <p className="text-lg font-semibold tracking-tight">{sc.horizon}</p>
+              <p className="text-sm text-muted-foreground">{sc.horizonHint(levelName(level, levels))}</p>
+              <HorizonPicker start={horizon.start} end={horizon.end} onChange={(start, end) => setHorizon({ start, end })} canInherit={false} data-cartograph-field="/spec/horizon" />
+            </div>
+          ) : null}
+        </>
       ) : (
         field("fill-group", sc.groupDescription, sc.groupHint, a, setA, 240, true)
       )}
