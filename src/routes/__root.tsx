@@ -59,6 +59,7 @@ import { TourEntry } from "@/tour/TourEntry";
 import { useActiveChangeSet } from "@/changesets/useActive";
 import { MergeBar } from "@/changesets/MergeBar";
 import { CreateMenu } from "@/components/CreateMenu";
+import { RecentVisits } from "@/surfaces/home/Recent";
 
 const defineItems = [
   {
@@ -625,6 +626,7 @@ function RootLayout() {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
+            <RecentVisits />
             <CreateMenu />
             <WorkingIn />
             {unlisted ? null : <MergeBar />}

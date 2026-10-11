@@ -13,6 +13,7 @@ import { manifestLink } from "@/proposals/links";
 import { FLOW_KEYS, flowLink, nameFrom } from "./flows";
 import { onboarded, useNewWorkspace } from "@/onboarding/firstRun";
 import { LeftToDo } from "./LeftToDo";
+import { Recent } from "./Recent";
 import { TourInvite } from "@/tour/TourInvite";
 
 const hc = copy.home;
@@ -53,7 +54,7 @@ export function Home() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pt-[12vh] pb-12" data-cartograph-region="home">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pt-10 pb-12" data-cartograph-region="home">
       <h1 className="text-center text-3xl font-semibold tracking-tight">{hc.title}</h1>
       <form
         className="flex flex-col gap-2 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-foreground/10 transition-shadow duration-150 ease-standard focus-within:shadow-md focus-within:ring-foreground/20"
@@ -104,6 +105,8 @@ export function Home() {
       ) : null}
       {/* What was started and not finished, while nothing is being asked. */}
       {read.data || read.isPending ? null : <LeftToDo />}
+      {/* What this person opened last, one click away (#58). */}
+      {read.data || read.isPending ? null : <Recent />}
       {/* Someone new to a workspace others started is offered the tour. */}
       {read.data || read.isPending || isNew ? null : <TourInvite />}
     </div>
