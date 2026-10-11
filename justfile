@@ -45,6 +45,27 @@ sync-contract version:
 dev: deps
     npm run dev
 
+# Builds in the test environment, then runs the engine's `just stack`
+# serving this build: Cartograph and the Laya sidecar in containers, on a
+# fresh copy of the example, kept nowhere. CARTOGRAPH_ENGINE is the engine
+# checkout (../cartograph-engine by default).
+# Run this build on the whole stack locally, for testing
+stack:
+    #!{{toolchain}} bash
+    set -euo pipefail
+    engine=$(cd "${CARTOGRAPH_ENGINE:-../cartograph-engine}" && pwd)
+    out=${XDG_CACHE_HOME:-$HOME/.cache}/cartograph-stack/ui-dist
+    rm -rf "$out" && mkdir -p "$out"
+    # The environment's copy is not the host's: the build comes out as a tar.
+    scripts/dev sh -c 'just build >&2 && tar -C dist -cf - . | base64 -w0' | base64 -d | tar -xf - -C "$out"
+    just --justfile "$engine/justfile" --working-directory "$engine" stack "$out"
+
+# Stop the stack and drop everything it held
+stack-down:
+    #!{{toolchain}} bash
+    engine=$(cd "${CARTOGRAPH_ENGINE:-../cartograph-engine}" && pwd)
+    just --justfile "$engine/justfile" --working-directory "$engine" stack-down
+
 # Drive this build headless against an engine already serving it (README: The smoke test); Chromium is $CHROMIUM or chromium on PATH
 smoke url="http://127.0.0.1:8080" *args="":
     node scripts/smoke.mjs {{url}} {{args}}
