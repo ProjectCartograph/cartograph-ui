@@ -18,7 +18,9 @@ const schemaDir = path.resolve(
 function specProperties(kind: string): string[] {
   const file = path.join(schemaDir, `${kind.toLowerCase()}.schema.json`);
   const doc = JSON.parse(readFileSync(file, "utf8"));
-  return Object.keys(doc.properties.spec.properties ?? {});
+  // A deprecated property is read, never shown, so it needs no copy.
+  const props: Record<string, { description?: string }> = doc.properties.spec.properties ?? {};
+  return Object.keys(props).filter((p) => !String(props[p].description ?? "").startsWith("Deprecated"));
 }
 
 describe("every directory field a person can see has copy", () => {

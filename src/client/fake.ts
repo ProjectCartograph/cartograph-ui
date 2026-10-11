@@ -24,6 +24,7 @@ const every: Record<keyof Client, true> = {
   decisionModel: true,
   fromIdea: true,
   match: true,
+  readAggregation: true,
   gapCoverage: true,
   cyclePeriods: true,
   deleteGoal: true,

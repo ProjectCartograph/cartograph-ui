@@ -61,7 +61,9 @@ export function isSheetKind(kind: string): kind is SheetKind {
  *
  * The name is metadata.name, the Sheet's first column and the dialog's
  * first field. spec.name, which once held it a second time, is deprecated
- * (engine 2.6.0): read from an old manifest, never shown or written.
+ * (engine 2.6.0): read from an old manifest, never shown or written. So is
+ * any property the contract marks deprecated, such as a data source's dbt
+ * semantic model (engine TAXONOMY.md D64).
  */
 export function parseSpecFields(schemaDoc: JSONSchemaDoc | undefined): FieldDef[] {
   const specSchema = schemaDoc?.properties?.spec;
@@ -69,7 +71,7 @@ export function parseSpecFields(schemaDoc: JSONSchemaDoc | undefined): FieldDef[
   const properties: Record<string, JSONSchemaDoc> = specSchema.properties ?? {};
   const required: string[] = specSchema.required ?? [];
   return Object.keys(properties)
-    .filter((name) => name !== "name")
+    .filter((name) => name !== "name" && !String(properties[name]?.description ?? "").startsWith("Deprecated"))
     .map((name) => {
       const prop = properties[name];
       return { name, required: required.includes(name), ...classify(prop) };
