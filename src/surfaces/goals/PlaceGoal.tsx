@@ -1,5 +1,6 @@
 import { useId, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 
 import { useClient } from "@/client/context";
 import type { GoalTree } from "@/client/port";
@@ -43,6 +44,8 @@ type Props = {
   onDone: (id?: string) => void;
   /** The level is settled by where the person is (a project's outcomes). */
   fixedLevel?: boolean;
+  /** Each parent added on the way, before the one the person came with. */
+  onParentAdded?: (p: { id: string; name: string; level: GoalLevel }) => void;
 };
 
 /**
@@ -50,7 +53,9 @@ type Props = {
  * tree needs it: under the level above, picked on the tree itself. Where
  * there is nothing at that level yet, the order of work says to define it
  * first (TAXONOMY.md D28), so the parent is added here and the one the
- * person came with follows under it. Either can be left unplaced instead
+ * person came with follows under it. So does one at any level the tree
+ * has no right place for yet: an outcome under a new objective, and that
+ * objective under a new goal (#62). Either can be left unplaced instead
  * (D35): defined now, placed later.
  *
  * In the page where the person already is, it is a panel of the page
@@ -89,14 +94,16 @@ const PanelFrame: Frame = ({ title, description, children }) => (
   </section>
 );
 
-export function PlaceGoalForm({ level, name, tree, onDone, fixedLevel = false, frame = PanelFrame }: Props & { frame?: Frame }) {
+export function PlaceGoalForm({ level, name, tree, onDone, fixedLevel = false, onParentAdded, frame = PanelFrame }: Props & { frame?: Frame }) {
   const client = useClient();
   const queryClient = useQueryClient();
   const ids = useId();
-  // The goal being added now, and the one waiting on it.
+  // The goal being added now, and those waiting on it, the nearest last:
+  // an outcome waits on its new objective, which waits on its new goal.
   // parentName is set for a parent added here, before the tree has it.
   const [now, setNow] = useState({ level, name, parent: "", parentName: "" });
-  const [waiting, setWaiting] = useState<{ level: GoalLevel; name: string } | null>(null);
+  const [stack, setStack] = useState<{ level: GoalLevel; name: string }[]>([]);
+  const waiting = stack.at(-1) ?? null;
   const [problems, setProblems] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   // Left unplaced (TAXONOMY.md D35): null when it is being placed; else
@@ -128,8 +135,9 @@ export function PlaceGoalForm({ level, name, tree, onDone, fixedLevel = false, f
     setUnplaced(null);
     if (waiting) {
       // The parent just added, placed or not, is where the waiting one goes.
+      onParentAdded?.({ id, name: trimmed, level: now.level });
       setNow({ level: waiting.level, name: waiting.name, parent: id, parentName: trimmed });
-      setWaiting(null);
+      setStack(stack.slice(0, -1));
       return;
     }
     onDone(id);
@@ -137,7 +145,7 @@ export function PlaceGoalForm({ level, name, tree, onDone, fixedLevel = false, f
 
   function parentFirst() {
     if (!parentLevel) return;
-    setWaiting({ level: now.level, name: now.name });
+    setStack([...stack, { level: now.level, name: now.name }]);
     setUnplaced(null);
     setNow({ level: parentLevel, name: "", parent: "", parentName: "" });
   }
@@ -180,7 +188,7 @@ export function PlaceGoalForm({ level, name, tree, onDone, fixedLevel = false, f
           onUse={(m) => {
             if (waiting) {
               setNow({ level: waiting.level, name: waiting.name, parent: m.id, parentName: m.name });
-              setWaiting(null);
+              setStack(stack.slice(0, -1));
               return;
             }
             onDone(m.id);
@@ -203,6 +211,11 @@ export function PlaceGoalForm({ level, name, tree, onDone, fixedLevel = false, f
           <div className="flex flex-col gap-1.5">
             <Label id={`${ids}-parent`}>{pc.parent(word(parentLevel))}</Label>
             <GoalTreePicker tree={tree} level={now.level} value={parent} onChange={(p) => setNow({ ...now, parent: p })} name={now.name} labelledBy={`${ids}-parent`} />
+            {/* None of them is the right place: a new one, added first. */}
+            <Button type="button" variant="outline" size="sm" className="self-start" onClick={parentFirst} data-slot="new-parent">
+              <Plus />
+              {pc.newParent(word(parentLevel))}
+            </Button>
           </div>
         ) : null}
         {orphan && parentLevel && unplaced === null ? (

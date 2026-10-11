@@ -1321,6 +1321,7 @@ export const copy = {
           `${capital(an(level))} ${level.toLowerCase()} goes under ${an(parentLevel)} ${parentLevel.toLowerCase()}, and you have none yet. Add one first.`,
         under: (parentLevel: string, name: string) => `Under the ${parentLevel.toLowerCase()} "${name}".`,
         first: (parentLevel: string) => `Add ${an(parentLevel)} ${parentLevel.toLowerCase()} first`,
+        newParent: (parentLevel: string) => `New ${parentLevel.toLowerCase()}`,
         then: (name: string, parentLevel: string) => `Then "${name}" goes under this ${parentLevel.toLowerCase()}.`,
         taken: "One with this name already exists. Choose another name.",
         // Defined now, placed later (engine TAXONOMY.md D35).
@@ -2422,8 +2423,20 @@ export const copy = {
     gapDesired: "How should they be?",
     gapDesiredHint: "How things should be.",
     gapOutcomes: "Which of the project's outcomes would close it?",
-    outcomeStatement: "What will be true once it is met?",
-    outcomeHint: "What is true for people once it is met, not a task.",
+    // What each level states, by the level of the goal named here (#62).
+    statement: {
+      goal: "State the lasting aim this goal sets",
+      objective: "State the change this objective brings about",
+      outcome: "State what will be true once this outcome is met",
+    } as Record<string, string>,
+    statementHint: {
+      goal: "Write the direction your Organization works toward, broad enough to hold several objectives. For example: members earn a fair living from what they grow.",
+      objective: "Write, in one sentence, the change its outcomes make happen together. For example: produce reaches buyers in the grade it was sold at.",
+      outcome: "Write a condition, not a task: what people will have, do or experience, starting with who. For example: members are paid within a week of delivery.",
+    } as Record<string, string>,
+    horizon: "Set when work on it starts and when it should be reached",
+    horizonHint: (level: string) =>
+      `Nothing above this ${level.toLowerCase()} sets a time frame yet, so it needs its own. Choose a year at each end, and a month only if it matters.`,
     groupDescription: "Who are they?",
     groupHint: "Who is in this group and who is not.",
     fillNext: "Next",
