@@ -122,6 +122,34 @@ describe("finishing what was named in passing", () => {
   // A new outcome is placed in the page, on the tree, and may go under an
   // objective not placed yet; what is not placed yet is listed to choose
   // from, so nothing named disappears (TAXONOMY.md D35).
+  // A refused save is said under the field, never a button that seems to
+  // do nothing (#60).
+  it("says why a new name was not added", async () => {
+    const client = fakeClient({
+      list: async () => [] as never,
+      goalTree: async () => tree as never,
+      relevant: async () => ({ available: false, matches: [] }),
+      saveVersion: async () => {
+        throw new TypeError("Failed to fetch");
+      },
+    });
+    render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <StartProject />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    fireEvent.change(screen.getByLabelText(sc.aboutQuestion), { target: { value: "Check every delivery at intake." } });
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(`${sc.next}|${sc.skip}`) }));
+    await screen.findByRole("heading", { name: sc.gapsQuestion });
+    fireEvent.change(screen.getByLabelText(sc.nameNew(sc.words.gap)), { target: { value: "Depots check differently" } });
+    fireEvent.click(screen.getByRole("button", { name: sc.add }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(sc.notReached);
+    // What was typed stays, to try again.
+    expect(screen.getByLabelText(sc.nameNew(sc.words.gap))).toHaveValue("Depots check differently");
+  });
+
   it("places a new outcome on the tree in the page, and lists what is not placed", async () => {
     const saveVersion = vi.fn(async () => ({ number: 1 }) as never);
     const loose = { id: "cut-loss", name: "Cut loss after picking", level: "objective", keyResults: 0, aligned: {}, smart: {}, children: [] };

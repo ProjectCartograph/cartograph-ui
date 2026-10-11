@@ -6,6 +6,7 @@ import { ArrowRight, Check, PencilLine, Plus, Rocket, Sparkles } from "lucide-re
 
 import { aliasFor } from "@/alias";
 import { useClient } from "@/client/context";
+import { ClientError } from "@/client/port";
 import type { GoalTree } from "@/client/port";
 import { ChipPicker, type ChipItem } from "@/components/ChipPicker";
 import { Suggested, WorkTextProvider } from "@/components/relevance";
@@ -566,13 +567,19 @@ function Choose({
 function NameNew({ label, onAdd, kind, level, onUse }: { label: string; onAdd: (name: string) => Promise<void>; kind: string; level?: string; onUse: (id: string) => void }) {
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);
+  // Why a name was not added, said under the field: a failed save that
+  // shows nothing reads as a button that does nothing (#60).
+  const [error, setError] = useState<string | null>(null);
   async function submit() {
     const v = value.trim();
     if (!v) return;
     setBusy(true);
+    setError(null);
     try {
       await onAdd(v);
       setValue("");
+    } catch (e) {
+      setError(e instanceof ClientError ? (e.problems[0]?.message ?? sc.notAdded) : sc.notReached);
     } finally {
       setBusy(false);
     }
@@ -593,6 +600,11 @@ function NameNew({ label, onAdd, kind, level, onUse }: { label: string; onAdd: (
           {sc.add}
         </Button>
       </form>
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
       {/* Already there under another spelling: chosen, not named twice. */}
       <DidYouMean
         kind={kind}
