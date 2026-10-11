@@ -737,6 +737,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/aggregations/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a data source metric's aggregation reads as, or why it does not
+         * @description A metric's aggregation is pseudocode SQL (TAXONOMY.md D64): one aggregate function over a field or every entry, with an optional WHERE on the source's own fields. The answer says it in words, with the fields it names and the measure a semantic layer builds from it; or the problem and where it is, such as a FROM or a JOIN, which belong to the warehouse model. Read only: nothing is saved.
+         */
+        post: operations["readAggregation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/glossary": {
         parameters: {
             query?: never;
@@ -2140,6 +2160,21 @@ export interface components {
             took: string;
             /** @description Why it decided without asking. */
             why: string;
+        };
+        /** @description What an aggregation reads as (reading, names, agg, expr), or why it does not (problem, at): one or the other. */
+        AggregationReading: {
+            /** @description What it says, in words. */
+            reading?: string;
+            /** @description The fields it names, each once, in the order written. */
+            names: string[];
+            /** @description The measure's aggregation, in the semantic layer's words. */
+            agg?: string;
+            /** @description The expression it aggregates, its condition folded in as a CASE WHEN. */
+            expr?: string;
+            /** @description Why it does not read as an aggregation, in words. */
+            problem?: string;
+            /** @description Where in the text the problem is, as a byte offset. */
+            at?: number;
         };
         /** @description One thing a manifest still needs, as every kind reports it: met (ok), advice (warn), or a block on a handoff (block). */
         ManifestCheck: {
@@ -4183,6 +4218,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Match"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    readAggregation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    text: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AggregationReading"];
                 };
             };
             401: components["responses"]["Unauthenticated"];
