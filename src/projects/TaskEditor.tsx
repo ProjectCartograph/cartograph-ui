@@ -40,7 +40,7 @@ function TaskRow({
   onAddRole: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <span className="flex h-5 shrink-0 items-center justify-center rounded-md bg-muted px-1 text-[11px] tabular-nums text-muted-foreground">
         {code}
       </span>

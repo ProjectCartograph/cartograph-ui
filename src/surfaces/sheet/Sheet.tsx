@@ -272,7 +272,7 @@ export function Sheet({ kind, initialName, adding }: { kind: SheetKind; initialN
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <h1 className="flex items-center gap-1.5 text-2xl font-semibold tracking-tight">
             {kindLabel}

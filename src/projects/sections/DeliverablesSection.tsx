@@ -100,7 +100,7 @@ export function DeliverablesSection() {
 
           {/* The register: who owns it, when it is due and the evidence
               it was accepted (engine TAXONOMY.md D49). */}
-          <div className="grid gap-3 pl-9 sm:grid-cols-2" data-slot="deliverable-register">
+          <div className="grid gap-3 pl-0 sm:grid-cols-2 sm:pl-9 [&>*]:min-w-0" data-slot="deliverable-register">
             <Labelled label={dc.owner}>
               <RoleRefPicker
                 value={d.owner}

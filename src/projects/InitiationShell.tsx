@@ -249,7 +249,8 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
     <FromIdeaProvider kind="Project" idea={spec.summary.idea}>
     <div className="flex flex-col gap-4">
       <ProjectHeaderBar />
-      <div className="flex items-start justify-between gap-4">
+      {/* On a phone the heading takes the width and its links go under it. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{pc.stages[stage]}</h1>
           <p className="text-muted-foreground text-pretty">{pc.stageQuestion[stage]}</p>

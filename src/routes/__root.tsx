@@ -597,7 +597,7 @@ function RootLayout() {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset className="min-w-0">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4" data-cartograph-region="header">
+          <header className="flex h-14 shrink-0 items-center gap-2 overflow-x-auto border-b px-4 [scrollbar-width:none]" data-cartograph-region="header">
             {/* On a phone the rail slides in over the page, so its
                 toggle is here too. */}
             <SidebarTrigger className="-ml-1 md:hidden" />
