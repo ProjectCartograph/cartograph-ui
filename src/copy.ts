@@ -14,6 +14,13 @@ export const copy = {
   // The home page: one question, read against the taxonomy and the record
   // (engine docs/adr/0023).
   home: {
+    recent: {
+      title: "Opened recently",
+      justNow: "just now",
+      minutes: (n: number) => `${n} min ago`,
+      hours: (n: number) => `${n} h ago`,
+      days: (n: number) => `${n} day${n === 1 ? "" : "s"} ago`,
+    },
     // What was started and not finished (surfaces/home/leftToDo).
     left: {
       title: "Pick up where you left off",
@@ -745,7 +752,6 @@ export const copy = {
   rail: {
     graph: "Graph",
     home: "Home",
-    new: "New",
     define: "Define",
     work: "Work",
     administration: "Administration",

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldHeading } from "@/components/guidance";
 import { copy } from "@/copy";
+import { nameFrom } from "@/surfaces/home/flows";
 import { KPIAddDialog } from "@/kpis/KPIAddDialog";
 import { useGoalTree } from "@/surfaces/goals/api";
 import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
@@ -31,14 +32,17 @@ export function PreparePage() {
   return <Prepare kind="Project" partOf={projectRoute.useSearch().partOf} />;
 }
 
+const programmeRoute = getRouteApi("/programmes/prepare");
+const portfolioRoute = getRouteApi("/portfolios/prepare");
+
 /** Preparing a programme. */
 export function PrepareProgrammePage() {
-  return <Prepare kind="Programme" />;
+  return <Prepare kind="Programme" idea={programmeRoute.useSearch().idea} />;
 }
 
 /** Preparing a portfolio. */
 export function PreparePortfolioPage() {
-  return <Prepare kind="Portfolio" />;
+  return <Prepare kind="Portfolio" idea={portfolioRoute.useSearch().idea} />;
 }
 
 interface Item {
@@ -94,10 +98,14 @@ function wordOf(i: Item): string {
  * can be started at any point. Preparing makes the walk a matter of
  * picking; it is never a gate (engine TAXONOMY.md D34).
  */
-export function Prepare({ kind, partOf }: { kind: PreparedKind; partOf?: boolean }) {
+export function Prepare({ kind, partOf, idea: typed }: { kind: PreparedKind; partOf?: boolean; idea?: string }) {
   const navigate = useNavigate();
   const items = ITEMS[kind];
-  const [state, setState] = useState(() => load(kind));
+  // What was typed before choosing, where nothing is kept yet.
+  const [state, setState] = useState(() => {
+    const kept = load(kind);
+    return typed && !kept.idea.trim() ? { ...kept, idea: typed } : kept;
+  });
   const [open, setOpen] = useState<string | null>(null);
   const seen = new Set(state.seen);
   const current = open ?? items.map(keyOf).find((k) => !seen.has(k)) ?? null;
@@ -113,8 +121,9 @@ export function Prepare({ kind, partOf }: { kind: PreparedKind; partOf?: boolean
     setOpen(null);
   }
   function start() {
-    if (kind === "Programme") return void navigate({ to: "/programmes/new", search: {} });
-    if (kind === "Portfolio") return void navigate({ to: "/portfolios/new", search: {} });
+    const named = state.idea.trim() ? { name: nameFrom(state.idea) } : {};
+    if (kind === "Programme") return void navigate({ to: "/programmes/new", search: named });
+    if (kind === "Portfolio") return void navigate({ to: "/portfolios/new", search: named });
     const about = state.idea.trim().split(/(?<=[.!?])\s|\n/)[0]?.slice(0, 300) ?? "";
     const idea = state.idea.trim().slice(0, 1000);
     void navigate({ to: "/projects/start", search: { ...(partOf ? { partOf: true } : {}), ...(about ? { about } : {}), ...(idea ? { idea } : {}) } });

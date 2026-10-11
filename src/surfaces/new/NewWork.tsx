@@ -42,7 +42,7 @@ const WHERE: Record<string, string> = {
  * under one sponsor and one budget (D14). It opens once the strategy has an
  * outcome for the work to serve.
  */
-export function NewWork() {
+export function NewWork({ text }: { text?: string } = {}) {
   const client = useClient();
   const order = useQuery({ queryKey: ["order"], queryFn: () => client.order() });
   const stages = new Map((order.data?.stages ?? []).map((s) => [s.key, s]));
@@ -67,7 +67,7 @@ export function NewWork() {
       <section className="flex flex-col gap-3" aria-label={nc.work} data-cartograph-region="new-work">
         <h2 className="text-base font-medium">{nc.work}</h2>
         <p className="text-sm text-muted-foreground">{copy.whichKind.hint}</p>
-        <WhichKindChoice />
+        <WhichKindChoice text={text} />
       </section>
     </div>
   );

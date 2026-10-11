@@ -7,7 +7,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { Archive, BookOpen, Bot, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest, BriefcaseBusiness } from "lucide-react";
+import { Archive, BookOpen, Bot, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest, BriefcaseBusiness } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -59,6 +59,7 @@ import { TourEntry } from "@/tour/TourEntry";
 import { useActiveChangeSet } from "@/changesets/useActive";
 import { MergeBar } from "@/changesets/MergeBar";
 import { CreateMenu } from "@/components/CreateMenu";
+import { RecentVisits } from "@/surfaces/home/Recent";
 
 const defineItems = [
   {
@@ -494,14 +495,6 @@ function RootLayout() {
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip={copy.rail.new}>
-                      <Link to="/new">
-                        <Plus />
-                        <span>{copy.rail.new}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                   {defineItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild tooltip={item.title}>
@@ -633,6 +626,7 @@ function RootLayout() {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
+            <RecentVisits />
             <CreateMenu />
             <WorkingIn />
             {unlisted ? null : <MergeBar />}
