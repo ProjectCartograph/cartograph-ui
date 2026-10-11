@@ -2476,6 +2476,11 @@ export const copy = {
     needed: "Needed for the handover",
     ready: (n: number) => (n === 0 ? "None yet" : n === 1 ? "1 ready" : `${n} ready`),
     relevant: "Relevant to your idea",
+    // What already exists, read before adding another (#73).
+    existing: "Already defined",
+    existingFilter: (what: string) => `Find among the ${what}`,
+    existingMore: (n: number) => `${n} more: narrow the list to find them`,
+    existingNoMatch: "Nothing matches.",
     add: "Add one",
     define: "Define one",
     plannedService: "Add a planned service",

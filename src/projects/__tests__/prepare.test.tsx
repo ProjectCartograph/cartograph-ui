@@ -80,3 +80,33 @@ describe("before a project's walk", () => {
     });
   });
 });
+
+// What is already defined is listed in the open item, each read in place
+// before another is added (#73).
+describe("what is already defined", () => {
+  it("lists the existing ones, and shows one in place", async () => {
+    const teams = [
+      { kind: "Team", id: "quality-team", name: "Quality Team", version: 1, updatedOn: "2026-01-01T00:00:00Z" },
+      { kind: "Team", id: "depot-team", name: "Depot Network Team", version: 1, updatedOn: "2026-01-01T00:00:00Z" },
+    ];
+    const client = fakeClient({
+      list: (async (kind: string) => (kind === "Team" ? teams : [])) as never,
+      get: (async (kind: string, id: string) => ({ version: { number: 1 }, manifest: { apiVersion: "cartograph/v1", kind, metadata: { id, name: "Quality Team" }, spec: { purpose: "Checks every delivery." } } })) as never,
+      goalTree: async () => ({ levels: ["Goal", "Objective", "Outcome"], nodes: [] }),
+      relevant: async () => ({ available: false, matches: [] }),
+      getGuide: (async () => undefined) as never,
+    });
+    render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <Prepare kind="Programme" />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    const list = await screen.findByRole("region", { name: pc.existing });
+    expect(within(list).getByText("Depot Network Team")).toBeInTheDocument();
+    fireEvent.click(within(list).getByRole("button", { name: "Quality Team" }));
+    expect(within(list).getByRole("button", { name: "Quality Team" })).toHaveAttribute("aria-expanded", "true");
+    expect(await within(list).findAllByText("Quality Team")).not.toHaveLength(0);
+  });
+});
