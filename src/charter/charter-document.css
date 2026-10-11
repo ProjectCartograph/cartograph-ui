@@ -1,0 +1,65 @@
+/* The charter as a document, edited where it is read (#75): one page,
+   sections one after another, as the PDF prints them. */
+.charter-doc {
+  margin-inline: auto;
+  max-width: 52rem;
+  border-radius: 0.75rem;
+  background: var(--card);
+  padding: 2.5rem 3rem;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 8%, transparent);
+  outline: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+}
+@media (max-width: 640px) {
+  .charter-doc { padding: 1.25rem 1rem; }
+}
+.charter-doc section { scroll-margin-top: 6rem; border-radius: 0.5rem; }
+.charter-doc section + section { margin-top: 2rem; }
+.charter-doc h2 { display: flex; align-items: center; gap: 0.375rem; font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+.charter-doc h3 { font-size: 0.9375rem; font-weight: 600; margin: 1rem 0 0.25rem; }
+.charter-doc .lead { font-size: 1.0625rem; margin-bottom: 0.75rem; }
+.charter-doc dl { display: grid; grid-template-columns: minmax(8rem, 12rem) 1fr; gap: 0.25rem 1rem; margin: 0.5rem 0; }
+.charter-doc dl.facts { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.75rem 1.25rem; padding: 0.75rem 1rem; border-radius: 0.5rem; background: var(--muted); }
+.charter-doc dl.facts > div { display: flex; flex-direction: column; }
+.charter-doc dt { color: var(--muted-foreground); font-size: 0.8125rem; }
+.charter-doc dd { margin: 0; }
+.charter-doc table { width: 100%; border-collapse: collapse; margin: 0.5rem 0; font-size: 0.875rem; }
+.charter-doc th { text-align: left; font-size: 0.75rem; font-weight: 500; color: var(--muted-foreground); padding: 0.25rem 0.5rem; border-bottom: 1px solid var(--border); }
+.charter-doc td { padding: 0.375rem 0.5rem; border-bottom: 1px solid color-mix(in oklab, var(--border) 60%, transparent); vertical-align: top; }
+.charter-doc ul { padding-left: 1.25rem; list-style: disc; }
+.charter-doc .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.charter-doc .label { font-size: 0.75rem; color: var(--muted-foreground); }
+.charter-doc .note, .charter-doc .empty-part { font-size: 0.8125rem; color: var(--muted-foreground); }
+
+/* What can be written: no box, only the cursor's own cue on hover. */
+.charter-doc [data-field],
+.charter-doc [data-source] { border-radius: 0.25rem; transition: background-color 150ms ease; outline: none; }
+.charter-doc [data-field][contenteditable] { cursor: text; }
+.charter-doc [data-field]:not([contenteditable]),
+.charter-doc [data-source] { cursor: pointer; }
+.charter-doc [data-field]:hover,
+.charter-doc [data-source]:hover { background: color-mix(in oklab, var(--muted) 80%, transparent); }
+.charter-doc [data-field]:focus-visible,
+.charter-doc [data-field][contenteditable]:focus,
+.charter-doc [data-source]:focus-visible { background: color-mix(in oklab, var(--primary) 7%, transparent); box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 25%, transparent); }
+/* A value worked out from others reads as it is, a dotted line under it
+   saying it opens what it comes from. */
+.charter-doc [data-source] { text-decoration: underline dotted color-mix(in oklab, var(--muted-foreground) 60%, transparent); text-underline-offset: 3px; }
+/* An empty place to write shows what to do there. */
+.charter-doc [data-empty]:empty::before { content: attr(data-placeholder); color: var(--muted-foreground); opacity: 0.7; }
+.charter-doc [data-empty]:empty { display: inline-block; min-width: 6rem; }
+
+/* A list's next item, and a row's way out, appear where they act. */
+.charter-doc [data-add] { margin: 0.25rem 0 0; }
+.charter-doc [data-add] button { font-size: 0.8125rem; color: var(--muted-foreground); border-radius: 0.25rem; padding: 0 0.25rem; }
+.charter-doc [data-add] button:hover { color: var(--foreground); background: var(--muted); }
+.charter-doc [data-remove] { opacity: 0; color: var(--muted-foreground); padding: 0 0.25rem; border-radius: 0.25rem; transition: opacity 150ms ease; }
+.charter-doc tr:hover [data-remove],
+.charter-doc li:hover [data-remove],
+.charter-doc [data-remove]:focus-visible { opacity: 1; }
+.charter-doc [data-remove]:hover { color: var(--destructive); background: var(--muted); }
+.charter-doc td.remove-cell { width: 1.5rem; border-bottom: none; }
+@media (prefers-reduced-motion: reduce) {
+  .charter-doc [data-field], .charter-doc [data-source], .charter-doc [data-remove] { transition: none; }
+}
