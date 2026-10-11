@@ -1783,6 +1783,28 @@ export const copy = {
       close: "Close",
       noneYet: "None yet.",
       nothingYet: "Nothing here yet.",
+      // Fields in a source panel whose key alone would not say what to
+      // write, by list.key or key (#78).
+      fields: {
+        "kpis.kpi": "KPI",
+        "kpis.reason": "Why this project moves this KPI",
+        "resources.role": "Role in the project",
+        "resources.resource": "Who holds it",
+        "funding.source": "Funding source",
+        "funding.amount": "Amount",
+        "funding.status": "Status of the funding",
+        "costs.category": "What the cost is for",
+        "mandate.title": "What gives the authority",
+        "mandate.kind": "Kind of authority",
+        "milestones.name": "Milestone",
+        "milestones.timing": "When",
+        reason: "Why",
+        note: "Note",
+        owner: "Who owns it",
+        confirmedBy: "Who confirms it",
+      } as Record<string, string>,
+      // A list a value is worked out from, as the panel names it.
+      lists: { kpis: "KPIs it moves", resources: "roles of the project", escalationRoute: "escalation route", events: "events recorded" } as Record<string, string>,
     },
   },
   framework: {

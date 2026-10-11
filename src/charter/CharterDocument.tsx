@@ -57,6 +57,10 @@ export function CharterDocument({
   const queries = useQueryClient();
   const parts = useQuery({ queryKey: ["charter-parts", id], queryFn: () => client.charterParts(id) });
   const record = useQuery({ queryKey: ["charter-parts", id, "record"], queryFn: () => client.charterParts(id, { record: true }) });
+  // What the sections hold (the components diagram, the triangle, chips)
+  // styled as the charter styles them, its colour variables renamed to the
+  // page's own (#77).
+  const style = useQuery({ queryKey: ["charter-parts-style"], queryFn: () => client.charterPartsStyle(), staleTime: Infinity });
   // Read again a moment after the draft changes, for everyone in the
   // change set: their edits and this person's alike.
   useEffect(() => {
@@ -98,6 +102,7 @@ export function CharterDocument({
 
   return (
     <article className="charter-doc" data-cartograph-region="charter-document" aria-label={copy.charter.title}>
+      {style.data ? <style>{`.charter-doc { ${style.data.replaceAll("var(--", "var(--charter-")} }`}</style> : null}
       {parts.data.map((part, i) => (
         <Section
           key={`${part.title}-${i}`}
@@ -165,9 +170,18 @@ function decorate(root: HTMLElement, act: Actions) {
   root.querySelectorAll<HTMLElement>("[data-field]").forEach((el) => {
     const path = el.dataset.field!;
     const editor = act.editorOf(path);
-    const label = labelOf(el);
+    // A part of a sentence (a problem's who, what, why) is named by what
+    // belongs there, and edited beside the sentence, never typed into it.
+    const part = el.hasAttribute("data-part");
+    const hint = el.dataset.hint ?? "";
+    const label = part ? hint.charAt(0).toUpperCase() + hint.slice(1) : labelOf(el);
     el.dataset.label = label;
-    if (isText(editor)) {
+    if (part) {
+      el.setAttribute("role", "button");
+      el.tabIndex = 0;
+      el.setAttribute("aria-label", dc.change(label));
+      el.dataset.placeholder = hint;
+    } else if (isText(editor)) {
       el.setAttribute("contenteditable", "plaintext-only");
       el.spellcheck = true;
       el.setAttribute("role", "textbox");

@@ -35,6 +35,14 @@ const parts: CharterPart[] = [
     empty: false,
   },
   {
+    title: "Problem, as a sentence",
+    step: "aim",
+    anchor: "s4",
+    html: '<p class="problem-statement"><span data-field="/spec/summary/problems/0/groups" data-part="" data-hint="who it affects"><span class="mention">Depot staff</span></span> <span data-field="/spec/summary/problems/0/problem/situation" data-part="" data-hint="what goes wrong for them">depots grade produce differently</span>.</p>',
+    fields: ["/spec/summary/problems/0/groups", "/spec/summary/problems/0/problem/situation"],
+    empty: false,
+  },
+  {
     title: "Key risks",
     step: "risks",
     anchor: "s3",
@@ -109,7 +117,7 @@ describe("the charter as a document", () => {
     await user.click(await screen.findByRole("button", { name: dc.source("Start") }));
     const panel = screen.getByRole("group", { name: "Start" });
     expect(within(panel).getByText(dc.from("Start", "milestones"))).toBeInTheDocument();
-    const name = within(panel).getByRole("textbox", { name: "Name" });
+    const name = within(panel).getByRole("textbox", { name: copy.charter.doc.fields["milestones.name"] });
     await user.clear(name);
     await user.type(name, "Pilot begins");
     fireEvent.blur(name);
@@ -123,5 +131,38 @@ describe("the charter as a document", () => {
     expect((latest.summary as { problems: unknown[] }).problems).toHaveLength(2);
     await user.click(screen.getAllByRole("button", { name: dc.remove })[0]);
     expect(latest.risks).toEqual([]);
+  });
+});
+
+// A problem reads as a sentence; each part opens beside it, never typed
+// into (cartograph-engine#79).
+describe("a problem as a sentence", () => {
+  it("opens a part to change it, and keeps the sentence untyped", async () => {
+    const user = userEvent.setup();
+    mount();
+    const part = await screen.findByRole("button", { name: dc.change("What goes wrong for them") });
+    expect(part).not.toHaveAttribute("contenteditable");
+    await user.click(part);
+    const box = within(screen.getByRole("group", { name: "What goes wrong for them" })).getByRole("textbox");
+    await user.clear(box);
+    await user.type(box, "Depots grade alike{Enter}");
+    expect((latest.summary as { problems: { problem: { situation: string } }[] }).problems[0].problem.situation).toBe("Depots grade alike");
+  });
+});
+
+// A source panel names each item and says what to write; a measured
+// target is built as its step builds it (#78, #79).
+describe("the charter's editors", () => {
+  it("names what a field is for, KPI in capitals, codes as written", async () => {
+    const { wordsOf } = await import("../words");
+    expect(wordsOf("kpi")).toBe("KPI");
+    expect(wordsOf("USD")).toBe("USD");
+    expect(wordsOf("atClosing")).toBe("At closing");
+    expect(copy.charter.doc.fields["kpis.reason"]).not.toBe("Reason");
+  });
+
+  it("builds a success criterion's target", async () => {
+    const { editorAt } = await import("../schemaAt");
+    expect(editorAt(undefined, "/spec/successCriteria/0/standard")).toEqual({ kind: "standard" });
   });
 });

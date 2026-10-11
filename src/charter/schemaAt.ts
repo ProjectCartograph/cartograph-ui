@@ -27,6 +27,7 @@ export type Editor =
   | { kind: "number" }
   | { kind: "date"; month: boolean }
   | { kind: "timing" }
+  | { kind: "standard" }
   | { kind: "flag" }
   | { kind: "record" }
   | { kind: "list" };
@@ -52,6 +53,10 @@ export function schemaAt(doc: Schema | undefined, pointer: string): Schema | und
 
 /** The editor a value at a pointer needs. */
 export function editorAt(doc: Schema | undefined, pointer: string): Editor {
+  // A measured success criterion's target is built, as its step builds it:
+  // a comparison, a number and a unit, or words (#79). A criterion of
+  // compliance has none; the engine offers no place to write one.
+  if (/\/successCriteria\/\d+\/standard$/.test(pointer)) return { kind: "standard" };
   const s = schemaAt(doc, pointer);
   if (!s) return { kind: "text", long: false };
   if (typeof s["x-cartograph-ref"] === "string") return { kind: "ref", refKind: s["x-cartograph-ref"] };
