@@ -2418,11 +2418,13 @@ export const copy = {
     fillTitle: "You named new items for this project. Let's fill them in.",
     fillLeft: (n: number) => (n === 1 ? "1 left" : `${n} left`),
     fillKind: { Gap: "Gap", Goal: "Outcome", BeneficiaryGroup: "Group" } as Record<string, string>,
-    gapCurrent: "How are things now?",
-    gapCurrentHint: "How things are today.",
-    gapDesired: "How should they be?",
-    gapDesiredHint: "How things should be.",
-    gapOutcomes: "Which of the project's outcomes would close it?",
+    gapCurrent: "Describe how things are now",
+    gapCurrentHint:
+      "Write what happens today that falls short, as someone would see it. Say who is affected, and how often or how much if you know. For example: two in five deliveries are graded after they leave the depot.",
+    gapDesired: "Describe how things should be",
+    gapDesiredHint:
+      "Write the same situation as it should be, measured the same way where you can, so the difference between the two is the gap. For example: every delivery is graded before it leaves the depot.",
+    gapOutcomes: "Choose the outcomes that would close this gap",
     // What each level states, by the level of the goal named here (#62).
     statement: {
       goal: "State the lasting aim this goal sets",
@@ -2437,8 +2439,9 @@ export const copy = {
     horizon: "Set when work on it starts and when it should be reached",
     horizonHint: (level: string) =>
       `Nothing above this ${level.toLowerCase()} sets a time frame yet, so it needs its own. Choose a year at each end, and a month only if it matters.`,
-    groupDescription: "Who are they?",
-    groupHint: "Who is in this group and who is not.",
+    groupDescription: "Describe who is in this group",
+    groupHint:
+      "Write who belongs in it and who does not, so anyone can tell whether a person counts. For example: members who delivered at least once this season, not their buyers.",
     fillNext: "Next",
     editName: "Edit the name",
     fillDone: "Done",
