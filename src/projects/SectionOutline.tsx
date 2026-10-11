@@ -75,8 +75,8 @@ const typing = (el: EventTarget | null) =>
 
 /**
  * Where a long stage goes, from the keyboard (#32): an outline of its
- * headings, kept in view, each a jump; Alt+Down and Alt+Up (or J and K
- * when not typing) move a section and put the cursor in its first field;
+ * headings, kept in view, each a jump; Alt+Right and Alt+Left (or Alt+L
+ * and Alt+H, or J and K when not typing) move a section and put the cursor in its first field;
  * Ctrl+Enter takes the next step. Reading one section and writing in
  * another no longer means reaching for the mouse to scroll.
  */
@@ -101,10 +101,14 @@ export function SectionOutline({ root, onNext }: { root: RefObject<HTMLElement |
       const el = root.current;
       if (!el) return;
       const plain = !e.altKey && !e.ctrlKey && !e.metaKey && !typing(e.target);
-      if ((e.altKey && e.key === "ArrowDown") || (plain && e.key === "j")) {
+      // Alt with the arrows, or with H and L as in vim (by the key, since
+      // Option+H types a letter on a Mac); J and K when not typing. Taken
+      // from the browser, which would otherwise go back or forward.
+      const alt = e.altKey && !e.ctrlKey && !e.metaKey;
+      if ((alt && (e.key === "ArrowRight" || e.code === "KeyL")) || (plain && e.key === "j")) {
         e.preventDefault();
         jump(el, 1);
-      } else if ((e.altKey && e.key === "ArrowUp") || (plain && e.key === "k")) {
+      } else if ((alt && (e.key === "ArrowLeft" || e.code === "KeyH")) || (plain && e.key === "k")) {
         e.preventDefault();
         jump(el, -1);
       } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && onNext) {

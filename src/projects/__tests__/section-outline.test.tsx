@@ -39,8 +39,14 @@ describe("moving through a stage", () => {
     for (const h of document.querySelectorAll("h2")) {
       h.getBoundingClientRect = () => ({ top: tops[h.textContent ?? ""] ?? 0 }) as DOMRect;
     }
-    fireEvent.keyDown(document.body, { key: "ArrowDown", altKey: true });
+    // Alt+Right moves on a section, and the browser does not go forward.
+    expect(fireEvent.keyDown(document.body, { key: "ArrowRight", altKey: true })).toBe(false);
     expect(screen.getByRole("textbox", { name: "Amount" })).toHaveFocus();
+    // Alt+L as in vim, by the key, whatever letter Option types on a Mac.
+    expect(fireEvent.keyDown(document.body, { key: "¬", code: "KeyL", altKey: true })).toBe(false);
+    // Alt+Left and Alt+H go back a section, never back a page.
+    expect(fireEvent.keyDown(document.body, { key: "ArrowLeft", altKey: true })).toBe(false);
+    expect(fireEvent.keyDown(document.body, { key: "˙", code: "KeyH", altKey: true })).toBe(false);
     fireEvent.keyDown(document.body, { key: "Enter", ctrlKey: true });
     expect(onNext).toHaveBeenCalled();
   });

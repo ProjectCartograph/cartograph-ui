@@ -2801,7 +2801,7 @@ export const copy = {
     outline: {
       label: "Sections of this stage",
       onThisPage: "On this page:",
-      keys: "Alt+Down and Alt+Up move a section, J and K when not typing. Ctrl+Enter takes the next step.",
+      keys: "Alt+Right and Alt+Left move a section. Ctrl+Enter takes the next step.",
     },
     // The seven stages of the walk (engine TAXONOMY.md D33), each named
     // for what it settles, with the sentence that says so.
