@@ -11,6 +11,7 @@ import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
 import { useRelevant } from "@/components/useRelevant";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FieldHeading } from "@/components/guidance";
 import { copy } from "@/copy";
@@ -20,6 +21,7 @@ import { useGoalTree } from "@/surfaces/goals/api";
 import { PlaceGoalForm } from "@/surfaces/goals/PlaceGoal";
 import { SheetAddDialog } from "@/surfaces/sheet/InlineSheetAdd";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
+import { RecordPreview } from "@/records/RecordPreview";
 
 const pc = copy.prepare;
 const projectRoute = getRouteApi("/projects/prepare");
@@ -168,38 +170,29 @@ export function Prepare({ kind, partOf, idea: typed }: { kind: PreparedKind; par
   );
 }
 
-/** How many of a kind exist, for a goal at its level. */
-function useCount(i: Item): number {
+/** What already exists for an item: the records of its kind, or the goals
+ * at its level (a portfolio's: goals and objectives, never outcomes). */
+function useExisting(i: Item): { id: string; name: string }[] {
   const refs = useReferenceOptions(i.kind === "Goal" ? "Team" : i.kind);
   const tree = useGoalTree();
   return useMemo(() => {
-    if (i.kind !== "Goal") return refs.data?.options.length ?? 0;
-    let n = 0;
-    const walk = (ns: { level: string; children: unknown[] }[]) => {
+    if (i.kind !== "Goal") return (refs.data?.options ?? []).map((o) => ({ id: o.value, name: o.label }));
+    const out: { id: string; name: string }[] = [];
+    const walk = (ns: { id: string; name: string; level: string; children?: unknown[] }[]) => {
       for (const node of ns) {
-        if (node.level === i.level) n++;
-        walk(node.children as { level: string; children: unknown[] }[]);
+        if (i.level ? node.level === i.level : node.level !== "outcome") out.push({ id: node.id, name: node.name });
+        walk((node.children ?? []) as never);
       }
     };
     walk((tree.data?.nodes ?? []) as never);
-    if (!i.level) {
-      // A portfolio's: goals and objectives, never outcomes.
-      let all = 0;
-      const every = (ns: { level: string; children: unknown[] }[]) => {
-        for (const node of ns) {
-          if (node.level !== "outcome") all++;
-          every(node.children as { level: string; children: unknown[] }[]);
-        }
-      };
-      every((tree.data?.nodes ?? []) as never);
-      return all;
-    }
-    return n;
+    walk((tree.data?.unplaced ?? []) as never);
+    return out;
   }, [i, refs.data, tree.data]);
 }
 
 function PrepareRow({ item, isOpen, seen, onOpen, onDone }: { item: Item; isOpen: boolean; seen: boolean; onOpen: () => void; onDone: () => void }) {
-  const count = useCount(item);
+  const existing = useExisting(item);
+  const count = existing.length;
   const word = wordOf(item);
   const Mark = seen ? Check : isOpen ? ChevronRight : CircleDashed;
   if (!isOpen) {
@@ -230,6 +223,7 @@ function PrepareRow({ item, isOpen, seen, onOpen, onDone }: { item: Item; isOpen
       </div>
       <p className="text-sm text-muted-foreground text-pretty">{item.guide}</p>
       <RelevantHere item={item} />
+      <Existing kind={item.kind} what={word} records={existing} />
       <div className="flex flex-wrap items-center gap-2">
         <AddOne item={item} onAdded={onDone} />
         <Button type="button" variant="ghost" onClick={onDone}>
@@ -240,6 +234,53 @@ function PrepareRow({ item, isOpen, seen, onOpen, onDone }: { item: Item; isOpen
     </div>
   );
 }
+
+/** What is already defined, to read before adding another: each one
+ * opens in place, the record as its own page shows it, and a long list
+ * narrows as a name is typed. */
+function Existing({ kind, what, records }: { kind: string; what: string; records: { id: string; name: string }[] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  if (records.length === 0) return null;
+  const shown = records.filter((r) => r.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const first = shown.slice(0, LIST);
+  return (
+    <section className="flex flex-col gap-2" aria-label={pc.existing} data-slot="prepare-existing">
+      <p className="text-xs font-medium text-muted-foreground">{pc.existing}</p>
+      {records.length > LIST ? (
+        <Input value={q} onChange={(e) => setQ(e.target.value)} aria-label={pc.existingFilter(what.toLowerCase())} className="h-8 sm:max-w-64" />
+      ) : null}
+      <ul className="flex flex-col divide-y rounded-lg ring-1 ring-foreground/10">
+        {first.map((r) => {
+          const on = open === r.id;
+          return (
+            <li key={r.id}>
+              <button
+                type="button"
+                aria-expanded={on}
+                onClick={() => setOpen(on ? null : r.id)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors duration-150 ease-standard hover:bg-muted/60"
+              >
+                <ChevronRight className={`size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 ${on ? "rotate-90" : ""}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate">{r.name}</span>
+              </button>
+              {on ? (
+                <div className="border-t bg-muted/30 px-3 py-3 animate-in fade-in duration-150">
+                  <RecordPreview kind={kind} id={r.id} />
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      {shown.length === 0 ? <p className="text-xs text-muted-foreground">{pc.existingNoMatch}</p> : null}
+      {shown.length > LIST ? <p className="text-xs text-muted-foreground">{pc.existingMore(shown.length - LIST)}</p> : null}
+    </section>
+  );
+}
+
+/** How many are listed before the list asks to be narrowed. */
+const LIST = 8;
 
 /** What already exists that is relevant to the idea, so a person sees it
  * is there before adding another. */
