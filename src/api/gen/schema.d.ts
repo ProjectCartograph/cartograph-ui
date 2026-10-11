@@ -446,6 +446,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/charter/parts.css": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The styling of what a charter's sections hold
+         * @description Chips, the components diagram, the schedule chart and the iron triangle as the charter styles them, for an interface drawing the charter as parts in a page of its own. It reads the charter's colour variables (--fg, --muted, --line, --soft, --paper, --accent, --accent-soft, --ok, --warn, --bad, --sans), which the page sets.
+         */
+        get: operations["getCharterPartsStyle"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/Project/{id}/charter/parts": {
         parameters: {
             query?: never;
@@ -3697,6 +3717,28 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getCharterPartsStyle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/css": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getProjectCharterParts: {

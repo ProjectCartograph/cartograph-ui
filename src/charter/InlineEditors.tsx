@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
+import { StandardPicker } from "@/projects/StandardPicker";
 import { TimingField } from "@/projects/TimingField";
 import type { Timing } from "@/projects/types";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
@@ -86,6 +87,13 @@ export function FieldEditor({
           {renderParty(value, onChange)}
         </div>
       );
+    case "standard":
+      return (
+        <div>
+          {heading}
+          <StandardPicker value={typeof value === "string" ? value : ""} onChange={(v) => onChange(v || undefined)} data-cartograph-field={field} />
+        </div>
+      );
     case "timing":
       return <TimingField value={value as Timing | undefined} onChange={(v) => onChange(v)} field={field ?? ""} label={label} />;
     case "number":
@@ -115,8 +123,8 @@ export function FieldEditor({
       return (
         <div>
           {heading}
-          {long ? (
-            <Textarea aria-label={label} defaultValue={text} rows={2} onBlur={(e) => onChange(e.target.value.trim() || undefined)} />
+          {long || !compact ? (
+            <Textarea aria-label={label} defaultValue={text} rows={2} autoFocus={!compact} onBlur={(e) => onChange(e.target.value.trim() || undefined)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), e.currentTarget.blur(), onDone?.())} />
           ) : (
             <Input aria-label={label} defaultValue={text} onBlur={(e) => onChange(e.target.value.trim() || undefined)} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
           )}
@@ -151,6 +159,22 @@ function RefList({ refKind, value, label, onChange }: { refKind: string; value: 
 /** What names an item in a list, for its heading in a source panel. */
 const NAME_KEYS = ["name", "title", "metric", "statement", "description", "action", "category", "label"];
 
+/** A field in a source panel, labelled by what to write there where its
+ * key alone would not say (#78), else its key in words. */
+function labelOf(list: string, key: string): string {
+  return dc.fields[`${list}.${key}`] ?? dc.fields[key] ?? wordsOf(key);
+}
+
+/** An item's heading: its name, or the name of the record it names (a
+ * KPI, a funding source, a resource), or its place in the list. */
+function ItemHeading({ item, refs, n }: { item: Record<string, unknown>; refs: { key: string; kind: string }[]; n: number }) {
+  const first = refs.find((r) => typeof item[r.key] === "string" && item[r.key]);
+  const names = useReferenceOptions(first?.kind ?? "Team").data?.names;
+  const own = NAME_KEYS.map((k) => item[k]).find((v) => typeof v === "string" && v) as string | undefined;
+  const named = first ? names?.get(item[first.key] as string) : undefined;
+  return <p className="text-xs font-medium">{own ?? named ?? `${n + 1}`}</p>;
+}
+
 /**
  * What a worked-out value comes from, edited where it is shown: a start
  * date's milestones, a budget's funding lines. Each item with its own
@@ -173,7 +197,8 @@ export function SourceEditor({
 }) {
   const value = getAt(spec, path);
   const s = schemaAt(schema as never, path);
-  const where = wordsOf(path.split("/").filter((k) => !/^\d+$/.test(k)).pop() ?? "").toLowerCase();
+  const list = path.split("/").filter((k) => !/^\d+$/.test(k)).pop() ?? "";
+  const where = (dc.lists[list] ?? wordsOf(list)).toLowerCase();
   const items: { at: string; item: Record<string, unknown> }[] = Array.isArray(value)
     ? value.map((item, i) => ({ at: `${path}/${i}`, item: (item ?? {}) as Record<string, unknown> }))
     : value && typeof value === "object"
@@ -185,17 +210,18 @@ export function SourceEditor({
       <p className="pr-6 text-xs font-medium text-muted-foreground">{dc.from(label, where)}</p>
       {items.length === 0 ? <p className="text-xs text-muted-foreground">{dc.noneYet}</p> : null}
       {items.map(({ at, item }, n) => {
-        const name = NAME_KEYS.map((k) => item[k]).find((v) => typeof v === "string" && v) as string | undefined;
+        const refs = props.map((k) => ({ key: k, editor: editorAt(schema as never, `${at}/${k}`) })).flatMap((p) => (p.editor.kind === "ref" ? [{ key: p.key, kind: p.editor.refKind }] : []));
         return (
           <div key={at} className="flex flex-col gap-2 rounded-md bg-muted/40 p-2" data-source-item={at}>
-            {Array.isArray(value) ? <p className="text-xs font-medium">{name ?? `${n + 1}`}</p> : null}
+            {Array.isArray(value) ? <ItemHeading item={item} refs={refs} n={n} /> : null}
             {props.map((k) => {
               const editor = editorAt(schema as never, `${at}/${k}`);
               if (editor.kind === "list" || editor.kind === "record") return null;
+              const fieldLabel = labelOf(list, k);
               return (
                 <label key={k} className="flex flex-col gap-1 text-xs text-muted-foreground">
-                  {wordsOf(k)}
-                  <FieldEditor compact editor={editor} label={wordsOf(k)} value={item[k]} field={`${at}/${k}`} renderParty={renderParty} onChange={(v) => onChange(`${at}/${k}`, v)} />
+                  {fieldLabel}
+                  <FieldEditor compact editor={editor} label={fieldLabel} value={item[k]} field={`${at}/${k}`} renderParty={renderParty} onChange={(v) => onChange(`${at}/${k}`, v)} />
                 </label>
               );
             })}

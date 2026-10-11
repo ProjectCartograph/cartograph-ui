@@ -25,6 +25,7 @@ const every: Record<keyof Client, true> = {
   fromIdea: true,
   match: true,
   readAggregation: true,
+  charterPartsStyle: true,
   gapCoverage: true,
   cyclePeriods: true,
   deleteGoal: true,

@@ -307,7 +307,7 @@ function MilestoneChart({
   const shown = (it: ScheduleItem) => (drag?.mode === "move" && drag.from === it.id && Math.abs(drag.x - drag.x0) > 3 ? monthAt(drag.x) : it.month);
 
   return (
-    <figure ref={frame} className="overflow-hidden rounded-xl bg-background ring-1 ring-foreground/10" data-slot="milestone-chart">
+    <figure ref={frame} className="overflow-x-auto rounded-xl bg-background ring-1 ring-foreground/10" data-slot="milestone-chart">
       <svg
         ref={box}
         viewBox={`0 0 ${width} ${height}`}

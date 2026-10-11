@@ -63,3 +63,56 @@
 @media (prefers-reduced-motion: reduce) {
   .charter-doc [data-field], .charter-doc [data-source], .charter-doc [data-remove] { transition: none; }
 }
+
+/* The charter's colour variables, as the engine's styles for what the
+   sections hold read them (renamed, so the page's own stay its own). */
+.charter-doc {
+  --charter-fg: var(--foreground);
+  --charter-muted: var(--muted-foreground);
+  --charter-line: var(--border);
+  --charter-soft: var(--muted);
+  --charter-paper: var(--card);
+  --charter-accent: var(--primary);
+  --charter-accent-soft: color-mix(in oklab, var(--primary) 12%, transparent);
+  --charter-ok: var(--success);
+  --charter-warn: var(--warning);
+  --charter-bad: var(--destructive);
+  --charter-sans: inherit;
+}
+/* A drawing wider than the page scrolls on its own. */
+.charter-doc figure, .charter-doc .part-body > svg { max-width: 100%; overflow-x: auto; }
+.charter-doc table { display: block; overflow-x: auto; }
+@media (min-width: 641px) { .charter-doc table { display: table; } }
+/* On a phone the page is the screen: drawings shrink to it, the margins
+   narrow, and two columns become one. */
+.charter-doc { max-width: min(52rem, 100%); min-width: 0; }
+.charter-doc svg { max-width: 100%; height: auto; }
+@media (max-width: 640px) {
+  .charter-doc .columns { grid-template-columns: 1fr; }
+  .charter-doc dl { grid-template-columns: 1fr; }
+}
+
+/* A problem read as one sentence (cartograph-engine#79): each part in a dotted box that
+   opens what it is, the groups as mentions. */
+.charter-doc .problem-statement { font-size: 1rem; line-height: 2; margin: 0.25rem 0 0.75rem; }
+.charter-doc [data-part] {
+  border: 1px dashed color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+  border-radius: 0.375rem;
+  padding: 0.05rem 0.3rem;
+  text-decoration: none;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.charter-doc [data-part]:hover { border-color: color-mix(in oklab, var(--primary) 50%, transparent); }
+.charter-doc [data-part][data-empty]:empty { display: inline; }
+.charter-doc .mention {
+  display: inline-flex; align-items: center;
+  margin: 0 0.15rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 10%, transparent);
+  color: var(--primary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.charter-doc .mention::before { content: "@"; opacity: 0.6; margin-right: 0.05rem; }

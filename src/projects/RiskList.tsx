@@ -162,7 +162,7 @@ export function RiskList({
         ) : null}
         {/* How likely it is to be caught in time (FMEA, engine TAXONOMY.md
             D58): with impact and likelihood, its risk priority. */}
-        <div className="flex items-center gap-2" data-cartograph-field={at(r, idx, "detection")}>
+        <div className="flex flex-wrap items-center gap-2" data-cartograph-field={at(r, idx, "detection")}>
           <Label className="w-24 shrink-0 text-muted-foreground" title={rc.detectionHint}>
             {rc.detectionLabel}
           </Label>
@@ -184,7 +184,7 @@ export function RiskList({
         {/* Who manages it day to day (TAXONOMY.md D41): a role on the
             work, a governance body, or, where the work names no roles, an
             entry in the catalogue. A high-impact risk without one warns. */}
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 [&>*:last-child]:min-w-0 [&>*:last-child]:flex-1">
           <Label className="w-24 shrink-0 text-muted-foreground">{rc.ownerLabel}</Label>
           {roles && roles.length > 0 ? (
             <RoleRefPicker
@@ -195,7 +195,7 @@ export function RiskList({
               label={rc.ownerLabel}
               placeholder={rc.ownerPlaceholder}
               withBodies
-              className="w-56"
+              className="w-full sm:w-56"
             />
           ) : (
             <div className="w-56">

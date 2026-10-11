@@ -401,6 +401,9 @@ export interface Client {
   decisionModel(): Promise<DecisionModel>;
   /** The existing records of a kind that say what a text says. */
   match(kind: string, text: string, level?: string): Promise<Match[]>;
+  /** The styling of what a charter's sections hold (diagrams, the
+   * triangle, chips), reading the charter's colour variables. */
+  charterPartsStyle(): Promise<string>;
   /** What a data source metric's aggregation reads as, or why not. */
   readAggregation(text: string): Promise<AggregationReading>;
   /** Which part of a gap each piece of work addresses. */

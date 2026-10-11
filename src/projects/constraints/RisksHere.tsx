@@ -57,15 +57,17 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
   return (
     <section className="flex flex-col gap-2 rounded-lg border border-dashed p-3" data-cartograph-region={`risks-here-${side}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="flex items-center gap-1.5 text-sm font-medium">
-          {tc.hereHeading(sideName)}
+        {/* The stance beside the heading, not in it: the page's outline
+            reads the heading alone. */}
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-sm font-medium">{tc.hereHeading(sideName)}</h3>
           {held ? (
             <span className="inline-flex items-center gap-1 text-xs font-normal text-muted-foreground" title={tc.stanceTitle.hold}>
               <Lock className="size-3" aria-hidden />
               {tc.held}
             </span>
           ) : null}
-        </h3>
+        </div>
         <Button asChild variant="link" size="sm" className="h-auto p-0">
           <Link to="/projects/$id/initiation/risks" params={{ id: store.id }}>
             {tc.inRegister}
