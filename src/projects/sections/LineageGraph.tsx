@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Database,
@@ -9,6 +10,7 @@ import {
 
 import { useClient } from "@/client/context";
 import type { LineageNode } from "@/client/port";
+import { vocabIcon } from "@/components/vocab";
 import { copy } from "@/copy";
 
 const lc = copy.projects.data.lineage;
@@ -52,6 +54,7 @@ export function LineageGraph({
     queryFn: () => client.lineage(project, name, uses, produces),
     placeholderData: (prev) => prev,
   });
+  const forms = useSourceForms();
   const nodes = lineage.data?.nodes ?? [];
   const edges = lineage.data?.edges ?? [];
   // Columns drawn: the three around the project always, the outer two
@@ -132,7 +135,7 @@ export function LineageGraph({
           );
         })}
         {nodes.map((n) => (
-          <Node key={`${n.kind}/${n.id}`} n={n} x={colX(n.x)} y={yOf(n.y)} />
+          <Node key={`${n.kind}/${n.id}`} n={n} x={colX(n.x)} y={yOf(n.y)} form={forms.get(n.id)} />
         ))}
         <AddNode
           x={colX(1)}
@@ -153,8 +156,17 @@ export function LineageGraph({
   );
 }
 
-function Node({ n, x, y }: { n: LineageNode; x: number; y: number }) {
-  const Icon = ICON[n.kind] ?? Database;
+/** Each data source's form (a database, a spreadsheet, paper, a form),
+ * so a node shows what it is rather than a database for all of them
+ * (#82). */
+function useSourceForms(): Map<string, string> {
+  const client = useClient();
+  const q = useQuery({ queryKey: ["data-source-forms"], queryFn: () => client.list("DataSource", { expand: "spec" }), staleTime: 60_000 });
+  return new Map((q.data ?? []).map((r) => [r.id, ((r as { spec?: { category?: string } }).spec?.category ?? "") as string]));
+}
+
+function Node({ n, x, y, form }: { n: LineageNode; x: number; y: number; form?: string }) {
+  const Icon = (n.kind === "DataSource" ? vocabIcon("dataSourceCategory", form) : undefined) ?? ICON[n.kind] ?? Database;
   const self = n.role === "project";
   const label = n.name.length > 20 ? `${n.name.slice(0, 19)}…` : n.name;
   return (
@@ -169,18 +181,14 @@ function Node({ n, x, y }: { n: LineageNode; x: number; y: number }) {
         fill={self ? "var(--color-primary)" : "var(--color-card)"}
         stroke={self ? "var(--color-primary)" : "var(--color-border)"}
       />
-      <Icon
-        x={x + 10}
-        y={y + 10}
-        width={14}
-        height={14}
-        color={
-          self
-            ? "var(--color-primary-foreground)"
-            : "var(--color-muted-foreground)"
-        }
-        aria-hidden="true"
-      />
+      {createElement(Icon, {
+        x: x + 10,
+        y: y + 10,
+        width: 14,
+        height: 14,
+        color: self ? "var(--color-primary-foreground)" : "var(--color-muted-foreground)",
+        "aria-hidden": "true",
+      })}
       <text
         x={x + 30}
         y={y + 21}
