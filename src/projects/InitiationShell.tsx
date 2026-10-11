@@ -22,7 +22,11 @@ import { ProjectHeaderBar } from "./Chrome";
 import { ProjectMap } from "./canvas/ProjectMap";
 import { useRecordDrawer } from "@/records/RecordDrawer";
 import { CharterView } from "@/charter/CharterView";
-import { LiveCharter } from "@/charter/LiveCharter";
+import { CharterDocument } from "@/charter/CharterDocument";
+import { useQuery } from "@tanstack/react-query";
+import { useClient } from "@/client/context";
+import type { Ref } from "./types";
+import { RoleRefPicker, roleOptions, useResourceNames } from "./RoleRefPicker";
 import { useProjectStore } from "./store";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
@@ -449,24 +453,24 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
  */
 export function ProjectLiveCharter({ id, section }: { id: string; section?: string }) {
   const store = useProjectStore();
-  const navigate = useNavigate();
-  const checksQuery = useProjectChecks(id, true);
+  const client = useClient();
+  const schema = useQuery({ queryKey: ["schema", "Project"], queryFn: () => client.schema("Project"), staleTime: Infinity });
+  const names = useResourceNames();
+  const roles = roleOptions(store.spec.resources ?? [], names);
   return (
-    <LiveCharter
+    <CharterDocument
       id={id}
-      version={store.spec}
+      spec={store.spec as unknown as Record<string, unknown>}
+      update={(fn) => store.updateSpec((sp) => fn(sp as unknown as Record<string, unknown>) as unknown as ProjectSpec)}
+      schema={schema.data}
       step={section}
-      onStep={(step) => {
-        const path = pathOfStep(step);
-        if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
-      }}
-      onField={(pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value))}
-      valueOf={(pointer) => getAt(store.spec, pointer)}
-      checksOf={(step) => (checksQuery.data?.items ?? []).filter((c) => c.section === step && c.state !== "ok").map((c) => c.message)}
       routeOf={(step) => {
         const path = pathOfStep(step);
         return path ? `/projects/${id}${path}` : undefined;
       }}
+      renderParty={(value, onChange) => (
+        <RoleRefPicker value={value as Ref | undefined} options={roles} onChange={(v) => onChange(v)} label={copy.charter.doc.choose} withBodies className="w-full" />
+      )}
     />
   );
 }
@@ -480,32 +484,7 @@ function pathOfStep(step: string): string | undefined {
   return undefined;
 }
 
-/** Sets one text value in the spec by its JSON pointer, as the charter
- * names it ("/spec/summary/problems/0/problem/situation"). */
-/** The text at a JSON pointer in the spec, as the charter names it. */
-function getAt(spec: ProjectSpec, pointer: string): string {
-  let at: unknown = spec;
-  for (const key of pointer.split("/").filter(Boolean).slice(1)) at = at && typeof at === "object" ? (at as Record<string, unknown>)[key] : undefined;
-  return typeof at === "string" ? at : "";
-}
 
-function setAt(spec: ProjectSpec, pointer: string, value: string): ProjectSpec {
-  const parts = pointer.split("/").filter(Boolean).slice(1);
-  const copyOf = (v: unknown): unknown => (Array.isArray(v) ? [...v] : v && typeof v === "object" ? { ...(v as object) } : {});
-  const root = copyOf(spec) as Record<string, unknown>;
-  let at: Record<string, unknown> | unknown[] = root;
-  parts.forEach((key, i) => {
-    const k = /^\d+$/.test(key) ? Number(key) : key;
-    const container = at as Record<string | number, unknown>;
-    if (i === parts.length - 1) {
-      container[k] = value;
-      return;
-    }
-    container[k] = copyOf(container[k]);
-    at = container[k] as Record<string, unknown>;
-  });
-  return root as unknown as ProjectSpec;
-}
 
 /** The steps of a stage walked one at a time, as a numbered sequence: each
  * its own screen, so the last is never a long scroll away. Numbered and
