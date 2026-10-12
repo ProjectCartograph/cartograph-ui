@@ -195,16 +195,8 @@ function MilestoneEditor({ m, i, patch, remove, autoFocus }: { m: Milestone; i: 
           <span>{mc.owner}</span>
           <RoleRefPicker value={m.owner} options={roles} onChange={(owner) => patch(i, { owner })} label={mc.owner} withBodies className="w-full" data-cartograph-field={`/spec/milestones/${i}/owner`} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground" title={mc.evidenceHint}>
-          {mc.evidence}
-          <Input
-            value={m.evidence ?? ""}
-            onChange={(e) => patch(i, { evidence: e.target.value.slice(0, 240) || undefined })}
-            maxLength={240}
-            aria-label={mc.evidence}
-            data-cartograph-field={`/spec/milestones/${i}/evidence`}
-          />
-        </label>
+        {/* Evidence that it was reached is recorded when it is, as an
+            event (engine D52), not while the plan is written (#101). */}
       </div>
       {deliverables.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5" data-cartograph-field={`/spec/milestones/${i}/deliverables`}>

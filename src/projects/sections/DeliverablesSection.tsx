@@ -114,15 +114,9 @@ export function DeliverablesSection() {
             <div className="sm:col-span-2">
               <TimingField value={d.due} onChange={(due) => update(idx, { due })} field={`/spec/deliverables/${seg(d, idx)}/due`} label={dc.due} />
             </div>
-            <Labelled label={dc.evidence} hint={dc.evidenceHint} className="sm:col-span-2">
-              <Input
-                value={d.evidence ?? ""}
-                onChange={(e) => update(idx, { evidence: e.target.value.slice(0, 240) || undefined })}
-                maxLength={240}
-                aria-label={dc.evidence}
-                data-cartograph-field={`/spec/deliverables/${seg(d, idx)}/evidence`}
-              />
-            </Labelled>
+            {/* Evidence that it was accepted is recorded when it is, as an
+                event (engine D52): defining it asks only for its acceptance
+                criteria (#101). */}
           </div>
 
           <div className="flex flex-col gap-2 pl-9">
