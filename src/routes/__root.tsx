@@ -7,7 +7,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { Archive, BookOpen, Bot, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest, BriefcaseBusiness } from "lucide-react";
+import { Archive, BookOpen, Bot, FilePen, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest, BriefcaseBusiness } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -58,6 +58,7 @@ import { TourProvider } from "@/tour/TourProvider";
 import { TourEntry } from "@/tour/TourEntry";
 import { useActiveChangeSet } from "@/changesets/useActive";
 import { MergeBar } from "@/changesets/MergeBar";
+import { isDraft } from "@/changesets/drafts";
 import { CreateMenu } from "@/components/CreateMenu";
 import { RecentVisits } from "@/surfaces/home/Recent";
 
@@ -303,6 +304,9 @@ function useBreadcrumbCrumbs(): Crumb[] {
   if (routeId === "/new") {
     return [{ label: copy.newWork.title }];
   }
+  if (routeId === "/drafts") {
+    return [{ label: copy.drafts.title }];
+  }
   if (routeId === "/changesets/") {
     return [{ label: copy.changeSets.title }];
   }
@@ -418,6 +422,9 @@ function RootLayout() {
   // Change sets waiting for this person to review.
   const changeSets = useQuery({ queryKey: ["changesets"], queryFn: () => client.changeSets(), retry: false, refetchInterval: 15_000 });
   const waiting = (changeSets.data ?? []).filter((c) => c.status === "proposed").length;
+  // The person's own work not yet merged: always reachable, since every
+  // edit lands in a draft.
+  const drafts = (changeSets.data ?? []).filter(isDraft).length;
   const agentsHere = session?.access?.agents === true;
   // Signed in through the proxy, but not on the access list: nothing here
   // is theirs to see, and the engine would refuse every request.
@@ -523,6 +530,15 @@ function RootLayout() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip={copy.drafts.rail}>
+                      <Link to="/drafts" data-cartograph-region="rail-drafts">
+                        <FilePen />
+                        <span>{copy.drafts.rail}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    {drafts > 0 ? <SidebarMenuBadge>{drafts}</SidebarMenuBadge> : null}
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

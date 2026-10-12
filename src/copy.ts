@@ -384,6 +384,23 @@ export const copy = {
     } as Record<string, string>,
     level: { goal: "Goal", objective: "Objective", outcome: "Outcome" } as Record<string, string>,
   },
+  // Work not yet merged (changesets/DraftsPage): a draft is an open
+  // change set, named for what a person calls unfinished work.
+  drafts: {
+    title: "Drafts",
+    rail: "Drafts",
+    intro: "Every edit lands in a draft until it is merged. Carry on with any of yours here, or review one to merge it.",
+    yours: "Yours",
+    theirs: (who: string) => `${who}'s drafts`,
+    someone: "Someone",
+    none: "No drafts. Your next edit starts one.",
+    here: "This window works in it",
+    edited: (at: string) => `Edited ${at}`,
+    workIn: "Work in it",
+    workInTitle: (title: string) => `Work in ${title}: your edits land there`,
+    savedIn: "in your draft",
+    savedInTitle: "Open the draft this was saved in",
+  },
   changeSets: {
     decided: {
       heading: "Decided for you",
