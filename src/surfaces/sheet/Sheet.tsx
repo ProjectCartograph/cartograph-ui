@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useVocabularyWord } from "@/components/useVocabulary";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Check, Plus } from "lucide-react";
 
@@ -81,6 +82,12 @@ interface Row {
   loading: boolean;
 }
 
+/** A stored choice in the workspace's word, as a chip. */
+function VocabularyWord({ vocabulary, value }: { vocabulary: string; value: string }) {
+  const word = useVocabularyWord(vocabulary);
+  return <Badge variant="secondary">{word(value)}</Badge>;
+}
+
 function SpecCell({
   field,
   kind,
@@ -123,6 +130,11 @@ function SpecCell({
       if (items.length === 0) return dash;
       const label = copy.sheets.fields[kind]?.[field.name] ?? field.name;
       return <Badge variant="secondary">{`${items.length} ${label.toLowerCase()}`}</Badge>;
+    }
+    case "vocabulary": {
+      // The workspace's own word for it (engine TAXONOMY.md D71).
+      if (typeof value !== "string" || value === "") return dash;
+      return <VocabularyWord vocabulary={field.vocabulary as string} value={value} />;
     }
     case "enum": {
       // Numbers are enums too (a reporting cycle's period is 1, 3, 6 or

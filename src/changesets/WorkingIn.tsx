@@ -5,6 +5,7 @@ import { ChevronDown, Eye, EyeOff, GitBranch, GitPullRequest, LogOut, Pencil, Pl
 
 import { activeChangeSet } from "@/client/active";
 import { useClient } from "@/client/context";
+import { NotFound } from "@/client/port";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -56,14 +57,16 @@ export function WorkingIn() {
   };
 
   // A change set that was rolled in or closed elsewhere is no longer one
-  // to work in.
+  // to work in; nor is one the workspace does not have (a fresh vault, a
+  // link to one since deleted), or every read through it would fail.
   const status = review.data?.changeSet.status;
+  const gone = review.error instanceof NotFound;
   useEffect(() => {
-    if (active && status && status !== "open") {
+    if (active && ((status && status !== "open") || gone)) {
       activeChangeSet.set(undefined);
       void queryClient.invalidateQueries();
     }
-  }, [active, status, queryClient]);
+  }, [active, status, gone, queryClient]);
 
   const rename = useMutation({
     mutationFn: (t: string) => client.retitleChangeSet(active as string, t),

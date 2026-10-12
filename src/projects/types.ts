@@ -320,7 +320,8 @@ export type DataOutput =
   | "documentsOrFiles"
   | "extractOrReport";
 export type PersonalData = "none" | "personal" | "sensitive";
-export type Refresh = "continuous" | "onEvent" | "daily" | "weekly" | "monthly" | "quarterly" | "termly" | "annual" | "irregular";
+/** How often, from the workspace's refresh vocabulary (engine D71). */
+export type Refresh = string;
 
 export interface DataConsumeItem {
   source: string;

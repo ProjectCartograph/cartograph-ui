@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { VocabularyChoice } from "@/components/Vocabulary";
 import { newRecordId } from "@/lib/recordId";
 import { type Control, useForm, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -449,6 +450,26 @@ function SheetFormField({
                 onChange={rhf.onChange}
               />
             )}
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
+  // A choice from the workspace's own words (engine TAXONOMY.md D71).
+  if (field.kind === "vocabulary") {
+    return (
+      <FormField
+        control={control}
+        name={field.name}
+        rules={rules}
+        render={({ field: rhf }) => (
+          <FormItem>
+            {heading}
+            <FormControl>
+              <VocabularyChoice vocabulary={field.vocabulary as string} value={(rhf.value as string) || undefined} onChange={rhf.onChange} label={label} field={pointer} />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}

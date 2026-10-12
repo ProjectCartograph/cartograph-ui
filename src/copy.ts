@@ -201,6 +201,21 @@ export const copy = {
       email
         ? `You signed in as ${email}, but only the people an administrator lists can see this. Ask one to add you.`
         : "Only the people an administrator lists can see this. Ask one to add you.",
+    // The workspace's own data words (access/Vocabularies; engine D71).
+    vocabularies: {
+      title: "Vocabularies",
+      intro: "The words this workspace uses where a field's choices are its own. Each starts as the standard list; change it to your organisation's, and a value outside it is pointed out rather than refused.",
+      names: { classification: "Classification levels", refresh: "How often a source changes", dataSourceCategory: "Forms a data source takes" } as Record<string, string>,
+      isStandard: "Standard list",
+      standard: "Standard",
+      useStandard: (name: string) => `Use the standard list for ${name.toLowerCase()}`,
+      value: "Stored as",
+      label: "Reads as",
+      description: "What it means",
+      add: "Term",
+      addHint: (name: string) => `Add a term to ${name.toLowerCase()}`,
+      remove: (term: string) => `Remove ${term || "this term"}`,
+    },
     changeControl: {
       title: "Change control",
       intro:
@@ -1229,12 +1244,6 @@ export const copy = {
           internal: "Internal",
           external: "Third-Party",
         },
-        classification: {
-          public: "Public",
-          internal: "Internal",
-          confidential: "Confidential",
-          restricted: "Restricted",
-        },
         capture: {
           "byHand": "Typed in by hand",
           "scannedForms": "Scanned from paper forms",
@@ -1278,19 +1287,6 @@ export const copy = {
     } as Record<string, Record<string, Record<string, string>>>,
     // What each fixed choice means, under its name where it is chosen.
     fieldValueHints: {
-      DataSource: {
-        refresh: {
-          continuous: "Each record lands as it is made: an operational system, a live feed.",
-          onEvent: "Changes when something sets it off, such as a harvest closed, not on a calendar.",
-          irregular: "Changes with no rhythm and no event that can be named.",
-        },
-        classification: {
-          public: "Anyone may see it; its release harms no one.",
-          internal: "Anyone in the organisation may see it; released outside, it would cause minor harm.",
-          confidential: "Only the roles that need it may see it; released, it would cause serious harm.",
-          restricted: "Only named roles may see it, under the strictest controls; released, it would cause severe harm or break the law.",
-        },
-      },
     } as Record<string, Record<string, Record<string, string>>>,
     fieldExamples: {
       DataSource: {
@@ -3548,9 +3544,10 @@ export const copy = {
       spendsNone: "Nothing said",
       on: (name: string) => `on ${name}`,
       overviewHeading: "Scope, schedule and cost",
-      overviewLead: "Where the risks fall. Each corner grows with the weighted risk it carries: likelihood times impact on that side.",
+      overviewLead: "Where the risks fall. Each side reaches as far as its share of the weighted risk: likelihood times impact on that side.",
       overviewLabel: "Scope, schedule and cost, each sized by the weighted risk it carries",
       mostConstrained: "Most constrained",
+      shareLabel: "Share of the weighted risk (%)",
       weighted: (n: number, share: number) => `${n} weighted (${Math.round(share * 100)}%)`,
       noWeight: "No weighted risk",
       stanceUnsaid: "Stance not said",

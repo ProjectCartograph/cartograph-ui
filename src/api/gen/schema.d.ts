@@ -2434,6 +2434,18 @@ export interface components {
                 [key: string]: string[];
             };
             changeControl?: components["schemas"]["ChangeControl"];
+            /** @description The words this workspace uses for a field whose choices are its own (TAXONOMY.md D71): a data source's classification, refresh and form, the standard terms unless the workspace sets its own. Keyed by the vocabulary a schema field names in x-cartograph-vocabulary. */
+            vocabularies?: {
+                [key: string]: components["schemas"]["VocabularyTerm"][];
+            };
+        };
+        VocabularyTerm: {
+            /** @description What a record stores. */
+            value: string;
+            /** @description What a person reads. */
+            label: string;
+            /** @description What the choice means, shown under it where it is chosen. */
+            description?: string;
         };
         /** @description How the record may change (docs/adr/0024). Absent or false, every write path works as before. */
         ChangeControl: {

@@ -6,6 +6,7 @@
 
 export type FieldKind =
   | "string"
+  | "vocabulary"
   | "enum"
   | "boolean"
   | "integer"
@@ -28,6 +29,8 @@ export interface FieldDef {
   maximum?: number;
   minItems?: number;
   format?: string;
+  /** The workspace vocabulary a choice is from (engine D71). */
+  vocabulary?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,6 +110,10 @@ function classify(prop: JSONSchemaDoc): Omit<FieldDef, "name" | "required"> {
   }
   if (typeof prop["x-cartograph-ref"] === "string") {
     return { kind: "ref", refKind: prop["x-cartograph-ref"] };
+  }
+  // A choice from the workspace's own words (engine TAXONOMY.md D71).
+  if (typeof prop["x-cartograph-vocabulary"] === "string") {
+    return { kind: "vocabulary", vocabulary: prop["x-cartograph-vocabulary"] };
   }
   // A reference in Cartograph's one shape (kind and id, or an outside
   // party), picked as a Resource or named as text.
