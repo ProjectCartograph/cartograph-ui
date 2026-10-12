@@ -42,6 +42,8 @@ export const SHEET_KINDS = [
   "Segment",
   "Unit",
   "FundingSource",
+  // What a budget gives a project, kept by its holder (engine D69).
+  "Allocation",
   "Gap",
   "Assumption",
   "DataSource",
