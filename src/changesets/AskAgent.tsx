@@ -22,7 +22,9 @@ export function AskAgent({ set, title }: { set: string; title: string }) {
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" size="sm" aria-label={c.label} title={c.label} data-cartograph-action="ask-agent">
           <Bot />
-          {c.button}
+          {/* On a phone the mark alone, so the header's row fits; its name
+              says the whole of it. */}
+          <span className="max-sm:hidden">{c.button}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="flex w-80 flex-col gap-3" align="end">

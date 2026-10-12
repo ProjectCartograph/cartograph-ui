@@ -628,7 +628,10 @@ function RootLayout() {
         {/* One frame the height of the screen: the header stays, and what
             is below it scrolls inside main, never the window. */}
         <SidebarInset className="h-svh min-w-0 overflow-hidden md:peer-data-[variant=inset]:h-[calc(100svh-1rem)]">
-          <header className="flex h-14 shrink-0 items-center gap-2 overflow-x-auto border-b px-4 [scrollbar-width:none]" data-cartograph-region="header">
+          {/* On a phone the header is two rows, where to go and what to do,
+              so the change set's actions are in sight rather than scrolled
+              off the edge; on a wider screen it is one row, as before. */}
+          <header className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1.5 border-b px-4 py-2 md:h-14 md:flex-nowrap md:overflow-x-auto md:py-0 md:[scrollbar-width:none]" data-cartograph-region="header">
             {/* On a phone the rail slides in over the page, so its
                 toggle is here too. */}
             <SidebarTrigger className="-ml-1 md:hidden" />
@@ -657,11 +660,13 @@ function RootLayout() {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
-            <RecentVisits />
-            <CreateMenu />
-            <WorkingIn />
-            {unlisted ? null : <MergeBar />}
-            <PeopleHere />
+            <div className="flex min-w-0 items-center gap-2 max-md:w-full max-md:overflow-x-auto max-md:[scrollbar-width:none] md:contents" data-cartograph-region="header-actions">
+              <RecentVisits />
+              <CreateMenu />
+              <WorkingIn />
+              {unlisted ? null : <MergeBar />}
+              <PeopleHere />
+            </div>
           </header>
           <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
             {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
