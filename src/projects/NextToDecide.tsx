@@ -4,25 +4,13 @@ import { ArrowRight, ChevronRight, ListChecks } from "lucide-react";
 import { useState } from "react";
 
 import { useClient } from "@/client/context";
+import { focusField } from "@/components/focusField";
 import type { RoundTask } from "@/client/port";
 import { copy } from "@/copy";
 import { useProjectStore } from "./store";
 import { STEPS } from "./types";
 
 const nd = copy.projects.nextToDecide;
-
-/** Focuses a field once its step is on screen. */
-function focusField(field: string) {
-  let tries = 0;
-  const find = () => {
-    const el = document.querySelector<HTMLElement>(`[data-cartograph-field="${CSS.escape(field)}"]`);
-    if (el) {
-      el.scrollIntoView({ block: "center" });
-      (el.matches("input, textarea, [role=combobox], button") ? el : el.querySelector<HTMLElement>("input, textarea, [role=combobox], button"))?.focus();
-    } else if (tries++ < 20) setTimeout(find, 100);
-  };
-  find();
-}
 
 /**
  * What the walk can decide now (#60): the project's round, the same tree

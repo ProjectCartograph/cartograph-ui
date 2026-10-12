@@ -6,7 +6,9 @@ import { CheckCircle2, CircleDashed, Eye, GitMerge } from "lucide-react";
 import { activeChangeSet } from "@/client/active";
 import { useClient } from "@/client/context";
 import { ClientError, type Client } from "@/client/port";
+import { focusField } from "@/components/focusField";
 import { useGuide } from "@/components/guide";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -98,7 +100,7 @@ export function MergeBar() {
           buttons at the bottom of a screen (#33). */}
       <div className="flex shrink-0 items-center gap-1.5" data-cartograph-region="merge-bar">
         <p className="hidden text-xs text-muted-foreground lg:block" title={c.saved(review.data?.changeSet.title ?? "")}>
-          {needed > 0 ? <span className="text-destructive">{c.needed(needed)}</span> : null}
+          {needed > 0 ? <NeededList items={items} needed={needed} /> : null}
           {needed > 0 && open > 0 ? " · " : null}
           {open > 0 ? <span className="text-warning">{c.open(open)}</span> : null}
         </p>
@@ -162,7 +164,7 @@ function whereTo(item: Item, check: ItemCheck, stepOf: (path: string) => string 
 
 /** One record's open items in the merge dialog: what must be finished
  * first, then what may wait, each a link to where it is done. */
-function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
+function RecordItems({ item, onGo, only }: { item: Item; onGo: () => void; only?: "required" }) {
   const { data: guide } = useGuide(item.kind);
   const open = item.checks.filter((k) => k.state !== "ok");
   // The guide's step holding a field: the longest field path the
@@ -187,7 +189,8 @@ function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
     { key: "required", label: c.tierRequired, checks: open.filter(isRequired) },
     { key: "block", label: c.tierHandoff, checks: open.filter((k) => !isRequired(k) && k.state === "block") },
     { key: "warn", label: c.tierAdvice, checks: open.filter((k) => !isRequired(k) && k.state === "warn") },
-  ].filter((t) => t.checks.length > 0);
+  ].filter((t) => t.checks.length > 0 && (!only || t.key === only));
+  if (tiers.length === 0) return null;
   return (
     <li className="flex flex-col gap-2" data-cartograph-item={`${item.kind}/${item.id}`}>
       <p className="font-medium">{item.name ?? item.id}</p>
@@ -209,7 +212,10 @@ function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
                     params={go.params as never}
                     search={go.search as never}
                     className="min-w-0 flex-1 text-muted-foreground hover:text-foreground hover:underline"
-                    onClick={onGo}
+                    onClick={() => {
+                      onGo();
+                      if (check.path) focusField(check.path);
+                    }}
                   >
                     {checkText(check)}
                     {required && check.path && titleOf(check.path) ? <span className="ml-1.5 text-xs text-muted-foreground/80">{titleOf(check.path)}</span> : null}
@@ -224,16 +230,46 @@ function RecordItems({ item, onGo }: { item: Item; onGo: () => void }) {
   );
 }
 
+/** The fields to fill before merging, said as a count that opens to
+ * each of them, each a link to the field (#86). */
+function NeededList({ items, needed }: { items: Item[]; needed: number }) {
+  const [shown, setShown] = useState(false);
+  return (
+    <Popover open={shown} onOpenChange={setShown}>
+      <PopoverTrigger className="text-destructive underline decoration-dotted underline-offset-2 hover:decoration-solid">{c.needed(needed)}</PopoverTrigger>
+      <PopoverContent align="end" className="w-80" data-cartograph-region="needed-list">
+        <ul className="flex max-h-80 flex-col gap-3 overflow-y-auto text-sm">
+          {items.map((it) => (
+            <RecordItems key={`${it.kind}/${it.id}`} item={it} only="required" onGo={() => setShown(false)} />
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /** What a check says, in words: a missing field by its name, anything
  * else as the engine says it. */
 export function checkText(check: ItemCheck): string {
-  return isRequired(check) && check.path && check.message === MISSING ? c.required(fieldName(check.path)) : check.message;
+  if (!isRequired(check) || !check.path) return check.message;
+  if (check.message === MISSING) return c.required(fieldName(check.path));
+  // Anything else said of a field says which field first (#86).
+  return c.ofField(fieldName(check.path), check.message);
 }
 
-/** A field's own name, from the last part of its pointer. */
+// A key that names nothing alone: its parent says what it is the date
+// or the value of.
+const GENERIC = new Set(["date", "value", "amount", "currency", "name", "description", "id"]);
+
+/** A field's own name, from the last part of its pointer, with its
+ * parent's where the last part alone names nothing. */
 function fieldName(path: string): string {
-  const key = path.split("/").filter((p) => p && !/^\d+$/.test(p)).pop() ?? "";
-  return c.fields[key] ?? `the ${key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase()}`;
+  const keys = path.split("/").filter((p) => p && p !== "spec" && !/^\d+$/.test(p) && !/^\{.*\}$/.test(p));
+  const key = keys.pop() ?? "";
+  if (c.fields[key]) return c.fields[key];
+  const words = (k: string) => k.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase();
+  const parent = GENERIC.has(key) ? keys.pop() : undefined;
+  return `the ${parent ? `${words(parent)} ` : ""}${words(key)}`;
 }
 
 /**
