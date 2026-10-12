@@ -1882,7 +1882,12 @@ export const copy = {
   // A data source's metrics, each written as an aggregation (engine
   // TAXONOMY.md D64).
   sourceMetrics: {
+    lead: "The numbers this source can give. Write each as a SQL-like aggregation over this source's own fields: it says what you mean to count, for whoever builds it in the warehouse, and is not the calculation itself.",
     name: "Name",
+    nameHint: "What the number is called, such as Deliveries checked.",
+    startFrom: "Start from one of these, then change the fields to this source's own:",
+    examples: ["COUNT(*)", "COUNT(*) WHERE passed = true", "COUNT(DISTINCT member_id)", "SUM(weight_kg)", "AVG(days_to_pay)"],
+    useExample: (example: string) => `Start from ${example}`,
     description: "What it is",
     descriptionHint: "Describe the number in words, for whoever maps it to the warehouse.",
     aggregation: "Aggregation",

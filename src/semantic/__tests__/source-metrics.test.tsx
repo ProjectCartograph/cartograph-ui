@@ -59,3 +59,23 @@ describe("a data source's metrics", () => {
     expect(await screen.findByText("JOIN is not part of a metric.")).toBeInTheDocument();
   });
 });
+
+// An empty aggregation says what goes there and offers ones to start from,
+// each filling it (#99).
+describe("an empty metric", () => {
+  it("says what a metric is and starts from an example", async () => {
+    const user = userEvent.setup();
+    render(
+      <ClientProvider client={fakeClient({ readAggregation: vi.fn(async () => ({ names: [], reading: "Read." })) as never })}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <Harness initial={[{ id: "m1", name: "", aggregation: "" }]} />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    expect(screen.getByText(mc.lead)).toBeVisible();
+    expect(screen.getByText(mc.nameHint)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: mc.useExample("COUNT(*) WHERE passed = true") }));
+    expect(latest?.[0].aggregation).toBe("COUNT(*) WHERE passed = true");
+    expect(screen.queryByText(mc.startFrom)).toBeNull();
+  });
+});
