@@ -450,7 +450,7 @@ function SheetFormField({
               </FormControl>
               <SelectContent>
                 {(field.enumValues ?? []).map((v) => (
-                  <SelectItem key={String(v)} value={v}>
+                  <SelectItem key={String(v)} value={v} hint={copy.sheets.fieldValueHints[kind]?.[field.name]?.[String(v)]}>
                     {vocab ? (
                       <VocabOption vocab={vocab} value={v as string | number} />
                     ) : (

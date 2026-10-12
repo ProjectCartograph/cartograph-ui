@@ -1243,6 +1243,22 @@ export const copy = {
         },
       },
     } as Record<string, Record<string, Record<string, string>>>,
+    // What each fixed choice means, under its name where it is chosen.
+    fieldValueHints: {
+      DataSource: {
+        refresh: {
+          continuous: "Each record lands as it is made: an operational system, a live feed.",
+          onEvent: "Changes when something sets it off, such as a harvest closed, not on a calendar.",
+          irregular: "Changes with no rhythm and no event that can be named.",
+        },
+        classification: {
+          public: "Anyone may see it; its release harms no one.",
+          internal: "Anyone in the organisation may see it; released outside, it would cause minor harm.",
+          confidential: "Only the roles that need it may see it; released, it would cause serious harm.",
+          restricted: "Only named roles may see it, under the strictest controls; released, it would cause severe harm or break the law.",
+        },
+      },
+    } as Record<string, Record<string, Record<string, string>>>,
     fieldExamples: {
       DataSource: {
         name: [
@@ -3411,6 +3427,8 @@ export const copy = {
         paper: "Paper",
       } as Record<string, string>,
       refresh: {
+        continuous: "Real time",
+        onEvent: "When something happens",
         daily: "Daily",
         weekly: "Weekly",
         monthly: "Monthly",

@@ -320,7 +320,7 @@ export type DataOutput =
   | "documentsOrFiles"
   | "extractOrReport";
 export type PersonalData = "none" | "personal" | "sensitive";
-export type Refresh = "daily" | "weekly" | "monthly" | "quarterly" | "annual" | "irregular";
+export type Refresh = "continuous" | "onEvent" | "daily" | "weekly" | "monthly" | "quarterly" | "termly" | "annual" | "irregular";
 
 export interface DataConsumeItem {
   source: string;

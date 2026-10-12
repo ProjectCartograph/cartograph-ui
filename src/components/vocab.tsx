@@ -49,6 +49,8 @@ import {
   ChartPie,
   CalendarSync,
   Warehouse,
+  Activity,
+  Zap,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +115,8 @@ const ICONS = {
   },
   personalData: { none: ShieldOff, personal: Shield, sensitive: ShieldAlert },
   refresh: {
+    continuous: Activity,
+    onEvent: Zap,
     daily: RefreshCw,
     weekly: RefreshCw,
     monthly: RefreshCw,
