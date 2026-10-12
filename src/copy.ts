@@ -3103,6 +3103,7 @@ export const copy = {
         gapOutside: (gap: string) => `${gap} affects none of the groups named. Name a group it affects, or unlink it.`,
         gapUnknown: (gap: string) => `${gap} does not say who it affects yet.`,
         openGap: "Open the gap",
+        sayAffects: "Say who it affects",
         useGroups: (names: string) => `It affects ${names}`,
         suggest: "Groups these gaps affect:",
         addGroup: (group: string) => `Add ${group}`,

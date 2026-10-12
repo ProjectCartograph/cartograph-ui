@@ -19,7 +19,9 @@ const FOCUSABLE = 'input:not([type=hidden]):not([disabled]), textarea:not([disab
 function targetsIn(root: HTMLElement): { el: HTMLElement; text: string; level: number }[] {
   const out: { el: HTMLElement; text: string; level: number }[] = [];
   root.querySelectorAll<HTMLElement>("h2, h3, section").forEach((el) => {
-    if (el.closest("[role=dialog]") || el.classList.contains("sr-only")) return;
+    // The summary of earlier steps is a reminder, not a part of this one:
+    // its blocks are not places to go (#91: Beneficiaries listed twice).
+    if (el.closest("[role=dialog]") || el.closest("[data-slot=context-recap]") || el.classList.contains("sr-only")) return;
     if (el.tagName === "SECTION") {
       if (el.querySelector("h2, h3")) return;
       const label = el.querySelector<HTMLElement>("label, legend");
