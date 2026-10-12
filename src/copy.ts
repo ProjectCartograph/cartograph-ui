@@ -3321,9 +3321,10 @@ export const copy = {
       notePlaceholder: "",
       addRole: "Add a role",
       empty: "No role named yet.",
-      requiredTitle: "Required roles",
-      requiredHint: "Name a sponsor and a project manager.",
-      requiredHintComponent: "Name a project manager; the sponsor is the parent project's.",
+      addRequired: (role: string, component: boolean) =>
+        component && role !== "Sponsor"
+          ? `Add the ${role.toLowerCase()}: the charter is not handed off without one; the sponsor is the parent project's`
+          : `Add the ${role.toLowerCase()}: the charter is not handed off without one`,
       fundingTitle: "Funding",
       fundingHint: "The money for this project: how much, in which currency, whether it is approved yet, and the budget it comes from. One line per currency.",
       fundingEmpty: "No funding line yet.",

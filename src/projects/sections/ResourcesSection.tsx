@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Check, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -129,7 +128,7 @@ function RoleRow({
 export function ResourcesSection() {
   useSectionAutosave();
   const store = useProjectStore();
-  const [nextRole, setNextRole] = useState<ProjectRoleKind>("sponsor");
+  const [nextRole, setNextRole] = useState<ProjectRoleKind>("teamMember");
 
   const resources = store.spec.resources ?? [];
 
@@ -138,6 +137,8 @@ export function ResourcesSection() {
   // manager (TAXONOMY.md D15), as the engine's resources-sponsor-lead check reads it.
   const component = !!store.spec.alignment?.partOf;
   const required = component ? REQUIRED_ROLES.filter(({ role }) => role !== "sponsor") : REQUIRED_ROLES;
+
+  const missing = required.filter(({ role }) => !roleRows.some(({ r }) => r.role === role));
 
   function setResources(next: ProjectRole[]) {
     store.updateSpec((spec) => ({ ...spec, resources: next }));
@@ -154,7 +155,9 @@ export function ResourcesSection() {
   // neither once a row holds it, and starts on the first role still free.
   const takenBy = (except?: number) =>
     new Set(roleRows.filter(({ r, idx }) => idx !== except && SINGLE_ROLES.has(r.role)).map(({ r }) => r.role));
-  const free = ROLE_KINDS.filter((k) => !takenBy().has(k));
+  // A required role still missing has its own tile above, so the add
+  // starts on the first other role still free.
+  const free = ROLE_KINDS.filter((k) => !takenBy().has(k) && !missing.some((m) => m.role === k));
   const addAs = free.includes(nextRole) ? nextRole : free[0];
   function addRole() {
     setResources([...resources, { role: addAs }]);
@@ -162,31 +165,34 @@ export function ResourcesSection() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2 rounded-lg bg-muted/40 p-3" data-cartograph-region="required-roles">
-        <div className="flex items-center gap-1">
-          <p className="text-sm font-medium">{pc.requiredTitle}</p>
-          <Help label={pc.requiredTitle} hint={component ? pc.requiredHintComponent : pc.requiredHint} />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {required.map(({ role, label }) => {
-            const present = roleRows.some(({ r }) => r.role === role);
-            return (
-              <Badge key={role} variant={present ? "secondary" : "outline"} className="gap-1 font-normal">
-                {present ? <Check className="size-3 text-success" /> : null}
-                {label}
-              </Badge>
-            );
-          })}
-        </div>
-      </div>
-
       <section className="flex flex-col gap-3" data-cartograph-region="roles">
         <div className="flex items-center gap-1">
           <h2 className="text-base font-semibold">{pc.listTitle}</h2>
           <Help label={pc.listTitle} hint={pc.listHint} />
         </div>
 
-        {roleRows.length === 0 ? <p className="text-sm text-muted-foreground">{pc.empty}</p> : null}
+        {/* The roles a charter is not handed off without, in the list
+            they belong to: each one still missing is a tile that adds it,
+            not a second list beside this one. */}
+        {missing.length > 0 ? (
+          <div className="flex flex-wrap gap-2" data-cartograph-region="required-roles">
+            {missing.map(({ role, label }) => (
+              <Button
+                key={role}
+                type="button"
+                variant="outline"
+                className="border-dashed"
+                onClick={() => setResources([...resources, { role }])}
+                aria-label={pc.addRequired(label, component)}
+                title={pc.addRequired(label, component)}
+              >
+                <Plus />
+                {label}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+        {roleRows.length === 0 && missing.length === 0 ? <p className="text-sm text-muted-foreground">{pc.empty}</p> : null}
 
         {roleRows.map(({ r, idx }) => (
           <RoleRow

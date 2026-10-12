@@ -28,7 +28,8 @@ beforeEach(() => {
 });
 
 // A project has one sponsor (engine TAXONOMY.md D61): once a row holds it,
-// neither the add nor another row offers it again (#58).
+// neither the add nor another row offers it again (#58). A required role
+// still missing is a tile of its own, not a choice in the add.
 describe("a project's single roles", () => {
   it("offers the sponsor only while no row holds it", async () => {
     render(
@@ -42,10 +43,13 @@ describe("a project's single roles", () => {
     );
     const triggers = await screen.findAllByRole("combobox", { name: pc.roleLabel });
     const add = triggers[triggers.length - 1];
-    expect(add).toHaveTextContent(pc.roleKind.manager);
+    // The manager still missing has its own tile, so the add offers it
+    // nowhere else and starts on the next role free.
+    expect(screen.getByRole("button", { name: pc.addRequired(pc.leadLabel, false) })).toBeInTheDocument();
+    expect(add).toHaveTextContent(pc.roleKind.teamMember);
     await userEvent.click(add);
     const options = within(screen.getByRole("listbox")).getAllByRole("option").map((o) => o.textContent);
     expect(options).not.toContain(pc.roleKind.sponsor);
-    expect(options).toContain(pc.roleKind.manager);
+    expect(options).not.toContain(pc.roleKind.manager);
   });
 });
