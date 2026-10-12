@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode, useEffect, useRef } from "react";
+import { useRelevant } from "@/components/useRelevant";
 import { wordsWithin } from "./words";
 import { LabelsEditor } from "@/components/LabelsEditor";
 import { newRecordId } from "@/lib/recordId";
@@ -378,12 +379,15 @@ function Pick({
     onChange([...selected, id]);
   }
 
+  // What is suggested above is not listed again below, and "everything
+  // else" is said only under something (#91).
+  const suggested = new Set(useRelevant(kind).matches.map((m) => m.id));
   return (
     <Choose words={words} word={word} hasAny={items.length > 0} onAdd={add} kind={kind} onUse={(id) => (selected.includes(id) ? undefined : onChange([...selected, id]))}>
       <Suggested kind={kind} selected={selected} onPick={toggle} />
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-muted-foreground">{sc.all}</p>
-        <ChipPicker items={items} selected={selected} onToggle={toggle} placeholder={sc.searchPlaceholder} empty={sc.none(sc.words[words])} slot={`start-${kind}`} />
+        {suggested.size > 0 ? <p className="text-xs text-muted-foreground">{sc.all}</p> : null}
+        <ChipPicker items={items.filter((i) => !suggested.has(i.id))} selected={selected} onToggle={toggle} placeholder={sc.searchPlaceholder} empty={sc.none(sc.words[words])} slot={`start-${kind}`} />
       </div>
     </Choose>
   );
@@ -433,6 +437,7 @@ function PickOutcomes({
     return out;
   }, [tree.data, marks]);
   const fromGaps = chips.filter((c) => named.has(c.id));
+  const suggestedOutcomes = new Set(useRelevant("Goal", "outcome").matches.map((m) => m.id));
   // The outcomes the chosen gaps close into are what the project serves,
   // unless the person says otherwise: chosen once, as they arrive, and
   // left alone after.
@@ -503,9 +508,10 @@ function PickOutcomes({
       ) : null}
       <Suggested kind="Goal" level="outcome" selected={selected} onPick={toggle} />
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-muted-foreground">{sc.all}</p>
-        {/* Everything else: what the gaps named is listed above, once. */}
-        <ChipPicker items={chips.filter((c) => !named.has(c.id))} selected={selected} onToggle={toggle} placeholder={sc.searchPlaceholder} empty={sc.none(sc.words.goals)} slot="start-goals" />
+        {fromGaps.length > 0 || suggestedOutcomes.size > 0 ? <p className="text-xs text-muted-foreground">{sc.all}</p> : null}
+        {/* Everything else: what the gaps named, or what is suggested, is
+            listed above, once. */}
+        <ChipPicker items={chips.filter((c) => !named.has(c.id) && !suggestedOutcomes.has(c.id))} selected={selected} onToggle={toggle} placeholder={sc.searchPlaceholder} empty={sc.none(sc.words.goals)} slot="start-goals" />
       </div>
     </Choose>
     </>

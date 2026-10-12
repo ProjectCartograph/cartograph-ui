@@ -51,3 +51,26 @@ describe("moving through a stage", () => {
     expect(onNext).toHaveBeenCalled();
   });
 });
+
+// The summary of earlier steps is a reminder, not a place to go: its
+// blocks are not in the outline (#91: Beneficiaries listed twice).
+describe("the outline beside a summary", () => {
+  it("lists the step's own headings, not the summary's", async () => {
+    function WithRecap() {
+      const root = useRef<HTMLDivElement>(null);
+      return (
+        <div ref={root}>
+          <SectionOutline root={root} onNext={() => {}} />
+          <section data-slot="context-recap">
+            <h3>Beneficiaries</h3>
+          </section>
+          <h2>Problem</h2>
+          <h3>Beneficiaries</h3>
+        </div>
+      );
+    }
+    render(<WithRecap />);
+    const nav = await screen.findByRole("navigation", { name: so.label });
+    expect(nav.textContent?.match(/Beneficiaries/g)).toHaveLength(1);
+  });
+});

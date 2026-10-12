@@ -334,8 +334,8 @@ export function ProblemMap({
                   </Button>
                 ) : null}
                 {b.gap && drawer ? (
-                  <Button type="button" variant="link" size="sm" className="h-auto p-0 text-muted-foreground" onClick={() => drawer.open("Gap", b.gap as string)}>
-                    {mc.openGap}
+                  <Button type="button" variant="link" size="sm" className="h-auto p-0 text-muted-foreground" onClick={() => drawer.open("Gap", b.gap as string, b.unknown ? "/spec/affects" : undefined)}>
+                    {b.unknown ? mc.sayAffects : mc.openGap}
                   </Button>
                 ) : b.gap ? (
                   <Link to="/gaps/$id" params={{ id: b.gap }} className="text-muted-foreground underline">
