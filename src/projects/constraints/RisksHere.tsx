@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Lock, Pencil, Plus, X } from "lucide-react";
+import { Link2, Lock, Pencil, Plus, Unlink, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { copy, plusNoun } from "@/copy";
 import { useProjectStore } from "../store";
 import type { Constraint, ImpactLikelihood } from "../types";
-import { bearsOnOf, newRiskOn, placeOn, risksOn } from "./triangle";
+import { bearsOnOf, newRiskOn, placeOn, risksOn, takeOff } from "./triangle";
 import { MiniTriangle } from "./Overview";
 
 const tc = copy.projects.triangle;
@@ -65,11 +65,34 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
     }));
     setEditing(-1);
   }
+  // A risk on other sides too is taken off this one only: it is still
+  // the same risk where else it bears.
+  function unlink(index: number) {
+    store.updateSpec((s) => ({ ...s, risks: (s.risks ?? []).map((r, i) => (i === index ? takeOff(r, side) : r)) }));
+  }
   function remove(index: number) {
     store.updateSpec((s) => {
       const left = (s.risks ?? []).filter((_, i) => i !== index);
       return { ...s, risks: left.length > 0 ? left : undefined };
     });
+  }
+
+  // A risk already raised on another side, placed on this one too: one
+  // risk that moves several sides is declared once (TAXONOMY.md D60), not
+  // typed again for each.
+  const elsewhere = risks
+    .map((risk, index) => ({ risk, index }))
+    .filter(({ risk }) => !risk.affects?.some((a) => a.constraint === side) && (risk.affects?.length ?? 0) > 0);
+  const [linking, setLinking] = useState("");
+  function link() {
+    const index = Number(linking);
+    if (linking === "" || Number.isNaN(index)) return;
+    const patch = { ...(impact ? { impact } : {}), ...(on !== NONE ? { on } : {}) };
+    store.updateSpec((s) => ({ ...s, risks: (s.risks ?? []).map((r, i) => (i === index ? placeOn(r, side, patch) : r)) }));
+    setLinking("");
+    setImpact("");
+    setOn(NONE);
+    setAdding(false);
   }
 
   function add() {
@@ -150,14 +173,26 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
                 {affects.on && nameOf.get(affects.on) ? (
                   <span className="text-xs text-muted-foreground">{tc.on(nameOf.get(affects.on)!)}</span>
                 ) : null}
+                {(risk.affects?.length ?? 0) > 1 ? (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground" data-slot="also-on">
+                    <Link2 className="size-3" aria-hidden />
+                    {tc.alsoOn(otherSides(risk.affects ?? [], side))}
+                  </span>
+                ) : null}
                 {/* What was raised here is changed or taken back here. */}
                 <span className="ml-auto flex items-center gap-0.5 self-center">
                   <Button type="button" variant="ghost" size="icon-xs" onClick={() => startEdit(index, risk.description, affects.impact)} aria-label={tc.editRisk(risk.description || rc.unnamed)} title={tc.editRisk(risk.description || rc.unnamed)}>
                     <Pencil />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon-xs" onClick={() => remove(index)} aria-label={tc.removeRisk(risk.description || rc.unnamed)} title={tc.removeRisk(risk.description || rc.unnamed)}>
-                    <X />
-                  </Button>
+                  {(risk.affects?.length ?? 0) > 1 ? (
+                    <Button type="button" variant="ghost" size="icon-xs" onClick={() => unlink(index)} aria-label={tc.unlinkRisk(risk.description || rc.unnamed, sideName)} title={tc.unlinkRisk(risk.description || rc.unnamed, sideName)}>
+                      <Unlink />
+                    </Button>
+                  ) : (
+                    <Button type="button" variant="ghost" size="icon-xs" onClick={() => remove(index)} aria-label={tc.removeRisk(risk.description || rc.unnamed)} title={tc.removeRisk(risk.description || rc.unnamed)}>
+                      <X />
+                    </Button>
+                  )}
                 </span>
               </li>
             ),
@@ -166,6 +201,21 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
       )}
       {adding ? (
         <div className="flex flex-wrap items-center gap-2">
+          {elsewhere.length > 0 ? (
+            <Select value={linking} onValueChange={setLinking}>
+              <SelectTrigger className="w-full" aria-label={tc.linkLabel(sideName)} data-cartograph-region="link-risk">
+                <SelectValue placeholder={tc.linkLabel(sideName)} />
+              </SelectTrigger>
+              <SelectContent>
+                {elsewhere.map(({ risk, index }) => (
+                  <SelectItem key={risk.id ?? index} value={String(index)} hint={tc.raisedOn(otherSides(risk.affects ?? [], side))}>
+                    {risk.description || rc.unnamed}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+          {linking === "" ? (
           <Input
             autoFocus
             value={description}
@@ -179,6 +229,7 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
             className="min-w-60 flex-1"
             data-cartograph-field="/spec/risks/-/description"
           />
+          ) : null}
           <Select value={impact} onValueChange={(v) => setImpact(v as ImpactLikelihood)}>
             <SelectTrigger className="w-32" aria-label={tc.hereImpact} data-cartograph-field="/spec/risks/-/affects/-/impact">
               <SelectValue placeholder={tc.hereImpact} />
@@ -206,10 +257,25 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
               </SelectContent>
             </Select>
           ) : null}
-          <Button type="button" size="sm" variant="outline" onClick={add} disabled={!description.trim()}>
-            {tc.hereSave}
-          </Button>
-          <Button type="button" size="sm" variant="ghost" onClick={() => setAdding(false)}>
+          {linking === "" ? (
+            <Button type="button" size="sm" variant="outline" onClick={add} disabled={!description.trim()}>
+              {tc.hereSave}
+            </Button>
+          ) : (
+            <Button type="button" size="sm" variant="outline" onClick={link}>
+              <Link2 />
+              {tc.linkShort}
+            </Button>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setLinking("");
+              setAdding(false);
+            }}
+          >
             {tc.hereCancel}
           </Button>
         </div>
@@ -229,6 +295,14 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
       )}
     </section>
   );
+}
+
+/** The other sides a risk bears on, in words. */
+function otherSides(affects: readonly { constraint: string }[], side: Constraint): string {
+  return affects
+    .filter((a) => a.constraint !== side)
+    .map((a) => tc.sides[a.constraint as Constraint].toLowerCase())
+    .join(", ");
 }
 
 /** The risks to one side, beside the section that holds it, with what
