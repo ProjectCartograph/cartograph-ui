@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { defaultFilter } from "cmdk";
-import { Check, FolderSearch, Search } from "lucide-react";
+import { Check, Circle, CircleDot, FolderSearch, Search } from "lucide-react";
 
 import { useClient } from "@/client/context";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,14 @@ const pk = copy.recordPicker;
  * right. Arrow keys move, Space chooses or unchooses, Enter is done.
  */
 export function PickerDialog(props: PickerProps & { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { open, onOpenChange, title, multiple } = props;
+  const { open, onOpenChange, title, select } = props;
+  const one = select.max === 1;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl" data-cartograph-region="record-picker">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{multiple ? pk.hintMany : pk.hintOne}</DialogDescription>
+          <DialogDescription>{one ? pk.hintOne : select.max ? pk.hintUpTo(select.max) : pk.hintMany}</DialogDescription>
         </DialogHeader>
         {/* Mounted afresh on each opening, starting from what is chosen now. */}
         {open ? <PickerBody {...props} close={() => onOpenChange(false)} /> : null}
@@ -33,17 +34,24 @@ export function PickerDialog(props: PickerProps & { open: boolean; onOpenChange:
   );
 }
 
+/** How many may be chosen: max 1 is one choice, which a click makes and
+ * closes on; otherwise as many as the bounds allow (none, any number). A
+ * caller passes what its field allows, its schema's maxItems among it. */
+export type PickerSelect = { min?: number; max?: number };
+
 type PickerProps = {
   kind: string;
   title: string;
-  multiple: boolean;
+  select: PickerSelect;
   selected: string[];
   onChange: (ids: string[]) => void;
   /** The ids that may be chosen, where fewer than every record may. */
   only?: ReadonlySet<string>;
 };
 
-function PickerBody({ kind, title, multiple, selected, onChange, only, close }: PickerProps & { close: () => void }) {
+function PickerBody({ kind, title, select, selected, onChange, only, close }: PickerProps & { close: () => void }) {
+  const multiple = select.max !== 1;
+  const { min = 0, max } = select;
   const client = useClient();
   const list = useQuery({ queryKey: ["picker", kind], queryFn: () => client.list(kind) });
   const [query, setQuery] = useState("");
@@ -65,7 +73,7 @@ function PickerBody({ kind, title, multiple, selected, onChange, only, close }: 
       close();
       return;
     }
-    setChosen((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
+    setChosen((c) => (c.includes(id) ? c.filter((x) => x !== id) : max !== undefined && c.length >= max ? c : [...c, id]));
   }
   function move(d: number) {
     const i = rows.findIndex((r) => r.id === at);
@@ -75,15 +83,22 @@ function PickerBody({ kind, title, multiple, selected, onChange, only, close }: 
       listRef.current?.querySelector(`[data-row="${CSS.escape(next.id)}"]`)?.scrollIntoView({ block: "nearest" });
     }
   }
+  const full = max !== undefined && chosen.length >= max;
+  const short = chosen.length < min;
   function done() {
+    if (short) return;
     onChange(chosen);
     close();
   }
 
   return (
     <>
-      <div className="grid min-h-0 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="flex min-w-0 flex-col gap-2">
+      {/* Both panes keep one height whatever the preview holds: a preview
+          that grew or shrank re-centred the dialog, moving the list under
+          the pointer onto another row, which changed the preview again
+          (#96). */}
+      <div className="grid min-h-0 gap-4 md:h-[55vh] md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="flex min-h-0 min-w-0 flex-col gap-2">
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -100,43 +115,56 @@ function PickerBody({ kind, title, multiple, selected, onChange, only, close }: 
               }}
             />
           </div>
-          <ul ref={listRef} role="listbox" aria-label={title} aria-multiselectable={multiple} className="flex max-h-[55vh] flex-col overflow-y-auto rounded-lg p-1 ring-1 ring-foreground/10">
+          <ul ref={listRef} role="listbox" aria-label={title} aria-multiselectable={multiple} className="flex max-h-[40vh] min-h-0 flex-1 flex-col overflow-y-auto rounded-lg p-1 ring-1 ring-foreground/10 md:max-h-none">
             {list.isLoading ? <li className="p-2 text-sm text-muted-foreground">{pk.loading}</li> : null}
             {!list.isLoading && rows.length === 0 ? <li className="p-2 text-sm text-muted-foreground">{query ? pk.noMatch : pk.empty}</li> : null}
             {rows.map((r) => {
               const on = chosen.includes(r.id);
+              const shut = multiple && full && !on;
               return (
                 <li
                   key={r.id}
                   role="option"
                   aria-selected={on}
+                  aria-disabled={shut || undefined}
+                  title={shut && max !== undefined ? pk.atMost(max) : undefined}
                   data-row={r.id}
                   data-at={r.id === at ? "" : undefined}
                   onMouseEnter={() => setPointed(r.id)}
                   onFocus={() => setPointed(r.id)}
                   onClick={() => toggle(r.id)}
-                  className={`flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm ${r.id === at ? "bg-muted" : ""}`}
+                  className={`flex cursor-default items-center gap-2 rounded-md px-2 py-1.5 text-sm ${r.id === at ? "bg-muted" : ""} ${shut ? "text-muted-foreground" : ""}`}
                 >
-                  <span className={`flex size-4 shrink-0 items-center justify-center rounded border ${on ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30"}`} aria-hidden="true">
-                    {on ? <Check className="size-3" /> : null}
-                  </span>
+                  {/* One choice is marked as one, a radio; several as boxes. */}
+                  {multiple ? (
+                    <span className={`flex size-4 shrink-0 items-center justify-center rounded border ${on ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30"}`} aria-hidden="true">
+                      {on ? <Check className="size-3" /> : null}
+                    </span>
+                  ) : on ? (
+                    <CircleDot className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  ) : (
+                    <Circle className="size-4 shrink-0 text-foreground/30" aria-hidden="true" />
+                  )}
                   <span className="min-w-0 flex-1 truncate">{r.name}</span>
                 </li>
               );
             })}
           </ul>
         </div>
-        <div className="max-h-[60vh] min-w-0 overflow-y-auto rounded-lg p-3 ring-1 ring-foreground/10" aria-live="polite">
+        <div className="h-[30vh] min-w-0 overflow-y-auto rounded-lg p-3 ring-1 ring-foreground/10 md:h-full" aria-live="polite">
           {at ? <RecordPreview kind={kind} id={at} /> : <p className="text-sm text-muted-foreground">{pk.previewEmpty}</p>}
         </div>
       </div>
       {multiple ? (
         <DialogFooter>
-          <span className="mr-auto self-center text-sm text-muted-foreground">{pk.chosen(chosen.length)}</span>
+          <span className="mr-auto self-center text-sm text-muted-foreground" aria-live="polite">
+            {max !== undefined ? pk.chosenOf(chosen.length, max) : pk.chosen(chosen.length)}
+            {short ? ` · ${pk.atLeast(min)}` : ""}
+          </span>
           <Button type="button" variant="outline" onClick={close}>
             {pk.cancel}
           </Button>
-          <Button type="button" onClick={done}>
+          <Button type="button" onClick={done} disabled={short}>
             <Check />
             {pk.done}
           </Button>
