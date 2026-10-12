@@ -1,5 +1,6 @@
 import { Plus, X } from "lucide-react";
 
+import { CommentMark } from "@/comments/CommentMark";
 import { FromIdea } from "@/components/FromIdea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,6 +94,11 @@ export function DeliverablesSection() {
                 maxLength={60}
               />
             </div>
+            {d.id ? (
+              <span className="mt-7">
+                <CommentMark kind="Project" id={store.id} anchor={`/spec/deliverables/{${d.id}}`} what={d.name || `D${idx + 1}`} />
+              </span>
+            ) : null}
             <Button type="button" variant="ghost" size="icon-sm" className="mt-7" onClick={() => remove(idx)} aria-label={copy.projects.common.remove}>
               <X />
             </Button>

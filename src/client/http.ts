@@ -338,6 +338,11 @@ export function httpClient(
     components: () => answer(wire.GET("/components", { params: { query: { ...preview() } } })),
     dmaic: (id) => answer(wire.GET("/manifests/Project/{id}/dmaic", { params: { path: { id }, query: preview() } })),
     constraints: (id) => answer(wire.GET("/manifests/Project/{id}/constraints", { params: { path: { id }, query: preview() } })),
+    comments: (kind, id) => answer(wire.GET("/manifests/{kind}/{id}/comments", { params: { path: { kind, id } } })),
+    addComment: (kind, id, draft) => answer(wire.POST("/manifests/{kind}/{id}/comments", { params: { path: { kind, id } }, body: draft })),
+    resolveComment: (comment, resolved) => answer(wire.PATCH("/comments/{comment}", { params: { path: { comment } }, body: { resolved } })),
+    mentionables: (q) => answer(wire.GET("/mentionables", { params: { query: q ? { q } : {} } })),
+    myMentions: () => answer(wire.GET("/comments/mentions")),
     round: (id) => answer(wire.GET("/manifests/Project/{id}/round", { params: { path: { id }, query: preview() } })),
     controlChart: (id) => answer(wire.GET("/manifests/KPI/{id}/control", { params: { path: { id }, query: preview() } })),
     semanticLayer: async (format) => {

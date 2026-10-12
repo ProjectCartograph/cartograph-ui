@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { CommentMark } from "@/comments/CommentMark";
 import { ChevronUp, Flag, List, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -136,8 +137,11 @@ export function MilestonesSection() {
       {showAll ? (
         <ol className="flex flex-col gap-3" data-cartograph-field="/spec/milestones">
           {milestones.map((m, i) => (
-            <li key={m.id}>
-              <MilestoneEditor m={m} i={i} patch={patch} remove={() => set(milestones.filter((_, j) => j !== i))} />
+            <li key={m.id} className="flex items-start gap-1">
+              <div className="min-w-0 flex-1">
+                <MilestoneEditor m={m} i={i} patch={patch} remove={() => set(milestones.filter((_, j) => j !== i))} />
+              </div>
+              {m.id ? <CommentMark kind="Project" id={store.id} anchor={`/spec/milestones/{${m.id}}`} what={m.name || `#${i + 1}`} /> : null}
             </li>
           ))}
         </ol>

@@ -1,5 +1,6 @@
 import { Grid3x3, Plus, X } from "lucide-react";
 
+import { CommentMark } from "@/comments/CommentMark";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -48,7 +49,11 @@ export function RiskList({
   placing,
   onPlace,
   triangle,
+  comments,
 }: {
+  /** The record each risk is commented on in, where comments are kept
+   * beside it (engine D72). */
+  comments?: { kind: string; id: string };
   /** What each side's risks can bear on, for a project: the risk row
    * then places itself on scope, schedule and cost (D60). */
   triangle?: Partial<Record<Constraint, readonly BearsOn[]>>;
@@ -112,6 +117,11 @@ export function RiskList({
             maxLength={160}
             className="flex-1"
           />
+          {comments && r.id ? (
+            <span className="self-center">
+              <CommentMark kind={comments.kind} id={comments.id} anchor={`${field}/{${r.id}}`} what={r.description || rc.unnamed} />
+            </span>
+          ) : null}
           {onPlace ? (
             <Button
               type="button"

@@ -351,6 +351,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/{kind}/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A record's comments, oldest first
+         * @description The conversation about a record, beside the parts it is about (TAXONOMY.md D72): each comment's anchor, the thread it answers, its words, whom it asks, and whether its thread is resolved. Comments are not the record: no version, no change set, no check.
+         */
+        get: operations["listComments"];
+        put?: never;
+        /**
+         * Comment on a record, beside a part of it
+         * @description Anyone who may read the record may comment on it. A reply joins the thread it answers; a mention asks a person on the access list or a team, and is refused for anyone not there.
+         */
+        post: operations["addComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/comments/{comment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Resolve or reopen the thread a comment starts */
+        patch: operations["resolveComment"];
+        trace?: never;
+    };
+    "/comments/mentions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The comments that ask the caller, newest first
+         * @description By the caller's address, or through a team they are on. Empty for an operator nobody signed in as.
+         */
+        get: operations["listMyMentions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mentionables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who a comment can ask
+         * @description The people on the access list, then the teams, whose name, address or id holds q. Without an access list, the teams alone.
+         */
+        get: operations["listMentionables"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/Project/{id}/constraints": {
         parameters: {
             query?: never;
@@ -2439,6 +2520,49 @@ export interface components {
                 [key: string]: components["schemas"]["VocabularyTerm"][];
             };
         };
+        Comment: {
+            id: string;
+            kind: string;
+            /** @description The id of the record it is on. */
+            manifest: string;
+            /** @description What it is about: a JSON pointer into the record, a section of the walk as section:<step>, or empty for the record as a whole. */
+            anchor: string;
+            /** @description The comment that starts the thread it answers. */
+            reply?: string;
+            body: string;
+            mentions: components["schemas"]["Mention"][];
+            /** @description Who wrote it, by their address; empty for an operator nobody signed in as. */
+            author: string;
+            /** @description The author's name on the access list, where it has one. */
+            authorName?: string;
+            /** Format: date-time */
+            at: string;
+            /** @description Set on the comment that starts a thread, when it is resolved. */
+            resolved: boolean;
+            resolvedBy?: string;
+            /** Format: date-time */
+            resolvedAt?: string;
+        };
+        CommentDraft: {
+            anchor?: string;
+            reply?: string;
+            body: string;
+            mentions?: components["schemas"]["Mention"][];
+        };
+        Mention: {
+            /** @enum {string} */
+            kind: "person" | "team";
+            /** @description A person's address on the access list, or a team's id. */
+            id: string;
+            /** @description How the party is named now, in a comment read back: the person's name on the access list or the team's name. Ignored when writing. */
+            name?: string;
+        };
+        Mentionable: {
+            /** @enum {string} */
+            kind: "person" | "team";
+            id: string;
+            name: string;
+        };
         VocabularyTerm: {
             /** @description What a record stores. */
             value: string;
@@ -3559,6 +3683,144 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    listComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    addComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentDraft"];
+            };
+        };
+        responses: {
+            /** @description Kept */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    resolveComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                comment: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    resolved: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listMyMentions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listMentionables: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Mentionable"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getProjectConstraints: {
