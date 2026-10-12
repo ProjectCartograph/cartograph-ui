@@ -104,7 +104,7 @@ export function GapCitations({
       />
       </div>
       {/* Each gap readable before it is cited (#28). */}
-      {gapOptions.length > 0 ? <BrowseButton kind="Gap" title={ac.problemGapsLabel} multiple selected={cited} onChange={setGaps} /> : null}
+      {gapOptions.length > 0 ? <BrowseButton kind="Gap" title={ac.problemGapsLabel} select={{}} selected={cited} onChange={setGaps} /> : null}
       </div>
       <SheetAddDialog
         kind="Gap"

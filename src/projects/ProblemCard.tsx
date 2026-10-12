@@ -165,7 +165,7 @@ export function ProblemCard({
                 <BrowseButton
                   kind="BeneficiaryGroup"
                   title={ac.problemGroupsLabel}
-                  multiple
+                  select={{}}
                   selected={groups}
                   onChange={(next) => onChange({ groups: next })}
                   only={new Set(groupOptions.map((o) => o.value))}

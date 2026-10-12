@@ -71,7 +71,7 @@ export function ReferencePicker({
       </div>
       {/* Each record readable before it is chosen (#28). */}
       {empty ? null : (
-        <BrowseButton kind={refKind} title={label ?? kindLabel} multiple={false} selected={value ? [value] : []} onChange={(ids) => onChange(ids[0])} />
+        <BrowseButton kind={refKind} title={label ?? kindLabel} select={{ max: 1 }} selected={value ? [value] : []} onChange={(ids) => onChange(ids[0])} />
       )}
       {canAdd ? (
         <>

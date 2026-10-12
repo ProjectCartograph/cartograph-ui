@@ -595,6 +595,10 @@ export const copy = {
   recordPicker: {
     hintOne: "Read each in the preview, then choose one.",
     hintMany: "Read each in the preview, then choose as many as apply. Space chooses, Enter is done.",
+    hintUpTo: (max: number) => `Read each in the preview, then choose up to ${max}. Space chooses, Enter is done.`,
+    chosenOf: (n: number, max: number) => `${n} of ${max} chosen`,
+    atMost: (max: number) => `Up to ${max} may be chosen; take one off to choose this`,
+    atLeast: (min: number) => `Choose at least ${min}`,
     search: "Search by name",
     loading: "Loading",
     empty: "None recorded yet.",

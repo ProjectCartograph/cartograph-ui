@@ -16,13 +16,15 @@ const pk = copy.recordPicker;
 const gaps = [
   { kind: "Gap", id: "late", name: "Faults are found after dispatch", version: 1, updatedOn: "" },
   { kind: "Gap", id: "standard", name: "No single standard", version: 1, updatedOn: "" },
+  { kind: "Gap", id: "paper", name: "Forms arrive late", version: 1, updatedOn: "" },
 ];
 const manifests: Record<string, unknown> = {
   late: { kind: "Gap", metadata: { id: "late", name: "Faults are found after dispatch" }, spec: { statement: "Checks happen after the produce leaves" } },
   standard: { kind: "Gap", metadata: { id: "standard", name: "No single standard" }, spec: { statement: "Each depot grades its own way" } },
+  paper: { kind: "Gap", metadata: { id: "paper", name: "Forms arrive late" }, spec: { statement: "Paper forms reach the office after the season" } },
 };
 
-function mount(onChange: (ids: string[]) => void) {
+function mount(onChange: (ids: string[]) => void, select: { min?: number; max?: number } = {}) {
   render(
     <ClientProvider
       client={fakeClient({
@@ -32,7 +34,7 @@ function mount(onChange: (ids: string[]) => void) {
       })}
     >
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <PickerDialog kind="Gap" title="Related gaps" multiple selected={[]} onChange={onChange} open onOpenChange={() => {}} />
+        <PickerDialog kind="Gap" title="Related gaps" select={select} selected={[]} onChange={onChange} open onOpenChange={() => {}} />
       </QueryClientProvider>
     </ClientProvider>,
   );
@@ -52,6 +54,34 @@ describe("choosing records with a preview", () => {
     await userEvent.click(second);
     await userEvent.click(screen.getByRole("option", { name: /Faults are found/ }));
     await userEvent.click(screen.getByRole("button", { name: pk.done }));
+    expect(onChange).toHaveBeenCalledWith(["standard", "late"]);
+  });
+
+  // One widget, told how many may be chosen (#98).
+  it("marks one choice as one, and makes it with a click", async () => {
+    const onChange = vi.fn();
+    mount(onChange, { max: 1 });
+    expect(await screen.findByText(pk.hintOne)).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("option", { name: /No single standard/ }));
+    expect(onChange).toHaveBeenCalledWith(["standard"]);
+    expect(screen.queryByRole("button", { name: pk.done })).toBeNull();
+  });
+});
+
+describe("choosing a bounded few", () => {
+  it("shuts the rest once the most is chosen, and refuses Done below the least", async () => {
+    const onChange = vi.fn();
+    mount(onChange, { min: 1, max: 2 });
+    const done = await screen.findByRole("button", { name: pk.done });
+    expect(done).toBeDisabled();
+    expect(screen.getByText(new RegExp(pk.atLeast(1)))).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("option", { name: /No single standard/ }));
+    expect(screen.getByText(new RegExp(pk.chosenOf(1, 2)))).toBeInTheDocument();
+    expect(done).toBeEnabled();
+    await userEvent.click(screen.getByRole("option", { name: /Faults are found/ }));
+    expect(screen.getByRole("option", { name: /Forms arrive late/ })).toHaveAttribute("aria-disabled", "true");
+    await userEvent.click(screen.getByRole("option", { name: /Forms arrive late/ }));
+    await userEvent.click(done);
     expect(onChange).toHaveBeenCalledWith(["standard", "late"]);
   });
 
