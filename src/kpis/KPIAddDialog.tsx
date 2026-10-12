@@ -32,6 +32,12 @@ import { DidYouMean } from "@/components/DidYouMean";
 const kc = copy.kpis;
 const dc = kc.definition;
 
+/** What a key result already says of the measure it is read by: its
+ * figure today, its target and where it is read from. The two take the
+ * same shapes, so a new indicator starts from them rather than asking
+ * again (#87). */
+export type KPISeed = { baseline?: unknown; target?: unknown; source?: string };
+
 /**
  * A new measure, from inside the flow that wanted one.
  *
@@ -46,8 +52,10 @@ export function KPIAddDialog({
   onOpenChange,
   onAdded,
   initialName,
+  seed,
 }: {
   open: boolean;
+  seed?: KPISeed;
   /** A name to start from, as typed on the home page. */
   initialName?: string;
   onOpenChange: (open: boolean) => void;
@@ -59,7 +67,7 @@ export function KPIAddDialog({
   const [definition, setDefinition] = useState("");
   const [unit, setUnit] = useState<string | undefined>();
   const [direction, setDirection] = useState<string | undefined>();
-  const [source, setSource] = useState<string | undefined>();
+  const [source, setSource] = useState<string | undefined>(seed?.source);
   const [cycle, setCycle] = useState<string | undefined>();
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [refused, setRefused] = useState(false);
@@ -69,19 +77,19 @@ export function KPIAddDialog({
   // waiting on, as everywhere else here.
   const ready = !!name.trim() && !!definition.trim() && !!unit && !!direction && !!source;
 
-  function close(next: boolean) {
-    if (!next) {
-      setName("");
-      setDefinition("");
-      setUnit(undefined);
-      setDirection(undefined);
-      setSource(undefined);
-      setCycle(undefined);
-      setLabels({});
-      setRefused(false);
-      setFailed(null);
-    }
-    onOpenChange(next);
+  // Escape or a click outside only closes: what was typed is there when
+  // it opens again (#85). Cancel and a save clear it.
+  function discard() {
+    setName("");
+    setDefinition("");
+    setUnit(undefined);
+    setDirection(undefined);
+    setSource(seed?.source);
+    setCycle(undefined);
+    setLabels({});
+    setRefused(false);
+    setFailed(null);
+    onOpenChange(false);
   }
 
   async function save() {
@@ -94,7 +102,15 @@ export function KPIAddDialog({
       apiVersion: "cartograph/v1",
       kind: "KPI",
       metadata: Object.keys(labels).length > 0 ? { id, name, labels } : { id, name },
-      spec: { definition, unit, direction, sources: [source], ...(cycle ? { cycle } : {}) },
+      spec: {
+        definition,
+        unit,
+        direction,
+        sources: [source],
+        ...(cycle ? { cycle } : {}),
+        ...(seed?.baseline ? { baseline: seed.baseline } : {}),
+        ...(seed?.target ? { target: seed.target } : {}),
+      },
     };
     try {
       await client.saveVersion("KPI", id, manifest, kc.addReason);
@@ -107,11 +123,11 @@ export function KPIAddDialog({
     queryClient.invalidateQueries({ queryKey: ["sheet-ref-options", "KPI"] });
     queryClient.invalidateQueries({ queryKey: ["project-aim-kpis"] });
     onAdded?.(id, name);
-    close(false);
+    discard();
   }
 
   return (
-    <Dialog open={open} onOpenChange={close}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg" data-cartograph-region="dialog-kpi-add">
         <DialogHeader>
           <DialogTitle>{kc.addTitle}</DialogTitle>
@@ -217,7 +233,7 @@ export function KPIAddDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="ghost" onClick={() => close(false)}>
+          <Button type="button" variant="ghost" onClick={discard}>
             {kc.addCancel}
           </Button>
           <Button type="button" onClick={save}>

@@ -466,21 +466,15 @@ function RootLayout() {
             {/* Opening and closing the rail belongs to the rail: its first
                 thing, at the top left, open or folded to its icons. */}
             <SidebarTrigger className="size-8" data-cartograph-region="rail-toggle" />
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              {/* The organisation the workspace is about, once named
-                  (engine TAXONOMY.md D37); the product's name until then. */}
-              {logo ? (
-                <img src={logo} alt="" className="size-8 shrink-0 rounded-lg bg-white object-contain p-0.5" />
-              ) : (
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
-                  {(organisation || copy.appName).slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate text-sm font-semibold">{organisation || copy.appName}</span>
-                <span className="truncate text-xs text-muted-foreground">{organisation ? copy.appName : copy.appLine}</span>
+            {/* The organisation the workspace is about, once named (engine
+                TAXONOMY.md D37). Until then the rail starts with what it
+                holds: no product mark, no block. */}
+            {organisation ? (
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                {logo ? <img src={logo} alt="" className="size-8 shrink-0 rounded-lg bg-white object-contain p-0.5" /> : null}
+                <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">{organisation}</span>
               </div>
-            </div>
+            ) : null}
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>

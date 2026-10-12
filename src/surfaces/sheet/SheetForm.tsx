@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { type Control, useForm } from "react-hook-form";
+import { type Control, useForm, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -134,7 +134,6 @@ export function SheetForm({
   const queryClient = useQueryClient();
   const client = useClient();
 
-  const [idEdited, setIdEdited] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [conflict, setConflict] = useState(false);
 
@@ -142,7 +141,8 @@ export function SheetForm({
     const base: FormValues = {
       _name: existing?.name ?? initialName ?? "",
       _id: existing?.id ?? "",
-      _reason: minimal?.reason ?? "",
+      // Adding says itself why: a reason is asked only of a change.
+      _reason: minimal?.reason ?? (existing ? "" : copy.sheets.dialog.addedReason),
     };
     for (const f of fields) {
       const v = existing?.spec[f.name];
@@ -157,7 +157,6 @@ export function SheetForm({
   useEffect(() => {
     if (open) {
       form.reset(defaultValues);
-      setIdEdited(false);
       setGeneralError(null);
       setConflict(false);
     }
@@ -166,11 +165,11 @@ export function SheetForm({
 
   const nameValue = form.watch("_name");
   useEffect(() => {
-    if (!isEdit && !idEdited) {
+    if (!isEdit) {
       form.setValue("_id", slugify(typeof nameValue === "string" ? nameValue : ""));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nameValue, isEdit, idEdited]);
+  }, [nameValue, isEdit]);
 
   async function onSubmit(values: FormValues) {
     setGeneralError(null);
@@ -290,36 +289,8 @@ export function SheetForm({
               )}
             />
 
-            {minimal ? null : (
-            <FormField
-              control={form.control}
-              name="_id"
-              rules={{ required: true, pattern: /^[a-z0-9][a-z0-9-]{1,63}$/ }}
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-1">
-                    <FormLabel>{copy.sheets.dialog.idLabel}</FormLabel>
-                    <Help label={copy.sheets.dialog.idLabel} hint={copy.sheets.dialog.idHint} />
-                  </div>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      data-cartograph-field="/metadata/id"
-                      value={field.value as string}
-                      disabled={isEdit}
-                      onChange={(e) => {
-                        setIdEdited(true);
-                        field.onChange(e);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            )}
-
+            {/* The id is made from the name and never asked: a technical
+                handle a person has no use for (#88). */}
             {(minimal ? fields.filter((f) => f.required && !(preset && f.name in preset)) : fields).map((f) => (
               <SheetFormField key={f.name} kind={kind} field={f} control={form.control} />
             ))}
@@ -328,23 +299,29 @@ export function SheetForm({
               <BodyUses id={existing.id} />
             ) : null}
 
-            {minimal ? null : (
+            {minimal || !isEdit ? null : (
             <FormField
               control={form.control}
               name="_reason"
               rules={{ required: true, maxLength: 60 }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{copy.sheets.dialog.reasonLabel}</FormLabel>
+                  <FormLabel>
+                    {copy.sheets.dialog.reasonLabel}
+                    <span aria-hidden="true" className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       value={field.value as string}
                       maxLength={60}
+                      required
                       placeholder={copy.sheets.dialog.reasonPlaceholder}
                     />
                   </FormControl>
-                  <FormDescription>{((field.value as string)?.length ?? 0)}/60</FormDescription>
+                  <FormDescription>
+                    {copy.sheets.dialog.reasonHint} {((field.value as string)?.length ?? 0)}/60
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -364,6 +341,14 @@ export function SheetForm({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** A source's metrics, each asked what it counts over where the source
+ * holds more than one kind of record: a warehouse (engine TAXONOMY.md
+ * D67). */
+function MetricsOfSource({ control, value, onChange }: { control: Control<FormValues>; value: SourceMetric[] | ""; onChange: (next: SourceMetric[] | undefined) => void }) {
+  const category = useWatch({ control, name: "category" });
+  return <SourceMetricsEditor value={value} onChange={onChange} several={category === "warehouse"} />;
 }
 
 function SheetFormField({
@@ -412,7 +397,7 @@ function SheetFormField({
         render={({ field: rhf }) => (
           <FormItem>
             {heading}
-            <SourceMetricsEditor value={rhf.value as SourceMetric[] | ""} onChange={(next) => rhf.onChange(next ?? "")} />
+            <MetricsOfSource control={control} value={rhf.value as SourceMetric[] | ""} onChange={(next) => rhf.onChange(next ?? "")} />
           </FormItem>
         )}
       />
@@ -473,7 +458,7 @@ function SheetFormField({
               </FormControl>
               <SelectContent>
                 {(field.enumValues ?? []).map((v) => (
-                  <SelectItem key={String(v)} value={v}>
+                  <SelectItem key={String(v)} value={v} hint={copy.sheets.fieldValueHints[kind]?.[field.name]?.[String(v)]}>
                     {vocab ? (
                       <VocabOption vocab={vocab} value={v as string | number} />
                     ) : (
@@ -589,6 +574,7 @@ function SheetFormField({
               value={(rhf.value as string) ?? ""}
               placeholder={placeholder}
               maxLength={field.maxLength}
+              type={field.format === "date" ? "date" : undefined}
             />
           </FormControl>
           {field.maxLength ? (

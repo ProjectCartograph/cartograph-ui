@@ -10,7 +10,6 @@ function capital(s: string): string {
 
 export const copy = {
   appName: "Cartograph",
-  appLine: "Definitions",
   // The home page: one question, read against the taxonomy and the record
   // (engine docs/adr/0023).
   home: {
@@ -84,6 +83,7 @@ export const copy = {
       Segment: "Segment",
       DataSource: "Data source",
       FundingSource: "Budget",
+      Allocation: "Allocation",
       BeneficiaryGroup: "Beneficiary group",
       KPIReadings: "Readings",
       PortfolioDecisions: "Portfolio decisions",
@@ -120,8 +120,10 @@ export const copy = {
     label: "Tags",
     hint: "Your own tags for grouping records, such as by report.",
     keyLabel: "Tag",
+    keyShown: "Tag, such as region",
     keyPlaceholder: "",
     valueLabel: "Value",
+    valueShown: "Its value, such as north",
     valuePlaceholder: "",
     add: "Add",
     groupBy: "Group by",
@@ -362,6 +364,7 @@ export const copy = {
       Segment: "Segment",
       Unit: "Unit",
       FundingSource: "Budget",
+      Allocation: "Allocation",
       Assumption: "Assumption",
       DataSource: "Data source",
       ReportingCycle: "Reporting cycle",
@@ -705,6 +708,7 @@ export const copy = {
     finishFirst: "Required before merging.",
     needed: (n: number) => (n === 1 ? "1 field to fill before merging" : `${n} fields to fill before merging`),
     required: (field: string) => `Fill in ${field}`,
+    ofField: (field: string, message: string) => `${field.charAt(0).toUpperCase()}${field.slice(1)}: ${message.charAt(0).toLowerCase()}${message.slice(1)}`,
     // A field's name where its pointer's last part does not read well.
     fields: {
       situation: "the problem",
@@ -939,6 +943,7 @@ export const copy = {
       Segment: "Segments",
       Unit: "Units",
       FundingSource: "Budgets",
+      Allocation: "Allocations",
       Gap: "Gaps",
       Assumption: "Assumptions",
       DataSource: "Data sources",
@@ -955,6 +960,7 @@ export const copy = {
       Segment: "Segment",
       Unit: "Unit",
       FundingSource: "Budget",
+      Allocation: "Allocation",
       Gap: "Gap",
       Assumption: "Assumption",
       DataSource: "Data source",
@@ -987,6 +993,16 @@ export const copy = {
         name: "Name",
         category: "Category",
         description: "Description",
+      },
+      Allocation: {
+        name: "Name",
+        source: "Budget",
+        project: "Project",
+        amount: "Amount",
+        currency: "Currency",
+        status: "Decision",
+        decided: "Decided on",
+        note: "Note",
       },
       FundingSource: {
         name: "Name",
@@ -1043,6 +1059,8 @@ export const copy = {
       ReportingCycle: {
         name: "Name",
         periodMonths: "Period",
+        periodDays: "Period in days",
+        startDate: "First day",
         startMonth: "Start month",
         periods: "Named periods",
         dueOffsetDays: "Due offset",
@@ -1101,6 +1119,15 @@ export const copy = {
         affects: "The groups of people this shortfall falls on.",
         segments: "Where this gap was found, such as a region, product line or service tier.",
       },
+      Allocation: {
+        source: "The budget the money comes from.",
+        project: "The project the money goes to.",
+        amount: "How much the budget gives the project.",
+        currency: "The three-letter code of the currency, such as USD.",
+        status: "Approved once the budget's holder has agreed it, requested while it waits, not funded if it was refused. The project's cost lines on this budget follow it.",
+        decided: "The day it was decided.",
+        note: "Anything about the decision the other fields cannot hold, such as a condition on the money.",
+      },
       FundingSource: {
         code: "The code finance uses for this budget.",
         heldBy: "The unit or organisation whose budget it is.",
@@ -1123,6 +1150,8 @@ export const copy = {
       },
       ReportingCycle: {
         periodMonths: "How many months one round covers.",
+        periodDays: "How many days one round covers, for a number read daily, weekly or every two weeks. Leave it empty for rounds of months.",
+        startDate: "The first day of one round, so the rest line up with it: a weekly cycle from a Monday.",
         startMonth: "The month of the year the first round opens.",
         periods: "Named periods instead of equal rounds, such as terms each year or one-off survey waves, each set by the month it ends.",
         dueOffsetDays: "How many days after a round closes the report is due.",
@@ -1197,10 +1226,11 @@ export const copy = {
           "operationalSystem": "Operational system",
           "apiOrFeed": "API or feed",
           "documentStore": "Document store",
+          warehouse: "Warehouse",
         },
         provenance: {
-          internal: "Run by us",
-          external: "Run by a third party",
+          internal: "Internal",
+          external: "Third-Party",
         },
         classification: {
           public: "Public",
@@ -1232,12 +1262,36 @@ export const copy = {
           low: "Unsure",
         },
       },
+      Allocation: {
+        status: { approved: "Approved", requested: "Requested", unfunded: "Not funded" },
+      },
       ReportingCycle: {
         periodMonths: {
           "1": "Monthly",
           "3": "Quarterly",
           "6": "Every six months",
           "12": "Yearly",
+        },
+        periodDays: {
+          "1": "Daily",
+          "7": "Weekly",
+          "14": "Every two weeks",
+        },
+      },
+    } as Record<string, Record<string, Record<string, string>>>,
+    // What each fixed choice means, under its name where it is chosen.
+    fieldValueHints: {
+      DataSource: {
+        refresh: {
+          continuous: "Each record lands as it is made: an operational system, a live feed.",
+          onEvent: "Changes when something sets it off, such as a harvest closed, not on a calendar.",
+          irregular: "Changes with no rhythm and no event that can be named.",
+        },
+        classification: {
+          public: "Anyone may see it; its release harms no one.",
+          internal: "Anyone in the organisation may see it; released outside, it would cause minor harm.",
+          confidential: "Only the roles that need it may see it; released, it would cause serious harm.",
+          restricted: "Only named roles may see it, under the strictest controls; released, it would cause severe harm or break the law.",
         },
       },
     } as Record<string, Record<string, Record<string, string>>>,
@@ -1269,8 +1323,10 @@ export const copy = {
     dialog: {
       idLabel: "Id",
       idHint: "A short name used in links. It can't be changed later.",
-      reasonLabel: "Reason",
+      reasonLabel: "What changed",
+      reasonHint: "A few words kept with this version in its history, such as 'new owner after the restructure'.",
       reasonPlaceholder: "",
+      addedReason: "Added",
       save: "Save",
       cancel: "Cancel",
       loadingOptions: "Loading.",
@@ -1877,8 +1933,21 @@ export const copy = {
   // A data source as a dbt semantic model (engine TAXONOMY.md D57).
   // A data source's metrics, each written as an aggregation (engine
   // TAXONOMY.md D64).
+  // An amount of money typed in the unit that saves digits (components/AmountInput).
+  amount: {
+    unitLabel: "Typed in",
+    units: { 1: "As written", 1000: "Thousand", 1000000: "Million", 1000000000: "Billion" } as Record<number, string>,
+    whole: (amount: string) => `That is ${amount}.`,
+  },
   sourceMetrics: {
+    lead: "The numbers this source can give. Write each as a SQL-like aggregation over this source's own fields: it says what you mean to count, for whoever builds it in the warehouse, and is not the calculation itself.",
     name: "Name",
+    nameHint: "What the number is called, such as Deliveries checked.",
+    over: "Counts over",
+    overHint: "What one entry this number counts is, where the source holds more than one kind, as a warehouse does: each delivery graded, each order placed. Leave it empty when it is one entry of this source.",
+    startFrom: "Start from one of these, then change the fields to this source's own:",
+    examples: ["COUNT(*)", "COUNT(*) WHERE passed = true", "COUNT(DISTINCT member_id)", "SUM(weight_kg)", "AVG(days_to_pay)"],
+    useExample: (example: string) => `Start from ${example}`,
     description: "What it is",
     descriptionHint: "Describe the number in words, for whoever maps it to the warehouse.",
     aggregation: "Aggregation",
@@ -2009,6 +2078,9 @@ export const copy = {
     cycleSignature: {
       every: (months: number) =>
         months === 1 ? "Read every month," : `Read every ${months} months,`,
+      everyDays: (days: number) => (days === 1 ? "Read every day," : days === 7 ? "Read every week," : `Read every ${days === 14 ? "two weeks" : `${days} days`},`),
+      fromDay: (day: string) => `from ${day}.`,
+      nextEnd: (days: string) => `The next periods end on ${days}.`,
       startingIn: (month: string) => `counting from ${month}.`,
       named: (names: string) => `Read at the end of each named period: ${names}.`,
       periodsEnd: (months: string) => `Periods end in ${months}.`,
@@ -2088,6 +2160,7 @@ export const copy = {
       direction: {
         increase: "Higher is better",
         decrease: "Lower is better",
+        reach: "Closest to the target",
         maintain: "Hold it steady",
       } as Record<string, string>,
     },
@@ -2800,6 +2873,7 @@ export const copy = {
       resources: "Resources",
       stakeholders: "Stakeholders",
       timeline: "Schedule",
+      costs: "Costs and procurement",
       data: "Data",
       risks: "Risks",
       closing: "Closure",
@@ -2894,6 +2968,7 @@ export const copy = {
     back: "Back",
     next: "Next",
     nextTo: (label: string) => `Next: ${label.toLowerCase()}`,
+    reviewAndMerge: "Review and merge",
     stepsOfStage: "Steps of this stage",
     checks: {
       // Read out for the mark at the end of a rail row, where the state
@@ -2922,6 +2997,10 @@ export const copy = {
       subtitle: "",
       causes: {
         title: "Causes found",
+        earlier: "Written before as the problem's one cause. Move it into the causes found to keep it: the problem statement gives the first cause found.",
+        move: "Move into causes found",
+        moveHint: "Move this cause into the causes found, as the first of them",
+        dropEarlier: "Remove this cause",
         hint: "What you found behind the problem when you looked into it. Write each cause in a sentence, then what shows it. Mark it confirmed once the evidence proves it is a cause.",
         cause: "Cause",
         evidence: "Evidence",
@@ -2953,7 +3032,6 @@ export const copy = {
       // (ProblemCard), and the map of what it links.
       statement: {
         defined: "This problem is defined as",
-        cause: "with a potential cause as stated",
         gaps: "It is related to identified gaps",
         groups: "It affects",
         change: "The project will change this to",
@@ -3159,6 +3237,7 @@ export const copy = {
         "Product labelling and certification, owned elsewhere",
       ],
       addSentence: "Add a sentence",
+      addShort: "Add",
       scopeEmpty: "Nothing listed yet.",
     },
     deliverables: {
@@ -3198,8 +3277,8 @@ export const copy = {
       addVerifierTitleLabel: "Role name",
       addVerifierTitlePlaceholder: "",
       addVerifierExamples: ["Quality lead", "Operations lead", "Depot manager group"],
-      addVerifierResourceLabel: "Catalogue entry",
-      addVerifierResourcePlaceholder: "Catalogue entry, optional",
+      addVerifierResourceLabel: "Post",
+      addVerifierResourcePlaceholder: "Choose the post that fills it",
       verifierAlreadyNamed: "Already named in Resources",
       verifierNewRole: "Added to Resources",
       add: "Add a deliverable",
@@ -3214,6 +3293,10 @@ export const copy = {
       taskRoleLabel: "Done by",
       addTask: "Add a task",
       addTaskShort: "Add task",
+    },
+    costs: {
+      heading: "Costs and procurement",
+      subtitle: "What the project costs, line by line against the budgets it draws on, and what it buys, by when.",
     },
     timeline: {
       heading: "Schedule",
@@ -3239,8 +3322,8 @@ export const copy = {
       roleLabel: "Role",
       titleLabel: "Title",
       titlePlaceholder: "",
-      resourceLabel: "Catalogue entry",
-      resourcePlaceholder: "Catalogue entry, optional",
+      resourceLabel: "Post",
+      resourcePlaceholder: "Choose the post that fills it",
       noteLabel: "Note",
       notePlaceholder: "",
       addRole: "Add a role",
@@ -3248,7 +3331,7 @@ export const copy = {
       requiredTitle: "Required roles",
       requiredHint: "Name a sponsor and a project manager.",
       requiredHintComponent: "Name a project manager; the sponsor is the parent project's.",
-      fundingTitle: "Approved funding",
+      fundingTitle: "Funding",
       fundingHint: "The money for this project: how much, in which currency, whether it is approved yet, and the budget it comes from. One line per currency.",
       fundingEmpty: "No funding line yet.",
       addFunding: "Add a funding line",
@@ -3398,6 +3481,8 @@ export const copy = {
         paper: "Paper",
       } as Record<string, string>,
       refresh: {
+        continuous: "Real time",
+        onEvent: "When something happens",
         daily: "Daily",
         weekly: "Weekly",
         monthly: "Monthly",
@@ -3439,10 +3524,14 @@ export const copy = {
       hereAdd: (side: string) => `Add a risk to the ${side.toLowerCase()}`,
       hereAddShort: "Risk",
       hereDescription: "What could happen",
-      hereImpact: "How far",
-      hereOn: "Bears on",
-      hereOnNone: "The whole side",
+      hereImpact: "How much it moves it",
+      movesIt: "moves it",
+      hereOn: "Where it bears",
+      at: "at",
+      hereOnNone: (side: string) => `the whole ${side.toLowerCase()}`,
       hereSave: "Add",
+      editRisk: (risk: string) => `Change ${risk}`,
+      removeRisk: (risk: string) => `Remove ${risk} from the risks`,
       hereCancel: "Cancel",
       inRegister: "Open in Risks",
       held: "Held",
@@ -3758,7 +3847,9 @@ export const copy = {
       addSignOff: "Add a line to sign",
       stage: "Stage",
       stages: { definition: "Definition", closing: "Closure", handover: "Handover" } as Record<string, string>,
-      line: "Line",
+      line: "Signs as",
+      lineHint: "What the line says above the signature, in your template's words.",
+      lineExamples: ["Prepared by", "Reviewed by", "Approved by"],
       role: "Role",
       signed: "Signed",
       decision: "Decision",
@@ -3795,17 +3886,20 @@ export const copy = {
       cycleHint: "Click to set R, A, C or I",
       legend: "One role answers for each deliverable or decision.",
       costs: "Cost plan",
-      costsHint: "The budget as lines: what each covers, how much, from where, and whether it is approved.",
-      costsNeedFunding: "Add a funding line first, in Approved funding above: the cost plan breaks it down.",
+      costsHint: "The project's money as lines: the budget each draws on, what it covers, how much, and how the amount is worked out. A line's approval is the budget holder's, from what the budget allocated the project.",
       addCost: "Add a cost line",
       category: "What it covers",
       amount: "Amount",
       currency: "Currency",
       status: "Approval",
       statuses: { approved: "Approved", requested: "Requested", beingCosted: "Being costed", unfunded: "Not funded" } as Record<string, string>,
-      basis: "Quantity or basis",
-      period: "Period",
+      basis: "How the amount is worked out",
+      basisHint: "Such as 2 analysts for 6 months, or a supplier's quote: what the amount is made of, not the amount again.",
       source: "Funding source",
+      sourceFirst: "Choose the budget it draws on first: what that budget allocated the project decides the line's approval.",
+      allocated: (status: string, amount: string, used: string) => `${status} by the budget holder: ${amount} allocated, ${used} of it on these lines.`,
+      noAllocation: "This budget has allocated the project nothing yet: the line stays requested until its holder decides.",
+      allocationLocked: "Set by the budget holder's allocation",
       condition: "The condition that decides it",
       total: (amount: string) => `Total ${amount}`,
       procurement: "Procurement plan",
@@ -3944,7 +4038,10 @@ export const copy = {
       removePlaceholder: "Remove",
       nameIt: (name: string) => `Name "${name}" here`,
       confirmedByTitle: "Accepted by",
-      confirmedByEmpty: "Name a service owner in Resources: the role that accepts the handover.",
+      confirmedByHint: "The service owner: the post accountable for the service, who accepts what the project hands over.",
+      confirmedByPlaceholder: "Choose the service owner",
+      purposeLabel: "What it does",
+      purposeHint: "What the service gives the people it serves, in a sentence.",
     },
     record: {
       loading: "Loading this project.",

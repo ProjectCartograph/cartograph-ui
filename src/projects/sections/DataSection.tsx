@@ -137,7 +137,9 @@ export function DataSection() {
         onAddUse={() => updateConsumes([...consumes, { source: "", purpose: "" }])}
         onAddOutput={() => updateProduces([...produces, { output: "recordsInExistingSource", sink: "", purpose: "", personalData: "none" }])}
       />
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      {/* One above the other: the lineage above already sets them side
+          by side, and each needs the width to show what it names (#89). */}
+      <div className="grid grid-cols-1 gap-8">
       <div className="flex flex-col gap-3" data-cartograph-region="data-uses">
         <div className="flex items-center gap-1">
           <Label className="flex items-center gap-2">
@@ -178,7 +180,7 @@ export function DataSection() {
                 aria-label={dc.usePurposeLabel}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Field label={dc.handoffLabel}>
                 <EnumSelect
                   data-cartograph-field={`/spec/data/consumes/${idx}/handoff`}
@@ -260,7 +262,7 @@ export function DataSection() {
                 aria-label={dc.producePurposeLabel}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Field label={dc.refreshLabel}>
                 <EnumSelect
                   data-cartograph-field={`/spec/data/produces/${idx}/refresh`}

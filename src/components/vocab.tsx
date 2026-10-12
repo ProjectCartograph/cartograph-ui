@@ -18,6 +18,7 @@ import {
   Handshake,
   Hash,
   Keyboard,
+  HandCoins,
   Landmark,
   Link2,
   Lock,
@@ -49,6 +50,8 @@ import {
   ChartPie,
   CalendarSync,
   Warehouse,
+  Activity,
+  Zap,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +87,7 @@ const ICONS = {
     "operationalSystem": Cog,
     "apiOrFeed": Rss,
     "documentStore": FolderOpen,
+    warehouse: Warehouse,
   },
   handoff: {
     "apiOrFeed": Rss,
@@ -113,6 +117,8 @@ const ICONS = {
   },
   personalData: { none: ShieldOff, personal: Shield, sensitive: ShieldAlert },
   refresh: {
+    continuous: Activity,
+    onEvent: Zap,
     daily: RefreshCw,
     weekly: RefreshCw,
     monthly: RefreshCw,
@@ -169,6 +175,7 @@ const SHORT: Partial<Record<VocabName, Record<string, string>>> = {
     "operationalSystem": "System",
     "apiOrFeed": "Feed",
     "documentStore": "Documents",
+    warehouse: "Warehouse",
   },
   handoff: { "apiOrFeed": "Feed", "fileTransfer": "File", "sharedDatabase": "Database", "manualReentry": "Re-entry" },
   dataOutput: {
@@ -196,6 +203,7 @@ const KIND_ICONS: Record<string, LucideIcon> = {
   Segment: ChartPie,
   Unit: Ruler,
   FundingSource: Banknote,
+  Allocation: HandCoins,
   Gap: TriangleAlert,
   Assumption: CircleHelp,
   DataSource: Database,

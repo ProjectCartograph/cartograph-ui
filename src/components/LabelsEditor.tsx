@@ -78,7 +78,9 @@ export function LabelsEditor({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground" htmlFor={`${idPrefix}-key`}>
+          {lc.keyShown}
         <Input
           id={`${idPrefix}-key`}
           className="w-40"
@@ -94,6 +96,9 @@ export function LabelsEditor({
             }
           }}
         />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-muted-foreground" htmlFor={`${idPrefix}-value`}>
+          {lc.valueShown}
         <Input
           id={`${idPrefix}-value`}
           className="w-40"
@@ -109,6 +114,7 @@ export function LabelsEditor({
             }
           }}
         />
+        </label>
         <Button type="button" variant="outline" size="sm" onClick={add} disabled={!key.trim()} aria-label={lc.add}>
           <Plus />
           {plusNoun(lc.add)}

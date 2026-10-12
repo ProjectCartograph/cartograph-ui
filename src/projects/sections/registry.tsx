@@ -29,18 +29,14 @@ export const SECTION_VIEW: Record<InitiationSection, { heading: string; subtitle
   beneficiaries: { ...pc.beneficiaries, View: BeneficiariesSection },
   aim: { ...pc.aim, View: AimSection },
   measures: { ...pc.measures, View: MeasuresSection },
-  // Roles and funding, then the mandate the project works under: who
-  // decides, who pays, and on whose authority.
+  // Roles, then the mandate the project works under: who decides, and
+  // on whose authority. The money is planned in Plan (engine D69).
   resources: {
     ...pc.resources,
     View: () => (
       <div className="flex flex-col gap-6">
         <ResourcesSection />
         <MandateSection />
-        <RaciEditor />
-        <CostsEditor />
-        <ProcurementEditor />
-        <SideRisks side="cost" />
       </div>
     ),
   },
@@ -62,6 +58,8 @@ export const SECTION_VIEW: Record<InitiationSection, { heading: string; subtitle
     View: () => (
       <div className="flex flex-col gap-6">
         <DeliverablesSection />
+        {/* Who does each deliverable, once there are deliverables. */}
+        <RaciEditor />
         <SideRisks side="scope" />
       </div>
     ),
@@ -74,6 +72,18 @@ export const SECTION_VIEW: Record<InitiationSection, { heading: string; subtitle
       <div className="flex flex-col gap-6">
         <MilestonesSection />
         <SideRisks side="schedule" />
+      </div>
+    ),
+  },
+  // The cost plan against each budget's allocation, what is bought, and
+  // what could move the cost (engine TAXONOMY.md D69).
+  costs: {
+    ...pc.costs,
+    View: () => (
+      <div className="flex flex-col gap-6">
+        <CostsEditor />
+        <ProcurementEditor />
+        <SideRisks side="cost" />
       </div>
     ),
   },

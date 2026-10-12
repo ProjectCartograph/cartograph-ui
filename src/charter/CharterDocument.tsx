@@ -10,7 +10,7 @@ import { SectionPeers, sectionRing, usePeersOn } from "@/collab/SectionPeers";
 import { copy } from "@/copy";
 import { FieldEditor, SourceEditor } from "./InlineEditors";
 import { appendAt, getAt, removeAt, setAt } from "./pointer";
-import { editorAt, schemaAt, type Editor } from "./schemaAt";
+import { editorAt, newItemAt, type Editor } from "./schemaAt";
 import "./charter-document.css";
 
 const dc = copy.charter.doc;
@@ -90,10 +90,9 @@ export function CharterDocument({
     save: (path, text) => update((s) => setAt(s, path, text.trim() === "" ? undefined : text)),
     open: setOpened,
     add: (path) => {
-      const items = schemaAt(schema as never, `${path}/0`);
       const list = getAt(spec, path);
       focusNext.current = `${path}/${Array.isArray(list) ? list.length : 0}`;
-      update((s) => appendAt(s, path, items?.type === "string" ? "" : {}));
+      update((s) => appendAt(s, path, newItemAt(schema as never, path, getAt(s, path))));
     },
     remove: (path) => update((s) => removeAt(s, path)),
     editorOf: (path) => editorAt(schema as never, path),
@@ -233,12 +232,21 @@ function decorate(root: HTMLElement, act: Actions) {
   });
   // The item just added takes the cursor in its first place to type.
   if (act.focusNext.current) {
-    const el = root.querySelector<HTMLElement>(`[data-field^="${CSS.escape(act.focusNext.current)}"][contenteditable]`);
+    const at = CSS.escape(act.focusNext.current);
+    const el = root.querySelector<HTMLElement>(`[data-field="${at}"][contenteditable], [data-field^="${at}\\/"][contenteditable]`);
     if (el) {
       act.focusNext.current = null;
       el.focus();
     }
   }
+}
+
+/** Whether a value in root is being typed in: only then is its HTML
+ * held back. A button or a link in it holding the focus, as the one
+ * that just added a row does, holds nothing back. */
+function typingIn(root: HTMLElement): boolean {
+  const a = document.activeElement;
+  return a instanceof HTMLElement && root.contains(a) && a.hasAttribute("contenteditable");
 }
 
 function Section({ part, proposed, route, refSection, act }: { part: CharterPart; proposed?: "new" | "changed"; route?: string; refSection: (el: HTMLElement | null) => void; act: Actions }) {
@@ -257,7 +265,7 @@ function Section({ part, proposed, route, refSection, act }: { part: CharterPart
   });
   useLayoutEffect(() => {
     const el = body.current;
-    if (!el || el.contains(document.activeElement)) return;
+    if (!el || typingIn(el)) return;
     el.innerHTML = part.html;
     decorate(el, actRef.current);
   }, [part.html]);
@@ -308,7 +316,7 @@ function Section({ part, proposed, route, refSection, act }: { part: CharterPart
           // The cursor has left: what changed meanwhile is drawn now.
           requestAnimationFrame(() => {
             const root = body.current;
-            if (root && !root.contains(document.activeElement) && root.innerHTML !== latest.current) {
+            if (root && !typingIn(root) && root.innerHTML !== latest.current) {
               root.innerHTML = latest.current;
               decorate(root, actRef.current);
             }
