@@ -143,7 +143,7 @@ const MISSING = "Needed before this can be merged.";
 const STEP_ROUTES: Record<string, { base: string; steps: string[] }> = {
   Project: {
     base: "/projects/$id/initiation",
-    steps: ["aim", "beneficiaries", "data", "deliverables", "goals", "landing", "measures", "resources", "risks", "scope", "stakeholders", "success", "timeline"],
+    steps: ["aim", "beneficiaries", "costs", "data", "deliverables", "goals", "landing", "measures", "resources", "risks", "scope", "stakeholders", "success", "timeline"],
   },
   Gap: { base: "/gaps/$id", steps: ["evidence", "scope", "shortfall"] },
   Programme: { base: "/programmes/$id", steps: ["aim", "alignment", "components", "pathway", "problems", "risks", "stakeholders", "teams"] },

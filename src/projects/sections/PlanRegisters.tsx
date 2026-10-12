@@ -2,6 +2,9 @@ import { Plus, Receipt, ShoppingCart, Trash2, UsersRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { AmountInput } from "@/components/AmountInput";
+import { grouped } from "@/components/grouped";
+import { useAllocations } from "../allocations";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
@@ -236,9 +239,18 @@ export function CostsEditor() {
   const store = useProjectStore();
   const list = store.spec.costs ?? [];
   const conditions = store.spec.conditions ?? [];
+  const allocations = useAllocations(store.id);
   const set = (next: CostLine[]) => store.updateSpec((s) => ({ ...s, costs: next.length > 0 ? next : undefined }));
   const patch = (i: number, p: Partial<CostLine>) => set(list.map((c, j) => (j === i ? { ...c, ...p } : c)));
   const total = list.reduce((t, c) => t + (c.amount ?? 0), 0);
+  // What the lines on each budget come to, against what it allocated.
+  const usedOn = (source: string) => list.filter((c) => c.source === source).reduce((t, c) => t + (c.amount ?? 0), 0);
+  // A line on a budget that allocated the project takes the allocation's
+  // approval and currency: the holder decides them, not the project.
+  const choose = (i: number, source: string | undefined) => {
+    const a = source ? allocations.get(source) : undefined;
+    patch(i, { source, ...(a ? { status: a.status, ...(a.currency ? { currency: a.currency } : {}) } : { status: "requested" }) });
+  };
   return (
     <Register
       icon={Receipt}
@@ -247,87 +259,92 @@ export function CostsEditor() {
       count={list.length}
       field="/spec/costs"
       addLabel={rc.addCost}
-      needs={(store.spec.funding ?? []).length === 0 ? rc.costsNeedFunding : undefined}
       onAdd={() => set([...list, { id: newId("c", list), category: "" }])}
     >
-      {list.map((c, i) => (
-        <div key={c.id} className="flex flex-col gap-2 rounded-lg p-3 ring-1 ring-foreground/10" data-cost={c.id}>
-          {/* What it covers and how much, then where it comes from and
-              whether it is approved: two rows, every box labelled (#35). */}
-          <div className="flex items-end gap-2">
-            <Labelled label={rc.category} className="min-w-0 flex-1">
-              <Input value={c.category} onChange={(e) => patch(i, { category: e.target.value.slice(0, 80) })} maxLength={80} aria-label={rc.category} />
+      {list.map((c, i) => {
+        const at = `/spec/costs/${i}`;
+        const a = c.source ? allocations.get(c.source) : undefined;
+        return (
+          <div key={c.id} className="flex flex-col gap-2 rounded-lg p-3 ring-1 ring-foreground/10" data-cost={c.id}>
+            {/* The budget first: what it allocated decides the rest (#90). */}
+            <div className="flex items-end gap-2">
+              <Labelled label={rc.source} className="min-w-0 flex-1" hint={c.source ? undefined : rc.sourceFirst}>
+                <ReferencePicker refKind="FundingSource" value={c.source} onChange={(source) => choose(i, source)} label={rc.source} data-cartograph-field={`${at}/source`} />
+              </Labelled>
+              <Button type="button" variant="ghost" size="icon" onClick={() => set(list.filter((_, j) => j !== i))} aria-label={copy.projects.common.remove} title={copy.projects.common.remove}>
+                <Trash2 />
+              </Button>
+            </div>
+            {c.source ? (
+              <p className="text-xs text-muted-foreground" data-slot="allocation">
+                {a
+                  ? rc.allocated(rc.statuses[a.status ?? "requested"], `${a.currency ?? ""} ${grouped(a.amount ?? 0)}`.trim(), `${a.currency ?? c.currency ?? ""} ${grouped(usedOn(c.source))}`.trim())
+                  : rc.noAllocation}
+              </p>
+            ) : null}
+            <Labelled label={rc.category}>
+              <Input value={c.category} onChange={(e) => patch(i, { category: e.target.value.slice(0, 80) })} maxLength={80} aria-label={rc.category} data-cartograph-field={`${at}/category`} />
             </Labelled>
-            <Labelled label={rc.amount} className="w-32 shrink-0">
-              <Input
-                type="number"
-                min={0}
-                value={c.amount ?? ""}
-                onChange={(e) => patch(i, { amount: e.target.value === "" ? undefined : Math.max(0, Number(e.target.value)) })}
-                aria-label={rc.amount}
-              />
+            <div className="flex flex-wrap items-start gap-2">
+              <Labelled label={rc.amount} className="min-w-56 flex-1">
+                <AmountInput value={c.amount} onChange={(amount) => patch(i, { amount })} currency={c.currency} label={rc.amount} field={`${at}/amount`} />
+              </Labelled>
+              <Labelled label={rc.currency} className="w-28 shrink-0" hint={a?.currency ? rc.allocationLocked : undefined}>
+                <Combobox
+                  options={CURRENCY_OPTIONS}
+                  value={c.currency || undefined}
+                  onValueChange={(v) => patch(i, { currency: v || undefined })}
+                  placeholder=""
+                  searchPlaceholder={copy.projects.resources.currencySearchPlaceholder}
+                  emptyText={copy.projects.resources.currencyEmpty}
+                  aria-label={rc.currency}
+                  disabled={!!a?.currency}
+                />
+              </Labelled>
+            </div>
+            <Labelled label={rc.basis} hint={rc.basisHint}>
+              <Input value={c.basis ?? ""} onChange={(e) => patch(i, { basis: e.target.value.slice(0, 160) || undefined })} maxLength={160} aria-label={rc.basis} data-cartograph-field={`${at}/basis`} />
             </Labelled>
-            <Labelled label={rc.currency} className="w-28 shrink-0">
-              <Combobox
-                options={CURRENCY_OPTIONS}
-                value={c.currency || undefined}
-                onValueChange={(v) => patch(i, { currency: v || undefined })}
-                placeholder=""
-                searchPlaceholder={copy.projects.resources.currencySearchPlaceholder}
-                emptyText={copy.projects.resources.currencyEmpty}
-                aria-label={rc.currency}
-              />
-            </Labelled>
-            <Button type="button" variant="ghost" size="icon" onClick={() => set(list.filter((_, j) => j !== i))} aria-label={copy.projects.common.remove} title={copy.projects.common.remove}>
-              <Trash2 />
-            </Button>
+            {/* With no allocation the project says where the line stands;
+                with one, the holder has said it. */}
+            {a ? null : (
+              <Labelled label={rc.status}>
+                <Select value={c.status ?? ""} onValueChange={(v) => patch(i, { status: (v || undefined) as CostLine["status"] })}>
+                  <SelectTrigger className="w-full" aria-label={rc.status} data-cartograph-field={`${at}/status`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.filter((st) => st !== "approved" || c.status === "approved").map((st) => (
+                      <SelectItem key={st} value={st!}>
+                        {rc.statuses[st!]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Labelled>
+            )}
+            {/* What could make it cost more than planned (#59). */}
+            <RiskPrompt side="cost" on={c.id} question={copy.projects.triangle.askCost} short={copy.projects.triangle.shortCost} />
+            {c.status === "unfunded" || c.status === "beingCosted" ? (
+              <Labelled label={rc.condition}>
+                <Select value={c.condition ?? ""} onValueChange={(v) => patch(i, { condition: v || undefined })}>
+                  <SelectTrigger className="w-full" aria-label={rc.condition}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {conditions.map((cd) => (
+                      <SelectItem key={cd.id} value={cd.id}>
+                        {cd.action || cd.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Labelled>
+            ) : null}
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Labelled label={rc.status}>
-              <Select value={c.status ?? ""} onValueChange={(v) => patch(i, { status: (v || undefined) as CostLine["status"] })}>
-                <SelectTrigger className="w-full" aria-label={rc.status}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((st) => (
-                    <SelectItem key={st} value={st!}>
-                      {rc.statuses[st!]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Labelled>
-            <Labelled label={rc.source}>
-              <ReferencePicker refKind="FundingSource" value={c.source} onChange={(source) => patch(i, { source })} label={rc.source} />
-            </Labelled>
-            <Labelled label={rc.basis}>
-              <Input value={c.basis ?? ""} onChange={(e) => patch(i, { basis: e.target.value.slice(0, 160) || undefined })} maxLength={160} aria-label={rc.basis} />
-            </Labelled>
-            <Labelled label={rc.period}>
-              <Input value={c.period ?? ""} onChange={(e) => patch(i, { period: e.target.value.slice(0, 40) || undefined })} maxLength={40} aria-label={rc.period} />
-            </Labelled>
-          </div>
-          {/* What could make it cost more than planned (#59). */}
-          <RiskPrompt side="cost" on={c.id} question={copy.projects.triangle.askCost} short={copy.projects.triangle.shortCost} />
-          {c.status === "unfunded" || c.status === "beingCosted" ? (
-            <Labelled label={rc.condition}>
-              <Select value={c.condition ?? ""} onValueChange={(v) => patch(i, { condition: v || undefined })}>
-                <SelectTrigger className="w-full" aria-label={rc.condition}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {conditions.map((cd) => (
-                    <SelectItem key={cd.id} value={cd.id}>
-                      {cd.action || cd.id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Labelled>
-          ) : null}
-        </div>
-      ))}
-      {list.length > 0 ? <p className="text-sm font-medium tabular-nums">{rc.total(total.toLocaleString("en"))}</p> : null}
+        );
+      })}
+      {list.length > 0 ? <p className="text-sm font-medium tabular-nums">{rc.total(grouped(total))}</p> : null}
     </Register>
   );
 }

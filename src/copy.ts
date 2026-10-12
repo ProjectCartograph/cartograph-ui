@@ -1907,6 +1907,12 @@ export const copy = {
   // A data source as a dbt semantic model (engine TAXONOMY.md D57).
   // A data source's metrics, each written as an aggregation (engine
   // TAXONOMY.md D64).
+  // An amount of money typed in the unit that saves digits (components/AmountInput).
+  amount: {
+    unitLabel: "Typed in",
+    units: { 1: "As written", 1000: "Thousand", 1000000: "Million", 1000000000: "Billion" } as Record<number, string>,
+    whole: (amount: string) => `That is ${amount}.`,
+  },
   sourceMetrics: {
     lead: "The numbers this source can give. Write each as a SQL-like aggregation over this source's own fields: it says what you mean to count, for whoever builds it in the warehouse, and is not the calculation itself.",
     name: "Name",
@@ -2841,6 +2847,7 @@ export const copy = {
       resources: "Resources",
       stakeholders: "Stakeholders",
       timeline: "Schedule",
+      costs: "Costs and procurement",
       data: "Data",
       risks: "Risks",
       closing: "Closure",
@@ -3204,6 +3211,7 @@ export const copy = {
         "Product labelling and certification, owned elsewhere",
       ],
       addSentence: "Add a sentence",
+      addShort: "Add",
       scopeEmpty: "Nothing listed yet.",
     },
     deliverables: {
@@ -3259,6 +3267,10 @@ export const copy = {
       taskRoleLabel: "Done by",
       addTask: "Add a task",
       addTaskShort: "Add task",
+    },
+    costs: {
+      heading: "Costs and procurement",
+      subtitle: "What the project costs, line by line against the budgets it draws on, and what it buys, by when.",
     },
     timeline: {
       heading: "Schedule",
@@ -3492,6 +3504,8 @@ export const copy = {
       at: "at",
       hereOnNone: (side: string) => `the whole ${side.toLowerCase()}`,
       hereSave: "Add",
+      editRisk: (risk: string) => `Change ${risk}`,
+      removeRisk: (risk: string) => `Remove ${risk} from the risks`,
       hereCancel: "Cancel",
       inRegister: "Open in Risks",
       held: "Held",
@@ -3846,17 +3860,20 @@ export const copy = {
       cycleHint: "Click to set R, A, C or I",
       legend: "One role answers for each deliverable or decision.",
       costs: "Cost plan",
-      costsHint: "The budget as lines: what each covers, how much, from where, and whether it is approved.",
-      costsNeedFunding: "Add a funding line first, in Funding above: the cost plan breaks it down.",
+      costsHint: "The project's money as lines: the budget each draws on, what it covers, how much, and how the amount is worked out. A line's approval is the budget holder's, from what the budget allocated the project.",
       addCost: "Add a cost line",
       category: "What it covers",
       amount: "Amount",
       currency: "Currency",
       status: "Approval",
       statuses: { approved: "Approved", requested: "Requested", beingCosted: "Being costed", unfunded: "Not funded" } as Record<string, string>,
-      basis: "Quantity or basis",
-      period: "Period",
+      basis: "How the amount is worked out",
+      basisHint: "Such as 2 analysts for 6 months, or a supplier's quote: what the amount is made of, not the amount again.",
       source: "Funding source",
+      sourceFirst: "Choose the budget it draws on first: what that budget allocated the project decides the line's approval.",
+      allocated: (status: string, amount: string, used: string) => `${status} by the budget holder: ${amount} allocated, ${used} of it on these lines.`,
+      noAllocation: "This budget has allocated the project nothing yet: the line stays requested until its holder decides.",
+      allocationLocked: "Set by the budget holder's allocation",
       condition: "The condition that decides it",
       total: (amount: string) => `Total ${amount}`,
       procurement: "Procurement plan",

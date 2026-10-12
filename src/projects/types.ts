@@ -658,6 +658,7 @@ export const INITIATION_SECTIONS = [
   "scope",
   "deliverables",
   "timeline",
+  "costs",
   "data",
   "risks",
   "success",
@@ -699,6 +700,7 @@ export type StepPath =
   | "/initiation/deliverables"
   | "/initiation/success"
   | "/initiation/timeline"
+  | "/initiation/costs"
   | "/initiation/data"
   | "/initiation/risks"
   | "/initiation/landing"
@@ -728,6 +730,9 @@ export const STEPS: Step[] = [
   step("scope", "scope"),
   step("scope", "deliverables"),
   step("plan", "timeline"),
+  // The cost and procurement plans are plans: after the schedule, so a
+  // purchase can wait on a milestone (engine TAXONOMY.md D69).
+  step("plan", "costs"),
   step("plan", "data"),
   step("plan", "risks"),
   step("handover", "success"),
