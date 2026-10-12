@@ -1201,8 +1201,8 @@ export const copy = {
           "documentStore": "Document store",
         },
         provenance: {
-          internal: "Run by us",
-          external: "Run by a third party",
+          internal: "Internal",
+          external: "Third-Party",
         },
         classification: {
           public: "Public",
