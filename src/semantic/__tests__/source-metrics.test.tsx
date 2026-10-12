@@ -79,3 +79,30 @@ describe("an empty metric", () => {
     expect(screen.queryByText(mc.startFrom)).toBeNull();
   });
 });
+
+// A warehouse holds more than one kind of record, so each of its metrics
+// says what it counts over; another source's do not ask (engine D67).
+describe("a warehouse's metric", () => {
+  it("asks what it counts over only where the source holds several kinds", () => {
+    const metric = [{ id: "m1", name: "Orders", aggregation: "COUNT(*)" }];
+    const client = fakeClient({ readAggregation: vi.fn(async () => ({ names: [], reading: "Read." })) as never });
+    const qc = () => new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { unmount } = render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={qc()}>
+          <SourceMetricsEditor value={metric} onChange={() => {}} several />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    expect(screen.getByLabelText(mc.over)).toBeInTheDocument();
+    unmount();
+    render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={qc()}>
+          <SourceMetricsEditor value={metric} onChange={() => {}} />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    expect(screen.queryByLabelText(mc.over)).toBeNull();
+  });
+});

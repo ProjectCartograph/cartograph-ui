@@ -18,6 +18,8 @@ export interface SourceMetric {
   name: string;
   description?: string;
   aggregation: string;
+  /** What one entry it counts is, in a source holding several kinds. */
+  over?: string;
 }
 
 /** The words an aggregation is written in, offered as it is typed. */
@@ -52,7 +54,17 @@ function useReading(text: string) {
  * box offers the words it is written in and the names the source's other
  * metrics use, and says beneath it what the engine reads, or why not.
  */
-export function SourceMetricsEditor({ value, onChange }: { value: SourceMetric[] | ""; onChange: (next: SourceMetric[] | undefined) => void }) {
+export function SourceMetricsEditor({
+  value,
+  onChange,
+  several = false,
+}: {
+  value: SourceMetric[] | "";
+  onChange: (next: SourceMetric[] | undefined) => void;
+  /** The source holds more than one kind of record (a warehouse): each
+   * metric says which it counts over (engine TAXONOMY.md D67). */
+  several?: boolean;
+}) {
   const client = useClient();
   const metrics = value || [];
   // Every name the source's metrics use, for each box to offer.
@@ -78,7 +90,7 @@ export function SourceMetricsEditor({ value, onChange }: { value: SourceMetric[]
       <p className="text-xs text-muted-foreground text-pretty">{mc.lead}</p>
       {metrics.length === 0 ? <p className="text-sm text-muted-foreground">{mc.none}</p> : null}
       {metrics.map((m, i) => (
-        <MetricRow key={m.id} metric={m} index={i} names={names} onChange={(patch) => set(i, patch)} onRemove={() => remove(i)} />
+        <MetricRow key={m.id} metric={m} index={i} names={names} several={several} onChange={(patch) => set(i, patch)} onRemove={() => remove(i)} />
       ))}
       <Button
         type="button"
@@ -96,7 +108,7 @@ export function SourceMetricsEditor({ value, onChange }: { value: SourceMetric[]
   );
 }
 
-function MetricRow({ metric, index, names, onChange, onRemove }: { metric: SourceMetric; index: number; names: string[]; onChange: (patch: Partial<SourceMetric>) => void; onRemove: () => void }) {
+function MetricRow({ metric, index, names, several, onChange, onRemove }: { metric: SourceMetric; index: number; names: string[]; several: boolean; onChange: (patch: Partial<SourceMetric>) => void; onRemove: () => void }) {
   const ids = useId();
   const at = `/spec/metrics/${index}`;
   return (
@@ -123,6 +135,15 @@ function MetricRow({ metric, index, names, onChange, onRemove }: { metric: Sourc
         <Textarea id={`${ids}-desc`} rows={1} value={metric.description ?? ""} onChange={(e) => onChange({ description: e.target.value.slice(0, 400) || undefined })} aria-describedby={`${ids}-desc-hint`} data-cartograph-field={`${at}/description`} />
         <p id={`${ids}-desc-hint`} className="text-xs text-muted-foreground">{mc.descriptionHint}</p>
       </div>
+      {several || metric.over ? (
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`${ids}-over`} className="text-xs text-muted-foreground">
+            {mc.over}
+          </label>
+          <Input id={`${ids}-over`} value={metric.over ?? ""} onChange={(e) => onChange({ over: e.target.value.slice(0, 240) || undefined })} aria-describedby={`${ids}-over-hint`} data-cartograph-field={`${at}/over`} />
+          <p id={`${ids}-over-hint`} className="text-xs text-muted-foreground">{mc.overHint}</p>
+        </div>
+      ) : null}
       <AggregationField id={`${ids}-agg`} value={metric.aggregation} names={names} field={`${at}/aggregation`} onChange={(aggregation) => onChange({ aggregation })} />
     </div>
   );

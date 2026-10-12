@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { type Control, useForm } from "react-hook-form";
+import { type Control, useForm, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -343,6 +343,14 @@ export function SheetForm({
   );
 }
 
+/** A source's metrics, each asked what it counts over where the source
+ * holds more than one kind of record: a warehouse (engine TAXONOMY.md
+ * D67). */
+function MetricsOfSource({ control, value, onChange }: { control: Control<FormValues>; value: SourceMetric[] | ""; onChange: (next: SourceMetric[] | undefined) => void }) {
+  const category = useWatch({ control, name: "category" });
+  return <SourceMetricsEditor value={value} onChange={onChange} several={category === "warehouse"} />;
+}
+
 function SheetFormField({
   kind,
   field,
@@ -389,7 +397,7 @@ function SheetFormField({
         render={({ field: rhf }) => (
           <FormItem>
             {heading}
-            <SourceMetricsEditor value={rhf.value as SourceMetric[] | ""} onChange={(next) => rhf.onChange(next ?? "")} />
+            <MetricsOfSource control={control} value={rhf.value as SourceMetric[] | ""} onChange={(next) => rhf.onChange(next ?? "")} />
           </FormItem>
         )}
       />
@@ -566,6 +574,7 @@ function SheetFormField({
               value={(rhf.value as string) ?? ""}
               placeholder={placeholder}
               maxLength={field.maxLength}
+              type={field.format === "date" ? "date" : undefined}
             />
           </FormControl>
           {field.maxLength ? (
