@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode, useEffect, useRef } from "react";
+import { wordsWithin } from "./words";
 import { LabelsEditor } from "@/components/LabelsEditor";
 import { newRecordId } from "@/lib/recordId";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -164,7 +165,9 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
     setSaving(true);
     setFailed(false);
     try {
-      const summary = { about: about.trim().slice(0, 300) || undefined, idea: about.trim().slice(0, 1000) || undefined };
+      // What it is about, whole words only; the idea keeps every word, for
+      // the suggestions read from it (#90: cut mid-word at the limit).
+      const summary = { about: wordsWithin(about.trim(), 300) || undefined, idea: about.trim().slice(0, 1000) || undefined };
       let body: ProjectManifest;
       if (from && draft.data) {
         const d = JSON.parse(JSON.stringify(draft.data)) as ProjectManifest;

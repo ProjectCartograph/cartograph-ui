@@ -103,7 +103,12 @@ export function WorkingIn() {
             <GitPullRequest className="size-3.5 shrink-0" aria-hidden="true" />
             {/* On a phone the icon and the count say it; the name is in the menu. */}
             <span className="hidden truncate sm:inline">{active ? (name ?? c.label) : c.label}</span>
-            {active ? <span className="shrink-0 text-xs text-muted-foreground">{c.items(count)}</span> : null}
+            {active ? (
+              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                <span className="sm:hidden">{count}</span>
+                <span className="max-sm:hidden">{c.items(count)}</span>
+              </span>
+            ) : null}
             <ChevronDown className="size-3.5 shrink-0 opacity-60" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>

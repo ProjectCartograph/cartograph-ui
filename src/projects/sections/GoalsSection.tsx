@@ -266,7 +266,9 @@ export function AlignmentSection() {
           <span id="project-about-count" className={`self-end text-xs tabular-nums ${(store.spec.summary.about ?? "").length >= ABOUT_MAX ? "text-warning" : "text-muted-foreground"}`}>
             {gc.aboutCount((store.spec.summary.about ?? "").length, ABOUT_MAX)}
           </span>
-          {store.spec.summary.idea ? (
+          {/* The idea as first written, where it says more than what the
+              project is about: the same words twice is noise (#90). */}
+          {store.spec.summary.idea && store.spec.summary.idea.trim() !== (store.spec.summary.about ?? "").trim() ? (
             <details className="text-sm" data-region-idea>
               <summary className="cursor-pointer text-muted-foreground">{copy.common.yourIdea}</summary>
               <Textarea
