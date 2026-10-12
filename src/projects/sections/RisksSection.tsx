@@ -72,6 +72,7 @@ export function RisksSection() {
           placing={pick}
           onPlace={setGridPick}
           triangle={bearsOnOf(store.spec)}
+          comments={{ kind: "Project", id: store.id }}
         />
       </div>
     </div>

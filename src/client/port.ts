@@ -30,6 +30,10 @@ export type DMAIC = Schemas["DMAIC"];
 /** A project's triple constraint: each side's stance, risks and exposure
  * (engine TAXONOMY.md D60). */
 export type TripleConstraint = Schemas["TripleConstraint"];
+export type Comment = Schemas["Comment"];
+export type CommentDraft = Schemas["CommentDraft"];
+export type Mention = Schemas["Mention"];
+export type Mentionable = Schemas["Mentionable"];
 export type ProjectRound = Schemas["ProjectRound"];
 export type RoundTask = Schemas["RoundTask"];
 export type ConstraintSide = Schemas["ConstraintSide"];
@@ -499,6 +503,16 @@ export interface Client {
   dmaic(project: string): Promise<DMAIC>;
   /** A project's triple constraint, as the engine weighs it (D60). */
   constraints(project: string): Promise<TripleConstraint>;
+  /** A record's comments, oldest first (engine TAXONOMY.md D72). */
+  comments(kind: string, id: string): Promise<Comment[]>;
+  /** Comment on a record, beside a part of it. */
+  addComment(kind: string, id: string, draft: CommentDraft): Promise<Comment>;
+  /** Resolve or reopen the thread a comment starts. */
+  resolveComment(comment: string, resolved: boolean): Promise<Comment>;
+  /** Who a comment can ask, by what is typed. */
+  mentionables(q: string): Promise<Mentionable[]>;
+  /** The comments that ask the caller, newest first. */
+  myMentions(): Promise<Comment[]>;
   /** What a project's walk can decide now, in the order an agent is
    * asked it (engine docs/adr/0032). */
   round(project: string): Promise<ProjectRound>;

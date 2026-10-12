@@ -1,4 +1,5 @@
 import { useFlowTrace } from "@/trace/useFlowTrace";
+import { CommentMark } from "@/comments/CommentMark";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { createElement, useEffect, useRef, useState } from "react";
 import { FromIdeaProvider } from "@/components/FromIdea";
@@ -321,16 +322,25 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
                 return (
                   <section key={step.section} id={`step-${step.section}`} data-cartograph-step={step.section} className="flex scroll-mt-4 flex-col gap-4" aria-labelledby={`step-${step.section}-heading`}>
                     {steps.length > 1 || stepwise ? (
-                      <div>
-                        <h2 id={`step-${step.section}-heading`} className="text-lg font-semibold tracking-tight">
-                          {heading}
-                        </h2>
-                        {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+                      <div className="flex items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h2 id={`step-${step.section}-heading`} className="text-lg font-semibold tracking-tight">
+                            {heading}
+                          </h2>
+                          {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+                        </div>
+                        {/* Comments on the section, beside its heading and
+                            outside it, so the outline reads the heading
+                            alone (engine D72). */}
+                        <CommentMark kind="Project" id={id} anchor={`section:${step.section}`} what={heading} />
                       </div>
                     ) : (
-                      <h2 id={`step-${step.section}-heading`} className="sr-only">
-                        {heading}
-                      </h2>
+                      <div className="flex justify-end">
+                        <h2 id={`step-${step.section}-heading`} className="sr-only">
+                          {heading}
+                        </h2>
+                        <CommentMark kind="Project" id={id} anchor={`section:${step.section}`} what={heading} />
+                      </div>
                     )}
                     {createElement(View)}
                     <ProjectSectionNotes section={step.section} />
