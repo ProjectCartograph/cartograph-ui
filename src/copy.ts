@@ -2928,6 +2928,10 @@ export const copy = {
       subtitle: "",
       causes: {
         title: "Causes found",
+        earlier: "Written before as the problem's one cause. Move it into the causes found to keep it: the problem statement gives the first cause found.",
+        move: "Move into causes found",
+        moveHint: "Move this cause into the causes found, as the first of them",
+        dropEarlier: "Remove this cause",
         hint: "What you found behind the problem when you looked into it. Write each cause in a sentence, then what shows it. Mark it confirmed once the evidence proves it is a cause.",
         cause: "Cause",
         evidence: "Evidence",
@@ -2959,7 +2963,6 @@ export const copy = {
       // (ProblemCard), and the map of what it links.
       statement: {
         defined: "This problem is defined as",
-        cause: "with a potential cause as stated",
         gaps: "It is related to identified gaps",
         groups: "It affects",
         change: "The project will change this to",

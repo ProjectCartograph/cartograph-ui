@@ -37,3 +37,29 @@ describe("Causes found", () => {
     expect(screen.getByRole("button", { name: cc.verifiedHint })).toHaveAttribute("aria-pressed", "true");
   });
 });
+
+// A cause written before the list, as the problem's one cause, is shown
+// in the list's place and moved into it as its first cause (#94).
+describe("an earlier cause", () => {
+  function Earlier() {
+    const [problem, setProblem] = useState<{ cause?: string; causes?: Causes }>({ cause: "Checks happen after dispatch" });
+    return (
+      <CausesFound
+        field="/spec/summary/problems/0/problem/causes"
+        causes={problem.causes ?? []}
+        onChange={(causes) => setProblem({ ...problem, causes })}
+        earlier={problem.cause}
+        onEarlier={(move) => setProblem({ causes: move && problem.cause ? [{ cause: problem.cause }, ...(problem.causes ?? [])] : problem.causes })}
+      />
+    );
+  }
+
+  it("moves into the causes found as the first of them", async () => {
+    const user = userEvent.setup();
+    render(<Earlier />);
+    expect(screen.getByText(cc.earlier)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: cc.moveHint }));
+    expect(screen.queryByText(cc.earlier)).toBeNull();
+    expect(screen.getByLabelText(cc.cause)).toHaveValue("Checks happen after dispatch");
+  });
+});

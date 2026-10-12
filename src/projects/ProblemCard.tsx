@@ -1,4 +1,4 @@
-import { BadgeCheck, ChevronDown, ChevronRight, Plus, Users, X } from "lucide-react";
+import { ArrowDownToLine, BadgeCheck, ChevronDown, ChevronRight, Plus, Users, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -123,20 +123,18 @@ export function ProblemCard({
               onChange={(e) => onChange({ problem: { ...line.problem, situation: e.target.value } })}
             />
           </Lead>
-          <Lead text={ac.statement.cause}>
-            <Textarea
-              data-cartograph-field={`${field}/problem/cause`}
-              aria-label={ac.causeLabel}
-              value={line.problem?.cause ?? ""}
-              maxLength={600}
-              rows={1}
-              className="field-sizing-content min-h-0"
-              onChange={(e) => onChange({ problem: { ...line.problem, cause: e.target.value || undefined } as ProblemLine["problem"] })}
-            />
-          </Lead>
+          {/* The causes found are the one place a cause is written: a
+              cause written before as the problem's one cause is shown
+              among them, to move into the list (#94). */}
           <CausesFound
             field={`${field}/problem/causes`}
             causes={line.problem?.causes ?? []}
+            earlier={line.problem?.cause}
+            onEarlier={(move) => {
+              const { cause, ...rest } = line.problem;
+              const causes = move && cause ? [{ cause }, ...(line.problem?.causes ?? [])] : line.problem?.causes;
+              onChange({ problem: { ...rest, ...(causes && causes.length > 0 ? { causes } : {}) } as ProblemLine["problem"] });
+            }}
             onChange={(causes) => onChange({ problem: { ...line.problem, causes: causes.length > 0 ? causes : undefined } as ProblemLine["problem"] })}
           />
           <Lead text={ac.statement.gaps}>
@@ -226,7 +224,21 @@ function Lead({ text, children }: { text: string; children: React.ReactNode }) {
 /** What analysis found behind the problem, each cause with its evidence
  * and whether the evidence confirms it (engine TAXONOMY.md D58): the
  * charter's one line says what is suspected; these say what is known. */
-export function CausesFound({ field, causes, onChange }: { field: string; causes: NonNullable<ProblemLine["problem"]["causes"]>; onChange: (next: NonNullable<ProblemLine["problem"]["causes"]>) => void }) {
+export function CausesFound({
+  field,
+  causes,
+  onChange,
+  earlier,
+  onEarlier,
+}: {
+  field: string;
+  causes: NonNullable<ProblemLine["problem"]["causes"]>;
+  onChange: (next: NonNullable<ProblemLine["problem"]["causes"]>) => void;
+  /** A cause written before the list, as the problem's one cause. */
+  earlier?: string;
+  /** Moves the earlier cause into the list (true) or drops it (false). */
+  onEarlier?: (move: boolean) => void;
+}) {
   const cc = copy.projects.aim.causes;
   const patch = (i: number, p: Partial<(typeof causes)[number]>) => onChange(causes.map((c, j) => (j === i ? { ...c, ...p } : c)));
   return (
@@ -235,6 +247,21 @@ export function CausesFound({ field, causes, onChange }: { field: string; causes
         <p className="text-sm text-muted-foreground">{cc.title}</p>
         <p className="text-xs text-muted-foreground text-pretty">{cc.hint}</p>
       </div>
+      {earlier?.trim() && onEarlier ? (
+        <div className="flex flex-col gap-2 rounded-lg border border-dashed p-2" data-slot="earlier-cause" data-cartograph-field={field.replace(/\/causes$/, "/cause")}>
+          <p className="text-xs text-muted-foreground text-pretty">{cc.earlier}</p>
+          <p className="text-sm">{earlier}</p>
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="outline" size="sm" onClick={() => onEarlier(true)} aria-label={cc.moveHint} title={cc.moveHint}>
+              <ArrowDownToLine />
+              {cc.move}
+            </Button>
+            <Button type="button" variant="ghost" size="icon-sm" onClick={() => onEarlier(false)} aria-label={cc.dropEarlier} title={cc.dropEarlier}>
+              <X />
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {causes.map((c, i) => {
         const causeId = `${field}-${i}-cause`;
         const evidenceId = `${field}-${i}-evidence`;
