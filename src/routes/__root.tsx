@@ -590,7 +590,9 @@ function RootLayout() {
             </SidebarMenu>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="min-w-0">
+        {/* One frame the height of the screen: the header stays, and what
+            is below it scrolls inside main, never the window. */}
+        <SidebarInset className="h-svh min-w-0 overflow-hidden md:peer-data-[variant=inset]:h-[calc(100svh-1rem)]">
           <header className="flex h-14 shrink-0 items-center gap-2 overflow-x-auto border-b px-4 [scrollbar-width:none]" data-cartograph-region="header">
             {/* On a phone the rail slides in over the page, so its
                 toggle is here too. */}
@@ -626,7 +628,7 @@ function RootLayout() {
             {unlisted ? null : <MergeBar />}
             <PeopleHere />
           </header>
-          <main className="min-w-0 flex-1 p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
             {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
           </main>
         </SidebarInset>
