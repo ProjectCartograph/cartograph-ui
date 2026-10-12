@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { newRecordId } from "@/lib/recordId";
 import { type Control, useForm, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/select";
 
 import { Help } from "@/components/guidance";
+import { LabelsEditor } from "@/components/LabelsEditor";
 import { useClient } from "@/client/context";
 import { ClientError, Conflict } from "@/client/port";
 import type { components } from "@/api/gen/schema";
@@ -41,7 +43,7 @@ import { PeriodsField, type NamedPeriod } from "./PeriodsField";
 import { RefObjectField, type RefValue } from "./RefObjectField";
 import { ReferencePicker } from "./ReferencePicker";
 import { fieldVocab, VocabOption } from "@/components/vocab";
-import { type FieldDef, type SheetKind, slugify, unitHint } from "./schema";
+import { type FieldDef, type SheetKind, unitHint } from "./schema";
 import { DidYouMean } from "@/components/DidYouMean";
 
 type Problem = components["schemas"]["Problem"];
@@ -51,6 +53,8 @@ export interface SheetRow {
   name: string;
   version: number;
   spec: Record<string, unknown>;
+  /** metadata.labels: every other name people use for it (engine D70). */
+  labels?: Record<string, string>;
 }
 
 interface FormValues {
@@ -135,6 +139,7 @@ export function SheetForm({
   const client = useClient();
 
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [labels, setLabels] = useState<Record<string, string>>(existing?.labels ?? {});
   const [conflict, setConflict] = useState(false);
 
   const defaultValues = useMemo<FormValues>(() => {
@@ -157,19 +162,19 @@ export function SheetForm({
   useEffect(() => {
     if (open) {
       form.reset(defaultValues);
+      setLabels(existing?.labels ?? {});
       setGeneralError(null);
       setConflict(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, existing?.id]);
 
-  const nameValue = form.watch("_name");
+  // A new entry gets an id of its own when the dialog opens, never one
+  // made from its name.
   useEffect(() => {
-    if (!isEdit) {
-      form.setValue("_id", slugify(typeof nameValue === "string" ? nameValue : ""));
-    }
+    if (open && !isEdit) form.setValue("_id", newRecordId(kind));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nameValue, isEdit]);
+  }, [open, isEdit, kind]);
 
   async function onSubmit(values: FormValues) {
     setGeneralError(null);
@@ -193,7 +198,7 @@ export function SheetForm({
     const manifest = {
       apiVersion: "cartograph/v1",
       kind,
-      metadata: { id: values._id, name: values._name },
+      metadata: { id: values._id, name: values._name, ...(Object.keys(labels).length > 0 ? { labels } : {}) },
       spec,
     };
 
@@ -289,8 +294,18 @@ export function SheetForm({
               )}
             />
 
-            {/* The id is made from the name and never asked: a technical
-                handle a person has no use for (#88). */}
+            {/* The id is generated and never asked: a technical handle a
+                person has no use for (#88). Every other name people use for
+                it is a label (engine TAXONOMY.md D70). */}
+            {minimal ? null : (
+              <div className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1 text-sm font-medium">
+                  {copy.labels.label}
+                  <Help label={copy.labels.label} hint={copy.labels.hint} />
+                </span>
+                <LabelsEditor labels={labels} onChange={setLabels} idPrefix={`sheet-${kind}`} />
+              </div>
+            )}
             {(minimal ? fields.filter((f) => f.required && !(preset && f.name in preset)) : fields).map((f) => (
               <SheetFormField key={f.name} kind={kind} field={f} control={form.control} />
             ))}

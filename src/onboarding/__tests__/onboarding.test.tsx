@@ -84,9 +84,10 @@ describe("opening a new workspace", () => {
     fireEvent.change(screen.getByLabelText(oc.goalLabel(2)), { target: { value: "Widen members' access to buyers" } });
     fireEvent.click(next());
     await screen.findByRole("heading", { name: oc.pickQuestion(2) });
+    // Each goal under an id of its own, never its name's.
     expect(saveVersion.mock.calls.slice(1).map((c) => [c[0], c[1]])).toEqual([
-      ["Goal", "raise-produce-quality"],
-      ["Goal", "widen-members-access-to-buyers"],
+      ["Goal", expect.stringMatching(/^goal-[0-9a-f]{8}$/)],
+      ["Goal", expect.stringMatching(/^goal-[0-9a-f]{8}$/)],
     ]);
     fireEvent.click(screen.getByRole("radio", { name: "Widen members' access to buyers" }));
     fireEvent.click(next());
@@ -98,7 +99,9 @@ describe("opening a new workspace", () => {
     fireEvent.click(next());
     await screen.findByRole("heading", { name: oc.outcomesQuestion("Sell through two new buyers") });
     const objectiveSaved = saveVersion.mock.calls.at(-1)?.[2] as { spec: { level: string; parent: string } };
-    expect(objectiveSaved.spec).toMatchObject({ level: "objective", parent: "widen-members-access-to-buyers" });
+    // Under the goal chosen: the second goal named, by the id it was given.
+    const widen = saveVersion.mock.calls[2][1] as unknown as string;
+    expect(objectiveSaved.spec).toMatchObject({ level: "objective", parent: widen });
     fireEvent.change(screen.getByLabelText(oc.outcomeLabel(1)), { target: { value: "Members have a second buyer" } });
     fireEvent.click(next());
 

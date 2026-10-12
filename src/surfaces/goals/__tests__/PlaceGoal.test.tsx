@@ -57,15 +57,16 @@ describe("placing a goal from the home page", () => {
     fireEvent.click(screen.getByRole("button", { name: pc.add }));
     await waitFor(() => expect(saveVersion).toHaveBeenCalledTimes(1));
     // The only goal there is: the objective goes under it.
-    expect(saved(saveVersion.mock.calls[0])).toEqual({ id: "hold-every-depot-to-one-standard", name: "Hold every depot to one standard", level: "objective", parent: "raise-produce-quality" });
+    expect(saved(saveVersion.mock.calls[0])).toEqual({ id: expect.stringMatching(/^goal-[0-9a-f]{8}$/), name: "Hold every depot to one standard", level: "objective", parent: "raise-produce-quality" });
+    const objective = saved(saveVersion.mock.calls[0]).id;
 
     // Then the outcome the person came with, under the new objective.
     await screen.findByText(pc.title("Outcome"));
     expect((screen.getByLabelText(pc.name) as HTMLInputElement).value).toBe("Depot staff apply the standard alike");
     fireEvent.click(screen.getByRole("button", { name: pc.add }));
     await waitFor(() => expect(saveVersion).toHaveBeenCalledTimes(2));
-    expect(saved(saveVersion.mock.calls[1])).toEqual({ id: "depot-staff-apply-the-standard-alike", name: "Depot staff apply the standard alike", level: "outcome", parent: "hold-every-depot-to-one-standard" });
-    expect(onDone).toHaveBeenCalledWith("depot-staff-apply-the-standard-alike");
+    expect(saved(saveVersion.mock.calls[1])).toEqual({ id: expect.stringMatching(/^goal-[0-9a-f]{8}$/), name: "Depot staff apply the standard alike", level: "outcome", parent: objective });
+    expect(onDone).toHaveBeenCalledWith(saved(saveVersion.mock.calls[1]).id);
   });
 
   // The tree has objectives, but none is the right place: a new one is
@@ -85,13 +86,14 @@ describe("placing a goal from the home page", () => {
     await screen.findByText(pc.title("Outcome"));
     fireEvent.click(screen.getByRole("button", { name: pc.add }));
     await waitFor(() => expect(saveVersion).toHaveBeenCalledTimes(3));
-    expect(saveVersion.mock.calls.map(saved)).toEqual([
-      { id: "members-earn-a-fair-living", name: "Members earn a fair living", level: "goal", parent: undefined },
-      { id: "pay-members-on-time", name: "Pay members on time", level: "objective", parent: "members-earn-a-fair-living" },
-      { id: "members-are-paid-within-a-week", name: "Members are paid within a week", level: "outcome", parent: "pay-members-on-time" },
+    const [goal, objective, outcome] = saveVersion.mock.calls.map(saved);
+    expect([goal, objective, outcome]).toEqual([
+      { id: expect.stringMatching(/^goal-[0-9a-f]{8}$/), name: "Members earn a fair living", level: "goal", parent: undefined },
+      { id: expect.stringMatching(/^goal-[0-9a-f]{8}$/), name: "Pay members on time", level: "objective", parent: goal.id },
+      { id: expect.stringMatching(/^goal-[0-9a-f]{8}$/), name: "Members are paid within a week", level: "outcome", parent: objective.id },
     ]);
     expect(onParentAdded.mock.calls.map((c) => c[0].level)).toEqual(["goal", "objective"]);
-    expect(onDone).toHaveBeenCalledWith("members-are-paid-within-a-week");
+    expect(onDone).toHaveBeenCalledWith(outcome.id);
   });
 
   it("lets the person change the level the model offered", async () => {
@@ -106,7 +108,7 @@ describe("placing a goal from the home page", () => {
   it("adds a goal at the top, with nothing to choose", async () => {
     const { saveVersion, onDone } = mount("goal", "Raise produce quality", { levels: ["Goal", "Objective", "Outcome"], nodes: [] });
     fireEvent.click(screen.getByRole("button", { name: pc.add }));
-    await waitFor(() => expect(onDone).toHaveBeenCalledWith("raise-produce-quality"));
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith(expect.stringMatching(/^goal-[0-9a-f]{8}$/)));
     expect(saved(saveVersion.mock.calls[0]).parent).toBeUndefined();
   });
 
@@ -115,7 +117,7 @@ describe("placing a goal from the home page", () => {
     fireEvent.click(screen.getByRole("button", { name: pc.leaveUnplaced }));
     fireEvent.change(screen.getByLabelText(pc.unplacedUnder("Objective")), { target: { value: "Cut loss after picking" } });
     fireEvent.click(screen.getByRole("button", { name: pc.add }));
-    await waitFor(() => expect(onDone).toHaveBeenCalledWith("produce-is-kept-cool"));
+    await waitFor(() => expect(onDone).toHaveBeenCalledWith(expect.stringMatching(/^goal-[0-9a-f]{8}$/)));
     const m = saveVersion.mock.calls[0][2] as { metadata: { pending?: unknown[] }; spec: { parent?: string } };
     expect(m.spec.parent).toBeUndefined();
     expect(m.metadata.pending).toEqual([{ path: "/spec/parent", kind: "Goal", name: "Cut loss after picking" }]);

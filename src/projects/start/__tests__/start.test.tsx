@@ -54,7 +54,8 @@ describe("starting a project", () => {
     fireEvent.change(screen.getByLabelText(sc.nameNew(sc.words.gap)), { target: { value: "Depots check differently" } });
     fireEvent.click(screen.getByRole("button", { name: sc.add }));
     await waitFor(() => expect(saveVersion).toHaveBeenCalledTimes(1));
-    expect(saveVersion.mock.calls[0].slice(0, 2)).toEqual(["Gap", "depots-check-differently"]);
+    expect(saveVersion.mock.calls[0].slice(0, 2)).toEqual(["Gap", expect.stringMatching(/^gap-[0-9a-f]{8}$/)]);
+    const gapId = saveVersion.mock.calls[0][1] as unknown as string;
     fireEvent.click(next());
 
     // An outcome from the tree.
@@ -86,7 +87,7 @@ describe("starting a project", () => {
     fireEvent.click(done);
     await waitFor(() => expect(saveVersion).toHaveBeenCalledTimes(2));
     const [gk, gid, gm] = saveVersion.mock.calls[1] as unknown as [string, string, { metadata: { name: string }; spec: Record<string, unknown> }];
-    expect([gk, gid]).toEqual(["Gap", "depots-check-differently"]);
+    expect([gk, gid]).toEqual(["Gap", gapId]);
     expect(gm.metadata.name).toBe("Depots check differently from one another");
     expect(gm.spec).toMatchObject({ current: "Each depot keeps its own checklist", desired: "Every depot checks against one standard", outcomes: ["faults"] });
 
@@ -95,24 +96,31 @@ describe("starting a project", () => {
     expect(saveWorking).not.toHaveBeenCalled();
     // What was named here reads apart from what was chosen: the gap named
     // in place is marked new, the outcome picked from the tree is not.
-    expect(document.querySelector("[data-new]")?.textContent).toContain("depots-check-differently");
+    expect(document.querySelector("[data-new]")?.textContent).toContain(gapId);
     expect(document.querySelectorAll("[data-new]")).toHaveLength(1);
-    // The name is suggested from what it is about, written in as a value
-    // to change: a hint inside the box read as filled when it was not.
+    // No name is made up from the description: the person names it, and
+    // any other name they use is a label (engine TAXONOMY.md D70).
     const nameField = screen.getByLabelText(sc.nameLabel);
-    expect(nameField).toHaveValue("Train depot staff on one checklist");
+    expect(nameField).toHaveValue("");
     expect(nameField).not.toHaveAttribute("placeholder");
+    fireEvent.change(nameField, { target: { value: "Checklist rollout" } });
+    fireEvent.change(screen.getByLabelText(copy.labels.keyLabel), { target: { value: "CR-1 region=north" } });
+    fireEvent.keyDown(screen.getByLabelText(copy.labels.keyLabel), { key: "Enter" });
     expect(screen.getByRole("button", { name: new RegExp(sc.start) })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: new RegExp(sc.start) }));
     await waitFor(() => expect(saveWorking).toHaveBeenCalledTimes(1));
     const [kind, id, yaml] = saveWorking.mock.calls[0] as unknown as [string, string, string];
-    expect([kind, id]).toEqual(["Project", "train-depot-staff-on-one-checklist-2"]);
+    // Under an id of its own, never its name's.
+    expect([kind, id]).toEqual(["Project", expect.stringMatching(/^project-[0-9a-f]{8}$/)]);
     const doc = parse(yaml);
+    expect(doc.metadata.name).toBe("Checklist rollout");
+    expect(doc.metadata.labels).toEqual({ "CR-1": "", region: "north" });
+    expect(doc.metadata.alias).toBeUndefined();
     expect(doc.spec.summary.about).toBe("Train depot staff on one checklist. So every depot checks alike.");
-    expect(doc.spec.summary.problems[0].gaps).toEqual([{ gap: "depots-check-differently" }]);
+    expect(doc.spec.summary.problems[0].gaps).toEqual([{ gap: gapId }]);
     expect(doc.spec.alignment.goals).toEqual(["faults"]);
     expect(doc.spec.summary.beneficiaries).toEqual([]);
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/projects/$id/initiation/goals", params: { id: "train-depot-staff-on-one-checklist-2" } }));
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/projects/$id/initiation/goals", params: { id } }));
   });
 });
 

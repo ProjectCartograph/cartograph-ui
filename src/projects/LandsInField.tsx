@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { newRecordId } from "@/lib/recordId";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { stringify } from "yaml";
 import { ArrowRight, Hourglass, Plus } from "lucide-react";
@@ -14,7 +15,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { copy } from "@/copy";
 import { useClient } from "@/client/context";
-import { slugify } from "@/definition/NewDefinition";
 import { useRecordDrawer } from "@/records/RecordDrawer";
 import { useProjectStore } from "@/projects/store";
 import { NEW_OPERATION_ID } from "@/projects/types";
@@ -57,10 +57,7 @@ export function LandsInField({ resolve }: { resolve?: string }) {
   const queryClient = useQueryClient();
   const define = useMutation({
     mutationFn: async ({ name, purpose }: { name: string; purpose?: string }) => {
-      const taken = new Set((data?.options ?? []).map((o) => o.value));
-      const base = slugify(name) || "service";
-      let id = base;
-      for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
+      const id = newRecordId("Operation");
       await client.saveWorking(
         "Operation",
         id,

@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { newRecordId } from "@/lib/recordId";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { BookOpen, Plus } from "lucide-react";
@@ -17,7 +18,6 @@ import { useSettings } from "@/surfaces/goals/api";
 import { levelName } from "@/surfaces/goals/levels";
 import { createGoal, saveGoalFields } from "@/surfaces/goals/mutations";
 import type { GoalLevel } from "@/surfaces/goals/types";
-import { slugify } from "@/surfaces/sheet/schema";
 import { OnboardingMap } from "./OnboardingMap";
 import { markOnboarded } from "./firstRun";
 
@@ -30,17 +30,12 @@ type Step = (typeof WHO)[number] | (typeof HOW)[number] | "map";
 /** A record made here, by id and the name it was given. */
 export type Made = { id: string; name: string };
 
-/** A goal at any level, created under a free id: the name's own, or the
- * name's with a number when that is taken. */
+/** A goal at any level, created under an id of its own (never its
+ * name's). */
 async function createFree(client: Client, name: string, level: GoalLevel, parent?: string): Promise<Made | null> {
-  const base = slugify(name) || level;
-  for (let n = 1; n <= 9; n++) {
-    const id = n === 1 ? base : `${base}-${n}`;
-    const result = await createGoal(client, id, name, level, parent);
-    if (result.ok) return { id, name };
-    if (!result.conflict) return null;
-  }
-  return null;
+  const id = newRecordId("Goal");
+  const result = await createGoal(client, id, name, level, parent);
+  return result.ok ? { id, name } : null;
 }
 
 /**
