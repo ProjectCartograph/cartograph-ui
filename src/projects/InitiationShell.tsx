@@ -9,7 +9,7 @@ import { sameView } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 import { Scrubber, type ScrubStage } from "@/components/Scrubber";
 import { Button } from "@/components/ui/button";
-import { Activity, ChevronRight, FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
+import { Activity, ChevronRight, FileText, GitMerge, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
 
 
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
@@ -28,6 +28,8 @@ import { useClient } from "@/client/context";
 import type { Ref } from "./types";
 import { RoleRefPicker, roleOptions, useResourceNames } from "./RoleRefPicker";
 import { useProjectStore } from "./store";
+import { isApproved } from "./approved";
+import { useActiveChangeSet } from "@/changesets/useActive";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
 import { DMAICPanel } from "@/dmaic/DMAICPanel";
@@ -63,9 +65,11 @@ export function ProjectScrubber({ id, section }: { id: string; section?: Initiat
       return { key: st.section, label: pc.sections[st.section], state: bySection.get(st.section), ring: sectionRing(on) };
     }),
   }));
-  // Closure follows the walk: the one page of its phase, so the last
-  // segment of the same scrubber rather than a bar of its own.
-  stages.push({ key: "closing", label: pc.stepper.closing, steps: [{ key: "closing", label: pc.stepper.closing, state: bySection.get("closing") }] });
+  // Closure follows the walk once the definition is approved: the one
+  // page of its phase, so the last segment of the same scrubber rather
+  // than a bar of its own. Before then it is not part of defining (#80).
+  const approved = isApproved(useProjectStore().spec);
+  if (approved || section === "closing") stages.push({ key: "closing", label: pc.stepper.closing, steps: [{ key: "closing", label: pc.stepper.closing, state: bySection.get("closing") }] });
   const pathOf = new Map<string, string>([...STAGES.flatMap((stage) => stepsOfStage(stage).map((st) => [st.section, st.path] as const)), ["closing", "/closing"]]);
   useFlowTrace("Project", id, section ?? "", [...pathOf.keys()].indexOf(section ?? ""));
   return (
@@ -161,16 +165,40 @@ export function InitiationBackNext({ id, stage, section }: { id: string; stage: 
           )}
         />
       ) : (
-        <FlowNext
-          label={pc.nextTo(pc.stepper.closing)}
-          link={(c) => (
-            <Link to="/projects/$id/closing" params={{ id }}>
-              {c}
-            </Link>
-          )}
-        />
+        <WalkEnd id={id} />
       )}
     </FlowNav>
+  );
+}
+
+/** Where the walk goes after Approval: to Closure once the definition is
+ * approved; before then to where the definition is merged, the change
+ * set's review (cartograph-engine#80). */
+function WalkEnd({ id }: { id: string }) {
+  const approved = isApproved(useProjectStore().spec);
+  const changeSet = useActiveChangeSet();
+  if (approved)
+    return (
+      <FlowNext
+        label={pc.nextTo(pc.stepper.closing)}
+        link={(c) => (
+          <Link to="/projects/$id/closing" params={{ id }}>
+            {c}
+          </Link>
+        )}
+      />
+    );
+  if (!changeSet) return null;
+  return (
+    <FlowNext
+      label={pc.reviewAndMerge}
+      icon={GitMerge}
+      link={(c) => (
+        <Link to="/changesets/$id" params={{ id: changeSet }}>
+          {c}
+        </Link>
+      )}
+    />
   );
 }
 
@@ -385,7 +413,7 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
   }, []);
   return (
     <div ref={pane} className="relative flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
-      <div role="tablist" aria-label={mc.tabsLabel} className="flex items-center gap-0.5 self-start rounded-md bg-muted p-0.5">
+      <div role="tablist" aria-label={mc.tabsLabel} className="flex max-w-[calc(100%-2.5rem)] items-center gap-0.5 self-start overflow-x-auto rounded-md bg-muted p-0.5">
         {(["map", "charter", "checks", "dmaic"] as const).map((t) => (
           <button
             key={t}
@@ -393,7 +421,7 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
             role="tab"
             aria-selected={tab === t}
             onClick={() => pick(t)}
-            className={`flex items-center gap-1.5 rounded px-3 py-1 text-sm transition-colors duration-150 ${tab === t ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            className={`flex shrink-0 items-center gap-1.5 rounded px-2 py-1 text-sm transition-colors duration-150 sm:px-3 ${tab === t ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t === "map" ? (
               <Waypoints className="size-3.5" aria-hidden="true" />
