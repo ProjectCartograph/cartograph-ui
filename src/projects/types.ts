@@ -584,7 +584,7 @@ export interface ProjectKPI {
 
 export interface ProjectSpec {
   summary: ProjectSummary;
-  team: string;
+  team?: string;
   mandate?: Mandate[];
   /** Where a matter goes up when it cannot be settled here, nearest first
    * (TAXONOMY.md D44). */
@@ -629,8 +629,9 @@ export interface ProjectManifest {
 /** A blank, schema-valid-shaped spec for a brand new project. */
 export function blankProjectSpec(): ProjectSpec {
   return {
+    // No team until one is chosen: an empty one is refused as a malformed
+    // id, where a missing one is a field to fill.
     summary: { problems: [{ problem: {}, change: {} }] },
-    team: "",
   };
 }
 
