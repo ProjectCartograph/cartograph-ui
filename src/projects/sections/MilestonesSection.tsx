@@ -57,7 +57,7 @@ export function MilestonesSection() {
   const move = (id: string, month: string) => {
     const i = milestones.findIndex((m) => m.id === id);
     if (i < 0) return;
-    const t = milestones[i].timing;
+    const t = milestones[i].timing ?? { form: "date" };
     if (t.form === "date") patch(i, { timing: { ...t, date: withMonth(t.date, month) } });
     else if (t.form === "window" && t.notBefore && t.notAfter) {
       const by = (monthIndex(month) ?? 0) - (monthIndex(t.notBefore) ?? 0);
@@ -86,7 +86,9 @@ export function MilestonesSection() {
     const served = new Map((schedule.data ?? []).map((it) => [it.id, it]));
     return milestones.map((m): ScheduleItem => {
       const it = served.get(m.id);
-      const t = m.timing;
+      // A milestone added elsewhere without a timing yet is still drawn,
+      // as one whose date is to be given.
+      const t = m.timing ?? { form: "date" };
       const own = t.form === "date" ? { month: t.date?.slice(0, 7) } : t.form === "window" ? { notBefore: t.notBefore?.slice(0, 7), notAfter: t.notAfter?.slice(0, 7), month: it?.month ?? t.notBefore?.slice(0, 7) } : {};
       return { ...(it ?? { id: m.id, waitsOn: [], pending: false, late: false, critical: false, unplaced: false }), id: m.id, name: m.name, form: t.form, ...own };
     });

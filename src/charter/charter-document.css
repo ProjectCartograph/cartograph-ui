@@ -12,7 +12,7 @@
   outline: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
 }
 @media (max-width: 640px) {
-  .charter-doc { padding: 1.25rem 1rem; }
+  .charter-doc { padding: 1rem 0.75rem; }
 }
 .charter-doc section { scroll-margin-top: 6rem; border-radius: 0.5rem; }
 .charter-doc section + section { margin-top: 2rem; }
@@ -90,6 +90,10 @@
 @media (max-width: 640px) {
   .charter-doc .columns { grid-template-columns: 1fr; }
   .charter-doc dl { grid-template-columns: 1fr; }
+  /* A table keeps each column wide enough to read and scrolls, rather
+     than squeezing a sentence to a letter a line (#89). */
+  .charter-doc th, .charter-doc td { min-width: 6.5rem; }
+  .charter-doc td.remove-cell { min-width: 1.5rem; }
 }
 
 /* A problem read as one sentence (cartograph-engine#79): each part in a dotted box that

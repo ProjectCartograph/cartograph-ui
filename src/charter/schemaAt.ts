@@ -16,6 +16,7 @@ type Schema = {
   "x-cartograph-ref"?: string;
   "x-cartograph-enum"?: unknown[];
   $defs?: Record<string, Schema>;
+  required?: string[];
 };
 
 export type Editor =
@@ -75,4 +76,37 @@ export function editorAt(doc: Schema | undefined, pointer: string): Editor {
   if (type === "object" || s.properties) return { kind: "record" };
   if (s.format === "date") return { kind: "date", month: false };
   return { kind: "text", long: (s.maxLength ?? 0) > 160 };
+}
+
+/**
+ * A new item for the list at a pointer, as its own step adds one: text
+ * empty, to be typed where it shows, and what the contract requires
+ * filled as that step fills it: an id after the list's own (m3 after m2),
+ * an empty list, a timing on a date still to be given.
+ */
+export function newItemAt(doc: Schema | undefined, pointer: string, list: unknown): unknown {
+  const items = Array.isArray(list) ? (list as unknown[]) : [];
+  const s = schemaAt(doc, `${pointer}/${items.length}`);
+  const type = Array.isArray(s?.type) ? s?.type[0] : s?.type;
+  if (type === "string") return "";
+  const item: Record<string, unknown> = {};
+  for (const k of s?.required ?? []) {
+    const at = `${pointer}/${items.length}/${k}`;
+    if (k === "id") item.id = nextId(pointer, items);
+    else if (editorAt(doc, at).kind === "timing") item[k] = { form: "date" };
+    else if (editorAt(doc, at).kind === "list" || editorAt(doc, at).kind === "refs") item[k] = [];
+    else if (editorAt(doc, at).kind === "text") item[k] = "";
+  }
+  return item;
+}
+
+/** The next id in a list: its name's first letter and the first number
+ * not taken, as each step numbers what it adds. */
+function nextId(pointer: string, items: unknown[]): string {
+  const name = pointer.split("/").filter((k) => k && !/^\d+$/.test(k)).pop() ?? "item";
+  const prefix = name[0]?.toLowerCase() ?? "i";
+  const taken = new Set(items.map((it) => (it && typeof it === "object" ? (it as { id?: unknown }).id : undefined)));
+  let n = items.length + 1;
+  while (taken.has(`${prefix}${n}`)) n++;
+  return `${prefix}${n}`;
 }
