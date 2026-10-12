@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart } from "recharts";
 
 import { useClient } from "@/client/context";
 import type { ConstraintSide, TripleConstraint } from "@/client/port";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { copy } from "@/copy";
 import { useProjectStore } from "../store";
 import type { Constraint, InitiationSection, Risk } from "../types";
@@ -12,8 +14,6 @@ const tc = copy.projects.triangle;
 const rc = copy.projects.risks;
 const pc = copy.projects;
 
-/** Where each corner sits in the drawing: scope at the top. */
-const AT: Record<Constraint, [number, number]> = { scope: [200, 70], schedule: [90, 240], cost: [310, 240] };
 
 /** The step a risk on a side is raised in: on a deliverable, the
  * deliverables; on the scope as a whole, the scope. */
@@ -96,46 +96,60 @@ export function MiniTriangle() {
     placeholderData: (previous) => previous,
   });
   if (!data || !data.sides.some((s) => s.risks.length > 0)) return null;
-  return <TriangleDrawing data={data} className="w-40" />;
+  return <TriangleDrawing data={data} className="w-40" compact />;
 }
 
-function TriangleDrawing({ data, className = "w-full max-w-[22rem]" }: { data: TripleConstraint; className?: string }) {
-  const at = (s: ConstraintSide) => AT[s.constraint as Constraint];
-  const [a, b, c] = [AT.scope, AT.schedule, AT.cost];
+/** The three sides as a radar chart (shadcn/ui's chart on Recharts): each
+ * axis reaches as far as its share of the weighted risk, so the shape
+ * leans to the side that carries most. The axis says the side, the stance
+ * on it and its weight; the most constrained side is in the warning
+ * colour, and said in words in the list beneath. A hold is the side kept, so it is drawn as the solid point. */
+function TriangleDrawing({ data, className = "w-full max-w-[22rem]", compact = false }: { data: TripleConstraint; className?: string; compact?: boolean }) {
+  const order: Constraint[] = ["scope", "schedule", "cost"];
+  const bySide = new Map(data.sides.map((s) => [s.constraint as Constraint, s] as const));
+  const points = order.map((c) => {
+    const s = bySide.get(c);
+    return { side: c, share: Math.round((s?.share ?? 0) * 100), stance: s?.stance, exposure: s?.exposure ?? 0 };
+  });
+  const config = { share: { label: tc.shareLabel, color: "var(--primary)" } } satisfies ChartConfig;
   return (
-    <figure className="m-0">
-      <svg viewBox="0 0 400 320" className={className} role="img" aria-label={tc.overviewLabel}>
-        <path d={`M${a[0]},${a[1]} L${b[0]},${b[1]} L${c[0]},${c[1]} Z`} className="fill-none stroke-border" strokeWidth={1.5} />
-        {data.sides.map((s) => {
-          const [x, y] = at(s);
-          const r = 12 + 30 * Math.sqrt(s.share);
-          const most = data.mostConstrained === s.constraint;
-          const fill =
-            s.stance === "hold" ? "fill-foreground/80" : s.stance === "adjust" ? "fill-muted-foreground/35" : "fill-background";
-          const stroke = most ? "stroke-warning" : s.stance === "concede" ? "stroke-muted-foreground" : "stroke-foreground/70";
-          const label = s.constraint === "scope" ? y - r - 22 : y + r + 18;
-          const stance = s.stance ? tc.stanceWord[s.stance] : tc.stanceUnsaid;
-          return (
-            <g key={s.constraint} data-cartograph-side={s.constraint}>
-              <circle
-                cx={x}
-                cy={y}
-                r={r}
-                className={`${fill} ${stroke}`}
-                strokeWidth={most ? 4 : 1.5}
-                strokeDasharray={s.stance === "concede" ? "4 3" : undefined}
-              />
-              <text x={x} y={label} textAnchor="middle" className="fill-foreground text-[13px] font-semibold">
-                {tc.sides[s.constraint]}
-              </text>
-              <text x={x} y={label + 14} textAnchor="middle" className="fill-muted-foreground text-[11px]">
-                {`${stance} · ${s.exposure}${most ? ` · ${tc.mostConstrained.toLowerCase()}` : ""}`}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+    <figure className="m-0" aria-label={tc.overviewLabel} role="img">
+      <ChartContainer config={config} className={`aspect-[5/4] ${className}`}>
+        <RadarChart data={points} cy="58%" outerRadius={compact ? "66%" : "72%"} margin={{ top: 4, right: 32, bottom: 4, left: 32 }}>
+          <PolarGrid />
+          <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+          <PolarAngleAxis dataKey="side" tick={(props: AxisTick) => <SideTick {...props} compact={compact} points={points} most={data.mostConstrained} />} />
+          {compact ? null : <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />}
+          <Radar dataKey="share" fill="var(--color-share)" fillOpacity={0.25} stroke="var(--color-share)" dot={{ r: 3, fillOpacity: 1 }} isAnimationActive={false} />
+        </RadarChart>
+      </ChartContainer>
     </figure>
+  );
+}
+
+type AxisTick = { x?: number | string; y?: number | string; textAnchor?: "start" | "middle" | "end" | "inherit"; payload?: { value: string } };
+
+/** An axis label: the side, then its stance and weight; the most
+ * constrained side in the warning colour. */
+function SideTick({ x, y, textAnchor, payload, compact, points, most }: AxisTick & { compact: boolean; points: { side: Constraint; stance?: string; exposure: number }[]; most?: string }) {
+  const side = payload?.value as Constraint;
+  const p = points.find((q) => q.side === side);
+  const isMost = most === side;
+  const stance = p?.stance ? tc.stanceWord[p.stance] : tc.stanceUnsaid;
+  const ny = Number(y);
+  // Scope sits at the top: its words go above the point, the others' below.
+  const dy = side === "scope" ? -(compact ? 4 : 18) : compact ? 12 : 14;
+  return (
+    <g data-cartograph-side={side}>
+      <text x={x} y={ny + dy} textAnchor={textAnchor} className={`text-[12px] font-semibold ${isMost ? "fill-warning" : "fill-foreground"}`}>
+        {tc.sides[side]}
+      </text>
+      {compact ? null : (
+        <text x={x} y={ny + dy + 14} textAnchor={textAnchor} className="fill-muted-foreground text-[11px]">
+          {`${stance} · ${p?.exposure ?? 0}`}
+        </text>
+      )}
+    </g>
   );
 }
 
