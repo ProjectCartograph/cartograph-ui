@@ -13,20 +13,23 @@ function useShownOnScroll(): boolean {
   const last = useRef(0);
   useEffect(() => {
     let frame = 0;
-    const onScroll = () => {
+    // The page scrolls inside the frame, not the window: read whatever
+    // scrolled.
+    const onScroll = (e: Event) => {
+      const at = e.target instanceof HTMLElement ? e.target.scrollTop : window.scrollY;
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const y = window.scrollY;
+        const y = at;
         if (Math.abs(y - last.current) > 8) {
           setShown(y < last.current || y < 48);
           last.current = y;
         }
       });
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
     return () => {
       cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", onScroll, { capture: true });
     };
   }, []);
   return shown;

@@ -275,7 +275,9 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
   return (
     <WorkTextProvider text={workText}>
     <FromIdeaProvider kind="Project" idea={spec.summary.idea}>
-    <div className="flex flex-col gap-4">
+    {/* On a wide screen the walk fills the frame: its heading and stages
+        stay, and the step and the side pane each scroll on their own. */}
+    <div className="flex flex-col gap-4 xl:min-h-0 xl:flex-1">
       <ProjectHeaderBar />
       {/* On a phone the heading takes the width and its links go under it. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -302,8 +304,8 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
       <ProjectScrubber id={id} section={section} />
       <NextToDecide id={id} section={section} />
       <RequiredMarks kind="Project" />
-      <div className={`grid grid-cols-1 gap-6 ${paneOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
-        <div ref={card} className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
+      <div className={`grid grid-cols-1 gap-6 xl:min-h-0 xl:flex-1 ${paneOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
+        <div ref={card} className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6 xl:min-h-0 xl:overflow-y-auto" data-cartograph-region="section">
           {store.loaded ? <SectionOutline root={card} onNext={() => card.current?.querySelector<HTMLElement>("[data-flow-next]")?.click()} /> : null}
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
@@ -374,45 +376,11 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
       // Private windows refuse storage; the pane just forgets.
     }
   };
-  // Ends at the foot of the window wherever it starts, so the map's own
-  // foot is always in view: lower at the top of the page, where the
-  // walker sits above it, and the full height once it sticks.
   const pane = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const fit = () => {
-      const el = pane.current;
-      if (!el) return;
-      if (!window.matchMedia("(min-width: 80rem)").matches) {
-        el.style.height = "";
-        return;
-      }
-      // The change set's bar sits at the foot of the window; the pane
-      // stops above it where the two would overlap.
-      const box = el.getBoundingClientRect();
-      const bar = document.querySelector('[data-cartograph-region="merge-bar"]')?.getBoundingClientRect();
-      const under = bar && bar.right > box.left && bar.left < box.right ? bar.height + 12 : 0;
-      el.style.height = `${Math.max(448, window.innerHeight - Math.max(16, box.top) - 16 - under)}px`;
-    };
-    fit();
-    window.addEventListener("scroll", fit, { passive: true });
-    window.addEventListener("resize", fit);
-    // The bar comes and goes, and grows, as the change set does; read
-    // once a frame however much the page changes.
-    let frame = 0;
-    const watch = new MutationObserver(() => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(fit);
-    });
-    watch.observe(document.body, { childList: true, subtree: true });
-    return () => {
-      window.removeEventListener("scroll", fit);
-      window.removeEventListener("resize", fit);
-      watch.disconnect();
-      cancelAnimationFrame(frame);
-    };
-  }, []);
   return (
-    <div ref={pane} className="relative flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
+    // On a wide screen the pane is its grid cell's height, its content
+    // scrolling inside it: the frame never grows past the screen.
+    <div ref={pane} className="relative flex flex-col gap-2 xl:h-full xl:min-h-0" data-cartograph-region="side-pane">
       <div role="tablist" aria-label={mc.tabsLabel} className="flex max-w-[calc(100%-2.5rem)] items-center gap-0.5 self-start overflow-x-auto rounded-md bg-muted p-0.5">
         {(["map", "charter", "checks", "dmaic"] as const).map((t) => (
           <button
