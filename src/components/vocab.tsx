@@ -291,12 +291,12 @@ export function VocabChip({
 }
 
 /** The mark and the full word, for inside a select option. */
-export function VocabOption({ vocab, value }: { vocab: VocabName; value: string | number }) {
+export function VocabOption({ vocab, value, label }: { vocab: VocabName; value: string | number; label?: string }) {
   const Icon = vocabIcon(vocab, value);
   return (
     <span className="flex items-center gap-2">
       {Icon ? <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /> : null}
-      {vocabLabel(vocab, value)}
+      {label ?? vocabLabel(vocab, value)}
     </span>
   );
 }

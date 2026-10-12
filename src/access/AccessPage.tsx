@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Vocabularies } from "./Vocabularies";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Trash2, UserCog } from "lucide-react";
 
@@ -139,6 +140,7 @@ export function AccessPage() {
         </div>
       )}
       {holds(session, "administrator") ? <ChangeControl /> : null}
+      {holds(session, "administrator") ? <Vocabularies /> : null}
       {editing ? (
         <PersonDialog
           person={editing.person}

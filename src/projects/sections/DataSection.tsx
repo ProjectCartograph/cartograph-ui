@@ -1,5 +1,6 @@
 import { ArrowDownToLine, ArrowUpFromLine, Plus, X } from "lucide-react";
 
+import { VocabularyChoice } from "@/components/Vocabulary";
 import { Suggested } from "@/components/relevance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -264,13 +265,13 @@ export function DataSection() {
             </Field>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Field label={dc.refreshLabel}>
-                <EnumSelect
-                  data-cartograph-field={`/spec/data/produces/${idx}/refresh`}
-                  value={p.refresh ?? ""}
+                {/* The workspace's own words for how often (engine D71). */}
+                <VocabularyChoice
+                  vocabulary="refresh"
+                  field={`/spec/data/produces/${idx}/refresh`}
+                  value={p.refresh}
                   onChange={(v) => patchProduce(idx, { refresh: v as DataProduceItem["refresh"] })}
                   label={dc.refreshLabel}
-                  vocab="refresh"
-                  words={dc.refresh}
                 />
               </Field>
               <Field label={dc.personalDataLabel}>
