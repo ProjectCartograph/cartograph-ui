@@ -1,6 +1,6 @@
-import { Check } from "lucide-react";
+import { Check, FilePen } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { ErrorAlert } from "@/components/error-alert";
@@ -22,10 +22,14 @@ import { FlowProgress, type FlowSegment } from "@/components/walker";
 import { ConflictNotes } from "@/collab/ConflictNotes";
 import { OfflineNote } from "@/collab/OfflineNote";
 import { ProposalNotice } from "@/proposals/ProposalNotice";
+import { useActiveChangeSet } from "@/changesets/useActive";
 
 const pc = copy.projects;
 
 export function SaveStatus({ state }: { state: SaveState }) {
+  // Where the save went: every edit lands in the draft this window works
+  // in (engine docs/adr/0024), and the draft is one link away.
+  const draft = useActiveChangeSet();
   // data-state is the one dependable hook for "has everything landed":
   // the end-to-end script waits on it before a hard reload, rather than
   // guessing at the debounce.
@@ -49,6 +53,19 @@ export function SaveStatus({ state }: { state: SaveState }) {
       <span key={state} className="animate-in fade-in duration-150 ease-standard">
         {label}
       </span>
+      {draft && state !== "error" ? (
+        <Link
+          to="/changesets/$id"
+          params={{ id: draft }}
+          className="inline-flex items-center gap-1 underline-offset-2 hover:text-foreground hover:underline"
+          aria-label={copy.drafts.savedInTitle}
+          title={copy.drafts.savedInTitle}
+          data-slot="saved-in-draft"
+        >
+          <FilePen className="size-3.5" aria-hidden="true" />
+          {copy.drafts.savedIn}
+        </Link>
+      ) : null}
     </span>
   );
 }
