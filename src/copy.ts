@@ -3954,7 +3954,6 @@ export const copy = {
       removePlaceholder: "Remove",
       nameIt: (name: string) => `Name "${name}" here`,
       confirmedByTitle: "Accepted by",
-      confirmedByEmpty: "Name a service owner in Resources: the role that accepts the handover.",
       confirmedByHint: "The service owner: the post accountable for the service, who accepts what the project hands over.",
       confirmedByPlaceholder: "Choose the service owner",
       purposeLabel: "What it does",
