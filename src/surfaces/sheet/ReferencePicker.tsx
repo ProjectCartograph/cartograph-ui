@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { copy } from "@/copy";
 import { useRecordDrawer } from "@/records/RecordDrawer";
 import { ReferenceField } from "./ReferenceField";
-import { KPIAddDialog } from "@/kpis/KPIAddDialog";
+import { KPIAddDialog, type KPISeed } from "@/kpis/KPIAddDialog";
 import { SheetAddDialog } from "./InlineSheetAdd";
 import { isSheetKind, type SheetKind } from "./schema";
 import { useReferenceOptions } from "./useReferenceOptions";
@@ -26,6 +26,7 @@ export function ReferencePicker({
   label,
   addLabel,
   className,
+  kpiSeed,
   "data-cartograph-field": field,
 }: {
   refKind: string;
@@ -36,6 +37,8 @@ export function ReferencePicker({
   label?: string;
   addLabel?: string;
   className?: string;
+  /** For a new indicator: what the record it is added from already says. */
+  kpiSeed?: KPISeed;
   /** The manifest field this edits, by JSON pointer. */
   "data-cartograph-field"?: string;
 }) {
@@ -87,6 +90,7 @@ export function ReferencePicker({
           )}
           {isKPI ? (
             <KPIAddDialog
+              seed={kpiSeed}
               open={addOpen}
               onOpenChange={setAddOpen}
               onAdded={(id) => {

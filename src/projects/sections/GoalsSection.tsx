@@ -33,6 +33,8 @@ import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { Suggested } from "@/components/relevance";
 import { Textarea } from "@/components/ui/textarea";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
+import type { KPISeed } from "@/kpis/KPIAddDialog";
+import { kpiSeedOf } from "@/kpis/seed";
 import { useSectionAutosave, useProjectStore } from "../store";
 import { useProjectChecks } from "../api";
 import { ComponentsTable, dependentsOf, KIND_ICON, Marks, useComponentGraph } from "../components/ComponentsTable";
@@ -612,6 +614,7 @@ export function MeasuresSection() {
       <AddKpiDialog
         key={suggestedKpi ?? "-"}
         initialKpi={suggestedKpi}
+        seed={kpiSeedOf(store.spec.objectives)}
         open={addKpi}
         taken={namedKpis.map((k) => k.kpi)}
         onOpenChange={(open) => {
@@ -634,6 +637,7 @@ export function MeasuresSection() {
 function AddKpiDialog({
   open,
   initialKpi,
+  seed,
   taken,
   onOpenChange,
   onSave,
@@ -643,6 +647,8 @@ function AddKpiDialog({
   initialKpi?: string;
   /** Already named by this project, so it is not offered twice. */
   taken: string[];
+  /** For a new indicator: what the objective's key result already says. */
+  seed?: KPISeed;
   onOpenChange: (open: boolean) => void;
   onSave: (kpi: string, reason: string) => void;
 }) {
@@ -675,6 +681,7 @@ function AddKpiDialog({
             <ReferencePicker
               data-cartograph-field="/spec/kpis/-/kpi"
               refKind="KPI"
+              kpiSeed={seed}
               value={kpi}
               onChange={(v) => setKpi(v ?? undefined)}
               placeholder={gc.kpiPlaceholder}
