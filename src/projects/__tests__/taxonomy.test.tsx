@@ -57,7 +57,8 @@ describe("the taxonomy, on screen", () => {
       if (!el) throw new Error("not yet");
       return el;
     });
-    expect(within(required).getByText(copy.projects.resources.leadLabel)).toBeInTheDocument();
+    // A component names only its own manager: the sponsor is its parent's.
+    expect(within(required).getByRole("button", { name: copy.projects.resources.addRequired(copy.projects.resources.leadLabel, true) })).toBeInTheDocument();
     expect(within(required).queryByText(copy.projects.resources.sponsorLabel)).toBeNull();
   });
 });
