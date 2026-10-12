@@ -86,6 +86,7 @@ const ICONS = {
     "operationalSystem": Cog,
     "apiOrFeed": Rss,
     "documentStore": FolderOpen,
+    warehouse: Warehouse,
   },
   handoff: {
     "apiOrFeed": Rss,
@@ -173,6 +174,7 @@ const SHORT: Partial<Record<VocabName, Record<string, string>>> = {
     "operationalSystem": "System",
     "apiOrFeed": "Feed",
     "documentStore": "Documents",
+    warehouse: "Warehouse",
   },
   handoff: { "apiOrFeed": "Feed", "fileTransfer": "File", "sharedDatabase": "Database", "manualReentry": "Re-entry" },
   dataOutput: {

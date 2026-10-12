@@ -30,7 +30,8 @@ export function useKPI(id: string) {
 }
 
 /** The cycle a KPI is read on, which is what says what its periods are:
- * equal ones (periodMonths from startMonth), or named ones (periods). */
+ * equal months (periodMonths from startMonth), equal days (periodDays
+ * from startDate), or named ones (periods). */
 export function useCycle(id: string | undefined) {
   const client = useClient();
   return useQuery({
@@ -40,12 +41,15 @@ export function useCycle(id: string | undefined) {
       const view = (await client.get("ReportingCycle", id!)) as unknown as {
         manifest?: {
           metadata?: { name?: string };
-          spec?: { periodMonths?: number; startMonth?: number; periods?: { name: string }[] };
+          spec?: { periodMonths?: number; periodDays?: number; startDate?: string; startMonth?: number; periods?: { name: string }[] };
         };
       };
       return {
         name: view.manifest?.metadata?.name ?? id!,
         periodMonths: view.manifest?.spec?.periodMonths ?? 0,
+        // Periods of days (engine TAXONOMY.md D68), from their first day.
+        periodDays: view.manifest?.spec?.periodDays ?? 0,
+        startDate: view.manifest?.spec?.startDate ?? "",
         startMonth: view.manifest?.spec?.startMonth ?? 1,
         periodNames: (view.manifest?.spec?.periods ?? []).map((p) => p.name),
       };

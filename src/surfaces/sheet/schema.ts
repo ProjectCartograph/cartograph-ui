@@ -1,10 +1,8 @@
 // Turns a kind's JSON Schema (as served by GET /schemas/{kind}) into the
-// column and form field definitions the Sheet renders. The schema document
-// is the raw contract file: $ref targets into common.schema.json are never
-// resolved here, since every property that needs one carries an annotation
-// next to the $ref saying what it is (x-cartograph-ref for a reference,
-// x-cartograph-enum for an enum), which is enough to classify it without
-// following the $ref.
+// column and form field definitions the Sheet renders. The engine serves
+// the schema with the definitions it uses under $defs (engine #89), so a
+// property's $ref is followed one step to read what it is; annotations
+// beside it (x-cartograph-ref, x-cartograph-enum) still say the rest.
 
 export type FieldKind =
   | "string"
@@ -73,9 +71,20 @@ export function parseSpecFields(schemaDoc: JSONSchemaDoc | undefined): FieldDef[
   return Object.keys(properties)
     .filter((name) => name !== "name" && !String(properties[name]?.description ?? "").startsWith("Deprecated"))
     .map((name) => {
-      const prop = properties[name];
+      const prop = resolved(schemaDoc, properties[name]);
       return { name, required: required.includes(name), ...classify(prop) };
     });
+}
+
+/** A property with the definition it points to under it, as the engine
+ * serves a kind's schema with its definitions carried along: a cycle's
+ * first day reads as the date its Day definition says it is. The
+ * property's own words win, and its $ref stays for what it names. */
+function resolved(doc: JSONSchemaDoc, prop: JSONSchemaDoc): JSONSchemaDoc {
+  const ref = typeof prop?.$ref === "string" ? prop.$ref : "";
+  if (!ref.startsWith("#/$defs/")) return prop;
+  const def = doc.$defs?.[ref.slice("#/$defs/".length)];
+  return def && typeof def === "object" ? { ...def, ...prop } : prop;
 }
 
 function classify(prop: JSONSchemaDoc): Omit<FieldDef, "name" | "required"> {
@@ -131,6 +140,7 @@ function classify(prop: JSONSchemaDoc): Omit<FieldDef, "name" | "required"> {
 // no two of them collide across kinds.
 const UNIT_HINTS: Record<string, string> = {
   periodMonths: "months",
+  periodDays: "days",
   startMonth: "month of the year, 1 to 12",
   dueOffsetDays: "days",
   typicalSize: "people",

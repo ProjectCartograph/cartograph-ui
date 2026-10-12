@@ -1045,6 +1045,8 @@ export const copy = {
       ReportingCycle: {
         name: "Name",
         periodMonths: "Period",
+        periodDays: "Period in days",
+        startDate: "First day",
         startMonth: "Start month",
         periods: "Named periods",
         dueOffsetDays: "Due offset",
@@ -1125,6 +1127,8 @@ export const copy = {
       },
       ReportingCycle: {
         periodMonths: "How many months one round covers.",
+        periodDays: "How many days one round covers, for a number read daily, weekly or every two weeks. Leave it empty for rounds of months.",
+        startDate: "The first day of one round, so the rest line up with it: a weekly cycle from a Monday.",
         startMonth: "The month of the year the first round opens.",
         periods: "Named periods instead of equal rounds, such as terms each year or one-off survey waves, each set by the month it ends.",
         dueOffsetDays: "How many days after a round closes the report is due.",
@@ -1199,6 +1203,7 @@ export const copy = {
           "operationalSystem": "Operational system",
           "apiOrFeed": "API or feed",
           "documentStore": "Document store",
+          warehouse: "Warehouse",
         },
         provenance: {
           internal: "Internal",
@@ -1240,6 +1245,11 @@ export const copy = {
           "3": "Quarterly",
           "6": "Every six months",
           "12": "Yearly",
+        },
+        periodDays: {
+          "1": "Daily",
+          "7": "Weekly",
+          "14": "Every two weeks",
         },
       },
     } as Record<string, Record<string, Record<string, string>>>,
@@ -1901,6 +1911,8 @@ export const copy = {
     lead: "The numbers this source can give. Write each as a SQL-like aggregation over this source's own fields: it says what you mean to count, for whoever builds it in the warehouse, and is not the calculation itself.",
     name: "Name",
     nameHint: "What the number is called, such as Deliveries checked.",
+    over: "Counts over",
+    overHint: "What one entry this number counts is, where the source holds more than one kind, as a warehouse does: each delivery graded, each order placed. Leave it empty when it is one entry of this source.",
     startFrom: "Start from one of these, then change the fields to this source's own:",
     examples: ["COUNT(*)", "COUNT(*) WHERE passed = true", "COUNT(DISTINCT member_id)", "SUM(weight_kg)", "AVG(days_to_pay)"],
     useExample: (example: string) => `Start from ${example}`,
@@ -2034,6 +2046,9 @@ export const copy = {
     cycleSignature: {
       every: (months: number) =>
         months === 1 ? "Read every month," : `Read every ${months} months,`,
+      everyDays: (days: number) => (days === 1 ? "Read every day," : days === 7 ? "Read every week," : `Read every ${days === 14 ? "two weeks" : `${days} days`},`),
+      fromDay: (day: string) => `from ${day}.`,
+      nextEnd: (days: string) => `The next periods end on ${days}.`,
       startingIn: (month: string) => `counting from ${month}.`,
       named: (names: string) => `Read at the end of each named period: ${names}.`,
       periodsEnd: (months: string) => `Periods end in ${months}.`,
@@ -2113,6 +2128,7 @@ export const copy = {
       direction: {
         increase: "Higher is better",
         decrease: "Lower is better",
+        reach: "Closest to the target",
         maintain: "Hold it steady",
       } as Record<string, string>,
     },
@@ -3277,7 +3293,7 @@ export const copy = {
       requiredTitle: "Required roles",
       requiredHint: "Name a sponsor and a project manager.",
       requiredHintComponent: "Name a project manager; the sponsor is the parent project's.",
-      fundingTitle: "Approved funding",
+      fundingTitle: "Funding",
       fundingHint: "The money for this project: how much, in which currency, whether it is approved yet, and the budget it comes from. One line per currency.",
       fundingEmpty: "No funding line yet.",
       addFunding: "Add a funding line",
@@ -3831,7 +3847,7 @@ export const copy = {
       legend: "One role answers for each deliverable or decision.",
       costs: "Cost plan",
       costsHint: "The budget as lines: what each covers, how much, from where, and whether it is approved.",
-      costsNeedFunding: "Add a funding line first, in Approved funding above: the cost plan breaks it down.",
+      costsNeedFunding: "Add a funding line first, in Funding above: the cost plan breaks it down.",
       addCost: "Add a cost line",
       category: "What it covers",
       amount: "Amount",
