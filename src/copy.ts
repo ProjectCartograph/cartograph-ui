@@ -10,7 +10,6 @@ function capital(s: string): string {
 
 export const copy = {
   appName: "Cartograph",
-  appLine: "Definitions",
   // The home page: one question, read against the taxonomy and the record
   // (engine docs/adr/0023).
   home: {

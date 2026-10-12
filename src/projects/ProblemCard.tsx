@@ -1,4 +1,4 @@
-import { ArrowDownToLine, BadgeCheck, ChevronDown, ChevronRight, Plus, Users, X } from "lucide-react";
+import { ArrowDownToLine, BadgeCheck, ChevronDown, CircleDashed, ChevronRight, Plus, Users, X } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -299,7 +299,13 @@ export function CausesFound({
               title={!hasEvidence ? cc.verifyNeedsEvidence : c.verified ? cc.verifiedHint : cc.verifyHint}
               data-cartograph-field={`${field}/${i}/verified`}
             >
-              <BadgeCheck />
+              {/* Confirmed reads green, not confirmed amber and a different
+                  shape, so neither rests on colour alone (#95). */}
+              {c.verified ? (
+                <BadgeCheck className="text-success" data-mark="confirmed" />
+              ) : (
+                <CircleDashed className={hasEvidence ? "text-warning" : "text-muted-foreground"} data-mark="unconfirmed" />
+              )}
               {c.verified ? cc.verified : cc.verify}
             </Button>
           </div>
