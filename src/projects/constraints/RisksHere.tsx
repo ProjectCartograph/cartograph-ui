@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Lock, Plus } from "lucide-react";
+import { Lock, Pencil, Plus, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { copy, plusNoun } from "@/copy";
 import { useProjectStore } from "../store";
 import type { Constraint, ImpactLikelihood } from "../types";
-import { bearsOnOf, newRiskOn, risksOn } from "./triangle";
+import { bearsOnOf, newRiskOn, placeOn, risksOn } from "./triangle";
 import { MiniTriangle } from "./Overview";
 
 const tc = copy.projects.triangle;
@@ -42,6 +42,35 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
   const [impact, setImpact] = useState<ImpactLikelihood | "">("");
   const [on, setOn] = useState(NONE);
   const sideName = tc.sides[side];
+
+  // One risk changed in place: its words, and how much it moves this side.
+  const [editing, setEditing] = useState(-1);
+  const [draft, setDraft] = useState("");
+  const [draftImpact, setDraftImpact] = useState<ImpactLikelihood | "">("");
+  function startEdit(index: number, description: string, impact?: ImpactLikelihood) {
+    setEditing(index);
+    setDraft(description);
+    setDraftImpact(impact ?? "");
+  }
+  function save(index: number, was?: ImpactLikelihood) {
+    const text = draft.trim();
+    if (!text) return;
+    store.updateSpec((s) => ({
+      ...s,
+      risks: (s.risks ?? []).map((r, i) => {
+        if (i !== index) return r;
+        const next = { ...r, description: text };
+        return draftImpact && draftImpact !== was ? placeOn(next, side, { impact: draftImpact }) : next;
+      }),
+    }));
+    setEditing(-1);
+  }
+  function remove(index: number) {
+    store.updateSpec((s) => {
+      const left = (s.risks ?? []).filter((_, i) => i !== index);
+      return { ...s, risks: left.length > 0 ? left : undefined };
+    });
+  }
 
   function add() {
     const text = description.trim();
@@ -79,15 +108,60 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
         <p className="text-sm text-muted-foreground">{tc.hereEmpty}</p>
       ) : (
         <ul className="flex flex-col gap-1">
-          {here.map(({ index, risk, affects }) => (
-            <li key={risk.id ?? index} className="flex flex-wrap items-baseline gap-x-2 text-sm">
-              <span className="text-pretty">{risk.description || rc.unnamed}</span>
-              {affects.impact ? <span className="text-xs text-muted-foreground">{rc.levels[affects.impact]}</span> : null}
-              {affects.on && nameOf.get(affects.on) ? (
-                <span className="text-xs text-muted-foreground">{tc.on(nameOf.get(affects.on)!)}</span>
-              ) : null}
-            </li>
-          ))}
+          {here.map(({ index, risk, affects }) =>
+            editing === index ? (
+              <li key={risk.id ?? index} className="flex flex-wrap items-center gap-2 text-sm" data-editing="">
+                <Input
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value.slice(0, 160))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") save(index, affects.impact);
+                    if (e.key === "Escape") setEditing(-1);
+                  }}
+                  aria-label={tc.hereDescription}
+                  maxLength={160}
+                  className="min-w-60 flex-1"
+                  data-cartograph-field={`/spec/risks/${index}/description`}
+                />
+                <Select value={draftImpact} onValueChange={(v) => setDraftImpact(v as ImpactLikelihood)}>
+                  <SelectTrigger className="w-32" aria-label={`${tc.hereImpact}: ${sideName}`}>
+                    <SelectValue placeholder={tc.hereImpact} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(["low", "medium", "high"] as const).map((l) => (
+                      <SelectItem key={l} value={l}>
+                        {rc.levels[l]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button type="button" size="sm" variant="outline" onClick={() => save(index, affects.impact)} disabled={!draft.trim()}>
+                  {tc.hereSave}
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(-1)}>
+                  {tc.hereCancel}
+                </Button>
+              </li>
+            ) : (
+              <li key={risk.id ?? index} className="group flex flex-wrap items-baseline gap-x-2 text-sm">
+                <span className="text-pretty">{risk.description || rc.unnamed}</span>
+                {affects.impact ? <span className="text-xs text-muted-foreground">{rc.levels[affects.impact]}</span> : null}
+                {affects.on && nameOf.get(affects.on) ? (
+                  <span className="text-xs text-muted-foreground">{tc.on(nameOf.get(affects.on)!)}</span>
+                ) : null}
+                {/* What was raised here is changed or taken back here. */}
+                <span className="ml-auto flex items-center gap-0.5 self-center">
+                  <Button type="button" variant="ghost" size="icon-xs" onClick={() => startEdit(index, risk.description, affects.impact)} aria-label={tc.editRisk(risk.description || rc.unnamed)} title={tc.editRisk(risk.description || rc.unnamed)}>
+                    <Pencil />
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon-xs" onClick={() => remove(index)} aria-label={tc.removeRisk(risk.description || rc.unnamed)} title={tc.removeRisk(risk.description || rc.unnamed)}>
+                    <X />
+                  </Button>
+                </span>
+              </li>
+            ),
+          )}
         </ul>
       )}
       {adding ? (
