@@ -96,7 +96,7 @@ export function MiniTriangle() {
     placeholderData: (previous) => previous,
   });
   if (!data || !data.sides.some((s) => s.risks.length > 0)) return null;
-  return <TriangleDrawing data={data} className="w-40" compact />;
+  return <TriangleDrawing data={data} className="w-60" compact />;
 }
 
 /** The three sides as a radar chart (shadcn/ui's chart on Recharts): each
@@ -115,7 +115,7 @@ function TriangleDrawing({ data, className = "w-full max-w-[22rem]", compact = f
   return (
     <figure className="m-0" aria-label={tc.overviewLabel} role="img">
       <ChartContainer config={config} className={`aspect-[5/4] ${className}`}>
-        <RadarChart data={points} cy="58%" outerRadius={compact ? "66%" : "72%"} margin={{ top: 4, right: 32, bottom: 4, left: 32 }}>
+        <RadarChart data={points} cy="58%" outerRadius={compact ? "66%" : "72%"} margin={compact ? { top: 4, right: 44, bottom: 4, left: 44 } : { top: 4, right: 32, bottom: 4, left: 32 }}>
           <PolarGrid />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
           <PolarAngleAxis dataKey="side" tick={(props: AxisTick) => <SideTick {...props} compact={compact} points={points} most={data.mostConstrained} />} />
