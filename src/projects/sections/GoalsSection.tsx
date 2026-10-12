@@ -33,6 +33,7 @@ import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { Suggested } from "@/components/relevance";
 import { Textarea } from "@/components/ui/textarea";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
+import { LabelsEditor } from "@/components/LabelsEditor";
 import type { KPISeed } from "@/kpis/KPIAddDialog";
 import { kpiSeedOf } from "@/kpis/seed";
 import { useSectionAutosave, useProjectStore } from "../store";
@@ -232,6 +233,12 @@ export function AlignmentSection() {
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Every other name people use for it, an internal code or a
+          working name: its labels (engine TAXONOMY.md D70). */}
+      <section className="flex flex-col gap-1.5" data-cartograph-region="labels">
+        <FieldHeading label={copy.labels.label} hint={copy.labels.hint} />
+        <LabelsEditor labels={store.labels} onChange={store.setLabels} idPrefix="project-labels" />
+      </section>
       {/* What it is about, and where it sits, kept compact: one sentence,
           then a question at a time, each opening the next once answered.
           Asked first: everything suggested below is ranked against them

@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from "react";
+import { newRecordId } from "@/lib/recordId";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 
@@ -11,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { copy } from "@/copy";
-import { slugify } from "@/surfaces/sheet/schema";
 import { GoalTreePicker } from "./GoalTreePicker";
 import { levelName } from "./levels";
 import { createGoal } from "./mutations";
@@ -120,8 +120,8 @@ export function PlaceGoalForm({ level, name, tree, onDone, fixedLevel = false, o
 
   async function add() {
     const trimmed = now.name.trim();
-    const id = slugify(trimmed);
-    if (!id) return;
+    if (!trimmed) return;
+    const id = newRecordId("Goal");
     setSaving(true);
     const result = await createGoal(client, id, trimmed, now.level, unplaced === null ? parent || undefined : undefined, unplaced ?? undefined);
     setSaving(false);

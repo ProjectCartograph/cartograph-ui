@@ -1,10 +1,11 @@
 import { useMemo, useState, type ReactNode, useEffect, useRef } from "react";
+import { LabelsEditor } from "@/components/LabelsEditor";
+import { newRecordId } from "@/lib/recordId";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { stringify as stringifyYAML } from "yaml";
 import { ArrowRight, Check, PencilLine, Plus, Rocket, Sparkles } from "lucide-react";
 
-import { aliasFor } from "@/alias";
 import { useClient } from "@/client/context";
 import { ClientError } from "@/client/port";
 import type { GoalTree } from "@/client/port";
@@ -24,7 +25,6 @@ import { DidYouMean } from "@/components/DidYouMean";
 import { STEPS as TOUR_STEPS } from "@/tour/steps";
 import { useTour } from "@/tour/tourContext";
 import { useTutorial } from "./tutorial";
-import { slugify } from "@/surfaces/sheet/schema";
 import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import type { ProjectManifest } from "../types";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
@@ -51,20 +51,7 @@ interface Created {
 const ALL_STEPS = ["about", "gaps", "goals", "groups", "team", "details", "ready"] as const;
 type Step = (typeof ALL_STEPS)[number];
 
-/** An id from a name that no existing record of the kind holds. */
-function freeId(name: string, taken: Set<string>): string {
-  const base = slugify(name) || "record";
-  let id = base;
-  for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
-  return id;
-}
 
-/** A project's name from what it is about: its first few words. */
-function nameFrom(about: string): string {
-  const first = about.trim().split(/(?<=[.!?])\s|\n/)[0] ?? "";
-  const words = first.replace(/[.!?]+$/, "").split(/\s+/).slice(0, 8).join(" ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
 
 /**
  * Starting a project, as New starts anything: one question at a time on one
@@ -88,10 +75,8 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
   const [groups, setGroups] = useState<string[]>([]);
   const [team, setTeam] = useState("");
   const [name, setName] = useState(arrivedName ?? "");
-  // The name suggested from what it is about is written in, as a value
-  // that can be changed: a hint inside the box read as filled when it
-  // was not, and Start stayed off.
-  const [suggested, setSuggested] = useState(false);
+  // Every other name the person uses for it (engine TAXONOMY.md D70).
+  const [labels, setLabels] = useState<Record<string, string>>({});
   // The bigger project, for a component (TAXONOMY.md D14, D15).
   const [parent, setParent] = useState<string | undefined>(undefined);
 
@@ -144,12 +129,6 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
   const toFill = created.filter(
     (c) => c.kind !== "Team" && (isParent(c) || (c.kind === "Gap" ? gaps : c.kind === "Goal" ? goals : groups).includes(c.id)) && !filled.has(c.id),
   );
-  // Set while rendering, not in an effect, so the step never shows an
-  // empty box for a render before the suggestion arrives.
-  if (step === "ready" && !suggested) {
-    setSuggested(true);
-    if (!name.trim()) setName(nameFrom(about));
-  }
   const STEPS = ALL_STEPS.filter((s) => s !== "details" || toFill.length > 0 || step === "details");
   const at = STEPS.indexOf(step);
   const go = (to: Step) => {
@@ -203,12 +182,14 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
         };
         body = d;
       } else {
-        const existing = new Set(((await client.list("Project")) as { id: string }[]).map((p) => p.id));
-        const id = freeId(named, existing);
+        const id = newRecordId("Project");
+        // No name given: its id stands for it until somebody names it,
+        // never words lifted from the description (engine D70).
+        named = named.trim() || id;
         body = {
           apiVersion: "cartograph/v1",
           kind: "Project",
-          metadata: { id, name: named.trim(), alias: aliasFor(named) },
+          metadata: { id, name: named.trim(), ...(Object.keys(labels).length > 0 ? { labels } : {}) },
           spec: {
             team,
             summary: {
@@ -313,6 +294,13 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
                   autoFocus
                 />
               </div>
+              {/* Not a name made up from the description: the person's own,
+                  and any other they use for it as labels (engine D70). */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{copy.labels.label}</span>
+                <p className="text-xs text-muted-foreground">{copy.labels.hint}</p>
+                <LabelsEditor labels={labels} onChange={setLabels} idPrefix="start-labels" />
+              </div>
               <Summary chosen={chosen} newIds={newIds} team={team} />
               {failed ? <p className="text-sm text-destructive" role="alert">{sc.failed}</p> : null}
             </WalkerQuestion>
@@ -329,7 +317,7 @@ export function StartProject({ about: arrivedAbout, idea: arrivedIdea, name: arr
               variant="ghost"
               size="lg"
               className="ml-auto"
-              onClick={() => void start(projectName.trim() || nameFrom(about) || sc.untitled)}
+              onClick={() => void start(projectName.trim())}
               disabled={saving || (!from && !about.trim())}
               data-slot="skip-to-page"
             >
@@ -380,7 +368,7 @@ function Pick({
   );
 
   async function add(newName: string) {
-    const id = freeId(newName, new Set(items.map((i) => i.id)));
+    const id = newRecordId(kind);
     await client.saveVersion(kind, id, { apiVersion: "cartograph/v1", kind, metadata: { id, name: newName }, spec: {} }, sc.reason);
     await queryClient.invalidateQueries({ queryKey: ["sheet-ref-options", kind] });
     onCreated?.({ kind: kind as Created["kind"], id, name: newName });

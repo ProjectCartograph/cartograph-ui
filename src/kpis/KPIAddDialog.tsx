@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { newRecordId } from "@/lib/recordId";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -24,7 +25,6 @@ import { LabelsEditor } from "@/components/LabelsEditor";
 import { useClient } from "@/client/context";
 import { ClientError } from "@/client/port";
 import { copy } from "@/copy";
-import { slugify } from "@/surfaces/sheet/schema";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
 import { CycleSignature } from "./CycleSignature";
 import { DidYouMean } from "@/components/DidYouMean";
@@ -97,7 +97,7 @@ export function KPIAddDialog({
       setRefused(true);
       return;
     }
-    const id = slugify(name);
+    const id = newRecordId("KPI");
     const manifest = {
       apiVersion: "cartograph/v1",
       kind: "KPI",

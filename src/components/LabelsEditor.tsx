@@ -30,16 +30,20 @@ export function LabelsEditor({
   onChange: (next: Record<string, string>) => void;
   idPrefix?: string;
 }) {
-  const [key, setKey] = useState("");
-  const [value, setValue] = useState("");
+  const [text, setText] = useState("");
   const entries = Object.entries(labels);
 
+  // Written Kubernetes' way (engine TAXONOMY.md D70): a key alone, such as
+  // an internal code, or key=value. Several may be typed at once, apart.
   function add() {
-    const k = key.trim();
-    if (!k) return;
-    onChange({ ...labels, [k]: value.trim() });
-    setKey("");
-    setValue("");
+    const next = { ...labels };
+    for (const part of text.split(/[,\s]+/)) {
+      const [k, ...rest] = part.split("=");
+      const key = k.trim();
+      if (key) next[key] = rest.join("=").trim();
+    }
+    onChange(next);
+    setText("");
   }
 
   function remove(k: string) {
@@ -48,8 +52,8 @@ export function LabelsEditor({
     onChange(next);
   }
 
-  // metadata.labels, the one field this edits. The key and value boxes
-  // hold a label not added yet, so they name no field of their own.
+  // metadata.labels, the one field this edits. The box holds labels not
+  // added yet, so it names no field of its own.
   return (
     <div className="flex flex-col gap-2" data-cartograph-field="/metadata/labels">
       {entries.length > 0 ? (
@@ -58,11 +62,11 @@ export function LabelsEditor({
             <Badge
               key={k}
               variant="outline"
-              className="h-6 gap-1 pr-1"
+              className="h-6 gap-1 pr-1 font-mono"
               data-cartograph-field={`/metadata/labels/${k.replace(/~/g, "~0").replace(/\//g, "~1")}`}
             >
               <Tag aria-hidden="true" />
-              <span className="truncate">{v ? `${k}: ${v}` : k}</span>
+              <span className="truncate">{v ? `${k}=${v}` : k}</span>
               <Button
                 type="button"
                 variant="ghost"
@@ -77,49 +81,31 @@ export function LabelsEditor({
           ))}
         </div>
       ) : null}
-
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground" htmlFor={`${idPrefix}-key`}>
-          {lc.keyShown}
-        <Input
-          id={`${idPrefix}-key`}
-          className="w-40"
-          value={key}
-          placeholder={lc.keyPlaceholder}
-          aria-label={lc.keyLabel}
-          maxLength={60}
-          onChange={(e) => setKey(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              add();
-            }
-          }}
-        />
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground" htmlFor={`${idPrefix}-new`}>
+          {lc.shown}
+          <Input
+            id={`${idPrefix}-new`}
+            className="font-mono"
+            value={text}
+            aria-label={lc.keyLabel}
+            aria-describedby={`${idPrefix}-hint`}
+            maxLength={200}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                add();
+              }
+            }}
+          />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground" htmlFor={`${idPrefix}-value`}>
-          {lc.valueShown}
-        <Input
-          id={`${idPrefix}-value`}
-          className="w-40"
-          value={value}
-          placeholder={lc.valuePlaceholder}
-          aria-label={lc.valueLabel}
-          maxLength={60}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              add();
-            }
-          }}
-        />
-        </label>
-        <Button type="button" variant="outline" size="sm" onClick={add} disabled={!key.trim()} aria-label={lc.add}>
+        <Button type="button" variant="outline" size="sm" onClick={add} disabled={!text.trim()} aria-label={lc.add}>
           <Plus />
           {plusNoun(lc.add)}
         </Button>
       </div>
+      <p id={`${idPrefix}-hint`} className="text-xs text-muted-foreground">{lc.syntax}</p>
     </div>
   );
 }

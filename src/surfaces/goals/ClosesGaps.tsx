@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { newRecordId } from "@/lib/recordId";
 import { Link } from "@tanstack/react-router";
 import { Plus, TriangleAlert, X } from "lucide-react";
 import { useState } from "react";
@@ -9,7 +10,6 @@ import { Help } from "@/components/guidance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRecordDrawer } from "@/records/RecordDrawer";
-import { slugify } from "@/definition/NewDefinition";
 import { Label } from "@/components/ui/label";
 import { copy } from "@/copy";
 import { DirectorySelect } from "@/surfaces/sheet/DirectorySelect";
@@ -42,10 +42,7 @@ export function ClosesGaps({ outcome }: { outcome: string }) {
   const [naming, setNaming] = useState<string | null>(null);
   const create = useMutation({
     mutationFn: async (name: string) => {
-      const existing = new Set((gaps.data ?? []).map((g) => g.id));
-      const base = slugify(name) || "gap";
-      let id = base;
-      for (let n = 2; existing.has(id); n++) id = `${base}-${n}`;
+      const id = newRecordId("Gap");
       await client.saveWorking("Gap", id, stringify({ apiVersion: "cartograph/v1", kind: "Gap", metadata: { id, name }, spec: { outcomes: [outcome] } }));
       return id;
     },

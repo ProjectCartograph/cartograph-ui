@@ -77,6 +77,7 @@ interface Row {
   version: number;
   updatedOn: string;
   spec: Record<string, unknown> | undefined;
+  labels?: Record<string, string>;
   loading: boolean;
 }
 
@@ -237,6 +238,7 @@ export function Sheet({ kind, initialName, adding }: { kind: SheetKind; initialN
         version: s.version,
         updatedOn: s.updatedOn,
         spec: rowQueries[i]?.data?.manifest.spec as Record<string, unknown> | undefined,
+        labels: (rowQueries[i]?.data?.manifest.metadata as { labels?: Record<string, string> } | undefined)?.labels,
         loading: rowQueries[i]?.isLoading ?? true,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -267,7 +269,7 @@ export function Sheet({ kind, initialName, adding }: { kind: SheetKind; initialN
   }
   function openEdit(r: Row) {
     if (!r.spec) return;
-    setDialog({ open: true, row: { id: r.id, name: r.name, version: r.version, spec: r.spec } });
+    setDialog({ open: true, row: { id: r.id, name: r.name, version: r.version, spec: r.spec, labels: r.labels } });
   }
 
   return (
