@@ -3449,7 +3449,7 @@ export const copy = {
       movesIt: "moves it",
       hereOn: "Where it bears",
       at: "at",
-      hereOnNone: "The whole side",
+      hereOnNone: (side: string) => `the whole ${side.toLowerCase()}`,
       hereSave: "Add",
       hereCancel: "Cancel",
       inRegister: "Open in Risks",

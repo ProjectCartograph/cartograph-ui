@@ -123,7 +123,7 @@ export function RisksHere({ side, items = [] }: { side: Constraint; items?: read
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NONE}>{tc.hereOnNone}</SelectItem>
+                <SelectItem value={NONE}>{tc.hereOnNone(sideName)}</SelectItem>
                 {items.map((i) => (
                   <SelectItem key={i.id} value={i.id}>
                     {i.name}
