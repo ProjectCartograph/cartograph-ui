@@ -39,6 +39,14 @@ export function mayWrite(session: Session | undefined, kind: string, team?: stri
   }
 }
 
+/** Whether the session may set the workspace's settings: an
+ * administrator, or, where no one signs in (access off), whoever may
+ * write, since they run the workspace. */
+export function administers(session: Session | undefined): boolean {
+  if (!session) return false;
+  return session.access ? holds(session, "administrator") : session.canWrite;
+}
+
 /** Whether the session holds role. */
 export function holds(session: Session | undefined, role: Role): boolean {
   return !!session?.access?.roles.includes(role);

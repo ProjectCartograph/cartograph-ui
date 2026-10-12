@@ -25,7 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { copy, plusNoun } from "@/copy";
 
-import { holds, roles, useSession } from "./access";
+import { administers, roles, useSession } from "./access";
 import { ChangeControl } from "./ChangeControl";
 
 const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -139,8 +139,8 @@ export function AccessPage() {
           </Table>
         </div>
       )}
-      {holds(session, "administrator") ? <ChangeControl /> : null}
-      {holds(session, "administrator") ? <Vocabularies /> : null}
+      {administers(session) ? <ChangeControl /> : null}
+      {administers(session) ? <Vocabularies /> : null}
       {editing ? (
         <PersonDialog
           person={editing.person}

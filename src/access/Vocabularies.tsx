@@ -47,6 +47,11 @@ function Lists() {
         </h2>
       </div>
       <p className="max-w-2xl text-sm text-muted-foreground">{words.intro}</p>
+      <div className="hidden gap-1.5 text-xs text-muted-foreground sm:grid sm:grid-cols-[8rem_10rem_1fr_2rem]" aria-hidden>
+        <span>{words.value}</span>
+        <span>{words.label}</span>
+        <span>{words.description}</span>
+      </div>
       {Object.keys(served)
         .sort()
         .map((name) => {
