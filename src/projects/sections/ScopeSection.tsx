@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Plus, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { FieldHeading } from "@/components/guidance";
 import { Textarea } from "@/components/ui/textarea";
-import { copy, plusNoun } from "@/copy";
+import { copy } from "@/copy";
 import { ContextRecap } from "../ContextRecap";
+import { RiskPrompt } from "../constraints/RiskPrompt";
 import { useSectionAutosave, useProjectStore } from "../store";
 
 const sc = copy.projects.scope;
@@ -27,13 +29,29 @@ function ScopeList({
   items: string[];
   onChange: (next: string[]) => void;
 }) {
+  const store = useProjectStore();
+  // The line just added, which takes the cursor.
+  const [added, setAdded] = useState(-1);
+  // A risk names its line word for word: editing the line carries its
+  // risks along (engine TAXONOMY.md D62).
+  function edit(idx: number, text: string) {
+    const before = items[idx];
+    const next = [...items];
+    next[idx] = text;
+    onChange(next);
+    if (before && (store.spec.risks ?? []).some((r) => r.scopeLine === before)) {
+      store.updateSpec((sp) => ({ ...sp, risks: (sp.risks ?? []).map((r) => (r.scopeLine === before ? { ...r, scopeLine: text || undefined } : r)) }));
+    }
+  }
   return (
     <div className="flex flex-col gap-2" data-cartograph-region={field === "/spec/summary/scopeIn" ? "scope-in" : "scope-out"}>
       <FieldHeading label={title} hint={hint} examples={examples} />
       <div className="flex flex-col gap-2">
         {items.length === 0 ? <p className="text-sm text-muted-foreground">{sc.scopeEmpty}</p> : null}
         {items.map((item, idx) => (
-          <div key={idx} className="flex items-start gap-2 rounded-lg border p-2">
+          // Square: a rounded box clipped the cursor at its corners.
+          <div key={idx} className="flex flex-col gap-1 border p-2">
+          <div className="flex items-start gap-2">
             <span className="mt-1.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] tabular-nums text-muted-foreground">
               {idx + 1}
             </span>
@@ -42,16 +60,13 @@ function ScopeList({
             <Textarea
               data-cartograph-field={`${field}/${idx}`}
               value={item}
-              onChange={(e) => {
-                const next = [...items];
-                next[idx] = e.target.value.slice(0, 60);
-                onChange(next);
-              }}
+              onChange={(e) => edit(idx, e.target.value.slice(0, 60))}
               placeholder={placeholder}
               aria-label={`${title} ${idx + 1}`}
               maxLength={60}
               rows={2}
-              className="min-h-0 min-w-0 flex-1 resize-none border-0 bg-transparent p-0 shadow-none focus-visible:ring-0 dark:bg-transparent"
+              autoFocus={idx === added}
+              className="min-h-0 min-w-0 flex-1 resize-none rounded-none border-0 bg-transparent px-1 py-0 shadow-none focus-visible:ring-0 dark:bg-transparent"
             />
             <Button
               type="button"
@@ -64,16 +79,29 @@ function ScopeList({
               <X />
             </Button>
           </div>
+          {/* How the scope could creep across this line (#59). */}
+          {item.trim() ? (
+            <div className="pl-7">
+              <RiskPrompt side="scope" scopeLine={item} question={copy.projects.triangle.askCreep} short={copy.projects.triangle.shortCreep} />
+            </div>
+          ) : null}
+          </div>
         ))}
         <Button
           type="button"
           variant="outline"
           size="sm"
           className="self-start border-dashed"
-          onClick={() => onChange([...items, ""])}
-         aria-label={sc.addSentence}>
+          onClick={() => {
+            // The new line takes the cursor.
+            setAdded(items.length);
+            onChange([...items, ""]);
+          }}
+          aria-label={sc.addSentence}
+          title={sc.addSentence}
+        >
           <Plus />
-          {plusNoun(sc.addSentence)}
+          {sc.addShort}
         </Button>
       </div>
     </div>

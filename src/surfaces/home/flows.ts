@@ -1,3 +1,5 @@
+import { wordsWithin } from "@/projects/start/words";
+
 /** The stages a person defines, in the order of work (engine GET /order),
  * each opening the flow that defines it. */
 export const FLOW_KEYS = ["purpose", "goal", "objective", "outcome", "kpi", "gap", "assumption", "portfolio", "programme", "operation", "project"] as const;
@@ -25,7 +27,7 @@ export function flowLink(key: string, name: string): { to: string; search?: Reco
     // A project starts in the walker, what was typed being what it is
     // about, not its name: naming it comes last (projects/start).
     case "project":
-      return { to: "/projects/start", search: name ? { about: name.slice(0, 300) } : {} };
+      return { to: "/projects/start", search: name ? { about: wordsWithin(name, 300) } : {} };
     default:
       return { to: "/new" };
   }

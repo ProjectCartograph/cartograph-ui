@@ -47,7 +47,7 @@ function CriterionRow({
   onAddRole: () => void;
 }) {
   return (
-    <div className="flex items-start gap-2">
+    <div className="flex flex-wrap items-start gap-2">
       <span className="mt-2 flex size-5 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] tabular-nums text-muted-foreground">
         {index + 1}
       </span>

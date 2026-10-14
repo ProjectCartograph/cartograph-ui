@@ -1,5 +1,6 @@
 import { Plus, X } from "lucide-react";
 
+import { CommentMark } from "@/comments/CommentMark";
 import { FromIdea } from "@/components/FromIdea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { useSectionAutosave, useProjectStore } from "../store";
 import type { Deliverable } from "../types";
 import { RoleRefPicker, roleOptions, useResourceNames } from "../RoleRefPicker";
 import { TimingField } from "../TimingField";
+import { RiskPrompt } from "../constraints/RiskPrompt";
 import { Labelled } from "../Labelled";
 import { seg } from "../field";
 
@@ -92,6 +94,11 @@ export function DeliverablesSection() {
                 maxLength={60}
               />
             </div>
+            {d.id ? (
+              <span className="mt-7">
+                <CommentMark kind="Project" id={store.id} anchor={`/spec/deliverables/{${d.id}}`} what={d.name || `D${idx + 1}`} />
+              </span>
+            ) : null}
             <Button type="button" variant="ghost" size="icon-sm" className="mt-7" onClick={() => remove(idx)} aria-label={copy.projects.common.remove}>
               <X />
             </Button>
@@ -99,7 +106,7 @@ export function DeliverablesSection() {
 
           {/* The register: who owns it, when it is due and the evidence
               it was accepted (engine TAXONOMY.md D49). */}
-          <div className="grid gap-3 pl-9 sm:grid-cols-2" data-slot="deliverable-register">
+          <div className="grid gap-3 pl-0 sm:grid-cols-2 sm:pl-9 [&>*]:min-w-0" data-slot="deliverable-register">
             <Labelled label={dc.owner}>
               <RoleRefPicker
                 value={d.owner}
@@ -113,15 +120,9 @@ export function DeliverablesSection() {
             <div className="sm:col-span-2">
               <TimingField value={d.due} onChange={(due) => update(idx, { due })} field={`/spec/deliverables/${seg(d, idx)}/due`} label={dc.due} />
             </div>
-            <Labelled label={dc.evidence} hint={dc.evidenceHint} className="sm:col-span-2">
-              <Input
-                value={d.evidence ?? ""}
-                onChange={(e) => update(idx, { evidence: e.target.value.slice(0, 240) || undefined })}
-                maxLength={240}
-                aria-label={dc.evidence}
-                data-cartograph-field={`/spec/deliverables/${seg(d, idx)}/evidence`}
-              />
-            </Labelled>
+            {/* Evidence that it was accepted is recorded when it is, as an
+                event (engine D52): defining it asks only for its acceptance
+                criteria (#101). */}
           </div>
 
           <div className="flex flex-col gap-2 pl-9">
@@ -153,6 +154,13 @@ export function DeliverablesSection() {
             />
             <p className="self-end text-xs text-muted-foreground">{240 - (d.description ?? "").length} left</p>
           </div>
+
+          {/* What could keep it from being delivered as defined (#59). */}
+          {d.id ? (
+            <div className="pl-9">
+              <RiskPrompt side="scope" on={d.id} question={copy.projects.triangle.askDeliverable} short={copy.projects.triangle.shortDeliverable} />
+            </div>
+          ) : null}
         </div>
       ))}
 

@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { newRecordId } from "@/lib/recordId";
 import { Link } from "@tanstack/react-router";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FolderKanban, Gauge, Layers, ListChecks, MoreHorizontal, Plus, Settings2 } from "lucide-react";
@@ -41,7 +42,6 @@ import { type GoalNode } from "./tree-types";
 import type { GoalLevel } from "./types";
 import { GoalTreePicker } from "./GoalTreePicker";
 import { Unplaced } from "./Unplaced";
-import { slugify } from "@/surfaces/sheet/schema";
 
 const hc = copy.goals.home;
 
@@ -509,8 +509,8 @@ function StrategicGoalCard({
   }
 
   async function handleAddFunctional(name: string) {
-    const id = slugify(name);
-    if (!id) return;
+    if (!name.trim()) return;
+    const id = newRecordId("Goal");
     const result = await createGoal(client, id, name, "outcome", node.id);
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
@@ -783,8 +783,8 @@ function PillarColumn({
   }
 
   async function handleAddStrategic(name: string) {
-    const id = slugify(name);
-    if (!id) return;
+    if (!name.trim()) return;
+    const id = newRecordId("Goal");
     const result = await createGoal(client, id, name, "objective", node.id);
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
@@ -1077,8 +1077,8 @@ export function GoalsHome() {
   }
 
   async function handleAddPillar(name: string) {
-    const id = slugify(name);
-    if (!id) return;
+    if (!name.trim()) return;
+    const id = newRecordId("Goal");
     const result = await createGoal(client, id, name, "goal");
     if (result.ok) {
       queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
@@ -1091,7 +1091,7 @@ export function GoalsHome() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{hc.title}</h1>
           <p className="text-muted-foreground">{hc.subtitle}</p>

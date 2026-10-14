@@ -57,6 +57,7 @@ export function bearsOnOf(spec: ProjectSpec): Record<Constraint, { id: string; n
   return {
     scope: named(spec.deliverables, (d) => d.name),
     schedule: named(spec.milestones, (m) => m.name),
-    cost: named(spec.costs, (c) => c.basis || c.category),
+    // What is bought bears on the cost too (engine D69).
+    cost: [...named(spec.costs, (c) => c.category), ...named(spec.procurement, (p) => p.requirement)],
   };
 }

@@ -13,6 +13,7 @@ import { manifestLink } from "@/proposals/links";
 import { FLOW_KEYS, flowLink, nameFrom } from "./flows";
 import { onboarded, useNewWorkspace } from "@/onboarding/firstRun";
 import { LeftToDo } from "./LeftToDo";
+import { Recent } from "./Recent";
 import { TourInvite } from "@/tour/TourInvite";
 
 const hc = copy.home;
@@ -53,7 +54,7 @@ export function Home() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pt-[12vh] pb-12" data-cartograph-region="home">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 pt-10 pb-12" data-cartograph-region="home">
       <h1 className="text-center text-3xl font-semibold tracking-tight">{hc.title}</h1>
       <form
         className="flex flex-col gap-2 rounded-2xl bg-card p-3 shadow-sm ring-1 ring-foreground/10 transition-shadow duration-150 ease-standard focus-within:shadow-md focus-within:ring-foreground/20"
@@ -90,7 +91,7 @@ export function Home() {
           {hc.reading}
         </p>
       ) : read.data ? (
-        <Answer key={read.submittedAt} u={read.data} name={nameFrom(read.variables ?? "")} order={order.data} />
+        <Answer key={read.submittedAt} u={read.data} text={read.variables ?? ""} name={nameFrom(read.variables ?? "")} order={order.data} />
       ) : next ? (
         <Link
           to="/new"
@@ -104,6 +105,8 @@ export function Home() {
       ) : null}
       {/* What was started and not finished, while nothing is being asked. */}
       {read.data || read.isPending ? null : <LeftToDo />}
+      {/* What this person opened last, one click away (#58). */}
+      {read.data || read.isPending ? null : <Recent />}
       {/* Someone new to a workspace others started is offered the tour. */}
       {read.data || read.isPending || isNew ? null : <TourInvite />}
     </div>
@@ -113,7 +116,7 @@ export function Home() {
 /** What already says it, and where to define it: the record that says
  * it, opened, or the flows likeliest to define it, each opening with what
  * was typed. The person chooses the flow; the model only orders them. */
-function Answer({ u, name, order }: { u: Understanding; name: string; order: Order | undefined }) {
+function Answer({ u, text, name, order }: { u: Understanding; text: string; name: string; order: Order | undefined }) {
   const strong = u.matches.find((m) => m.by === "model");
   const offered = u.routes.map((r) => r.key);
   const rest = FLOW_KEYS.filter((k) => !offered.includes(k));
@@ -161,7 +164,7 @@ function Answer({ u, name, order }: { u: Understanding; name: string; order: Ord
             ))}
           </ul>
         </div>
-        <Link to="/new" className="self-start text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
+        <Link to="/new" search={{ text }} className="self-start text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
           {hc.notSure}
         </Link>
       </div>

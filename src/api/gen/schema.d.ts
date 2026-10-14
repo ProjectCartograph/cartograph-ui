@@ -351,6 +351,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/manifests/{kind}/{id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A record's comments, oldest first
+         * @description The conversation about a record, beside the parts it is about (TAXONOMY.md D72): each comment's anchor, the thread it answers, its words, whom it asks, and whether its thread is resolved. Comments are not the record: no version, no change set, no check.
+         */
+        get: operations["listComments"];
+        put?: never;
+        /**
+         * Comment on a record, beside a part of it
+         * @description Anyone who may read the record may comment on it. A reply joins the thread it answers; a mention asks a person on the access list or a team, and is refused for anyone not there.
+         */
+        post: operations["addComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/comments/{comment}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Resolve or reopen the thread a comment starts */
+        patch: operations["resolveComment"];
+        trace?: never;
+    };
+    "/comments/mentions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The comments that ask the caller, newest first
+         * @description By the caller's address, or through a team they are on. Empty for an operator nobody signed in as.
+         */
+        get: operations["listMyMentions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/mentionables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who a comment can ask
+         * @description The people on the access list, then the teams, whose name, address or id holds q. Without an access list, the teams alone.
+         */
+        get: operations["listMentionables"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/manifests/Project/{id}/constraints": {
         parameters: {
             query?: never;
@@ -363,6 +444,26 @@ export interface paths {
          * @description Scope, schedule and cost (TAXONOMY.md D60): the stance the project takes on each, the risks that would move it with each one's weight (likelihood times impact on that side, low 1, medium 2, high 3), the sum and share of each side, and the most constrained side. A milestone whose timing names a risk counts as that risk on the schedule there. Every interface draws the triangle from this.
          */
         get: operations["getProjectConstraints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/manifests/Project/{id}/round": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The decisions a project's walk can settle now, in the order agents are asked them
+         * @description The frontier of the project's open checks (docs/adr/0032): what the documents state (settle), what is the person's to decide (ask), and the records to write next (write), each with the step and the field that answer it and the id of its question; and how many wait behind them. The same tree the MCP server hands an agent, so a person and an agent walk a definition alike (#60).
+         */
+        get: operations["getProjectRound"];
         put?: never;
         post?: never;
         delete?: never;
@@ -418,6 +519,26 @@ export interface paths {
         };
         /** Project charter rendered as HTML from the latest snapshot (or working copy with ?working=true). */
         get: operations["getProjectCharterHtml"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/charter/parts.css": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The styling of what a charter's sections hold
+         * @description Chips, the components diagram, the schedule chart and the iron triangle as the charter styles them, for an interface drawing the charter as parts in a page of its own. It reads the charter's colour variables (--fg, --muted, --line, --soft, --paper, --accent, --accent-soft, --ok, --warn, --bad, --sans), which the page sets.
+         */
+        get: operations["getCharterPartsStyle"];
         put?: never;
         post?: never;
         delete?: never;
@@ -711,6 +832,26 @@ export interface paths {
          * @description Most likely first: judged by the decision model where one is configured, else by the words they share. For a Goal, level narrows it to one level. Asked before something new is defined, so a record that already says it is offered first.
          */
         post: operations["matchExisting"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/aggregations/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a data source metric's aggregation reads as, or why it does not
+         * @description A metric's aggregation is pseudocode SQL (TAXONOMY.md D64): one aggregate function over a field or every entry, with an optional WHERE on the source's own fields. The answer says it in words, with the fields it names and the measure a semantic layer builds from it; or the problem and where it is, such as a FROM or a JOIN, which belong to the warehouse model. Read only: nothing is saved.
+         */
+        post: operations["readAggregation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2121,6 +2262,21 @@ export interface components {
             /** @description Why it decided without asking. */
             why: string;
         };
+        /** @description What an aggregation reads as (reading, names, agg, expr), or why it does not (problem, at): one or the other. */
+        AggregationReading: {
+            /** @description What it says, in words. */
+            reading?: string;
+            /** @description The fields it names, each once, in the order written. */
+            names: string[];
+            /** @description The measure's aggregation, in the semantic layer's words. */
+            agg?: string;
+            /** @description The expression it aggregates, its condition folded in as a CASE WHEN. */
+            expr?: string;
+            /** @description Why it does not read as an aggregation, in words. */
+            problem?: string;
+            /** @description Where in the text the problem is, as a byte offset. */
+            at?: number;
+        };
         /** @description One thing a manifest still needs, as every kind reports it: met (ok), advice (warn), or a block on a handoff (block). */
         ManifestCheck: {
             id: string;
@@ -2131,6 +2287,8 @@ export interface components {
             section?: string;
             /** @description The field it is about, as a JSON pointer, where it is one field: what the record must have before it can be merged. */
             path?: string;
+            /** @description True when this is a judgement of meaning the decision model did not make (it is off, or did not answer): the check passes, so it holds nothing up, and its message says why it was not judged. */
+            notJudged?: boolean;
         };
         /** @description A proposal as its person reviews it: every part, in the order they would be saved. A proposal on its own has one part; a set (a KPI, the gap it measures and the outcome that closes it) has one per manifest, accepted or declined together. */
         ProposalReview: {
@@ -2357,6 +2515,61 @@ export interface components {
                 [key: string]: string[];
             };
             changeControl?: components["schemas"]["ChangeControl"];
+            /** @description The words this workspace uses for a field whose choices are its own (TAXONOMY.md D71): a data source's classification, refresh and form, the standard terms unless the workspace sets its own. Keyed by the vocabulary a schema field names in x-cartograph-vocabulary. */
+            vocabularies?: {
+                [key: string]: components["schemas"]["VocabularyTerm"][];
+            };
+        };
+        Comment: {
+            id: string;
+            kind: string;
+            /** @description The id of the record it is on. */
+            manifest: string;
+            /** @description What it is about: a JSON pointer into the record, a section of the walk as section:<step>, or empty for the record as a whole. */
+            anchor: string;
+            /** @description The comment that starts the thread it answers. */
+            reply?: string;
+            body: string;
+            mentions: components["schemas"]["Mention"][];
+            /** @description Who wrote it, by their address; empty for an operator nobody signed in as. */
+            author: string;
+            /** @description The author's name on the access list, where it has one. */
+            authorName?: string;
+            /** Format: date-time */
+            at: string;
+            /** @description Set on the comment that starts a thread, when it is resolved. */
+            resolved: boolean;
+            resolvedBy?: string;
+            /** Format: date-time */
+            resolvedAt?: string;
+        };
+        CommentDraft: {
+            anchor?: string;
+            reply?: string;
+            body: string;
+            mentions?: components["schemas"]["Mention"][];
+        };
+        Mention: {
+            /** @enum {string} */
+            kind: "person" | "team";
+            /** @description A person's address on the access list, or a team's id. */
+            id: string;
+            /** @description How the party is named now, in a comment read back: the person's name on the access list or the team's name. Ignored when writing. */
+            name?: string;
+        };
+        Mentionable: {
+            /** @enum {string} */
+            kind: "person" | "team";
+            id: string;
+            name: string;
+        };
+        VocabularyTerm: {
+            /** @description What a record stores. */
+            value: string;
+            /** @description What a person reads. */
+            label: string;
+            /** @description What the choice means, shown under it where it is chosen. */
+            description?: string;
         };
         /** @description How the record may change (docs/adr/0024). Absent or false, every write path works as before. */
         ChangeControl: {
@@ -2554,11 +2767,40 @@ export interface components {
             kind: "Project" | "Programme";
             id: string;
         };
+        RoundTask: {
+            kind: string;
+            id: string;
+            name?: string;
+            check: string;
+            state: string;
+            message: string;
+            /** @description The step of the walk that settles it. */
+            step?: string;
+            /** @description What the guidance says to do about it. */
+            do?: string;
+            /** @description The field that settles it, as a JSON pointer, where one field does. */
+            field?: string;
+            /** @description The id a round gives it, which an answer left with it names. */
+            question?: string;
+        };
+        ProjectRound: {
+            /** @description What the documents themselves state. */
+            settle: components["schemas"]["RoundTask"][];
+            /** @description The person's decisions, every one answerable now. */
+            ask: components["schemas"]["RoundTask"][];
+            /** @description Records to write next, each settling a link. */
+            write: components["schemas"]["RoundTask"][];
+            /** @description Open checks behind this round, asked once its answers are given. */
+            waiting: number;
+        };
         StructureQuestion: {
             /** @description The answer this question sets on a StructurePiece; empty for the last, which applies when none does. */
             field: string;
+            /** @description The question as an agent is asked it, with what to send. */
             question: string;
             then: string;
+            /** @description The question as a person is asked it, in plain words. An interface shows this, never question. */
+            person?: string;
         };
         StructurePiece: {
             name: string;
@@ -2750,6 +2992,8 @@ export interface components {
              */
             state: "ok" | "warn";
             message: string;
+            /** @description True when this is a judgement of meaning the decision model did not make (it is off, or did not answer): the check passes, so it holds nothing up, and its message says why it was not judged. */
+            notJudged?: boolean;
         };
         GoalCheck: {
             id: string;
@@ -2757,6 +3001,8 @@ export interface components {
             state: "ok" | "warn";
             message: string;
             fix?: components["schemas"]["GoalCheckFix"];
+            /** @description True when this is a judgement of meaning the decision model did not make (it is off, or did not answer): the check passes, so it holds nothing up, and its message says why it was not judged. */
+            notJudged?: boolean;
         };
         /** @description Exactly one of yaml or manifest must be supplied. */
         ValidateRequest: {
@@ -2778,6 +3024,10 @@ export interface components {
             state: components["schemas"]["ProjectCheckState"];
             message: string;
             fix: components["schemas"]["ProjectCheckFix"];
+            /** @description True when this is advice from the decision model, offered and never required: the check passes, so it holds nothing up. A project's objective that may not work toward an outcome it serves is one (goals-outcome-fit). */
+            suggestion?: boolean;
+            /** @description True when this is a judgement of meaning the decision model did not make (it is off, or did not answer): the check passes, so it holds nothing up, and its message says why it was not judged. */
+            notJudged?: boolean;
         };
         ProjectChecks: {
             /** @description The end month derived from timeline.start plus every phase's months. */
@@ -3435,6 +3685,144 @@ export interface operations {
             404: components["responses"]["NotFound"];
         };
     };
+    listComments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    addComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A registered kind name, for example Project or Goal. */
+                kind: components["parameters"]["KindParam"];
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentDraft"];
+            };
+        };
+        responses: {
+            /** @description Kept */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    resolveComment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                comment: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    resolved: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listMyMentions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Comment"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listMentionables: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Mentionable"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
     getProjectConstraints: {
         parameters: {
             query?: {
@@ -3456,6 +3844,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TripleConstraint"];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    getProjectRound: {
+        parameters: {
+            query?: {
+                /** @description Read as if this change set were accepted (docs/adr/0024): its drafts stand in for the records they change, and the records it creates are there too, each marked proposed. For reviewing a change set in the ordinary screens. */
+                changeSet?: components["parameters"]["PreviewParam"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["IdParam"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectRound"];
                 };
             };
             401: components["responses"]["Unauthenticated"];
@@ -3575,6 +3991,28 @@ export interface operations {
             401: components["responses"]["Unauthenticated"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+        };
+    };
+    getCharterPartsStyle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/css": string;
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
         };
     };
     getProjectCharterParts: {
@@ -4096,6 +4534,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Match"][];
+                };
+            };
+            401: components["responses"]["Unauthenticated"];
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    readAggregation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    text: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AggregationReading"];
                 };
             };
             401: components["responses"]["Unauthenticated"];

@@ -129,7 +129,10 @@ describe("Alignment picks goals as chips", () => {
   it("neither pillar nor area is pickable, only the goals under them", async () => {
     await mount(<AlignmentSection />);
     await screen.findByRole("button", { name: /Implement process automation/ });
-    expect(screen.queryByRole("button", { name: "Service Quality" })).not.toBeInTheDocument();
+    // A pillar opens and closes its branch (#29); it is never picked.
+    const pillar = screen.getByRole("button", { name: "Service Quality" });
+    expect(pillar).toHaveAttribute("aria-expanded");
+    expect(pillar).not.toHaveAttribute("data-chip-id");
     expect(screen.queryByRole("button", { name: "Operational efficiency" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("button").filter((b) => b.hasAttribute("data-chip-id"))).toHaveLength(2);
   });

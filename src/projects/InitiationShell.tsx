@@ -1,4 +1,5 @@
 import { useFlowTrace } from "@/trace/useFlowTrace";
+import { CommentMark } from "@/comments/CommentMark";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { createElement, useEffect, useRef, useState } from "react";
 import { FromIdeaProvider } from "@/components/FromIdea";
@@ -9,7 +10,7 @@ import { sameView } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 import { Scrubber, type ScrubStage } from "@/components/Scrubber";
 import { Button } from "@/components/ui/button";
-import { Activity, FileText, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
+import { Activity, ChevronRight, FileText, GitMerge, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
 
 
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
@@ -22,12 +23,20 @@ import { ProjectHeaderBar } from "./Chrome";
 import { ProjectMap } from "./canvas/ProjectMap";
 import { useRecordDrawer } from "@/records/RecordDrawer";
 import { CharterView } from "@/charter/CharterView";
-import { LiveCharter } from "@/charter/LiveCharter";
+import { CharterDocument } from "@/charter/CharterDocument";
+import { useQuery } from "@tanstack/react-query";
+import { useClient } from "@/client/context";
+import type { Ref } from "./types";
+import { RoleRefPicker, roleOptions, useResourceNames } from "./RoleRefPicker";
 import { useProjectStore } from "./store";
+import { isApproved } from "./approved";
+import { useActiveChangeSet } from "@/changesets/useActive";
 import { SECTION_VIEW, STAGE_ALSO_CHECKS } from "./sections/registry";
 import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type ProjectSpec, type Stage } from "./types";
 import { DMAICPanel } from "@/dmaic/DMAICPanel";
 import { STAGE_ICON, STEP_ICON } from "./steps";
+import { SectionOutline } from "./SectionOutline";
+import { NextToDecide } from "./NextToDecide";
 
 const pc = copy.projects;
 
@@ -57,9 +66,11 @@ export function ProjectScrubber({ id, section }: { id: string; section?: Initiat
       return { key: st.section, label: pc.sections[st.section], state: bySection.get(st.section), ring: sectionRing(on) };
     }),
   }));
-  // Closure follows the walk: the one page of its phase, so the last
-  // segment of the same scrubber rather than a bar of its own.
-  stages.push({ key: "closing", label: pc.stepper.closing, steps: [{ key: "closing", label: pc.stepper.closing, state: bySection.get("closing") }] });
+  // Closure follows the walk once the definition is approved: the one
+  // page of its phase, so the last segment of the same scrubber rather
+  // than a bar of its own. Before then it is not part of defining (#80).
+  const approved = isApproved(useProjectStore().spec);
+  if (approved || section === "closing") stages.push({ key: "closing", label: pc.stepper.closing, steps: [{ key: "closing", label: pc.stepper.closing, state: bySection.get("closing") }] });
   const pathOf = new Map<string, string>([...STAGES.flatMap((stage) => stepsOfStage(stage).map((st) => [st.section, st.path] as const)), ["closing", "/closing"]]);
   useFlowTrace("Project", id, section ?? "", [...pathOf.keys()].indexOf(section ?? ""));
   return (
@@ -155,16 +166,40 @@ export function InitiationBackNext({ id, stage, section }: { id: string; stage: 
           )}
         />
       ) : (
-        <FlowNext
-          label={pc.nextTo(pc.stepper.closing)}
-          link={(c) => (
-            <Link to="/projects/$id/closing" params={{ id }}>
-              {c}
-            </Link>
-          )}
-        />
+        <WalkEnd id={id} />
       )}
     </FlowNav>
+  );
+}
+
+/** Where the walk goes after Approval: to Closure once the definition is
+ * approved; before then to where the definition is merged, the change
+ * set's review (cartograph-engine#80). */
+function WalkEnd({ id }: { id: string }) {
+  const approved = isApproved(useProjectStore().spec);
+  const changeSet = useActiveChangeSet();
+  if (approved)
+    return (
+      <FlowNext
+        label={pc.nextTo(pc.stepper.closing)}
+        link={(c) => (
+          <Link to="/projects/$id/closing" params={{ id }}>
+            {c}
+          </Link>
+        )}
+      />
+    );
+  if (!changeSet) return null;
+  return (
+    <FlowNext
+      label={pc.reviewAndMerge}
+      icon={GitMerge}
+      link={(c) => (
+        <Link to="/changesets/$id" params={{ id: changeSet }}>
+          {c}
+        </Link>
+      )}
+    />
   );
 }
 
@@ -215,6 +250,9 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
       return { ...s, resources: next };
     });
   }, [missingIds, store]);
+  // The editor card: its headings make the outline, and its Next button
+  // is what Ctrl+Enter presses (#32).
+  const card = useRef<HTMLDivElement>(null);
   // The side pane, open or closed, as the person last left it.
   const [paneOpen, setPaneOpen] = useState(() => {
     try {
@@ -238,9 +276,12 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
   return (
     <WorkTextProvider text={workText}>
     <FromIdeaProvider kind="Project" idea={spec.summary.idea}>
-    <div className="flex flex-col gap-4">
+    {/* On a wide screen the walk fills the frame: its heading and stages
+        stay, and the step and the side pane each scroll on their own. */}
+    <div className="flex flex-col gap-4 xl:min-h-0 xl:flex-1">
       <ProjectHeaderBar />
-      <div className="flex items-start justify-between gap-4">
+      {/* On a phone the heading takes the width and its links go under it. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{pc.stages[stage]}</h1>
           <p className="text-muted-foreground text-pretty">{pc.stageQuestion[stage]}</p>
@@ -262,9 +303,11 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
         </div>
       </div>
       <ProjectScrubber id={id} section={section} />
+      <NextToDecide id={id} section={section} />
       <RequiredMarks kind="Project" />
-      <div className={`grid grid-cols-1 gap-6 ${paneOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
-        <div className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6" data-cartograph-region="section">
+      <div className={`grid grid-cols-1 gap-6 xl:min-h-0 xl:flex-1 ${paneOpen ? "xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" : ""}`}>
+        <div ref={card} className="flex min-w-0 flex-col gap-4 rounded-xl bg-card p-5 shadow-sm ring-1 ring-foreground/5 sm:p-6 xl:min-h-0 xl:overflow-y-auto" data-cartograph-region="section">
+          {store.loaded ? <SectionOutline root={card} onNext={() => card.current?.querySelector<HTMLElement>("[data-flow-next]")?.click()} /> : null}
           {store.loadError ? (
             <p className="text-sm text-destructive">{pc.record.error}</p>
           ) : !store.loaded ? (
@@ -279,16 +322,25 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
                 return (
                   <section key={step.section} id={`step-${step.section}`} data-cartograph-step={step.section} className="flex scroll-mt-4 flex-col gap-4" aria-labelledby={`step-${step.section}-heading`}>
                     {steps.length > 1 || stepwise ? (
-                      <div>
-                        <h2 id={`step-${step.section}-heading`} className="text-lg font-semibold tracking-tight">
-                          {heading}
-                        </h2>
-                        {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+                      <div className="flex items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h2 id={`step-${step.section}-heading`} className="text-lg font-semibold tracking-tight">
+                            {heading}
+                          </h2>
+                          {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+                        </div>
+                        {/* Comments on the section, beside its heading and
+                            outside it, so the outline reads the heading
+                            alone (engine D72). */}
+                        <CommentMark kind="Project" id={id} anchor={`section:${step.section}`} what={heading} />
                       </div>
                     ) : (
-                      <h2 id={`step-${step.section}-heading`} className="sr-only">
-                        {heading}
-                      </h2>
+                      <div className="flex justify-end">
+                        <h2 id={`step-${step.section}-heading`} className="sr-only">
+                          {heading}
+                        </h2>
+                        <CommentMark kind="Project" id={id} anchor={`section:${step.section}`} what={heading} />
+                      </div>
                     )}
                     {createElement(View)}
                     <ProjectSectionNotes section={step.section} />
@@ -316,7 +368,6 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
  */
 function SidePane({ id, section, checks, onClose }: { id: string; section?: string; checks: React.ReactNode; onClose: () => void }) {
   const store = useProjectStore();
-  const checksQuery = useProjectChecks(id, true);
   const navigate = useNavigate();
   const drawer = useRecordDrawer();
   const mc = copy.projectMap;
@@ -335,46 +386,12 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
       // Private windows refuse storage; the pane just forgets.
     }
   };
-  // Ends at the foot of the window wherever it starts, so the map's own
-  // foot is always in view: lower at the top of the page, where the
-  // walker sits above it, and the full height once it sticks.
   const pane = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const fit = () => {
-      const el = pane.current;
-      if (!el) return;
-      if (!window.matchMedia("(min-width: 80rem)").matches) {
-        el.style.height = "";
-        return;
-      }
-      // The change set's bar sits at the foot of the window; the pane
-      // stops above it where the two would overlap.
-      const box = el.getBoundingClientRect();
-      const bar = document.querySelector('[data-cartograph-region="merge-bar"]')?.getBoundingClientRect();
-      const under = bar && bar.right > box.left && bar.left < box.right ? bar.height + 12 : 0;
-      el.style.height = `${Math.max(448, window.innerHeight - Math.max(16, box.top) - 16 - under)}px`;
-    };
-    fit();
-    window.addEventListener("scroll", fit, { passive: true });
-    window.addEventListener("resize", fit);
-    // The bar comes and goes, and grows, as the change set does; read
-    // once a frame however much the page changes.
-    let frame = 0;
-    const watch = new MutationObserver(() => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(fit);
-    });
-    watch.observe(document.body, { childList: true, subtree: true });
-    return () => {
-      window.removeEventListener("scroll", fit);
-      window.removeEventListener("resize", fit);
-      watch.disconnect();
-      cancelAnimationFrame(frame);
-    };
-  }, []);
   return (
-    <div ref={pane} className="relative flex flex-col gap-2 xl:sticky xl:top-4 xl:h-[calc(100svh-6rem)]" data-cartograph-region="side-pane">
-      <div role="tablist" aria-label={mc.tabsLabel} className="flex items-center gap-0.5 self-start rounded-md bg-muted p-0.5">
+    // On a wide screen the pane is its grid cell's height, its content
+    // scrolling inside it: the frame never grows past the screen.
+    <div ref={pane} className="relative flex flex-col gap-2 xl:h-full xl:min-h-0" data-cartograph-region="side-pane">
+      <div role="tablist" aria-label={mc.tabsLabel} className="flex max-w-[calc(100%-2.5rem)] items-center gap-0.5 self-start overflow-x-auto rounded-md bg-muted p-0.5">
         {(["map", "charter", "checks", "dmaic"] as const).map((t) => (
           <button
             key={t}
@@ -382,7 +399,7 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
             role="tab"
             aria-selected={tab === t}
             onClick={() => pick(t)}
-            className={`flex items-center gap-1.5 rounded px-3 py-1 text-sm transition-colors duration-150 ${tab === t ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+            className={`flex shrink-0 items-center gap-1.5 rounded px-2 py-1 text-sm transition-colors duration-150 sm:px-3 ${tab === t ? "bg-background font-medium shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
           >
             {t === "map" ? (
               <Waypoints className="size-3.5" aria-hidden="true" />
@@ -424,24 +441,7 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
               working
               fileName={id}
               empty={copy.charter.empty}
-              live={
-                <LiveCharter
-                  id={id}
-                  version={store.spec}
-                  step={section}
-                  onStep={(step) => {
-                    const path = pathOfStep(step);
-                    if (path) void navigate({ to: `/projects/$id${path}`, params: { id } } as never);
-                  }}
-                  onField={(pointer, value) => store.updateSpec((sp) => setAt(sp, pointer, value))}
-                  valueOf={(pointer) => getAt(store.spec, pointer)}
-                  checksOf={(step) => (checksQuery.data?.items ?? []).filter((c) => c.section === step && c.state !== "ok").map((c) => c.message)}
-                  routeOf={(step) => {
-                    const path = pathOfStep(step);
-                    return path ? `/projects/${id}${path}` : undefined;
-                  }}
-                />
-              }
+              live={<ProjectLiveCharter id={id} section={section} />}
             />
           </div>
         ) : tab === "dmaic" ? (
@@ -454,63 +454,70 @@ function SidePane({ id, section, checks, onClose }: { id: string; section?: stri
   );
 }
 
-/** The route of a step of the walk, by its section key. */
+/**
+ * A project's charter as a document of parts, each field edited in place
+ * where it is printed (#38): beside the walk, and as the charter page.
+ */
+export function ProjectLiveCharter({ id, section }: { id: string; section?: string }) {
+  const store = useProjectStore();
+  const client = useClient();
+  const schema = useQuery({ queryKey: ["schema", "Project"], queryFn: () => client.schema("Project"), staleTime: Infinity });
+  const names = useResourceNames();
+  const roles = roleOptions(store.spec.resources ?? [], names);
+  return (
+    <CharterDocument
+      id={id}
+      spec={store.spec as unknown as Record<string, unknown>}
+      update={(fn) => store.updateSpec((sp) => fn(sp as unknown as Record<string, unknown>) as unknown as ProjectSpec)}
+      schema={schema.data}
+      step={section}
+      routeOf={(step) => {
+        const path = pathOfStep(step);
+        return path ? `/projects/${id}${path}` : undefined;
+      }}
+      renderParty={(value, onChange) => (
+        <RoleRefPicker value={value as Ref | undefined} options={roles} onChange={(v) => onChange(v)} label={copy.charter.doc.choose} withBodies className="w-full" />
+      )}
+    />
+  );
+}
+
 /** The step each dated list of a project is written in. */
 const ITEM_STEP: Record<string, string> = { milestones: "timeline", deliverables: "deliverables", conditions: "approval", procurement: "resources", risks: "risks" };
 
+/** The route of a step of the walk, by its section key. */
 function pathOfStep(step: string): string | undefined {
   for (const stage of STAGES) for (const st of stepsOfStage(stage)) if (st.section === step) return st.path;
   return undefined;
 }
 
-/** Sets one text value in the spec by its JSON pointer, as the charter
- * names it ("/spec/summary/problems/0/problem/situation"). */
-/** The text at a JSON pointer in the spec, as the charter names it. */
-function getAt(spec: ProjectSpec, pointer: string): string {
-  let at: unknown = spec;
-  for (const key of pointer.split("/").filter(Boolean).slice(1)) at = at && typeof at === "object" ? (at as Record<string, unknown>)[key] : undefined;
-  return typeof at === "string" ? at : "";
-}
 
-function setAt(spec: ProjectSpec, pointer: string, value: string): ProjectSpec {
-  const parts = pointer.split("/").filter(Boolean).slice(1);
-  const copyOf = (v: unknown): unknown => (Array.isArray(v) ? [...v] : v && typeof v === "object" ? { ...(v as object) } : {});
-  const root = copyOf(spec) as Record<string, unknown>;
-  let at: Record<string, unknown> | unknown[] = root;
-  parts.forEach((key, i) => {
-    const k = /^\d+$/.test(key) ? Number(key) : key;
-    const container = at as Record<string | number, unknown>;
-    if (i === parts.length - 1) {
-      container[k] = value;
-      return;
-    }
-    container[k] = copyOf(container[k]);
-    at = container[k] as Record<string, unknown>;
-  });
-  return root as unknown as ProjectSpec;
-}
 
-/** The steps of a stage walked one at a time, as tabs with their marks:
- * each its own screen, so the last is never a long scroll away. */
+/** The steps of a stage walked one at a time, as a numbered sequence: each
+ * its own screen, so the last is never a long scroll away. Numbered and
+ * joined, they read as an order to follow, not as choices (#36). */
 function StepTabs({ id, steps, section }: { id: string; steps: ReturnType<typeof stepsOfStage>; section: InitiationSection }) {
   return (
-    <nav aria-label={pc.stepsOfStage} className="flex flex-wrap gap-1.5" data-cartograph-region="step-tabs">
-      {steps.map((st) => {
-        const Icon = STEP_ICON[st.section];
-        const on = st.section === section;
-        return (
-          <Link
-            key={st.section}
-            to={`/projects/$id${st.path}`}
-            params={{ id }}
-            aria-current={on ? "step" : undefined}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm ring-1 transition-colors ${on ? "bg-primary text-primary-foreground ring-primary" : "ring-foreground/15 hover:bg-muted"}`}
-          >
-            {Icon ? <Icon className="size-3.5" aria-hidden="true" /> : null}
-            {SECTION_VIEW[st.section].heading}
-          </Link>
-        );
-      })}
+    <nav aria-label={pc.stepsOfStage} data-cartograph-region="step-tabs">
+      <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm">
+        {steps.map((st, i) => {
+          const on = st.section === section;
+          return (
+            <li key={st.section} className="flex items-center gap-1">
+              {i > 0 ? <ChevronRight className="size-3.5 text-muted-foreground" aria-hidden="true" /> : null}
+              <Link
+                to={`/projects/$id${st.path}`}
+                params={{ id }}
+                aria-current={on ? "step" : undefined}
+                className={`inline-flex items-center gap-1.5 px-1 py-0.5 underline-offset-4 ${on ? "font-medium underline decoration-2" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <span className="tabular-nums">{i + 1}</span>
+                {SECTION_VIEW[st.section].heading}
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
     </nav>
   );
 }

@@ -143,6 +143,24 @@ export function httpClient(
     activeChangeSet.set(started.id);
     return started.id;
   }
+  // Runs an edit in the working change set. One that is gone (discarded
+  // or merged in another window, or a server started over) is forgotten
+  // and another started, once: the edit is never lost to it (#60).
+  async function inWorkingSet<T>(kind: string, id: string, run: (set: string) => Promise<T>): Promise<T> {
+    const set = await workingSet(kind, id);
+    try {
+      return await run(set);
+    } catch (e) {
+      if (!(e instanceof NotFound) || activeChangeSet.get() !== set || (await changeSetHeld(set))) throw e;
+      activeChangeSet.set(undefined);
+      return run(await workingSet(kind, id));
+    }
+  }
+  const changeSetHeld = (set: string) =>
+    wire.GET("/changesets/{set}", { params: { path: { set } } }).then(
+      (r) => r.response.status !== 404,
+      () => true,
+    );
   const putItem = async (set: string, kind: string, id: string, yaml: string) => {
     await done(wire.PUT("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } }, body: { yaml } }));
     activeChangeSet.touch();
@@ -235,7 +253,7 @@ export function httpClient(
       answer(wire.GET("/manifests/{kind}/{id}/versions", { params: { path: { kind, id } } })),
     references: (kind, id) =>
       answer(wire.GET("/manifests/{kind}/{id}/references", { params: { path: { kind, id } } })),
-    saveWorking: async (kind, id, text) => putItem(await workingSet(kind, id), kind, id, text),
+    saveWorking: (kind, id, text) => inWorkingSet(kind, id, (set) => putItem(set, kind, id, text)),
     // Leaving a change set's draft drops it from the change set; with none
     // active there is nothing of the person's own to discard.
     discardWorking: async (kind, id) => {
@@ -244,15 +262,16 @@ export function httpClient(
     },
     // A JSON manifest is YAML too, so it goes in as text.
     saveVersion: async (kind, id, doc, reason) => {
-      await putItem(await workingSet(kind, id), kind, id, typeof doc === "string" ? doc : JSON.stringify(doc));
+      await inWorkingSet(kind, id, (set) => putItem(set, kind, id, typeof doc === "string" ? doc : JSON.stringify(doc)));
       return inChangeSet(kind, id, reason);
     },
     // A snapshot is the record as the change set holds it; one it does not
     // hold yet starts from the record.
     snapshot: async (kind, id, reason) => {
-      const set = await workingSet(kind, id);
-      const draft = await answer(wire.GET("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } }));
-      if (!draft.inChangeSet) await putItem(set, kind, id, draft.yaml);
+      await inWorkingSet(kind, id, async (set) => {
+        const draft = await answer(wire.GET("/changesets/{set}/items/{kind}/{id}", { params: { path: { set, kind, id } } }));
+        if (!draft.inChangeSet) await putItem(set, kind, id, draft.yaml);
+      });
       return inChangeSet(kind, id, reason);
     },
     checks: checks as Client["checks"],
@@ -266,20 +285,20 @@ export function httpClient(
     decisionModel: () => answer(wire.GET("/decision-model")),
     fromIdea: (kind, idea) => answer(wire.POST("/from-idea", { body: { kind, idea } })),
     match: (kind, text, level) => answer(wire.POST("/match", { body: { kind, text, ...(level ? { level } : {}) } })),
+    readAggregation: (text) => answer(wire.POST("/aggregations/read", { body: { text } })),
+    charterPartsStyle: () => answer(wire.GET("/charter/parts.css", { parseAs: "text" })) as Promise<string>,
     gapCoverage: (id) => answer(wire.GET("/manifests/Gap/{id}/coverage", { params: { path: { id } } })),
     cyclePeriods: (id, from, to) =>
       answer(wire.GET("/manifests/ReportingCycle/{id}/periods", { params: { path: { id }, query: { from, to } } })),
     deleteGoal: async (id) => {
-      const set = await workingSet("Goal", id);
-      await done(wire.PUT("/changesets/{set}/items/{kind}/{id}/removal", { params: { path: { set, kind: "Goal", id } } }));
+      await inWorkingSet("Goal", id, (set) => done(wire.PUT("/changesets/{set}/items/{kind}/{id}/removal", { params: { path: { set, kind: "Goal", id } } })));
     },
 
     projectState: (id) => answer(wire.GET("/manifests/Project/{id}/state", { params: { path: { id } } })),
     // The move lands in the change set; the project stays where it is
     // until the change set is rolled in.
     transition: async (id, to) => {
-      const set = await workingSet("Project", id);
-      await done(wire.PUT("/changesets/{set}/items/Project/{id}/state", { params: { path: { set, id } }, body: { state: to } }));
+      await inWorkingSet("Project", id, (set) => done(wire.PUT("/changesets/{set}/items/Project/{id}/state", { params: { path: { set, id } }, body: { state: to } })));
       return answer(wire.GET("/manifests/Project/{id}/state", { params: { path: { id } } }));
     },
 
@@ -319,6 +338,12 @@ export function httpClient(
     components: () => answer(wire.GET("/components", { params: { query: { ...preview() } } })),
     dmaic: (id) => answer(wire.GET("/manifests/Project/{id}/dmaic", { params: { path: { id }, query: preview() } })),
     constraints: (id) => answer(wire.GET("/manifests/Project/{id}/constraints", { params: { path: { id }, query: preview() } })),
+    comments: (kind, id) => answer(wire.GET("/manifests/{kind}/{id}/comments", { params: { path: { kind, id } } })),
+    addComment: (kind, id, draft) => answer(wire.POST("/manifests/{kind}/{id}/comments", { params: { path: { kind, id } }, body: draft })),
+    resolveComment: (comment, resolved) => answer(wire.PATCH("/comments/{comment}", { params: { path: { comment } }, body: { resolved } })),
+    mentionables: (q) => answer(wire.GET("/mentionables", { params: { query: q ? { q } : {} } })),
+    myMentions: () => answer(wire.GET("/comments/mentions")),
+    round: (id) => answer(wire.GET("/manifests/Project/{id}/round", { params: { path: { id }, query: preview() } })),
     controlChart: (id) => answer(wire.GET("/manifests/KPI/{id}/control", { params: { path: { id }, query: preview() } })),
     semanticLayer: async (format) => {
       const r = await wire.GET("/semantic-layer", { params: { query: { ...preview(), ...(format ? { format } : {}) } } });

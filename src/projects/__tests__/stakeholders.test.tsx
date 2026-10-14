@@ -1,7 +1,7 @@
 /// <reference types="@testing-library/jest-dom" />
 import { useState } from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -81,5 +81,24 @@ describe("the work's own groups", () => {
       }),
     ).toEqual(["depot-staff", "members"]);
     expect(groupsOf({ problems: [{ groups: ["growers"] } as never] })).toEqual(["growers"]);
+  });
+});
+
+// A party is placed in words, on its own row, and the grid names it where
+// it sits, with no codes to decode (#40).
+describe("placing a stakeholder", () => {
+  it("places a party by its influence and interest in words", async () => {
+    mount([{ resource: "transport" }]);
+    expect(await screen.findByText("Transport contractor")).toBeInTheDocument();
+    expect(screen.getByText(pc.unplaced)).toBeInTheDocument();
+    const influence = screen.getByRole("radiogroup", { name: `${pc.influenceLabel} Transport contractor` });
+    await userEvent.click(within(influence).getByRole("radio", { name: pc.levels[3] }));
+    const interest = screen.getByRole("radiogroup", { name: `${pc.interestLabel} Transport contractor` });
+    await userEvent.click(within(interest).getByRole("radio", { name: pc.levels[3] }));
+    expect(entries()[0]).toMatchObject({ influence: 3, interest: 3 });
+    expect(screen.getAllByText(pc.gridQuadrant.manageClosely).length).toBeGreaterThan(0);
+    const cell = screen.getByLabelText(`${pc.influenceLabel} ${pc.levels[3]}, ${pc.interestLabel} ${pc.levels[3]}`);
+    expect(within(cell).getByText("Transport contractor")).toBeInTheDocument();
+    expect(screen.queryByText("3/3")).toBeNull();
   });
 });

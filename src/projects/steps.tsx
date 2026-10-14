@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Briefcase, CalendarRange, CircleCheck, Compass, Crosshair, Database, FileSignature, Gauge, Landmark, Medal, Package, PlaneLanding, Scale, SquareDashed, TriangleAlert, Users } from "lucide-react";
+import { Briefcase, CalendarRange, Coins, CircleCheck, Compass, Crosshair, Database, FileSignature, Gauge, Landmark, Medal, Package, PlaneLanding, Scale, SquareDashed, TriangleAlert, Users } from "lucide-react";
 
 import type { Stage } from "./types";
 
@@ -33,6 +33,7 @@ export const STEP_ICON: Record<string, LucideIcon> = {
   resources: Briefcase,
   stakeholders: Scale,
   timeline: CalendarRange,
+  costs: Coins,
   data: Database,
   risks: TriangleAlert,
   landing: PlaneLanding,

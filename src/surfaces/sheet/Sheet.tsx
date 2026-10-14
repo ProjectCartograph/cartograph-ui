@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useVocabularyWord } from "@/components/useVocabulary";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Check, Plus } from "lucide-react";
 
@@ -77,7 +78,14 @@ interface Row {
   version: number;
   updatedOn: string;
   spec: Record<string, unknown> | undefined;
+  labels?: Record<string, string>;
   loading: boolean;
+}
+
+/** A stored choice in the workspace's word, as a chip. */
+function VocabularyWord({ vocabulary, value }: { vocabulary: string; value: string }) {
+  const word = useVocabularyWord(vocabulary);
+  return <Badge variant="secondary">{word(value)}</Badge>;
 }
 
 function SpecCell({
@@ -123,6 +131,11 @@ function SpecCell({
       const label = copy.sheets.fields[kind]?.[field.name] ?? field.name;
       return <Badge variant="secondary">{`${items.length} ${label.toLowerCase()}`}</Badge>;
     }
+    case "vocabulary": {
+      // The workspace's own word for it (engine TAXONOMY.md D71).
+      if (typeof value !== "string" || value === "") return dash;
+      return <VocabularyWord vocabulary={field.vocabulary as string} value={value} />;
+    }
     case "enum": {
       // Numbers are enums too (a reporting cycle's period is 1, 3, 6 or
       // 12), and a string test alone used to drop them into a dash. The
@@ -146,10 +159,10 @@ function SpecCell({
       );
     }
     default:
-      // A data source's semantic model reads as the dbt model it is on.
-      if (field.name === "semanticModel" && value && typeof value === "object") {
-        const model = (value as { model?: string }).model;
-        return model ? <code className="text-xs">{model}</code> : dash;
+      // A data source's metrics read as their names.
+      if (field.name === "metrics" && Array.isArray(value)) {
+        const names = (value as { name?: string }[]).map((m) => m.name).filter(Boolean);
+        return names.length ? <TruncatedText text={names.join(", ")} /> : dash;
       }
       return <TruncatedText text={typeof value === "string" ? value : value ? JSON.stringify(value) : ""} />;
   }
@@ -237,6 +250,7 @@ export function Sheet({ kind, initialName, adding }: { kind: SheetKind; initialN
         version: s.version,
         updatedOn: s.updatedOn,
         spec: rowQueries[i]?.data?.manifest.spec as Record<string, unknown> | undefined,
+        labels: (rowQueries[i]?.data?.manifest.metadata as { labels?: Record<string, string> } | undefined)?.labels,
         loading: rowQueries[i]?.isLoading ?? true,
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -267,12 +281,12 @@ export function Sheet({ kind, initialName, adding }: { kind: SheetKind; initialN
   }
   function openEdit(r: Row) {
     if (!r.spec) return;
-    setDialog({ open: true, row: { id: r.id, name: r.name, version: r.version, spec: r.spec } });
+    setDialog({ open: true, row: { id: r.id, name: r.name, version: r.version, spec: r.spec, labels: r.labels } });
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <h1 className="flex items-center gap-1.5 text-2xl font-semibold tracking-tight">
             {kindLabel}

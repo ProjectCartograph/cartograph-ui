@@ -99,7 +99,7 @@ export function Explorer({
 
   return (
     <div className="flex flex-col gap-4" data-cartograph-region="explorer">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
           <Icon className="size-5 text-muted-foreground" aria-hidden="true" />
           {title}

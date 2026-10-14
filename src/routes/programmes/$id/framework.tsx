@@ -47,7 +47,7 @@ function Page() {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{fc.title}</h1>
           <p className="text-muted-foreground text-pretty">{fc.programmeSubtitle}</p>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { newRecordId } from "@/lib/recordId";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { AlreadyThere } from "@/components/AlreadyThere";
 import { DidYouMean } from "@/components/DidYouMean";
@@ -89,9 +90,10 @@ export function NewDefinition({
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
-  const id = slugify(name);
+  // An id of its own, made once, never from the name.
+  const [id] = useState(() => newRecordId(kind));
   const needsTeam = Boolean(teamLabel);
-  const canCreate = name.trim() !== "" && (!needsTeam || !!team) && !!id;
+  const canCreate = name.trim() !== "" && (!needsTeam || !!team);
 
   async function handleCreate() {
     setCreating(true);

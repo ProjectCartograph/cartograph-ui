@@ -1,8 +1,12 @@
-import { Gavel, Plus, Receipt, ShoppingCart, Trash2, UsersRound } from "lucide-react";
+import { Plus, Receipt, ShoppingCart, Trash2, UsersRound } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { AmountInput } from "@/components/AmountInput";
+import { grouped } from "@/components/grouped";
+import { useAllocations } from "../allocations";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { copy } from "@/copy";
@@ -11,6 +15,8 @@ import { RoleRefPicker, roleOptions, useResourceNames } from "../RoleRefPicker";
 import { TimingField } from "../TimingField";
 import { useProjectStore } from "../store";
 import { Labelled } from "../Labelled";
+import { CURRENCY_OPTIONS } from "../currencies";
+import { RiskPrompt } from "../constraints/RiskPrompt";
 import type { CostLine, ProcurementItem, Ref, Responsibility } from "../types";
 
 const rc = copy.projects.registers;
@@ -32,6 +38,7 @@ function Register({
   children,
   onAdd,
   addLabel,
+  needs,
 }: {
   icon: LucideIcon;
   title: string;
@@ -41,7 +48,21 @@ function Register({
   children: ReactNode;
   onAdd: () => void;
   addLabel: string;
+  /** What must exist before this register can be filled, said in place of
+   * it while it does not (#35). */
+  needs?: string;
 }) {
+  if (needs && count === 0) {
+    return (
+      <div className="flex items-start gap-2 rounded-xl px-4 py-3 text-sm ring-1 ring-foreground/10" data-cartograph-field={field} data-needs="">
+        <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+        <div className="flex flex-col gap-0.5">
+          <span className="font-medium text-muted-foreground">{title}</span>
+          <span className="text-xs text-muted-foreground">{needs}</span>
+        </div>
+      </div>
+    );
+  }
   return (
     <details className="rounded-xl ring-1 ring-foreground/10" open={count > 0} data-cartograph-field={field}>
       <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium" title={hint}>
@@ -62,7 +83,11 @@ function Register({
 }
 
 type Letter = "R" | "A" | "C" | "I";
-const CYCLE: (Letter | "")[] = ["", "R", "A", "C", "I"];
+const NONE = "__none__";
+const DECISION = "__decision__";
+/** A row about a decision: marked so, or written before rows named a
+ * deliverable, with words and no deliverable. */
+const isDecision = (r: Responsibility) => Boolean(r.decision) || (!r.deliverable && !!r.item);
 
 const refKey = (r: Ref | undefined) => (r ? `${r.local ?? r.kind ?? "x"}:${r.id ?? r.external}` : "");
 
@@ -87,10 +112,26 @@ export function RaciEditor() {
     if ((r.informed ?? []).some((x) => refKey(x) === k)) return "I";
     return "";
   };
-  const cycle = (i: number, ref: Ref) => {
+  // The project's roles, then any body or party a row names besides them,
+  // so nothing a row says is hidden for want of a column.
+  const resourceNames = names;
+  // Each role by who holds it and what it is: one person may hold two.
+  const roleOf = new Map((store.spec.resources ?? []).map((r) => [r.id, r.role]));
+  const columns = roles.map((o) => {
+    const kind = copy.projects.resources.roleKind[roleOf.get(o.id) ?? ""] ?? "";
+    return { ref: { local: "resources", id: o.id } as Ref, label: kind && kind !== o.label ? `${o.label} (${kind})` : o.label };
+  });
+  for (const r of list) {
+    for (const ref of [...(r.responsible ?? []), r.accountable, ...(r.consulted ?? []), ...(r.informed ?? [])]) {
+      if (!ref || columns.some((c) => refKey(c.ref) === refKey(ref))) continue;
+      const label = ref.external ?? (ref.kind === "Resource" && ref.id ? (resourceNames(ref.id) ?? ref.id) : (ref.id ?? ""));
+      columns.push({ ref, label });
+    }
+  }
+  const deliverables = store.spec.deliverables ?? [];
+  const setLetter = (i: number, ref: Ref, next: Letter | "") => {
     const r = list[i];
     const k = refKey(ref);
-    const next = CYCLE[(CYCLE.indexOf(letterOf(r, ref)) + 1) % CYCLE.length];
     const without = (xs: Ref[] | undefined) => {
       const out = (xs ?? []).filter((x) => refKey(x) !== k);
       return out.length > 0 ? out : undefined;
@@ -107,17 +148,6 @@ export function RaciEditor() {
     if (next === "I") p.informed = [...(p.informed ?? []), ref];
     patch(i, p);
   };
-  // The project's roles, then any body or party a row names besides them,
-  // so nothing a row says is hidden for want of a column.
-  const resourceNames = names;
-  const columns = roles.map((o) => ({ ref: { local: "resources", id: o.id } as Ref, label: o.label }));
-  for (const r of list) {
-    for (const ref of [...(r.responsible ?? []), r.accountable, ...(r.consulted ?? []), ...(r.informed ?? [])]) {
-      if (!ref || columns.some((c) => refKey(c.ref) === refKey(ref))) continue;
-      const label = ref.external ?? (ref.kind === "Resource" && ref.id ? (resourceNames(ref.id) ?? ref.id) : (ref.id ?? ""));
-      columns.push({ ref, label });
-    }
-  }
   return (
     <Register
       icon={UsersRound}
@@ -126,82 +156,77 @@ export function RaciEditor() {
       count={list.length}
       field="/spec/responsibilities"
       addLabel={rc.addRaci}
+      needs={roles.length === 0 ? rc.raciNeedsRoles : undefined}
       onAdd={() => set([...list, { id: newId("r", list), item: "" }])}
     >
-      {list.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm" data-slot="raci">
-            <thead>
-              <tr>
-                <th className="p-1 text-left font-medium text-muted-foreground">{rc.item}</th>
-                {columns.map((c) => (
-                  <th key={refKey(c.ref)} className="max-w-24 p-1 text-center text-xs font-medium text-muted-foreground" title={c.label}>
-                    <span className="line-clamp-2">{c.label}</span>
-                  </th>
+      <p className="text-xs text-muted-foreground">{rc.legend}</p>
+      {/* One card a row, the roles down it: the editor pane is narrow,
+          and a table of roles ran off its side (#35). */}
+      {list.map((r, i) => (
+        <div key={r.id} className="flex flex-col gap-2 rounded-lg p-3 ring-1 ring-foreground/10" data-raci={r.id}>
+          <div className="flex items-end gap-2">
+            {/* A deliverable is chosen from the project's own; only a
+                decision is written out (#35). */}
+            <Labelled label={rc.itemKind} className="w-48 shrink-0">
+            <Select
+              value={isDecision(r) ? DECISION : (r.deliverable ?? "")}
+              onValueChange={(v) =>
+                v === DECISION
+                  ? patch(i, { decision: true, deliverable: undefined, item: isDecision(r) ? r.item : "" })
+                  : patch(i, { decision: undefined, deliverable: v, item: deliverables.find((d) => d.id === v)?.name ?? v })
+              }
+            >
+              <SelectTrigger className="w-full" aria-label={rc.itemKind}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {deliverables.map((d) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.name || d.id}
+                  </SelectItem>
                 ))}
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((r, i) => (
-                <tr key={r.id} className="border-t" data-raci={r.id}>
-                  <td className="min-w-72 p-1">
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        aria-pressed={Boolean(r.decision)}
-                        onClick={() => patch(i, { decision: r.decision ? undefined : true })}
-                        className={`rounded p-1 ${r.decision ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                        aria-label={rc.decision}
-                        title={rc.decision}
-                      >
-                        <Gavel className="size-3.5" />
-                      </button>
-                      <Input
-                        className="h-8"
-                        value={r.item}
-                        onChange={(e) => patch(i, { item: e.target.value.slice(0, 160) })}
-                        maxLength={160}
-                        aria-label={rc.item}
-                      />
-                    </div>
-                  </td>
-                  {columns.map((c) => {
-                    const l = letterOf(r, c.ref);
-                    return (
-                      <td key={refKey(c.ref)} className="p-1 text-center">
-                        <button
-                          type="button"
-                          onClick={() => cycle(i, c.ref)}
-                          className={`size-8 rounded-md text-xs font-semibold ring-1 ${l === "A" ? "bg-primary text-primary-foreground ring-primary" : l ? "bg-muted ring-foreground/20" : "ring-foreground/10 text-muted-foreground hover:bg-muted"}`}
-                          aria-label={rc.cell(c.label, r.item || rc.item, l ? rc.letters[l] : rc.none)}
-                          title={l ? rc.letters[l] : rc.cycleHint}
-                          data-raci-cell={l}
-                        >
-                          {l}
-                        </button>
-                      </td>
-                    );
-                  })}
-                  <td className="p-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => set(list.filter((_, j) => j !== i))}
-                      aria-label={copy.projects.common.remove}
-                      title={copy.projects.common.remove}
+                <SelectItem value={DECISION}>{rc.aDecision}</SelectItem>
+              </SelectContent>
+            </Select>
+            </Labelled>
+            {isDecision(r) ? (
+              <Input className="min-w-0 flex-1" value={r.item} onChange={(e) => patch(i, { item: e.target.value.slice(0, 160) })} maxLength={160} aria-label={rc.decisionText} title={rc.decisionText} />
+            ) : (
+              <span className="flex-1" />
+            )}
+            <Button type="button" variant="ghost" size="icon-sm" onClick={() => set(list.filter((_, j) => j !== i))} aria-label={copy.projects.common.remove} title={copy.projects.common.remove}>
+              <Trash2 />
+            </Button>
+          </div>
+          <div className="flex flex-col divide-y">
+            {columns.map((c) => {
+              const l = letterOf(r, c.ref);
+              return (
+                <div key={refKey(c.ref)} className="flex items-center gap-2 py-1.5">
+                  <span className="min-w-0 flex-1 text-sm">{c.label}</span>
+                  <Select value={l || NONE} onValueChange={(v) => setLetter(i, c.ref, v === NONE ? "" : (v as Letter))}>
+                    <SelectTrigger
+                      className={`w-48 shrink-0 ${l === "A" ? "font-medium" : l ? "" : "text-muted-foreground"}`}
+                      aria-label={rc.cell(c.label, r.item || rc.item, l ? rc.letters[l] : rc.none)}
+                      data-raci-cell={l}
                     >
-                      <Trash2 />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-2 text-xs text-muted-foreground">{rc.legend}</p>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(["R", "A", "C", "I"] as Letter[]).map((x) => (
+                        <SelectItem key={x} value={x}>
+                          {rc.letters[x]}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value={NONE}>{rc.none}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      ) : null}
+      ))}
     </Register>
   );
 }
@@ -214,9 +239,18 @@ export function CostsEditor() {
   const store = useProjectStore();
   const list = store.spec.costs ?? [];
   const conditions = store.spec.conditions ?? [];
+  const allocations = useAllocations(store.id);
   const set = (next: CostLine[]) => store.updateSpec((s) => ({ ...s, costs: next.length > 0 ? next : undefined }));
   const patch = (i: number, p: Partial<CostLine>) => set(list.map((c, j) => (j === i ? { ...c, ...p } : c)));
   const total = list.reduce((t, c) => t + (c.amount ?? 0), 0);
+  // What the lines on each budget come to, against what it allocated.
+  const usedOn = (source: string) => list.filter((c) => c.source === source).reduce((t, c) => t + (c.amount ?? 0), 0);
+  // A line on a budget that allocated the project takes the allocation's
+  // approval and currency: the holder decides them, not the project.
+  const choose = (i: number, source: string | undefined) => {
+    const a = source ? allocations.get(source) : undefined;
+    patch(i, { source, ...(a ? { status: a.status, ...(a.currency ? { currency: a.currency } : {}) } : { status: "requested" }) });
+  };
   return (
     <Register
       icon={Receipt}
@@ -227,107 +261,90 @@ export function CostsEditor() {
       addLabel={rc.addCost}
       onAdd={() => set([...list, { id: newId("c", list), category: "" }])}
     >
-      {list.map((c, i) => (
-        <div key={c.id} className="grid gap-2 rounded-lg p-2 ring-1 ring-foreground/10 sm:grid-cols-6" data-cost={c.id}>
-          <Labelled label={rc.category} className="sm:col-span-2">
-            <Input
-              value={c.category}
-              onChange={(e) => patch(i, { category: e.target.value.slice(0, 80) })}
-              maxLength={80}
-              aria-label={rc.category}
-              title={rc.category}
-            />
-          </Labelled>
-          <Input
-            type="number"
-            min={0}
-            value={c.amount ?? ""}
-            onChange={(e) => patch(i, { amount: e.target.value === "" ? undefined : Math.max(0, Number(e.target.value)) })}
-            aria-label={rc.amount}
-            title={rc.amount}
-          />
-          <Labelled label={rc.currency}>
-            <Input
-              value={c.currency ?? ""}
-              onChange={(e) =>
-                patch(i, {
-                  currency:
-                    e.target.value
-                      .toUpperCase()
-                      .replace(/[^A-Z]/g, "")
-                      .slice(0, 3) || undefined,
-                })
-              }
-              maxLength={3}
-              aria-label={rc.currency}
-              title={rc.currency}
-            />
-          </Labelled>
-          <Labelled label={rc.status}>
-            <Select value={c.status ?? ""} onValueChange={(v) => patch(i, { status: (v || undefined) as CostLine["status"] })}>
-              <SelectTrigger aria-label={rc.status}>
-                <SelectValue placeholder={rc.status} />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUSES.map((s) => (
-                  <SelectItem key={s} value={s!}>
-                    {rc.statuses[s!]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Labelled>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="self-end"
-            onClick={() => set(list.filter((_, j) => j !== i))}
-            aria-label={copy.projects.common.remove}
-            title={copy.projects.common.remove}
-          >
-            <Trash2 />
-          </Button>
-          <Labelled label={rc.basis} className="sm:col-span-3">
-            <Input
-              value={c.basis ?? ""}
-              onChange={(e) => patch(i, { basis: e.target.value.slice(0, 160) || undefined })}
-              maxLength={160}
-              aria-label={rc.basis}
-              title={rc.basis}
-            />
-          </Labelled>
-          <Labelled label={rc.period}>
-            <Input
-              value={c.period ?? ""}
-              onChange={(e) => patch(i, { period: e.target.value.slice(0, 40) || undefined })}
-              maxLength={40}
-              aria-label={rc.period}
-              title={rc.period}
-            />
-          </Labelled>
-          <div className="sm:col-span-2">
-            <Labelled label={rc.source}>
-              <ReferencePicker refKind="FundingSource" value={c.source} onChange={(source) => patch(i, { source })} label={rc.source} />
+      {list.map((c, i) => {
+        const at = `/spec/costs/${i}`;
+        const a = c.source ? allocations.get(c.source) : undefined;
+        return (
+          <div key={c.id} className="flex flex-col gap-2 rounded-lg p-3 ring-1 ring-foreground/10" data-cost={c.id}>
+            {/* The budget first: what it allocated decides the rest (#90). */}
+            <div className="flex items-end gap-2">
+              <Labelled label={rc.source} className="min-w-0 flex-1" hint={c.source ? undefined : rc.sourceFirst}>
+                <ReferencePicker refKind="FundingSource" value={c.source} onChange={(source) => choose(i, source)} label={rc.source} data-cartograph-field={`${at}/source`} />
+              </Labelled>
+              <Button type="button" variant="ghost" size="icon" onClick={() => set(list.filter((_, j) => j !== i))} aria-label={copy.projects.common.remove} title={copy.projects.common.remove}>
+                <Trash2 />
+              </Button>
+            </div>
+            {c.source ? (
+              <p className="text-xs text-muted-foreground" data-slot="allocation">
+                {a
+                  ? rc.allocated(rc.statuses[a.status ?? "requested"], `${a.currency ?? ""} ${grouped(a.amount ?? 0)}`.trim(), `${a.currency ?? c.currency ?? ""} ${grouped(usedOn(c.source))}`.trim())
+                  : rc.noAllocation}
+              </p>
+            ) : null}
+            <Labelled label={rc.category}>
+              <Input value={c.category} onChange={(e) => patch(i, { category: e.target.value.slice(0, 80) })} maxLength={80} aria-label={rc.category} data-cartograph-field={`${at}/category`} />
             </Labelled>
+            <div className="flex flex-wrap items-start gap-2">
+              <Labelled label={rc.amount} className="min-w-56 flex-1">
+                <AmountInput value={c.amount} onChange={(amount) => patch(i, { amount })} currency={c.currency} label={rc.amount} field={`${at}/amount`} />
+              </Labelled>
+              <Labelled label={rc.currency} className="w-28 shrink-0" hint={a?.currency ? rc.allocationLocked : undefined}>
+                <Combobox
+                  options={CURRENCY_OPTIONS}
+                  value={c.currency || undefined}
+                  onValueChange={(v) => patch(i, { currency: v || undefined })}
+                  placeholder=""
+                  searchPlaceholder={copy.projects.resources.currencySearchPlaceholder}
+                  emptyText={copy.projects.resources.currencyEmpty}
+                  aria-label={rc.currency}
+                  disabled={!!a?.currency}
+                />
+              </Labelled>
+            </div>
+            <Labelled label={rc.basis} hint={rc.basisHint}>
+              <Input value={c.basis ?? ""} onChange={(e) => patch(i, { basis: e.target.value.slice(0, 160) || undefined })} maxLength={160} aria-label={rc.basis} data-cartograph-field={`${at}/basis`} />
+            </Labelled>
+            {/* With no allocation the project says where the line stands;
+                with one, the holder has said it. */}
+            {a ? null : (
+              <Labelled label={rc.status}>
+                <Select value={c.status ?? ""} onValueChange={(v) => patch(i, { status: (v || undefined) as CostLine["status"] })}>
+                  <SelectTrigger className="w-full" aria-label={rc.status} data-cartograph-field={`${at}/status`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUSES.filter((st) => st !== "approved" || c.status === "approved").map((st) => (
+                      <SelectItem key={st} value={st!}>
+                        {rc.statuses[st!]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Labelled>
+            )}
+            {/* What could make it cost more than planned (#59). */}
+            <RiskPrompt side="cost" on={c.id} question={copy.projects.triangle.askCost} short={copy.projects.triangle.shortCost} />
+            {c.status === "unfunded" || c.status === "beingCosted" ? (
+              <Labelled label={rc.condition}>
+                <Select value={c.condition ?? ""} onValueChange={(v) => patch(i, { condition: v || undefined })}>
+                  <SelectTrigger className="w-full" aria-label={rc.condition}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {conditions.map((cd) => (
+                      <SelectItem key={cd.id} value={cd.id}>
+                        {cd.action || cd.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Labelled>
+            ) : null}
           </div>
-          {c.status === "unfunded" || c.status === "beingCosted" ? (
-            <Select value={c.condition ?? ""} onValueChange={(v) => patch(i, { condition: v || undefined })}>
-              <SelectTrigger className="sm:col-span-6" aria-label={rc.condition}>
-                <SelectValue placeholder={rc.condition} />
-              </SelectTrigger>
-              <SelectContent>
-                {conditions.map((cd) => (
-                  <SelectItem key={cd.id} value={cd.id}>
-                    {cd.action || cd.id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-        </div>
-      ))}
-      {list.length > 0 ? <p className="text-sm font-medium tabular-nums">{rc.total(total.toLocaleString("en"))}</p> : null}
+        );
+      })}
+      {list.length > 0 ? <p className="text-sm font-medium tabular-nums">{rc.total(grouped(total))}</p> : null}
     </Register>
   );
 }

@@ -320,7 +320,8 @@ export type DataOutput =
   | "documentsOrFiles"
   | "extractOrReport";
 export type PersonalData = "none" | "personal" | "sensitive";
-export type Refresh = "daily" | "weekly" | "monthly" | "quarterly" | "annual" | "irregular";
+/** How often, from the workspace's refresh vocabulary (engine D71). */
+export type Refresh = string;
 
 export interface DataConsumeItem {
   source: string;
@@ -393,6 +394,9 @@ export interface Risk {
   response?: RiskResponse;
   /** The side the response draws on. */
   spends?: Constraint;
+  /** The line of the scope, in or out, it would move, word for word
+   * (engine TAXONOMY.md D62). */
+  scopeLine?: string;
 }
 
 /** A side of the triple constraint (engine TAXONOMY.md D60). */
@@ -580,7 +584,7 @@ export interface ProjectKPI {
 
 export interface ProjectSpec {
   summary: ProjectSummary;
-  team: string;
+  team?: string;
   mandate?: Mandate[];
   /** Where a matter goes up when it cannot be settled here, nearest first
    * (TAXONOMY.md D44). */
@@ -625,8 +629,9 @@ export interface ProjectManifest {
 /** A blank, schema-valid-shaped spec for a brand new project. */
 export function blankProjectSpec(): ProjectSpec {
   return {
+    // No team until one is chosen: an empty one is refused as a malformed
+    // id, where a missing one is a field to fill.
     summary: { problems: [{ problem: {}, change: {} }] },
-    team: "",
   };
 }
 
@@ -655,6 +660,7 @@ export const INITIATION_SECTIONS = [
   "scope",
   "deliverables",
   "timeline",
+  "costs",
   "data",
   "risks",
   "success",
@@ -696,6 +702,7 @@ export type StepPath =
   | "/initiation/deliverables"
   | "/initiation/success"
   | "/initiation/timeline"
+  | "/initiation/costs"
   | "/initiation/data"
   | "/initiation/risks"
   | "/initiation/landing"
@@ -725,6 +732,9 @@ export const STEPS: Step[] = [
   step("scope", "scope"),
   step("scope", "deliverables"),
   step("plan", "timeline"),
+  // The cost and procurement plans are plans: after the schedule, so a
+  // purchase can wait on a milestone (engine TAXONOMY.md D69).
+  step("plan", "costs"),
   step("plan", "data"),
   step("plan", "risks"),
   step("handover", "success"),

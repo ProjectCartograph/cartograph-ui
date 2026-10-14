@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { Check, Plus, Search, Sparkles } from "lucide-react";
+import { Check, ChevronRight, Eye, Plus, Search, Sparkles } from "lucide-react";
 
 import { copy } from "@/copy";
 import { SparkleBurst } from "@/components/Sparkle";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RecordPreview } from "@/records/RecordPreview";
 
 /**
  * One pickable thing. Where the register it comes from has a shape, the
@@ -26,6 +28,10 @@ export interface ChipItem {
   /** Named this moment: it sparkles as it appears. */
   fresh?: boolean;
 }
+
+/** Past this many items, branches start closed: a register longer than a
+ * handful of rows reads faster as its headings. */
+const LONG_REGISTER = 5;
 
 interface Branch {
   name: string;
@@ -58,6 +64,7 @@ export function ChipPicker({
   slot,
   groupIcon,
   areaIcon,
+  previewKind,
   "data-cartograph-field": field,
 }: {
   items: ChipItem[];
@@ -74,11 +81,19 @@ export function ChipPicker({
    * as by its name. */
   groupIcon?: React.ReactNode;
   areaIcon?: React.ReactNode;
+  /** The kind the items are, when each can be read in a preview before it
+   * is picked (#28). */
+  previewKind?: string;
   /** The manifest field this edits, by JSON pointer. */
   "data-cartograph-field"?: string;
 }) {
   const [search, setSearch] = useState("");
   const grouped = items.some((c) => c.group);
+  // Each branch opened or closed by hand. Otherwise a short register shows
+  // whole, and a long one reads as its headings, opening only the branches
+  // that hold a pick, or all while searching (#29).
+  const [toggled, setToggled] = useState<Map<string, boolean>>(new Map());
+  const long = items.length > LONG_REGISTER;
 
   // A picked chip is never filtered away: losing sight of the selection is
   // what the old second panel existed to prevent.
@@ -153,7 +168,7 @@ export function ChipPicker({
           : position === "last"
             ? "rounded-b-lg"
             : "";
-    return (
+    const pick = (
       <button
         key={c.id}
         type="button"
@@ -175,9 +190,31 @@ export function ChipPicker({
         >
           {isPicked ? <Check className="size-3" /> : null}
         </span>
-        <span className={`min-w-0 flex-1 text-sm text-pretty ${isPicked ? "font-medium" : ""}`}>{c.label}</span>
+        <span id={`chip-label-${c.id}`} className={`min-w-0 flex-1 text-sm text-pretty ${isPicked ? "font-medium" : ""}`}>{c.label}</span>
         {c.isNew ? <Sparkles className="size-4 shrink-0 text-new" aria-label={copy.common.isNew} /> : null}
       </button>
+    );
+    if (!previewKind) return pick;
+    return (
+      <div key={c.id} className="group/row relative flex items-stretch">
+        <div className="min-w-0 flex-1">{pick}</div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="absolute top-1/2 right-2 z-20 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label={copy.recordPreview.short}
+              aria-describedby={`chip-label-${c.id}`}
+              title={copy.recordPreview.label(c.label)}
+            >
+              <Eye className="size-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-96" align="end">
+            <RecordPreview kind={previewKind} id={c.id} />
+          </PopoverContent>
+        </Popover>
+      </div>
     );
   }
 
@@ -209,15 +246,22 @@ export function ChipPicker({
       {matching.length === 0 ? <p className="text-sm text-muted-foreground">{empty}</p> : null}
 
       {grouped ? (
-        <div className="flex flex-col gap-7">
+        <div className="flex flex-col gap-4">
           {branches.map((branch) => {
             const pickedHere = branch.areas.reduce(
               (n, a) => n + a.items.filter((c) => selected.includes(c.id)).length,
               0,
             );
+            const open = search.trim() ? true : (toggled.get(branch.name) ?? (!long || pickedHere > 0));
             return (
-              <section key={branch.name} className="flex flex-col gap-3" data-slot="chip-group">
-                <div className="flex items-center gap-2">
+              <section key={branch.name} className="flex flex-col gap-3" data-slot="chip-group" data-open={open ? "" : undefined}>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 text-left"
+                  aria-expanded={open}
+                  onClick={() => setToggled((m) => new Map(m).set(branch.name, !open))}
+                >
+                  <ChevronRight className={`size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 ${open ? "rotate-90" : ""}`} aria-hidden="true" />
                   {groupIcon ? <span className="text-muted-foreground">{groupIcon}</span> : null}
                   <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{branch.name}</h3>
                   {/* How many of this branch's goals are served, as a number
@@ -231,8 +275,10 @@ export function ChipPicker({
                       {pickedHere}
                     </span>
                   ) : null}
+                  {!open ? <span className="text-xs text-muted-foreground">{branch.areas.reduce((n, a) => n + a.items.length, 0)}</span> : null}
                   <span aria-hidden className="h-px flex-1 bg-border" />
-                </div>
+                </button>
+                {open ? (
                 <div className="ml-1 flex flex-col gap-4 border-l pl-4">
                   {branch.areas.map((area) => (
                     <div key={area.name} className="flex flex-col gap-2" data-slot="chip-area">
@@ -257,6 +303,7 @@ export function ChipPicker({
                     </div>
                   ))}
                 </div>
+                ) : null}
               </section>
             );
           })}

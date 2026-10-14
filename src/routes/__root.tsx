@@ -7,7 +7,7 @@ import {
   Outlet,
   useMatches,
 } from "@tanstack/react-router";
-import { Archive, BookOpen, Bot, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Plus, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest, BriefcaseBusiness } from "lucide-react";
+import { Archive, AtSign, BookOpen, Bot, FilePen, House, FolderKanban, Gauge, KeyRound, Layers, Map as MapIcon, PlugZap, Radio, Settings2, Table2, TriangleAlert, Waypoints, GitPullRequest, BriefcaseBusiness } from "lucide-react";
 
 import {
   Breadcrumb,
@@ -58,7 +58,10 @@ import { TourProvider } from "@/tour/TourProvider";
 import { TourEntry } from "@/tour/TourEntry";
 import { useActiveChangeSet } from "@/changesets/useActive";
 import { MergeBar } from "@/changesets/MergeBar";
+import { isDraft } from "@/changesets/drafts";
+import { mentionsSeen } from "@/comments/where";
 import { CreateMenu } from "@/components/CreateMenu";
+import { RecentVisits } from "@/surfaces/home/Recent";
 
 const defineItems = [
   {
@@ -302,6 +305,12 @@ function useBreadcrumbCrumbs(): Crumb[] {
   if (routeId === "/new") {
     return [{ label: copy.newWork.title }];
   }
+  if (routeId === "/mentions") {
+    return [{ label: copy.mentions.title }];
+  }
+  if (routeId === "/drafts") {
+    return [{ label: copy.drafts.title }];
+  }
   if (routeId === "/changesets/") {
     return [{ label: copy.changeSets.title }];
   }
@@ -417,6 +426,13 @@ function RootLayout() {
   // Change sets waiting for this person to review.
   const changeSets = useQuery({ queryKey: ["changesets"], queryFn: () => client.changeSets(), retry: false, refetchInterval: 15_000 });
   const waiting = (changeSets.data ?? []).filter((c) => c.status === "proposed").length;
+  // The person's own work not yet merged: always reachable, since every
+  // edit lands in a draft.
+  const drafts = (changeSets.data ?? []).filter(isDraft).length;
+  // What asks this person, since they last looked: the rail shows it only
+  // where comments are kept and something asks them.
+  const mentions = useQuery({ queryKey: ["mentions"], queryFn: () => client.myMentions(), retry: false, refetchInterval: 30_000 });
+  const newMentions = (mentions.data ?? []).filter((c) => Date.parse(c.at) > mentionsSeen.get()).length;
   const agentsHere = session?.access?.agents === true;
   // Signed in through the proxy, but not on the access list: nothing here
   // is theirs to see, and the engine would refuse every request.
@@ -465,21 +481,15 @@ function RootLayout() {
             {/* Opening and closing the rail belongs to the rail: its first
                 thing, at the top left, open or folded to its icons. */}
             <SidebarTrigger className="size-8" data-cartograph-region="rail-toggle" />
-            <div className="flex items-center gap-2 px-2 py-1.5">
-              {/* The organisation the workspace is about, once named
-                  (engine TAXONOMY.md D37); the product's name until then. */}
-              {logo ? (
-                <img src={logo} alt="" className="size-8 shrink-0 rounded-lg bg-white object-contain p-0.5" />
-              ) : (
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-semibold">
-                  {(organisation || copy.appName).slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate text-sm font-semibold">{organisation || copy.appName}</span>
-                <span className="truncate text-xs text-muted-foreground">{organisation ? copy.appName : copy.appLine}</span>
+            {/* The organisation the workspace is about, once named (engine
+                TAXONOMY.md D37). Until then the rail starts with what it
+                holds: no product mark, no block. */}
+            {organisation ? (
+              <div className="flex items-center gap-2 px-2 py-1.5">
+                {logo ? <img src={logo} alt="" className="size-8 shrink-0 rounded-lg bg-white object-contain p-0.5" /> : null}
+                <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">{organisation}</span>
               </div>
-            </div>
+            ) : null}
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
@@ -491,14 +501,6 @@ function RootLayout() {
                       <Link to="/" activeOptions={{ exact: true }}>
                         <House />
                         <span>{copy.rail.home}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild tooltip={copy.rail.new}>
-                      <Link to="/new">
-                        <Plus />
-                        <span>{copy.rail.new}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -536,6 +538,26 @@ function RootLayout() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip={copy.drafts.rail}>
+                      <Link to="/drafts" data-cartograph-region="rail-drafts">
+                        <FilePen />
+                        <span>{copy.drafts.rail}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    {drafts > 0 ? <SidebarMenuBadge>{drafts}</SidebarMenuBadge> : null}
+                  </SidebarMenuItem>
+                  {(mentions.data?.length ?? 0) > 0 ? (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip={copy.mentions.rail}>
+                        <Link to="/mentions" data-cartograph-region="rail-mentions">
+                          <AtSign />
+                          <span>{copy.mentions.rail}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      {newMentions > 0 ? <SidebarMenuBadge>{newMentions}</SidebarMenuBadge> : null}
+                    </SidebarMenuItem>
+                  ) : null}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -603,8 +625,13 @@ function RootLayout() {
             </SidebarMenu>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="min-w-0">
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4" data-cartograph-region="header">
+        {/* One frame the height of the screen: the header stays, and what
+            is below it scrolls inside main, never the window. */}
+        <SidebarInset className="h-svh min-w-0 overflow-hidden md:peer-data-[variant=inset]:h-[calc(100svh-1rem)]">
+          {/* On a phone the header is two rows, where to go and what to do,
+              so the change set's actions are in sight rather than scrolled
+              off the edge; on a wider screen it is one row, as before. */}
+          <header className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1.5 border-b px-4 py-2 md:h-14 md:flex-nowrap md:overflow-x-auto md:py-0 md:[scrollbar-width:none]" data-cartograph-region="header">
             {/* On a phone the rail slides in over the page, so its
                 toggle is here too. */}
             <SidebarTrigger className="-ml-1 md:hidden" />
@@ -633,13 +660,16 @@ function RootLayout() {
                 })}
               </BreadcrumbList>
             </Breadcrumb>
-            <CreateMenu />
-            <WorkingIn />
-            <PeopleHere />
+            <div className="flex min-w-0 items-center gap-2 max-md:w-full max-md:overflow-x-auto max-md:[scrollbar-width:none] md:contents" data-cartograph-region="header-actions">
+              <RecentVisits />
+              <CreateMenu />
+              <WorkingIn />
+              {unlisted ? null : <MergeBar />}
+              <PeopleHere />
+            </div>
           </header>
-          <main className="min-w-0 flex-1 p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
+          <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
             {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
-            {unlisted ? null : <MergeBar />}
           </main>
         </SidebarInset>
       </TourProvider>

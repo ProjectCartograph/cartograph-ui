@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { CommentMark } from "@/comments/CommentMark";
 import { ChevronUp, Flag, List, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -10,6 +11,7 @@ import { copy } from "@/copy";
 import { RoleRefPicker, roleOptions, useResourceNames } from "../RoleRefPicker";
 import { TimingField } from "../TimingField";
 import { useProjectStore, useSectionAutosave } from "../store";
+import { RiskPrompt } from "../constraints/RiskPrompt";
 import { addTimelineMonths, type Milestone } from "../types";
 
 const mc = copy.projects.milestones;
@@ -56,7 +58,7 @@ export function MilestonesSection() {
   const move = (id: string, month: string) => {
     const i = milestones.findIndex((m) => m.id === id);
     if (i < 0) return;
-    const t = milestones[i].timing;
+    const t = milestones[i].timing ?? { form: "date" };
     if (t.form === "date") patch(i, { timing: { ...t, date: withMonth(t.date, month) } });
     else if (t.form === "window" && t.notBefore && t.notAfter) {
       const by = (monthIndex(month) ?? 0) - (monthIndex(t.notBefore) ?? 0);
@@ -85,7 +87,9 @@ export function MilestonesSection() {
     const served = new Map((schedule.data ?? []).map((it) => [it.id, it]));
     return milestones.map((m): ScheduleItem => {
       const it = served.get(m.id);
-      const t = m.timing;
+      // A milestone added elsewhere without a timing yet is still drawn,
+      // as one whose date is to be given.
+      const t = m.timing ?? { form: "date" };
       const own = t.form === "date" ? { month: t.date?.slice(0, 7) } : t.form === "window" ? { notBefore: t.notBefore?.slice(0, 7), notAfter: t.notAfter?.slice(0, 7), month: it?.month ?? t.notBefore?.slice(0, 7) } : {};
       return { ...(it ?? { id: m.id, waitsOn: [], pending: false, late: false, critical: false, unplaced: false }), id: m.id, name: m.name, form: t.form, ...own };
     });
@@ -133,8 +137,11 @@ export function MilestonesSection() {
       {showAll ? (
         <ol className="flex flex-col gap-3" data-cartograph-field="/spec/milestones">
           {milestones.map((m, i) => (
-            <li key={m.id}>
-              <MilestoneEditor m={m} i={i} patch={patch} remove={() => set(milestones.filter((_, j) => j !== i))} />
+            <li key={m.id} className="flex items-start gap-1">
+              <div className="min-w-0 flex-1">
+                <MilestoneEditor m={m} i={i} patch={patch} remove={() => set(milestones.filter((_, j) => j !== i))} />
+              </div>
+              {m.id ? <CommentMark kind="Project" id={store.id} anchor={`/spec/milestones/{${m.id}}`} what={m.name || `#${i + 1}`} /> : null}
             </li>
           ))}
         </ol>
@@ -192,16 +199,8 @@ function MilestoneEditor({ m, i, patch, remove, autoFocus }: { m: Milestone; i: 
           <span>{mc.owner}</span>
           <RoleRefPicker value={m.owner} options={roles} onChange={(owner) => patch(i, { owner })} label={mc.owner} withBodies className="w-full" data-cartograph-field={`/spec/milestones/${i}/owner`} />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-muted-foreground" title={mc.evidenceHint}>
-          {mc.evidence}
-          <Input
-            value={m.evidence ?? ""}
-            onChange={(e) => patch(i, { evidence: e.target.value.slice(0, 240) || undefined })}
-            maxLength={240}
-            aria-label={mc.evidence}
-            data-cartograph-field={`/spec/milestones/${i}/evidence`}
-          />
-        </label>
+        {/* Evidence that it was reached is recorded when it is, as an
+            event (engine D52), not while the plan is written (#101). */}
       </div>
       {deliverables.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5" data-cartograph-field={`/spec/milestones/${i}/deliverables`}>
@@ -226,6 +225,8 @@ function MilestoneEditor({ m, i, patch, remove, autoFocus }: { m: Milestone; i: 
           })}
         </div>
       ) : null}
+      {/* What happens if it is missed (#59). */}
+      <RiskPrompt side="schedule" on={m.id} question={copy.projects.triangle.askMissed} short={copy.projects.triangle.shortMissed} />
     </div>
   );
 }
@@ -304,7 +305,7 @@ function MilestoneChart({
   const shown = (it: ScheduleItem) => (drag?.mode === "move" && drag.from === it.id && Math.abs(drag.x - drag.x0) > 3 ? monthAt(drag.x) : it.month);
 
   return (
-    <figure ref={frame} className="overflow-hidden rounded-xl bg-background ring-1 ring-foreground/10" data-slot="milestone-chart">
+    <figure ref={frame} className="overflow-x-auto rounded-xl bg-background ring-1 ring-foreground/10" data-slot="milestone-chart">
       <svg
         ref={box}
         viewBox={`0 0 ${width} ${height}`}

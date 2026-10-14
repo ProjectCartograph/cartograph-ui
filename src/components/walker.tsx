@@ -158,7 +158,7 @@ export function FlowNext({
     </>
   );
   return (
-    <Button type={link ? undefined : "button"} asChild={!!link} size="lg" onClick={onClick} disabled={disabled}>
+    <Button type={link ? undefined : "button"} asChild={!!link} size="lg" onClick={onClick} disabled={disabled} data-flow-next="">
       {link ? link(body) : body}
     </Button>
   );

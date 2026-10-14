@@ -65,3 +65,18 @@ describe("what could move a timing", () => {
     expect(timing).toMatchObject({ form: "after", lagMonths: 1, lagDays: 10, risks: ["r1"], note: "Training dates are not fixed" });
   });
 });
+
+// A deliverable due after a milestone the plan has not made yet makes it
+// here, named in place, so nothing waits for a later step (#39).
+describe("a milestone made from a deliverable", () => {
+  it("makes the milestone in the plan and waits on it", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    mount({ form: "after" });
+    await user.click(await screen.findByRole("combobox", { name: tc.waitsOn }));
+    await user.click(await screen.findByRole("option", { name: tc.newMilestone }));
+    expect(timing?.event?.on).toEqual({ local: "milestones", id: "m2" });
+    const name = await screen.findByRole("textbox", { name: tc.newMilestoneName });
+    await user.type(name, "Training done");
+    expect(name).toHaveValue("Training done");
+  });
+});

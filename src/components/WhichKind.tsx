@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { copy } from "@/copy";
+import { nameFrom } from "@/surfaces/home/flows";
 
 const c = copy.whichKind;
 
@@ -61,6 +62,17 @@ const TILE: Record<
   "": { icon: FolderKanban, to: "/projects/start", kind: "Project" },
 };
 
+/** What was typed before choosing, carried into the kind started, so
+ * nothing is typed twice: what a project is about, the name of anything
+ * else, the idea a programme or portfolio is prepared from. */
+function carried(kind: string | undefined, text: string | undefined): Record<string, string> {
+  const t = text?.trim();
+  if (!t || !kind) return {};
+  if (kind === "Project") return { about: t.slice(0, 300), idea: t.slice(0, 1000) };
+  if (kind === "Programme" || kind === "Portfolio") return { idea: t.slice(0, 1000) };
+  return { name: nameFrom(t) };
+}
+
 /**
  * Which kind a piece of work is, decided by the engine's questions rather
  * than by what the person's documents call it (engine TAXONOMY.md D56):
@@ -92,7 +104,7 @@ export function WhichKind({
 }
 
 /** The choice itself, in a dialog or on a page. */
-export function WhichKindChoice({ onStart }: { onStart?: () => void }) {
+export function WhichKindChoice({ onStart, text }: { onStart?: () => void; text?: string }) {
   const client = useClient();
   const navigate = useNavigate();
   const questions = useQuery({
@@ -136,7 +148,7 @@ export function WhichKindChoice({ onStart }: { onStart?: () => void }) {
                   onStart?.();
                   void navigate({
                     to: tile.to,
-                    search: (tile.search ?? {}) as never,
+                    search: { ...(tile.search ?? {}), ...carried(tile.kind, text) } as never,
                   } as never);
                 }}
                 data-which-start={tile.kind ?? "deliverable"}
@@ -170,7 +182,7 @@ export function WhichKindChoice({ onStart }: { onStart?: () => void }) {
                       {c.pick[q.field] ?? q.field}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {q.question}
+                      {q.person || q.question}
                     </span>
                   </span>
                 </button>

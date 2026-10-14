@@ -40,6 +40,14 @@ function quadrantKey(influence: number, interest: number): string | null {
 }
 
 const TIERS: StakeholderTier[] = ["primary", "secondary"];
+const LEVELS = [1, 2, 3] as const;
+
+/** How to manage a party, from where it sits: the four familiar approaches,
+ * the middle of each scale counting as high. */
+function approachOf(influence: number, interest: number): string {
+  if (influence >= 2) return interest >= 2 ? "manageClosely" : "keepSatisfied";
+  return interest >= 2 ? "keepInformed" : "monitor";
+}
 
 /**
  * How much power each stakeholder holds over this project.
@@ -101,31 +109,11 @@ export function StakeholderGrid({
       <div className="flex flex-col gap-2">
         {entries.map((e, idx) => (
           <div key={keyOf(e)} data-cartograph-region={`stakeholder-${idx}`} className="flex flex-col gap-2 rounded-lg border p-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="min-w-0 flex-1 truncate text-sm">{nameOf(e)}</span>
-
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              size="sm"
-              value={e.tier ?? ""}
-              onValueChange={(v) => updateAt(idx, { tier: (v || undefined) as StakeholderTier })}
-              aria-label={`${pc.tierLabel} ${nameOf(e)}`}
-              data-cartograph-field={`/spec/entries/${idx}/tier`}
-            >
-              {TIERS.map((t) => (
-                <ToggleGroupItem key={t} value={t}>
-                  {pc.tier[t]}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-
-            <span className="w-20 text-right text-xs tabular-nums text-muted-foreground">
-              {e.influence !== undefined && e.interest !== undefined
-                ? `${e.influence}/${e.interest}`
-                : pc.unplaced}
+          <div className="flex items-start gap-2">
+            <span className="min-w-0 flex-1 text-sm font-medium text-pretty">{nameOf(e)}</span>
+            <span className="text-xs text-muted-foreground">
+              {e.influence !== undefined && e.interest !== undefined ? pc.gridQuadrant[approachOf(e.influence, e.interest)] : pc.unplaced}
             </span>
-
             <Button
               type="button"
               variant="ghost"
@@ -136,6 +124,46 @@ export function StakeholderGrid({
             >
               <X />
             </Button>
+          </div>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            className="self-start"
+            value={e.tier ?? ""}
+            onValueChange={(v) => updateAt(idx, { tier: (v || undefined) as StakeholderTier })}
+            aria-label={`${pc.tierLabel} ${nameOf(e)}`}
+            data-cartograph-field={`/spec/entries/${idx}/tier`}
+          >
+            {TIERS.map((t) => (
+              <ToggleGroupItem key={t} value={t}>
+                {pc.tier[t]}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          {/* Where it sits, in words: how much power it has over the
+              work, and how much it cares (#40). */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            {(["influence", "interest"] as const).map((axis) => (
+              <div key={axis} className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{axis === "influence" ? pc.influenceLabel : pc.interestLabel}</span>
+                <ToggleGroup
+                  type="single"
+                  variant="outline"
+                  size="sm"
+                  value={e[axis] !== undefined ? String(e[axis]) : ""}
+                  onValueChange={(v) => updateAt(idx, { [axis]: v ? Number(v) : undefined })}
+                  aria-label={`${axis === "influence" ? pc.influenceLabel : pc.interestLabel} ${nameOf(e)}`}
+                  data-cartograph-field={`/spec/entries/${idx}/${axis}`}
+                >
+                  {LEVELS.map((l) => (
+                    <ToggleGroupItem key={l} value={String(l)}>
+                      {pc.levels[l]}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
+            ))}
           </div>
           {/* What this party cares about here, and who keeps the
               relationship (TAXONOMY.md D42). The map holds no roles of its
@@ -202,28 +230,17 @@ export function StakeholderGrid({
         ) : null}
       </div>
 
-      {entries.length > 0 ? <Grid entries={entries} nameOf={nameOf} onScore={updateAt} /> : null}
+      {entries.length > 0 ? <Grid entries={entries} nameOf={nameOf} /> : null}
     </div>
   );
 }
 
-/** The nine cells. Picking a stakeholder first, then a cell, is how this
- * has always worked; the pick now names an entry on the map. */
-function Grid({
-  entries,
-  nameOf,
-  onScore,
-}: {
-  entries: StakeholderEntry[];
-  nameOf: (e: StakeholderEntry) => string;
-  onScore: (idx: number, patch: Partial<StakeholderEntry>) => void;
-}) {
-  const unplaced = entries
-    .map((e, idx) => ({ e, idx }))
-    .filter(({ e }) => e.influence === undefined || e.interest === undefined);
-
+/** The nine cells, each naming the parties placed in it: a picture of
+ * where power lies, read without a legend. Parties are placed on their
+ * rows above, in words. */
+function Grid({ entries, nameOf }: { entries: StakeholderEntry[]; nameOf: (e: StakeholderEntry) => string }) {
   return (
-    <div className="flex flex-col gap-2 2xl:max-w-80" data-cartograph-region="stakeholder-matrix">
+    <div className="flex flex-col gap-2" data-cartograph-region="stakeholder-matrix">
       <div className="flex gap-2">
         <span className="flex items-center justify-center text-[10px] text-muted-foreground [writing-mode:vertical-rl] rotate-180">
           {pc.influenceLabel}
@@ -233,22 +250,22 @@ function Grid({
             {GRID_ROWS.flatMap((influence) =>
               GRID_COLS.map((interest) => {
                 const key = quadrantKey(influence, interest);
-                const inCell = entries.filter(
-                  (e) => e.influence === influence && e.interest === interest,
-                );
+                const inCell = entries.filter((e) => e.influence === influence && e.interest === interest);
                 return (
                   <div
                     key={`${influence}-${interest}`}
                     data-slot="grid-cell"
                     data-influence={influence}
                     data-interest={interest}
-                    aria-label={`${pc.influenceLabel} ${influence}, ${pc.interestLabel} ${interest}`}
-                    className="flex h-16 flex-col items-start justify-between rounded-md border bg-card p-1.5 text-left text-[10px] leading-tight"
+                    aria-label={`${pc.influenceLabel} ${pc.levels[influence]}, ${pc.interestLabel} ${pc.levels[interest]}`}
+                    className="flex min-h-16 flex-col items-start gap-1 rounded-md border bg-card p-1.5 text-left text-[10px] leading-tight"
                   >
                     <span className="text-muted-foreground">{key ? pc.gridQuadrant[key] : ""}</span>
-                    {inCell.length > 0 ? (
-                      <span className="self-end text-sm font-medium tabular-nums">{inCell.length}</span>
-                    ) : null}
+                    {inCell.map((e) => (
+                      <span key={keyOf(e)} className="text-xs font-medium">
+                        {nameOf(e)}
+                      </span>
+                    ))}
                   </div>
                 );
               }),
@@ -257,29 +274,6 @@ function Grid({
           <p className="pt-1 text-center text-[10px] text-muted-foreground">{pc.interestLabel}</p>
         </div>
       </div>
-
-      {unplaced.map(({ e, idx }) => (
-        <div key={keyOf(e)} data-cartograph-region={`stakeholder-place-${idx}`} className="flex flex-wrap items-center gap-1.5">
-          <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-            {pc.placePrompt(nameOf(e))}
-          </span>
-          {GRID_ROWS.flatMap((influence) =>
-            GRID_COLS.map((interest) => (
-              <Button
-                key={`${influence}-${interest}`}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-6 px-1.5 text-[10px] tabular-nums"
-                aria-label={`${nameOf(e)}, ${pc.influenceLabel} ${influence}, ${pc.interestLabel} ${interest}`}
-                onClick={() => onScore(idx, { influence, interest })}
-              >
-                {influence}/{interest}
-              </Button>
-            )),
-          )}
-        </div>
-      ))}
     </div>
   );
 }

@@ -93,7 +93,7 @@ export function RelationRow({
       </div>
       {picker ? (
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className={wide ? "sm:max-w-3xl" : "sm:max-w-lg"} data-cartograph-region={`${slot}-picker`}>
+          <DialogContent className={wide ? "sm:max-w-5xl" : "sm:max-w-lg"} data-cartograph-region={`${slot}-picker`}>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Icon className="size-4" aria-hidden="true" />

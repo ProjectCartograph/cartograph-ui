@@ -93,7 +93,10 @@ describe("home", () => {
     expect(region.querySelector("a[data-flow='gap']")?.textContent).toContain(hc.needsFirst("indicator"));
     // The others are one step away, and New only when the person is unsure.
     expect(within(region).getByRole("list", { name: hc.somethingElse }).querySelectorAll("a")).toHaveLength(8);
-    expect(within(region).getByRole("link", { name: hc.notSure }).getAttribute("href")).toBe("/new");
+    // Not sure which keeps what was typed, so nothing is typed again.
+    const notSure = new URL(within(region).getByRole("link", { name: hc.notSure }).getAttribute("href")!, "http://x");
+    expect(notSure.pathname).toBe("/new");
+    expect(notSure.searchParams.get("text")).toBe("Faults are caught before produce leaves the depot. Mostly at intake.");
   });
 
   it("without a decision model, shows what shares its words and offers every flow", async () => {

@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { copy } from "@/copy";
 import { useRecordDrawer } from "@/records/RecordDrawer";
 import { ReferenceField } from "./ReferenceField";
-import { KPIAddDialog } from "@/kpis/KPIAddDialog";
+import { KPIAddDialog, type KPISeed } from "@/kpis/KPIAddDialog";
 import { SheetAddDialog } from "./InlineSheetAdd";
 import { isSheetKind, type SheetKind } from "./schema";
 import { useReferenceOptions } from "./useReferenceOptions";
+import { BrowseButton } from "@/records/PickerDialog";
 
 /**
  * A reference picker that can also create what it is missing: the stock
@@ -25,6 +26,7 @@ export function ReferencePicker({
   label,
   addLabel,
   className,
+  kpiSeed,
   "data-cartograph-field": field,
 }: {
   refKind: string;
@@ -35,6 +37,8 @@ export function ReferencePicker({
   label?: string;
   addLabel?: string;
   className?: string;
+  /** For a new indicator: what the record it is added from already says. */
+  kpiSeed?: KPISeed;
   /** The manifest field this edits, by JSON pointer. */
   "data-cartograph-field"?: string;
 }) {
@@ -65,6 +69,10 @@ export function ReferencePicker({
           onRequestAdd={canAdd ? () => setAddOpen(true) : undefined}
         />
       </div>
+      {/* Each record readable before it is chosen (#28). */}
+      {empty ? null : (
+        <BrowseButton kind={refKind} title={label ?? kindLabel} select={{ max: 1 }} selected={value ? [value] : []} onChange={(ids) => onChange(ids[0])} />
+      )}
       {canAdd ? (
         <>
           {empty ? null : (
@@ -82,6 +90,7 @@ export function ReferencePicker({
           )}
           {isKPI ? (
             <KPIAddDialog
+              seed={kpiSeed}
               open={addOpen}
               onOpenChange={setAddOpen}
               onAdded={(id) => {

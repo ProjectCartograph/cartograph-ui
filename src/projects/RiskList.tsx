@@ -1,5 +1,6 @@
 import { Grid3x3, Plus, X } from "lucide-react";
 
+import { CommentMark } from "@/comments/CommentMark";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -48,7 +49,11 @@ export function RiskList({
   placing,
   onPlace,
   triangle,
+  comments,
 }: {
+  /** The record each risk is commented on in, where comments are kept
+   * beside it (engine D72). */
+  comments?: { kind: string; id: string };
   /** What each side's risks can bear on, for a project: the risk row
    * then places itself on scope, schedule and cost (D60). */
   triangle?: Partial<Record<Constraint, readonly BearsOn[]>>;
@@ -112,6 +117,11 @@ export function RiskList({
             maxLength={160}
             className="flex-1"
           />
+          {comments && r.id ? (
+            <span className="self-center">
+              <CommentMark kind={comments.kind} id={comments.id} anchor={`${field}/{${r.id}}`} what={r.description || rc.unnamed} />
+            </span>
+          ) : null}
           {onPlace ? (
             <Button
               type="button"
@@ -162,7 +172,7 @@ export function RiskList({
         ) : null}
         {/* How likely it is to be caught in time (FMEA, engine TAXONOMY.md
             D58): with impact and likelihood, its risk priority. */}
-        <div className="flex items-center gap-2" data-cartograph-field={at(r, idx, "detection")}>
+        <div className="flex flex-wrap items-center gap-2" data-cartograph-field={at(r, idx, "detection")}>
           <Label className="w-24 shrink-0 text-muted-foreground" title={rc.detectionHint}>
             {rc.detectionLabel}
           </Label>
@@ -184,7 +194,7 @@ export function RiskList({
         {/* Who manages it day to day (TAXONOMY.md D41): a role on the
             work, a governance body, or, where the work names no roles, an
             entry in the catalogue. A high-impact risk without one warns. */}
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 [&>*:last-child]:min-w-0 [&>*:last-child]:flex-1">
           <Label className="w-24 shrink-0 text-muted-foreground">{rc.ownerLabel}</Label>
           {roles && roles.length > 0 ? (
             <RoleRefPicker
@@ -195,7 +205,7 @@ export function RiskList({
               label={rc.ownerLabel}
               placeholder={rc.ownerPlaceholder}
               withBodies
-              className="w-56"
+              className="w-full sm:w-56"
             />
           ) : (
             <div className="w-56">

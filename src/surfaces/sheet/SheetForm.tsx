@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { type Control, useForm } from "react-hook-form";
+import { VocabularyChoice } from "@/components/Vocabulary";
+import { newRecordId } from "@/lib/recordId";
+import { type Control, useForm, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -30,10 +32,11 @@ import {
 } from "@/components/ui/select";
 
 import { Help } from "@/components/guidance";
+import { LabelsEditor } from "@/components/LabelsEditor";
 import { useClient } from "@/client/context";
 import { ClientError, Conflict } from "@/client/port";
 import type { components } from "@/api/gen/schema";
-import { SemanticModelEditor, type SemanticModel } from "@/semantic/SemanticModelEditor";
+import { SourceMetricsEditor, type SourceMetric } from "@/semantic/SourceMetricsEditor";
 import { copy } from "@/copy";
 import { ReferenceField } from "./ReferenceField";
 import { BodyUses } from "./BodyUses";
@@ -41,7 +44,7 @@ import { PeriodsField, type NamedPeriod } from "./PeriodsField";
 import { RefObjectField, type RefValue } from "./RefObjectField";
 import { ReferencePicker } from "./ReferencePicker";
 import { fieldVocab, VocabOption } from "@/components/vocab";
-import { type FieldDef, type SheetKind, slugify, unitHint } from "./schema";
+import { type FieldDef, type SheetKind, unitHint } from "./schema";
 import { DidYouMean } from "@/components/DidYouMean";
 
 type Problem = components["schemas"]["Problem"];
@@ -51,6 +54,8 @@ export interface SheetRow {
   name: string;
   version: number;
   spec: Record<string, unknown>;
+  /** metadata.labels: every other name people use for it (engine D70). */
+  labels?: Record<string, string>;
 }
 
 interface FormValues {
@@ -134,15 +139,16 @@ export function SheetForm({
   const queryClient = useQueryClient();
   const client = useClient();
 
-  const [idEdited, setIdEdited] = useState(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [labels, setLabels] = useState<Record<string, string>>(existing?.labels ?? {});
   const [conflict, setConflict] = useState(false);
 
   const defaultValues = useMemo<FormValues>(() => {
     const base: FormValues = {
       _name: existing?.name ?? initialName ?? "",
       _id: existing?.id ?? "",
-      _reason: minimal?.reason ?? "",
+      // Adding says itself why: a reason is asked only of a change.
+      _reason: minimal?.reason ?? (existing ? "" : copy.sheets.dialog.addedReason),
     };
     for (const f of fields) {
       const v = existing?.spec[f.name];
@@ -157,20 +163,19 @@ export function SheetForm({
   useEffect(() => {
     if (open) {
       form.reset(defaultValues);
-      setIdEdited(false);
+      setLabels(existing?.labels ?? {});
       setGeneralError(null);
       setConflict(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, existing?.id]);
 
-  const nameValue = form.watch("_name");
+  // A new entry gets an id of its own when the dialog opens, never one
+  // made from its name.
   useEffect(() => {
-    if (!isEdit && !idEdited) {
-      form.setValue("_id", slugify(typeof nameValue === "string" ? nameValue : ""));
-    }
+    if (open && !isEdit) form.setValue("_id", newRecordId(kind));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nameValue, isEdit, idEdited]);
+  }, [open, isEdit, kind]);
 
   async function onSubmit(values: FormValues) {
     setGeneralError(null);
@@ -194,7 +199,7 @@ export function SheetForm({
     const manifest = {
       apiVersion: "cartograph/v1",
       kind,
-      metadata: { id: values._id, name: values._name },
+      metadata: { id: values._id, name: values._name, ...(Object.keys(labels).length > 0 ? { labels } : {}) },
       spec,
     };
 
@@ -290,36 +295,18 @@ export function SheetForm({
               )}
             />
 
+            {/* The id is generated and never asked: a technical handle a
+                person has no use for (#88). Every other name people use for
+                it is a label (engine TAXONOMY.md D70). */}
             {minimal ? null : (
-            <FormField
-              control={form.control}
-              name="_id"
-              rules={{ required: true, pattern: /^[a-z0-9][a-z0-9-]{1,63}$/ }}
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center gap-1">
-                    <FormLabel>{copy.sheets.dialog.idLabel}</FormLabel>
-                    <Help label={copy.sheets.dialog.idLabel} hint={copy.sheets.dialog.idHint} />
-                  </div>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      data-cartograph-field="/metadata/id"
-                      value={field.value as string}
-                      disabled={isEdit}
-                      onChange={(e) => {
-                        setIdEdited(true);
-                        field.onChange(e);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+              <div className="flex flex-col gap-1.5">
+                <span className="flex items-center gap-1 text-sm font-medium">
+                  {copy.labels.label}
+                  <Help label={copy.labels.label} hint={copy.labels.hint} />
+                </span>
+                <LabelsEditor labels={labels} onChange={setLabels} idPrefix={`sheet-${kind}`} />
+              </div>
             )}
-
             {(minimal ? fields.filter((f) => f.required && !(preset && f.name in preset)) : fields).map((f) => (
               <SheetFormField key={f.name} kind={kind} field={f} control={form.control} />
             ))}
@@ -328,23 +315,29 @@ export function SheetForm({
               <BodyUses id={existing.id} />
             ) : null}
 
-            {minimal ? null : (
+            {minimal || !isEdit ? null : (
             <FormField
               control={form.control}
               name="_reason"
               rules={{ required: true, maxLength: 60 }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{copy.sheets.dialog.reasonLabel}</FormLabel>
+                  <FormLabel>
+                    {copy.sheets.dialog.reasonLabel}
+                    <span aria-hidden="true" className="text-destructive">*</span>
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       value={field.value as string}
                       maxLength={60}
+                      required
                       placeholder={copy.sheets.dialog.reasonPlaceholder}
                     />
                   </FormControl>
-                  <FormDescription>{((field.value as string)?.length ?? 0)}/60</FormDescription>
+                  <FormDescription>
+                    {copy.sheets.dialog.reasonHint} {((field.value as string)?.length ?? 0)}/60
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -364,6 +357,14 @@ export function SheetForm({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** A source's metrics, each asked what it counts over where the source
+ * holds more than one kind of record: a warehouse (engine TAXONOMY.md
+ * D67). */
+function MetricsOfSource({ control, value, onChange }: { control: Control<FormValues>; value: SourceMetric[] | ""; onChange: (next: SourceMetric[] | undefined) => void }) {
+  const category = useWatch({ control, name: "category" });
+  return <SourceMetricsEditor value={value} onChange={onChange} several={category === "warehouse"} />;
 }
 
 function SheetFormField({
@@ -402,9 +403,9 @@ function SheetFormField({
     ...(field.kind === "string" && field.maxLength ? { maxLength: field.maxLength } : {}),
   };
 
-  // Where a data source sits in the warehouse: an object of its own,
-  // edited as one (engine TAXONOMY.md D57).
-  if (kind === "DataSource" && field.name === "semanticModel") {
+  // The numbers a data source gives, each written as an aggregation
+  // (engine TAXONOMY.md D64).
+  if (kind === "DataSource" && field.name === "metrics") {
     return (
       <FormField
         control={control}
@@ -412,7 +413,7 @@ function SheetFormField({
         render={({ field: rhf }) => (
           <FormItem>
             {heading}
-            <SemanticModelEditor value={rhf.value as SemanticModel | ""} onChange={(next) => rhf.onChange(next ?? "")} />
+            <MetricsOfSource control={control} value={rhf.value as SourceMetric[] | ""} onChange={(next) => rhf.onChange(next ?? "")} />
           </FormItem>
         )}
       />
@@ -456,6 +457,26 @@ function SheetFormField({
     );
   }
 
+  // A choice from the workspace's own words (engine TAXONOMY.md D71).
+  if (field.kind === "vocabulary") {
+    return (
+      <FormField
+        control={control}
+        name={field.name}
+        rules={rules}
+        render={({ field: rhf }) => (
+          <FormItem>
+            {heading}
+            <FormControl>
+              <VocabularyChoice vocabulary={field.vocabulary as string} value={(rhf.value as string) || undefined} onChange={rhf.onChange} label={label} field={pointer} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
   if (field.kind === "enum") {
     return (
       <FormField
@@ -473,7 +494,7 @@ function SheetFormField({
               </FormControl>
               <SelectContent>
                 {(field.enumValues ?? []).map((v) => (
-                  <SelectItem key={String(v)} value={v}>
+                  <SelectItem key={String(v)} value={v} hint={copy.sheets.fieldValueHints[kind]?.[field.name]?.[String(v)]}>
                     {vocab ? (
                       <VocabOption vocab={vocab} value={v as string | number} />
                     ) : (
@@ -589,6 +610,7 @@ function SheetFormField({
               value={(rhf.value as string) ?? ""}
               placeholder={placeholder}
               maxLength={field.maxLength}
+              type={field.format === "date" ? "date" : undefined}
             />
           </FormControl>
           {field.maxLength ? (

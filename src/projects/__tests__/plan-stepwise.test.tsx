@@ -14,12 +14,12 @@ vi.mock("@tanstack/react-router", () => ({
 
 const pc = copy.projects;
 
-// The plan is walked one step at a time (milestones, data, risks), so data
+// The plan is walked one step at a time (milestones, costs, data, risks), so data
 // and risks are never a long scroll below the milestones.
 describe("the plan stage", () => {
   it("moves step by step inside the stage, then on to the next stage", () => {
     const { rerender } = render(<InitiationBackNext id="p1" stage="plan" section="timeline" />);
-    expect(screen.getByRole("link", { name: new RegExp(pc.nextTo(SECTION_VIEW.data.heading)) })).toHaveAttribute("href", "/projects/p1/initiation/data");
+    expect(screen.getByRole("link", { name: new RegExp(pc.nextTo(SECTION_VIEW.costs.heading)) })).toHaveAttribute("href", "/projects/p1/initiation/costs");
     rerender(<InitiationBackNext id="p1" stage="plan" section="risks" />);
     expect(screen.getByRole("link", { name: new RegExp(pc.nextTo(pc.stages.handover)) })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: new RegExp(pc.back) })).toHaveAttribute("href", "/projects/p1/initiation/data");

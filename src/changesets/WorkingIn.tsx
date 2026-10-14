@@ -5,6 +5,7 @@ import { ChevronDown, Eye, EyeOff, GitBranch, GitPullRequest, LogOut, Pencil, Pl
 
 import { activeChangeSet } from "@/client/active";
 import { useClient } from "@/client/context";
+import { NotFound } from "@/client/port";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -56,14 +57,16 @@ export function WorkingIn() {
   };
 
   // A change set that was rolled in or closed elsewhere is no longer one
-  // to work in.
+  // to work in; nor is one the workspace does not have (a fresh vault, a
+  // link to one since deleted), or every read through it would fail.
   const status = review.data?.changeSet.status;
+  const gone = review.error instanceof NotFound;
   useEffect(() => {
-    if (active && status && status !== "open") {
+    if (active && ((status && status !== "open") || gone)) {
       activeChangeSet.set(undefined);
       void queryClient.invalidateQueries();
     }
-  }, [active, status, queryClient]);
+  }, [active, status, gone, queryClient]);
 
   const rename = useMutation({
     mutationFn: (t: string) => client.retitleChangeSet(active as string, t),
@@ -100,7 +103,12 @@ export function WorkingIn() {
             <GitPullRequest className="size-3.5 shrink-0" aria-hidden="true" />
             {/* On a phone the icon and the count say it; the name is in the menu. */}
             <span className="hidden truncate sm:inline">{active ? (name ?? c.label) : c.label}</span>
-            {active ? <span className="shrink-0 text-xs text-muted-foreground">{c.items(count)}</span> : null}
+            {active ? (
+              <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                <span className="sm:hidden">{count}</span>
+                <span className="max-sm:hidden">{c.items(count)}</span>
+              </span>
+            ) : null}
             <ChevronDown className="size-3.5 shrink-0 opacity-60" aria-hidden="true" />
           </Button>
         </DropdownMenuTrigger>

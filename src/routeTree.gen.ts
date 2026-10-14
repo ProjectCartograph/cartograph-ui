@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccessRouteImport } from './routes/access'
 import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as DraftsRouteImport } from './routes/drafts'
 import { Route as GlossaryRouteImport } from './routes/glossary'
 import { Route as GraphRouteImport } from './routes/graph'
 import { Route as IndicatorsRouteImport } from './routes/indicators'
+import { Route as MentionsRouteImport } from './routes/mentions'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as WelcomeRouteImport } from './routes/welcome'
@@ -87,6 +89,7 @@ import { Route as ProjectsIdLandingRouteImport } from './routes/projects/$id/lan
 import { Route as ProjectsIdInitiationAimRouteImport } from './routes/projects/$id/initiation/aim'
 import { Route as ProjectsIdInitiationApprovalRouteImport } from './routes/projects/$id/initiation/approval'
 import { Route as ProjectsIdInitiationBeneficiariesRouteImport } from './routes/projects/$id/initiation/beneficiaries'
+import { Route as ProjectsIdInitiationCostsRouteImport } from './routes/projects/$id/initiation/costs'
 import { Route as ProjectsIdInitiationDataRouteImport } from './routes/projects/$id/initiation/data'
 import { Route as ProjectsIdInitiationDeliverablesRouteImport } from './routes/projects/$id/initiation/deliverables'
 import { Route as ProjectsIdInitiationGoalsRouteImport } from './routes/projects/$id/initiation/goals'
@@ -114,6 +117,11 @@ const AgentsRoute = AgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DraftsRoute = DraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GlossaryRoute = GlossaryRouteImport.update({
   id: '/glossary',
   path: '/glossary',
@@ -127,6 +135,11 @@ const GraphRoute = GraphRouteImport.update({
 const IndicatorsRoute = IndicatorsRouteImport.update({
   id: '/indicators',
   path: '/indicators',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MentionsRoute = MentionsRouteImport.update({
+  id: '/mentions',
+  path: '/mentions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewRoute = NewRouteImport.update({
@@ -492,6 +505,12 @@ const ProjectsIdInitiationBeneficiariesRoute =
     path: '/initiation/beneficiaries',
     getParentRoute: () => ProjectsIdRoute,
   } as any)
+const ProjectsIdInitiationCostsRoute =
+  ProjectsIdInitiationCostsRouteImport.update({
+    id: '/initiation/costs',
+    path: '/initiation/costs',
+    getParentRoute: () => ProjectsIdRoute,
+  } as any)
 const ProjectsIdInitiationDataRoute =
   ProjectsIdInitiationDataRouteImport.update({
     id: '/initiation/data',
@@ -563,9 +582,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/drafts': typeof DraftsRoute
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/indicators': typeof IndicatorsRoute
+  '/mentions': typeof MentionsRoute
   '/new': typeof NewRoute
   '/strategy': typeof StrategyRoute
   '/welcome': typeof WelcomeRoute
@@ -638,6 +659,7 @@ export interface FileRoutesByFullPath {
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
   '/projects/$id/initiation/approval': typeof ProjectsIdInitiationApprovalRoute
   '/projects/$id/initiation/beneficiaries': typeof ProjectsIdInitiationBeneficiariesRoute
+  '/projects/$id/initiation/costs': typeof ProjectsIdInitiationCostsRoute
   '/projects/$id/initiation/data': typeof ProjectsIdInitiationDataRoute
   '/projects/$id/initiation/deliverables': typeof ProjectsIdInitiationDeliverablesRoute
   '/projects/$id/initiation/goals': typeof ProjectsIdInitiationGoalsRoute
@@ -654,9 +676,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/drafts': typeof DraftsRoute
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/indicators': typeof IndicatorsRoute
+  '/mentions': typeof MentionsRoute
   '/new': typeof NewRoute
   '/strategy': typeof StrategyRoute
   '/welcome': typeof WelcomeRoute
@@ -723,6 +747,7 @@ export interface FileRoutesByTo {
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
   '/projects/$id/initiation/approval': typeof ProjectsIdInitiationApprovalRoute
   '/projects/$id/initiation/beneficiaries': typeof ProjectsIdInitiationBeneficiariesRoute
+  '/projects/$id/initiation/costs': typeof ProjectsIdInitiationCostsRoute
   '/projects/$id/initiation/data': typeof ProjectsIdInitiationDataRoute
   '/projects/$id/initiation/deliverables': typeof ProjectsIdInitiationDeliverablesRoute
   '/projects/$id/initiation/goals': typeof ProjectsIdInitiationGoalsRoute
@@ -740,9 +765,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/access': typeof AccessRoute
   '/agents': typeof AgentsRoute
+  '/drafts': typeof DraftsRoute
   '/glossary': typeof GlossaryRoute
   '/graph': typeof GraphRoute
   '/indicators': typeof IndicatorsRoute
+  '/mentions': typeof MentionsRoute
   '/new': typeof NewRoute
   '/strategy': typeof StrategyRoute
   '/welcome': typeof WelcomeRoute
@@ -815,6 +842,7 @@ export interface FileRoutesById {
   '/projects/$id/initiation/aim': typeof ProjectsIdInitiationAimRoute
   '/projects/$id/initiation/approval': typeof ProjectsIdInitiationApprovalRoute
   '/projects/$id/initiation/beneficiaries': typeof ProjectsIdInitiationBeneficiariesRoute
+  '/projects/$id/initiation/costs': typeof ProjectsIdInitiationCostsRoute
   '/projects/$id/initiation/data': typeof ProjectsIdInitiationDataRoute
   '/projects/$id/initiation/deliverables': typeof ProjectsIdInitiationDeliverablesRoute
   '/projects/$id/initiation/goals': typeof ProjectsIdInitiationGoalsRoute
@@ -833,9 +861,11 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/drafts'
     | '/glossary'
     | '/graph'
     | '/indicators'
+    | '/mentions'
     | '/new'
     | '/strategy'
     | '/welcome'
@@ -908,6 +938,7 @@ export interface FileRouteTypes {
     | '/projects/$id/initiation/aim'
     | '/projects/$id/initiation/approval'
     | '/projects/$id/initiation/beneficiaries'
+    | '/projects/$id/initiation/costs'
     | '/projects/$id/initiation/data'
     | '/projects/$id/initiation/deliverables'
     | '/projects/$id/initiation/goals'
@@ -924,9 +955,11 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/drafts'
     | '/glossary'
     | '/graph'
     | '/indicators'
+    | '/mentions'
     | '/new'
     | '/strategy'
     | '/welcome'
@@ -993,6 +1026,7 @@ export interface FileRouteTypes {
     | '/projects/$id/initiation/aim'
     | '/projects/$id/initiation/approval'
     | '/projects/$id/initiation/beneficiaries'
+    | '/projects/$id/initiation/costs'
     | '/projects/$id/initiation/data'
     | '/projects/$id/initiation/deliverables'
     | '/projects/$id/initiation/goals'
@@ -1009,9 +1043,11 @@ export interface FileRouteTypes {
     | '/'
     | '/access'
     | '/agents'
+    | '/drafts'
     | '/glossary'
     | '/graph'
     | '/indicators'
+    | '/mentions'
     | '/new'
     | '/strategy'
     | '/welcome'
@@ -1084,6 +1120,7 @@ export interface FileRouteTypes {
     | '/projects/$id/initiation/aim'
     | '/projects/$id/initiation/approval'
     | '/projects/$id/initiation/beneficiaries'
+    | '/projects/$id/initiation/costs'
     | '/projects/$id/initiation/data'
     | '/projects/$id/initiation/deliverables'
     | '/projects/$id/initiation/goals'
@@ -1101,9 +1138,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccessRoute: typeof AccessRoute
   AgentsRoute: typeof AgentsRoute
+  DraftsRoute: typeof DraftsRoute
   GlossaryRoute: typeof GlossaryRoute
   GraphRoute: typeof GraphRoute
   IndicatorsRoute: typeof IndicatorsRoute
+  MentionsRoute: typeof MentionsRoute
   NewRoute: typeof NewRoute
   StrategyRoute: typeof StrategyRoute
   WelcomeRoute: typeof WelcomeRoute
@@ -1163,6 +1202,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/drafts': {
+      id: '/drafts'
+      path: '/drafts'
+      fullPath: '/drafts'
+      preLoaderRoute: typeof DraftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/glossary': {
       id: '/glossary'
       path: '/glossary'
@@ -1182,6 +1228,13 @@ declare module '@tanstack/react-router' {
       path: '/indicators'
       fullPath: '/indicators'
       preLoaderRoute: typeof IndicatorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mentions': {
+      id: '/mentions'
+      path: '/mentions'
+      fullPath: '/mentions'
+      preLoaderRoute: typeof MentionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new': {
@@ -1688,6 +1741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIdInitiationBeneficiariesRouteImport
       parentRoute: typeof ProjectsIdRoute
     }
+    '/projects/$id/initiation/costs': {
+      id: '/projects/$id/initiation/costs'
+      path: '/initiation/costs'
+      fullPath: '/projects/$id/initiation/costs'
+      preLoaderRoute: typeof ProjectsIdInitiationCostsRouteImport
+      parentRoute: typeof ProjectsIdRoute
+    }
     '/projects/$id/initiation/data': {
       id: '/projects/$id/initiation/data'
       path: '/initiation/data'
@@ -1884,6 +1944,7 @@ interface ProjectsIdRouteChildren {
   ProjectsIdInitiationAimRoute: typeof ProjectsIdInitiationAimRoute
   ProjectsIdInitiationApprovalRoute: typeof ProjectsIdInitiationApprovalRoute
   ProjectsIdInitiationBeneficiariesRoute: typeof ProjectsIdInitiationBeneficiariesRoute
+  ProjectsIdInitiationCostsRoute: typeof ProjectsIdInitiationCostsRoute
   ProjectsIdInitiationDataRoute: typeof ProjectsIdInitiationDataRoute
   ProjectsIdInitiationDeliverablesRoute: typeof ProjectsIdInitiationDeliverablesRoute
   ProjectsIdInitiationGoalsRoute: typeof ProjectsIdInitiationGoalsRoute
@@ -1908,6 +1969,7 @@ const ProjectsIdRouteChildren: ProjectsIdRouteChildren = {
   ProjectsIdInitiationApprovalRoute: ProjectsIdInitiationApprovalRoute,
   ProjectsIdInitiationBeneficiariesRoute:
     ProjectsIdInitiationBeneficiariesRoute,
+  ProjectsIdInitiationCostsRoute: ProjectsIdInitiationCostsRoute,
   ProjectsIdInitiationDataRoute: ProjectsIdInitiationDataRoute,
   ProjectsIdInitiationDeliverablesRoute: ProjectsIdInitiationDeliverablesRoute,
   ProjectsIdInitiationGoalsRoute: ProjectsIdInitiationGoalsRoute,
@@ -1929,9 +1991,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccessRoute: AccessRoute,
   AgentsRoute: AgentsRoute,
+  DraftsRoute: DraftsRoute,
   GlossaryRoute: GlossaryRoute,
   GraphRoute: GraphRoute,
   IndicatorsRoute: IndicatorsRoute,
+  MentionsRoute: MentionsRoute,
   NewRoute: NewRoute,
   StrategyRoute: StrategyRoute,
   WelcomeRoute: WelcomeRoute,

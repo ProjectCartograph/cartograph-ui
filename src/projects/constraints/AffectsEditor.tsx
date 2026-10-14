@@ -59,9 +59,12 @@ export function AffectsEditor({
         return (
           <div key={a.constraint} className="flex flex-wrap items-center gap-2 pl-2 text-sm">
             <span className="w-20 text-muted-foreground">{tc.sides[a.constraint]}</span>
+            <span className="text-muted-foreground">{tc.movesIt}</span>
             <Select value={a.impact ?? ""} onValueChange={(v) => onChange(placeOn(risk, a.constraint, { impact: v as ImpactLikelihood }))}>
               <SelectTrigger className="w-28" aria-label={`${tc.hereImpact}: ${tc.sides[a.constraint]}`} data-cartograph-field={`${at}/impact`}>
-                <SelectValue placeholder={tc.hereImpact} />
+                {/* Left unsaid, a side bears the risk's own impact, as the
+                    engine weighs it (#82): that is what it shows. */}
+                <SelectValue placeholder={risk.impact ? rc.levels[risk.impact] : tc.hereImpact} />
               </SelectTrigger>
               <SelectContent>
                 {(["low", "medium", "high"] as const).map((l) => (
@@ -71,6 +74,7 @@ export function AffectsEditor({
                 ))}
               </SelectContent>
             </Select>
+            {list.length > 0 ? <span className="text-muted-foreground">{tc.at}</span> : null}
             {list.length > 0 ? (
               <Select
                 value={a.on ?? NONE}
@@ -80,7 +84,7 @@ export function AffectsEditor({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>{tc.hereOnNone}</SelectItem>
+                  <SelectItem value={NONE}>{tc.hereOnNone(tc.sides[a.constraint])}</SelectItem>
                   {list.map((i) => (
                     <SelectItem key={i.id} value={i.id}>
                       {i.name}

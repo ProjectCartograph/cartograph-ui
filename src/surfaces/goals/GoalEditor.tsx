@@ -1,10 +1,10 @@
 import { useFlowTrace } from "@/trace/useFlowTrace";
+import { newRecordId } from "@/lib/recordId";
 import { useEffect, useMemo, useState } from "react";
 import { RequiredMarks } from "@/components/RequiredMarks";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { stringify as stringifyYAML } from "yaml";
-import { slugify } from "@/definition/NewDefinition";
 import { AlertTriangle, CalendarRange, CheckCircle2, ClipboardCheck, CornerDownRight, Gauge, FileCode2, MessageSquare, Plus, Save, Target, UserRound, X } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -807,10 +807,7 @@ function NewParent({ level, levels, onCreated }: { level: string; levels: string
     const n = (name ?? "").trim();
     if (!n) return;
     setBusy(true);
-    const base = slugify(n) || above;
-    const taken = new Set(((await client.list("Goal")) as { id: string }[]).map((g) => g.id));
-    let newId = base;
-    for (let i = 2; taken.has(newId); i++) newId = `${base}-${i}`;
+    const newId = newRecordId("Goal");
     await client.saveWorking("Goal", newId, stringifyYAML({ apiVersion: "cartograph/v1", kind: "Goal", metadata: { id: newId, name: n }, spec: { level: above, objective: n } }));
     await queryClient.invalidateQueries({ queryKey: ["goal-tree"] });
     setBusy(false);

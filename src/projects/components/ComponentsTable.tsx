@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowDownUp, FolderKanban, Layers, RefreshCcw, Search, Share2, Timer } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { RecordPreview } from "@/records/RecordPreview";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -83,6 +84,10 @@ export function ComponentsTable({ from, value, onChange }: { from: WorkRef; valu
     return list.sort((a, b) => Number(picked.has(key(b))) - Number(picked.has(key(a))) || by[order](a, b));
   }, [graph.data, text, show, order, picked, from.kind, from.id]);
 
+  // The row read in the preview: the one under the pointer or focus (#28).
+  const [at, setAt] = useState<string | undefined>(undefined);
+  const atNode = rows.find((n) => key(n) === at) ?? rows[0];
+
   function toggle(n: ComponentNode) {
     onChange(picked.has(key(n)) ? value.filter((c) => `${c.kind}/${c.id}` !== key(n)) : [...value, { kind: n.kind, id: n.id }]);
   }
@@ -121,6 +126,7 @@ export function ComponentsTable({ from, value, onChange }: { from: WorkRef; valu
         </ToggleGroup>
       </div>
 
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_18rem]">
       <div className="max-h-96 overflow-auto rounded-lg ring-1 ring-foreground/10">
         <Table>
           <TableHeader className="sticky top-0 bg-background">
@@ -142,7 +148,15 @@ export function ComponentsTable({ from, value, onChange }: { from: WorkRef; valu
               const reason = on ? undefined : reasons.get(key(n));
               const Icon = KIND_ICON[n.kind];
               return (
-                <TableRow key={key(n)} data-component={key(n)} data-state={on ? "selected" : undefined} className={reason ? "text-muted-foreground" : ""}>
+                <TableRow
+                  key={key(n)}
+                  data-component={key(n)}
+                  data-state={on ? "selected" : undefined}
+                  data-at={atNode && key(atNode) === key(n) ? "" : undefined}
+                  onMouseEnter={() => setAt(key(n))}
+                  onFocus={() => setAt(key(n))}
+                  className={`${reason ? "text-muted-foreground" : ""} data-[at]:bg-muted/50`}
+                >
                   <TableCell className="align-top">
                     <Checkbox checked={on} disabled={Boolean(reason)} onCheckedChange={() => toggle(n)} aria-label={cc.dependOn(n.name)} />
                   </TableCell>
@@ -184,6 +198,10 @@ export function ComponentsTable({ from, value, onChange }: { from: WorkRef; valu
             ) : null}
           </TableBody>
         </Table>
+      </div>
+      <div className="max-h-96 overflow-y-auto rounded-lg p-3 ring-1 ring-foreground/10" aria-live="polite">
+        {atNode ? <RecordPreview kind={atNode.kind} id={atNode.id} /> : null}
+      </div>
       </div>
     </div>
   );

@@ -13,18 +13,17 @@ const when = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", 
 
 /**
  * Every piece of work done for this person (engine docs/adr/0022): what
- * waits for them to review first, then what is still being worked on,
- * then what was accepted or closed.
+ * waits for them to review first, then what was accepted or closed. What
+ * is still being worked on is a draft, on its own page.
  */
 export function ChangeSetsPage() {
   const client = useClient();
   const sets = useQuery({ queryKey: ["changesets"], queryFn: () => client.changeSets(), refetchInterval: 10_000 });
   const all = sets.data ?? [];
   const waiting = all.filter((c) => c.status === "proposed");
-  const working = all.filter((c) => c.status === "open" || c.status === "merging");
   const done = all.filter((c) => c.status === "merged" || c.status === "closed");
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6" data-cartograph-region="change-sets">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6" data-cartograph-region="change-sets">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
           <GitPullRequest className="size-6 text-muted-foreground" aria-hidden="true" />
@@ -36,7 +35,7 @@ export function ChangeSetsPage() {
       {all.length > 0 ? (
         <>
           <Group title={cc.waiting} sets={waiting} empty={cc.noneWaiting} />
-          {working.length > 0 ? <Group title={cc.working} sets={working} /> : null}
+          {/* What is still being worked on is on the drafts page. */}
           {done.length > 0 ? <Group title={cc.done} sets={done} muted /> : null}
         </>
       ) : null}

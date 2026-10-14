@@ -48,7 +48,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useBlocker } from "@tanstack/react-router";
 import { stringify as stringifyYAML } from "yaml";
 
-import { aliasAfterRename } from "@/alias";
 import type { Pending } from "@/collab/draft";
 import { useClient } from "@/client/context";
 import {
@@ -150,6 +149,10 @@ interface ProjectStoreApi {
   pending: Pending[];
   setPending: (next: Pending[]) => void;
   setAlias: (v: string) => void;
+  /** metadata.labels: every other name people use for it, a key alone or
+   * a key and a value (engine TAXONOMY.md D70). */
+  labels: Record<string, string>;
+  setLabels: (next: Record<string, string>) => void;
   spec: ProjectSpec;
   updateSpec: (updater: (spec: ProjectSpec) => ProjectSpec) => void;
   /** The StakeholderMap bound to this project. Always present to read;
@@ -199,6 +202,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
   const [loadError, setLoadError] = useState(false);
   const [name, setNameState] = useState("");
   const [alias, setAliasState] = useState("");
+  const [labels, setLabelsState] = useState<Record<string, string>>({});
+  const labelsRef = useRef<Record<string, string>>({});
   const [pending, setPendingState] = useState<Pending[]>([]);
   const pendingRef = useRef<Pending[]>([]);
   const [spec, setSpec] = useState<ProjectSpec>(blankProjectSpec());
@@ -256,6 +261,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     nameRef.current = read.name;
     setAliasState(read.alias);
     aliasRef.current = read.alias;
+    setLabelsState(read.labels);
+    labelsRef.current = read.labels;
     setPendingState(read.pending);
     pendingRef.current = read.pending;
   }, []);
@@ -291,6 +298,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         let loadedSpec: ProjectSpec | undefined;
         let loadedName = "";
         let loadedAlias = "";
+        let loadedLabels: Record<string, string> = {};
         let loadedPending: Pending[] = [];
         let loadedVersion = 0;
 
@@ -309,6 +317,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
           loadedSpec = read.spec;
           loadedName = read.name;
           loadedAlias = read.alias;
+          loadedLabels = read.labels;
           loadedPending = read.pending;
           loadedVersion = (manifest as unknown as { version?: { number: number } } | undefined)?.version?.number ?? 0;
           draftRef.current = shared;
@@ -318,6 +327,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
           loadedSpec = view.manifest.spec ?? blankProjectSpec();
           loadedName = view.manifest.metadata?.name ?? "";
           loadedAlias = view.manifest.metadata?.alias ?? "";
+          loadedLabels = (view.manifest.metadata as { labels?: Record<string, string> } | undefined)?.labels ?? {};
           loadedPending = ((view.manifest.metadata as { pending?: Pending[] } | undefined)?.pending ?? []) as Pending[];
           loadedVersion = view.version.number;
         }
@@ -334,6 +344,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
         nameRef.current = loadedName;
         setAliasState(loadedAlias);
         aliasRef.current = loadedAlias;
+        setLabelsState(loadedLabels);
+        labelsRef.current = loadedLabels;
         setPendingState(loadedPending);
         pendingRef.current = loadedPending;
         setVersion(loadedVersion);
@@ -419,6 +431,7 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
             id,
             name: nameRef.current.trim() || id,
             ...(aliasRef.current.trim() ? { alias: aliasRef.current.trim() } : {}),
+            ...(Object.keys(labelsRef.current).length ? { labels: labelsRef.current } : {}),
             ...(pendingRef.current.length ? { pending: pendingRef.current } : {}),
           },
           spec: specRef.current,
@@ -494,6 +507,20 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     [scheduleSave, share],
   );
 
+  const setLabels = useCallback(
+    (next: Record<string, string>) => {
+      setLabelsState(next);
+      labelsRef.current = next;
+      if (draftRef.current) {
+        share(draftRef.current, (e) => e.set("/metadata/labels", next));
+        return;
+      }
+      specDirty.current = true;
+      scheduleSave();
+    },
+    [scheduleSave, share],
+  );
+
   const setAlias = useCallback(
     (v: string) => {
       setAliasState(v);
@@ -524,20 +551,13 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
 
   const setName = useCallback(
     (v: string) => {
-      // The alias follows the name until somebody changes it, which is
-      // what makes it a default rather than a second thing to maintain.
-      const nextAlias = aliasAfterRename(aliasRef.current, nameRef.current, v);
-      const aliasMoved = nextAlias !== aliasRef.current;
-      if (aliasMoved) {
-        setAliasState(nextAlias);
-        aliasRef.current = nextAlias;
-      }
+      // A rename moves nothing else: other names are labels, which are
+      // the person's own (engine TAXONOMY.md D70).
       setNameState(v);
       nameRef.current = v;
       if (draftRef.current) {
         share(draftRef.current, (e) => {
           e.set("/metadata/name", v);
-          if (aliasMoved) e.set("/metadata/alias", nextAlias);
         });
         return;
       }
@@ -718,6 +738,8 @@ export function ProjectStoreProvider({ id, children }: { id: string; children: R
     setName,
     alias,
     setAlias,
+    labels,
+    setLabels,
     pending,
     setPending,
     spec,

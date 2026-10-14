@@ -53,6 +53,24 @@ describe("the HTTP adapter", () => {
     ]);
   });
 
+  // A change set gone from the server (discarded elsewhere, a server
+  // started over) is forgotten and another started, and the edit lands (#60).
+  it("starts another change set when the one in hand is gone", async () => {
+    activeChangeSet.set("gone");
+    const asked: string[] = [];
+    const fetch = async (req: Request) => {
+      const path = new URL(req.url).pathname.replace("/api/v1", "");
+      asked.push(`${req.method} ${path}`);
+      const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+      if (path.startsWith("/changesets/gone")) return json(404, { problems: [{ path: "", message: "not found: change set gone" }] });
+      if (req.method === "POST") return json(200, { id: "cs2" });
+      return new Response(null, { status: 204 });
+    };
+    await httpClient({ baseUrl: "http://engine/api/v1", fetch }).saveVersion("Gap", "g1", { kind: "Gap" }, "r");
+    expect(asked).toEqual(["PUT /changesets/gone/items/Gap/g1", "GET /changesets/gone", "POST /changesets", "PUT /changesets/cs2/items/Gap/g1"]);
+    expect(activeChangeSet.get()).toBe("cs2");
+  });
+
   it("saves into the change set, never a version, from text or from an object", async () => {
     activeChangeSet.set("cs1");
     const text = wire(204);

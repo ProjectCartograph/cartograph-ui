@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { newRecordId } from "@/lib/recordId";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { stringify } from "yaml";
 import { ArrowRight, Hourglass, Plus } from "lucide-react";
@@ -7,12 +8,13 @@ import { Link } from "@tanstack/react-router";
 import { Suggested } from "@/components/relevance";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
+import { Help } from "@/components/guidance";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { copy } from "@/copy";
 import { useClient } from "@/client/context";
-import { slugify } from "@/definition/NewDefinition";
 import { useRecordDrawer } from "@/records/RecordDrawer";
 import { useProjectStore } from "@/projects/store";
 import { NEW_OPERATION_ID } from "@/projects/types";
@@ -54,15 +56,12 @@ export function LandsInField({ resolve }: { resolve?: string }) {
   const client = useClient();
   const queryClient = useQueryClient();
   const define = useMutation({
-    mutationFn: async (name: string) => {
-      const taken = new Set((data?.options ?? []).map((o) => o.value));
-      const base = slugify(name) || "service";
-      let id = base;
-      for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
+    mutationFn: async ({ name, purpose }: { name: string; purpose?: string }) => {
+      const id = newRecordId("Operation");
       await client.saveWorking(
         "Operation",
         id,
-        stringify({ apiVersion: "cartograph/v1", kind: "Operation", metadata: { id, name }, spec: { status: "planned", ...(store.spec.team ? { team: store.spec.team } : {}) } }),
+        stringify({ apiVersion: "cartograph/v1", kind: "Operation", metadata: { id, name }, spec: { status: "planned", ...(purpose ? { purpose } : {}), ...(store.spec.team ? { team: store.spec.team } : {}) } }),
       );
       // Every list of services reads again, so the picker shows its name.
       await Promise.all([
@@ -82,7 +81,7 @@ export function LandsInField({ resolve }: { resolve?: string }) {
           onDefine={
             drawer
               ? () =>
-                  define.mutate(waiting.name, {
+                  define.mutate({ name: waiting.name }, {
                     onSuccess: (id) => {
                       set(id);
                       store.setPending(others);
@@ -114,8 +113,8 @@ export function LandsInField({ resolve }: { resolve?: string }) {
           open={naming}
           onOpenChange={setNaming}
           busy={define.isPending}
-          onCreate={(name) =>
-            define.mutate(name, {
+          onCreate={(name, purpose) =>
+            define.mutate({ name, purpose }, {
               onSuccess: (id) => {
                 setNaming(false);
                 set(id);
@@ -124,7 +123,9 @@ export function LandsInField({ resolve }: { resolve?: string }) {
             })
           }
         />
-        {!current && !waiting ? (
+        {/* In a walk, New service above defines it at once; holding a
+            place for it is for where nothing can be defined (#92). */}
+        {!current && !waiting && !drawer ? (
           <NotDefinedYet onAdd={(name) => store.setPending([...others, { path: OPERATION_PATH, kind: "Operation", name }])} />
         ) : null}
       </div>
@@ -218,10 +219,13 @@ function NotDefinedYet({ onAdd }: { onAdd: (name: string) => void }) {
 }
 
 /** Names a new service, added as planned. */
-function NewServiceDialog({ open, onOpenChange, busy, onCreate }: { open: boolean; onOpenChange: (o: boolean) => void; busy: boolean; onCreate: (name: string) => void }) {
+function NewServiceDialog({ open, onOpenChange, busy, onCreate }: { open: boolean; onOpenChange: (o: boolean) => void; busy: boolean; onCreate: (name: string, purpose: string) => void }) {
   const [name, setName] = useState("");
+  // A service is merged only with its purpose: asked with its name, so
+  // nothing is left on a record the walk never shows (#92).
+  const [purpose, setPurpose] = useState("");
   return (
-    <Dialog open={open} onOpenChange={(o) => (onOpenChange(o), o || setName(""))}>
+    <Dialog open={open} onOpenChange={(o) => (onOpenChange(o), o || (setName(""), setPurpose("")))}>
       <DialogContent className="sm:max-w-md" data-cartograph-region="new-service">
         <DialogHeader>
           <DialogTitle>{lc.newService}</DialogTitle>
@@ -231,15 +235,25 @@ function NewServiceDialog({ open, onOpenChange, busy, onCreate }: { open: boolea
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (name.trim()) onCreate(name.trim());
+            if (name.trim() && purpose.trim()) onCreate(name.trim(), purpose.trim());
           }}
         >
-          <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={lc.placeholderName} />
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            {lc.placeholderName}
+            <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={lc.placeholderName} data-cartograph-field="/metadata/name" />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            <span className="flex items-center gap-1">
+              {lc.purposeLabel}
+              <Help label={lc.purposeLabel} hint={lc.purposeHint} />
+            </span>
+            <Textarea rows={2} value={purpose} onChange={(e) => setPurpose(e.target.value)} aria-label={lc.purposeLabel} data-cartograph-field="/spec/purpose" />
+          </label>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {copy.projects.common.cancel}
             </Button>
-            <Button type="submit" disabled={busy || !name.trim()}>
+            <Button type="submit" disabled={busy || !name.trim() || !purpose.trim()}>
               <Plus />
               {lc.createService}
             </Button>

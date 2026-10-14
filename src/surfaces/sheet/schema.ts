@@ -1,13 +1,12 @@
 // Turns a kind's JSON Schema (as served by GET /schemas/{kind}) into the
-// column and form field definitions the Sheet renders. The schema document
-// is the raw contract file: $ref targets into common.schema.json are never
-// resolved here, since every property that needs one carries an annotation
-// next to the $ref saying what it is (x-cartograph-ref for a reference,
-// x-cartograph-enum for an enum), which is enough to classify it without
-// following the $ref.
+// column and form field definitions the Sheet renders. The engine serves
+// the schema with the definitions it uses under $defs (engine #89), so a
+// property's $ref is followed one step to read what it is; annotations
+// beside it (x-cartograph-ref, x-cartograph-enum) still say the rest.
 
 export type FieldKind =
   | "string"
+  | "vocabulary"
   | "enum"
   | "boolean"
   | "integer"
@@ -30,6 +29,8 @@ export interface FieldDef {
   maximum?: number;
   minItems?: number;
   format?: string;
+  /** The workspace vocabulary a choice is from (engine D71). */
+  vocabulary?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +45,8 @@ export const SHEET_KINDS = [
   "Segment",
   "Unit",
   "FundingSource",
+  // What a budget gives a project, kept by its holder (engine D69).
+  "Allocation",
   "Gap",
   "Assumption",
   "DataSource",
@@ -61,7 +64,9 @@ export function isSheetKind(kind: string): kind is SheetKind {
  *
  * The name is metadata.name, the Sheet's first column and the dialog's
  * first field. spec.name, which once held it a second time, is deprecated
- * (engine 2.6.0): read from an old manifest, never shown or written.
+ * (engine 2.6.0): read from an old manifest, never shown or written. So is
+ * any property the contract marks deprecated, such as a data source's dbt
+ * semantic model (engine TAXONOMY.md D64).
  */
 export function parseSpecFields(schemaDoc: JSONSchemaDoc | undefined): FieldDef[] {
   const specSchema = schemaDoc?.properties?.spec;
@@ -69,11 +74,22 @@ export function parseSpecFields(schemaDoc: JSONSchemaDoc | undefined): FieldDef[
   const properties: Record<string, JSONSchemaDoc> = specSchema.properties ?? {};
   const required: string[] = specSchema.required ?? [];
   return Object.keys(properties)
-    .filter((name) => name !== "name")
+    .filter((name) => name !== "name" && !String(properties[name]?.description ?? "").startsWith("Deprecated"))
     .map((name) => {
-      const prop = properties[name];
+      const prop = resolved(schemaDoc, properties[name]);
       return { name, required: required.includes(name), ...classify(prop) };
     });
+}
+
+/** A property with the definition it points to under it, as the engine
+ * serves a kind's schema with its definitions carried along: a cycle's
+ * first day reads as the date its Day definition says it is. The
+ * property's own words win, and its $ref stays for what it names. */
+function resolved(doc: JSONSchemaDoc, prop: JSONSchemaDoc): JSONSchemaDoc {
+  const ref = typeof prop?.$ref === "string" ? prop.$ref : "";
+  if (!ref.startsWith("#/$defs/")) return prop;
+  const def = doc.$defs?.[ref.slice("#/$defs/".length)];
+  return def && typeof def === "object" ? { ...def, ...prop } : prop;
 }
 
 function classify(prop: JSONSchemaDoc): Omit<FieldDef, "name" | "required"> {
@@ -94,6 +110,10 @@ function classify(prop: JSONSchemaDoc): Omit<FieldDef, "name" | "required"> {
   }
   if (typeof prop["x-cartograph-ref"] === "string") {
     return { kind: "ref", refKind: prop["x-cartograph-ref"] };
+  }
+  // A choice from the workspace's own words (engine TAXONOMY.md D71).
+  if (typeof prop["x-cartograph-vocabulary"] === "string") {
+    return { kind: "vocabulary", vocabulary: prop["x-cartograph-vocabulary"] };
   }
   // A reference in Cartograph's one shape (kind and id, or an outside
   // party), picked as a Resource or named as text.
@@ -129,6 +149,7 @@ function classify(prop: JSONSchemaDoc): Omit<FieldDef, "name" | "required"> {
 // no two of them collide across kinds.
 const UNIT_HINTS: Record<string, string> = {
   periodMonths: "months",
+  periodDays: "days",
   startMonth: "month of the year, 1 to 12",
   dueOffsetDays: "days",
   typicalSize: "people",

@@ -33,7 +33,11 @@ import { useReferenceOptions } from "@/surfaces/sheet/useReferenceOptions";
 import { Suggested } from "@/components/relevance";
 import { Textarea } from "@/components/ui/textarea";
 import { ReferencePicker } from "@/surfaces/sheet/ReferencePicker";
+import { LabelsEditor } from "@/components/LabelsEditor";
+import type { KPISeed } from "@/kpis/KPIAddDialog";
+import { kpiSeedOf } from "@/kpis/seed";
 import { useSectionAutosave, useProjectStore } from "../store";
+import { useProjectChecks } from "../api";
 import { ComponentsTable, dependentsOf, KIND_ICON, Marks, useComponentGraph } from "../components/ComponentsTable";
 import { RelationRow } from "../components/Relations";
 import { seg } from "../field";
@@ -229,6 +233,12 @@ export function AlignmentSection() {
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Every other name people use for it, an internal code or a
+          working name: its labels (engine TAXONOMY.md D70). */}
+      <section className="flex flex-col gap-1.5" data-cartograph-region="labels">
+        <FieldHeading label={copy.labels.label} hint={copy.labels.hint} />
+        <LabelsEditor labels={store.labels} onChange={store.setLabels} idPrefix="project-labels" />
+      </section>
       {/* What it is about, and where it sits, kept compact: one sentence,
           then a question at a time, each opening the next once answered.
           Asked first: everything suggested below is ranked against them
@@ -256,7 +266,9 @@ export function AlignmentSection() {
           <span id="project-about-count" className={`self-end text-xs tabular-nums ${(store.spec.summary.about ?? "").length >= ABOUT_MAX ? "text-warning" : "text-muted-foreground"}`}>
             {gc.aboutCount((store.spec.summary.about ?? "").length, ABOUT_MAX)}
           </span>
-          {store.spec.summary.idea ? (
+          {/* The idea as first written, where it says more than what the
+              project is about: the same words twice is noise (#90). */}
+          {store.spec.summary.idea && store.spec.summary.idea.trim() !== (store.spec.summary.about ?? "").trim() ? (
             <details className="text-sm" data-region-idea>
               <summary className="cursor-pointer text-muted-foreground">{copy.common.yourIdea}</summary>
               <Textarea
@@ -416,6 +428,7 @@ export function AlignmentSection() {
                 empty={gc.noGoalsInProgramme}
                 groupIcon={<VocabMark vocab="goalLevel" value="goal" className="size-3.5" decorative />}
                 areaIcon={<VocabMark vocab="goalLevel" value="objective" className="size-3.5" decorative />}
+                previewKind="Goal"
               />
             </div>
           ) : null}
@@ -437,6 +450,7 @@ export function AlignmentSection() {
               empty={gc.noGoalsMatch}
               groupIcon={<VocabMark vocab="goalLevel" value="goal" className="size-3.5" decorative />}
               areaIcon={<VocabMark vocab="goalLevel" value="objective" className="size-3.5" decorative />}
+              previewKind="Goal"
             />
           </div>
         </div>
@@ -470,15 +484,13 @@ export function AlignmentSection() {
 export function MeasuresSection() {
   useSectionAutosave();
   const store = useProjectStore();
+  const checks = useProjectChecks(store.id, true);
   const { data: kpis } = useKPIList();
 
   const [krDialog, setKrDialog] = useState<{ open: boolean; existing?: KeyResult }>({ open: false });
   const [addKpi, setAddKpi] = useState(false);
   const [suggestedKpi, setSuggestedKpi] = useState<string | undefined>(undefined);
 
-  // How many goals this project aligned to, from the step before: the
-  // objective editor marks an objective that names none of them.
-  const goals = store.spec.alignment?.goals ?? [];
   const objective = store.spec.objectives?.[0] ?? { objective: "", keyResults: [] };
   const keyResults = objective.keyResults ?? [];
 
@@ -513,7 +525,8 @@ export function MeasuresSection() {
         <ObjectiveEditor
           data-cartograph-field={`/spec/objectives/${seg(store.spec.objectives?.[0], 0)}/objective`}
           objective={objective.objective}
-          alignedGoals={parent ? 1 : goals.length}
+          about={store.spec.summary?.about}
+          aim={checks.data?.items.find((i) => i.id === "goals-objective-aim")}
           onChange={(next) => updateObjective({ objective: next })}
         />
       </Block>
@@ -610,6 +623,7 @@ export function MeasuresSection() {
       <AddKpiDialog
         key={suggestedKpi ?? "-"}
         initialKpi={suggestedKpi}
+        seed={kpiSeedOf(store.spec.objectives)}
         open={addKpi}
         taken={namedKpis.map((k) => k.kpi)}
         onOpenChange={(open) => {
@@ -632,6 +646,7 @@ export function MeasuresSection() {
 function AddKpiDialog({
   open,
   initialKpi,
+  seed,
   taken,
   onOpenChange,
   onSave,
@@ -641,6 +656,8 @@ function AddKpiDialog({
   initialKpi?: string;
   /** Already named by this project, so it is not offered twice. */
   taken: string[];
+  /** For a new indicator: what the objective's key result already says. */
+  seed?: KPISeed;
   onOpenChange: (open: boolean) => void;
   onSave: (kpi: string, reason: string) => void;
 }) {
@@ -673,6 +690,7 @@ function AddKpiDialog({
             <ReferencePicker
               data-cartograph-field="/spec/kpis/-/kpi"
               refKind="KPI"
+              kpiSeed={seed}
               value={kpi}
               onChange={(v) => setKpi(v ?? undefined)}
               placeholder={gc.kpiPlaceholder}

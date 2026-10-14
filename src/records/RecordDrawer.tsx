@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { focusField } from "@/components/focusField";
 import { ArrowLeft, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,12 @@ const BLANK = { Gap: blankGapSpec, KPI: blankKPISpec, Operation: blankOperationS
 export function RecordDrawerProvider({ children }: { children: ReactNode }) {
   const [stack, setStack] = useState<Opened[]>([]);
   const open = useCallback((kind: DrawerKind, id: string, fix?: string) => setStack((s) => [...s, { kind, id, fix }]), []);
+  // Opened for one field: the cursor goes to it, so what was asked is
+  // what is answered (#91: the whole gap opened for who it affects).
+  const top0 = stack[stack.length - 1];
+  useEffect(() => {
+    if (top0 && top0.kind !== "Goal" && top0.fix?.startsWith("/")) focusField(top0.fix);
+  }, [top0]);
   const api = useMemo(() => ({ open }), [open]);
   const top = stack[stack.length - 1];
   return (

@@ -3,6 +3,7 @@
 // risks raised where they bear, and a risk row that places itself.
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, type ReactNode } from "react";
 
@@ -109,5 +110,24 @@ describe("a risk row", () => {
     rerender(<AffectsEditor risk={risk} index={0} items={{}} onChange={(r) => (risk = r)} />);
     expect(screen.getByRole("button", { name: tc.affectsRemove(tc.sides.schedule) })).toHaveAttribute("data-cartograph-field", "/spec/risks/{board}/affects");
     expect(screen.getByRole("combobox", { name: tc.spendsLabel })).toHaveAttribute("data-cartograph-field", "/spec/risks/{board}/spends");
+  });
+});
+
+// A risk that moves several sides is raised once and linked to each
+// other side, not typed again; taking it off one side leaves it on the
+// rest.
+describe("a risk linked to another side", () => {
+  it("is placed on the side it is linked to, and taken off it alone", async () => {
+    const user = userEvent.setup();
+    mount({ risks: [{ id: "forms", description: "Forms run short", type: "risk", affects: [{ constraint: "scope", impact: "medium" }] }] }, <SideRisks side="schedule" />);
+    await user.click(await screen.findByRole("button", { name: tc.hereAdd(tc.sides.schedule) }));
+    await user.click(screen.getByRole("combobox", { name: tc.linkLabel(tc.sides.schedule) }));
+    await user.click(await screen.findByRole("option", { name: /Forms run short/ }));
+    await user.click(screen.getByRole("button", { name: tc.linkShort }));
+    expect(spec.risks).toHaveLength(1);
+    expect(spec.risks![0].affects?.map((a) => a.constraint)).toEqual(["scope", "schedule"]);
+
+    await user.click(await screen.findByRole("button", { name: tc.unlinkRisk("Forms run short", tc.sides.schedule) }));
+    expect(spec.risks![0].affects?.map((a) => a.constraint)).toEqual(["scope"]);
   });
 });

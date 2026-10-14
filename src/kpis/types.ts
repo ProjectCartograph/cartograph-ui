@@ -71,7 +71,21 @@ export interface KPIDefinitionSpec {
 export interface KPIMeasure {
   source: string;
   agg: MeasureAgg;
+  /** For an analyst: the column added up. */
   expr?: string;
+  /** What is counted or added up, in the definer's words (engine
+   * TAXONOMY.md D63). */
+  counts?: string;
+}
+
+export const WHERE_OPS = ["is", "isNot", "above", "below", "atLeast", "atMost", "oneOf"] as const;
+export type WhereOp = (typeof WHERE_OPS)[number];
+
+/** A condition built from named parts: which rows count. */
+export interface KPIWhere {
+  input: string;
+  op: WhereOp;
+  value: string;
 }
 
 export const MEASURE_AGGS = ["count", "sum", "count_distinct", "average", "min", "max", "median", "sum_boolean"] as const;
@@ -80,8 +94,19 @@ export type MeasureAgg = (typeof MEASURE_AGGS)[number];
 export const METRIC_TYPES = ["simple", "ratio", "cumulative", "derived"] as const;
 export type MetricType = (typeof METRIC_TYPES)[number];
 
+/** One of a data source's metrics, by the source and its id (engine
+ * TAXONOMY.md D64). */
+export interface SourceMetricRef {
+  dataSource: string;
+  metric: string;
+}
+
 export interface KPIMetric {
   type: MetricType;
+  /** The source metric the number is, or for a share what is counted. */
+  of?: SourceMetricRef;
+  /** For a share: the source metric it is out of. */
+  outOf?: SourceMetricRef;
   measure?: KPIMeasure;
   numerator?: KPIMeasure;
   denominator?: KPIMeasure;
@@ -89,6 +114,7 @@ export interface KPIMetric {
   expr?: string;
   uses?: string[];
   filter?: string;
+  where?: KPIWhere[];
 }
 
 export function blankKPISpec(): KPIDefinitionSpec {

@@ -1,5 +1,8 @@
-import { ArrowDownToLine, ArrowUpFromLine, Plus, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Plus, Target, X } from "lucide-react";
 
+import { useManifestName } from "@/api/names";
+
+import { VocabularyChoice } from "@/components/Vocabulary";
 import { Suggested } from "@/components/relevance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,6 +96,37 @@ function EnumSelect<T extends string>({
   );
 }
 
+/** The sources the project's key results are measured from, each with
+ * the metrics read from it. */
+function measuredFrom(objectives: readonly { keyResults?: readonly { metric?: string; source?: string }[] }[]): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const o of objectives) {
+    for (const kr of o.keyResults ?? []) {
+      if (!kr.source) continue;
+      out.set(kr.source, [...(out.get(kr.source) ?? []), kr.metric ?? ""].filter(Boolean));
+    }
+  }
+  return out;
+}
+
+/** A source read because a key result is measured from it: said here as
+ * it is, with a way to say how it arrives and whether it holds personal
+ * data, which adds it to the list. */
+function MeasuredSource({ source, metrics, onDetail }: { source: string; metrics: string[]; onDetail: () => void }) {
+  const { data: name } = useManifestName("DataSource", source);
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm" data-cartograph-region={`data-measured-${source}`}>
+      <Target className="size-4 text-muted-foreground" aria-hidden />
+      <span className="font-medium">{name ?? source}</span>
+      <span className="text-muted-foreground">{dc.measures(metrics)}</span>
+      <Button type="button" variant="ghost" size="sm" className="ml-auto" onClick={onDetail} aria-label={dc.detailMeasured(name ?? source)} title={dc.detailMeasured(name ?? source)}>
+        <Plus />
+        {dc.detailShort}
+      </Button>
+    </div>
+  );
+}
+
 /**
  * How this project interacts with data, and how it changes it (Programme
  * Lead, 2026-09-27). Two halves, and they are not mirror images:
@@ -113,6 +147,10 @@ export function DataSection() {
   const store = useProjectStore();
   const consumes = store.spec.data?.consumes ?? [];
   const produces = store.spec.data?.produces ?? [];
+  // What the key results are measured from is read by the project too
+  // (engine lineage): shown here as it is, not copied into the list.
+  const measured = measuredFrom(store.spec.objectives ?? []);
+  const measuredOnly = [...measured.keys()].filter((s) => !consumes.some((c) => c.source === s));
 
   function updateConsumes(next: DataConsumeItem[]) {
     store.updateSpec((s) => ({ ...s, data: { ...s.data, consumes: next } }));
@@ -132,12 +170,14 @@ export function DataSection() {
       <LineageGraph
         project={store.id}
         name={store.name}
-        uses={consumes.map((c) => c.source).filter(Boolean)}
+        uses={[...consumes.map((c) => c.source).filter(Boolean), ...measuredOnly]}
         produces={produces.map((p) => p.sink).filter(Boolean)}
         onAddUse={() => updateConsumes([...consumes, { source: "", purpose: "" }])}
         onAddOutput={() => updateProduces([...produces, { output: "recordsInExistingSource", sink: "", purpose: "", personalData: "none" }])}
       />
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      {/* One above the other: the lineage above already sets them side
+          by side, and each needs the width to show what it names (#89). */}
+      <div className="grid grid-cols-1 gap-8">
       <div className="flex flex-col gap-3" data-cartograph-region="data-uses">
         <div className="flex items-center gap-1">
           <Label className="flex items-center gap-2">
@@ -152,10 +192,18 @@ export function DataSection() {
         <Suggested
           kind="DataSource"
           selected={[]}
-          exclude={(m) => consumes.some((c) => c.source === m.id) || produces.some((p) => p.sink === m.id)}
+          exclude={(m) => consumes.some((c) => c.source === m.id) || produces.some((p) => p.sink === m.id) || measured.has(m.id)}
           onPick={(id) => updateConsumes([...consumes, { source: id, purpose: "" }])}
         />
-        {consumes.length === 0 ? <p className="text-sm text-muted-foreground">{dc.usesEmpty}</p> : null}
+        {measuredOnly.map((source) => (
+          <MeasuredSource
+            key={source}
+            source={source}
+            metrics={measured.get(source) ?? []}
+            onDetail={() => updateConsumes([...consumes, { source, purpose: dc.measuresPurpose(measured.get(source) ?? []) }])}
+          />
+        ))}
+        {consumes.length === 0 && measuredOnly.length === 0 ? <p className="text-sm text-muted-foreground">{dc.usesEmpty}</p> : null}
         {consumes.map((c, idx) => (
           <Row key={idx} region={`data-use-${idx}`} onRemove={() => updateConsumes(consumes.filter((_, i) => i !== idx))}>
             <Field label={dc.sourceLabel}>
@@ -169,6 +217,12 @@ export function DataSection() {
                 addLabel={dc.addSourceToRegister}
               />
             </Field>
+            {measured.has(c.source) ? (
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-slot="measured">
+                <Target className="size-3.5" aria-hidden />
+                {dc.alsoMeasures(measured.get(c.source) ?? [])}
+              </p>
+            ) : null}
             <Field label={dc.usePurposeLabel}>
               <Input
                 data-cartograph-field={`/spec/data/consumes/${idx}/purpose`}
@@ -178,7 +232,7 @@ export function DataSection() {
                 aria-label={dc.usePurposeLabel}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Field label={dc.handoffLabel}>
                 <EnumSelect
                   data-cartograph-field={`/spec/data/consumes/${idx}/handoff`}
@@ -260,15 +314,15 @@ export function DataSection() {
                 aria-label={dc.producePurposeLabel}
               />
             </Field>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Field label={dc.refreshLabel}>
-                <EnumSelect
-                  data-cartograph-field={`/spec/data/produces/${idx}/refresh`}
-                  value={p.refresh ?? ""}
+                {/* The workspace's own words for how often (engine D71). */}
+                <VocabularyChoice
+                  vocabulary="refresh"
+                  field={`/spec/data/produces/${idx}/refresh`}
+                  value={p.refresh}
                   onChange={(v) => patchProduce(idx, { refresh: v as DataProduceItem["refresh"] })}
                   label={dc.refreshLabel}
-                  vocab="refresh"
-                  words={dc.refresh}
                 />
               </Field>
               <Field label={dc.personalDataLabel}>

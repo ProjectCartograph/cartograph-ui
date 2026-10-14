@@ -30,6 +30,12 @@ export type DMAIC = Schemas["DMAIC"];
 /** A project's triple constraint: each side's stance, risks and exposure
  * (engine TAXONOMY.md D60). */
 export type TripleConstraint = Schemas["TripleConstraint"];
+export type Comment = Schemas["Comment"];
+export type CommentDraft = Schemas["CommentDraft"];
+export type Mention = Schemas["Mention"];
+export type Mentionable = Schemas["Mentionable"];
+export type ProjectRound = Schemas["ProjectRound"];
+export type RoundTask = Schemas["RoundTask"];
 export type ConstraintSide = Schemas["ConstraintSide"];
 export type ControlChart = Schemas["ControlChart"];
 export type LineageNode = Schemas["LineageNode"];
@@ -50,6 +56,9 @@ export type OrderStage = Schemas["OrderStage"];
 export type GlossaryEntry = Schemas["GlossaryEntry"];
 export type Understanding = Schemas["Understanding"];
 export type Match = Schemas["Match"];
+/** What a data source metric's aggregation reads as, or why it does not
+ * (engine TAXONOMY.md D64). */
+export type AggregationReading = Schemas["AggregationReading"];
 export type Relevance = Schemas["Relevance"];
 export type IdeaReading = Schemas["IdeaReading"];
 export type DecisionModel = Schemas["DecisionModel"];
@@ -396,6 +405,11 @@ export interface Client {
   decisionModel(): Promise<DecisionModel>;
   /** The existing records of a kind that say what a text says. */
   match(kind: string, text: string, level?: string): Promise<Match[]>;
+  /** The styling of what a charter's sections hold (diagrams, the
+   * triangle, chips), reading the charter's colour variables. */
+  charterPartsStyle(): Promise<string>;
+  /** What a data source metric's aggregation reads as, or why not. */
+  readAggregation(text: string): Promise<AggregationReading>;
   /** Which part of a gap each piece of work addresses. */
   gapCoverage(id: string): Promise<GapCoverage>;
   /** A reporting cycle's periods that overlap two months (YYYY-MM), as
@@ -489,6 +503,19 @@ export interface Client {
   dmaic(project: string): Promise<DMAIC>;
   /** A project's triple constraint, as the engine weighs it (D60). */
   constraints(project: string): Promise<TripleConstraint>;
+  /** A record's comments, oldest first (engine TAXONOMY.md D72). */
+  comments(kind: string, id: string): Promise<Comment[]>;
+  /** Comment on a record, beside a part of it. */
+  addComment(kind: string, id: string, draft: CommentDraft): Promise<Comment>;
+  /** Resolve or reopen the thread a comment starts. */
+  resolveComment(comment: string, resolved: boolean): Promise<Comment>;
+  /** Who a comment can ask, by what is typed. */
+  mentionables(q: string): Promise<Mentionable[]>;
+  /** The comments that ask the caller, newest first. */
+  myMentions(): Promise<Comment[]>;
+  /** What a project's walk can decide now, in the order an agent is
+   * asked it (engine docs/adr/0032). */
+  round(project: string): Promise<ProjectRound>;
   /** A KPI's readings as a control chart, with its capability. */
   controlChart(kpi: string): Promise<ControlChart>;
   /** The KPIs as a semantic layer in a syntax, dbt's by default (engine

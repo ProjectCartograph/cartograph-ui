@@ -1,6 +1,7 @@
 import { CheckCheck, FileSignature, History, ListChecks, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 
+import { Help } from "@/components/guidance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,11 +33,16 @@ function nextId(prefix: string, taken: { id: string }[]) {
  */
 export function ApprovalSection() {
   useSectionAutosave();
+  const store = useProjectStore();
+  // What has happened to the project starts with its signature: before
+  // that there is nothing to record, and defining it never asks
+  // (cartograph-engine#80).
+  const recording = (store.spec.events?.length ?? 0) > 0;
   return (
     <div className="flex flex-col gap-8">
       <Conditions />
       <SignOffs />
-      <Record />
+      {recording ? <Record /> : null}
     </div>
   );
 }
@@ -169,109 +175,102 @@ export function SignOffs({ stage }: { stage?: SignOff["stage"] } = {}) {
     <section className="flex flex-col gap-3" data-cartograph-field="/spec/signOffs">
       <Heading icon={FileSignature} title={ac.signOff} hint={stage ? ac.signOffStageHint : ac.signOffHint} />
       {list.some((so) => !stage || so.stage === stage) ? (
-        <div className="overflow-x-auto rounded-xl ring-1 ring-foreground/10">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
-              <tr>
-                <th className="p-2 font-medium">{ac.stage}</th>
-                <th className="p-2 font-medium">{ac.line}</th>
-                <th className="p-2 font-medium">{ac.role}</th>
-                <th className="p-2 font-medium">{ac.signed}</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((so, i) => {
-                if (stage && so.stage !== stage) return null;
-                const signed = last("signOffs", so.id);
-                return (
-                  <tr key={so.id} className="border-t align-top" data-signoff={so.id}>
-                    <td className="p-2">
-                      <Select value={so.stage} onValueChange={(v) => patch(i, { stage: v as SignOff["stage"] })}>
-                        <SelectTrigger className="h-8 w-32" aria-label={ac.stage}>
+        // A line each, its parts wrapping to the width there is, so a
+        // phone shows the whole line rather than a table to scroll (#88).
+        <ul className="flex flex-col gap-2 text-sm">
+          {list.map((so, i) => {
+            if (stage && so.stage !== stage) return null;
+            const signed = last("signOffs", so.id);
+            const at = `/spec/signOffs/${i}`;
+            return (
+              <li key={so.id} className="flex flex-wrap items-end gap-2 rounded-xl p-2 ring-1 ring-foreground/10" data-signoff={so.id}>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">{ac.stage}</span>
+                  <Select value={so.stage} onValueChange={(v) => patch(i, { stage: v as SignOff["stage"] })}>
+                    <SelectTrigger className="h-8 w-32" aria-label={ac.stage} data-cartograph-field={`${at}/stage`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STAGES.map((st) => (
+                        <SelectItem key={st} value={st}>
+                          {ac.stages[st]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    {ac.line}
+                    <Help label={ac.line} hint={ac.lineHint} examples={ac.lineExamples} />
+                  </span>
+                  <Input
+                    className="h-8 w-40"
+                    value={so.label ?? ""}
+                    onChange={(e) => patch(i, { label: e.target.value.slice(0, 80) || undefined })}
+                    maxLength={80}
+                    aria-label={ac.line}
+                    data-cartograph-field={`${at}/label`}
+                  />
+                </div>
+                <div className="flex min-w-48 flex-1 flex-col gap-1">
+                  <span className="text-xs text-muted-foreground">{ac.role}</span>
+                  <RoleRefPicker value={so.role} options={roles} onChange={(role) => role && patch(i, { role })} label={ac.role} withBodies className="w-full" data-cartograph-field={`${at}/role`} />
+                </div>
+                <div className="flex items-center gap-1">
+                  {signed ? (
+                    <span className="text-xs">
+                      {ac.decisions[signed.decision ?? "approve"]}, {signed.date}
+                      {signed.recordedBy ? (
+                        <span className="block text-muted-foreground">{signed.recordedBy}</span>
+                      ) : (
+                        <span className="block text-muted-foreground">{ac.mergeToStamp}</span>
+                      )}
+                    </span>
+                  ) : (
+                    <>
+                      <Select
+                        value={deciding[so.id] ?? "approve"}
+                        onValueChange={(v) => setDeciding({ ...deciding, [so.id]: v as (typeof DECISIONS)[number] })}
+                      >
+                        <SelectTrigger className="h-8 w-44" aria-label={ac.decision}>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {STAGES.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {ac.stages[s]}
+                          {DECISIONS.map((d) => (
+                            <SelectItem key={d} value={d}>
+                              {ac.decisions[d]}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    </td>
-                    <td className="p-2">
-                      <Input
-                        className="h-8"
-                        value={so.label ?? ""}
-                        onChange={(e) => patch(i, { label: e.target.value.slice(0, 80) || undefined })}
-                        maxLength={80}
-                        aria-label={ac.line}
-                      />
-                    </td>
-                    <td className="min-w-48 p-2">
-                      <RoleRefPicker value={so.role} options={roles} onChange={(role) => role && patch(i, { role })} label={ac.role} withBodies className="w-full" />
-                    </td>
-                    <td className="p-2">
-                      {signed ? (
-                        <span className="text-xs">
-                          {ac.decisions[signed.decision ?? "approve"]}, {signed.date}
-                          {signed.recordedBy ? (
-                            <span className="block text-muted-foreground">{signed.recordedBy}</span>
-                          ) : (
-                            <span className="block text-muted-foreground">{ac.mergeToStamp}</span>
-                          )}
-                        </span>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Select
-                            value={deciding[so.id] ?? "approve"}
-                            onValueChange={(v) => setDeciding({ ...deciding, [so.id]: v as (typeof DECISIONS)[number] })}
-                          >
-                            <SelectTrigger className="h-8 w-44" aria-label={ac.decision}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {DECISIONS.map((d) => (
-                                <SelectItem key={d} value={d}>
-                                  {ac.decisions[d]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={() =>
-                              record({ on: { local: "signOffs", id: so.id }, happened: "signed", date: today(), decision: deciding[so.id] ?? "approve" })
-                            }
-                            aria-label={ac.signAs(roleRefLabel(so.role, roles))}
-                            title={ac.signAs(roleRefLabel(so.role, roles))}
-                          >
-                            <FileSignature />
-                            {ac.sign}
-                          </Button>
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-2">
                       <Button
                         type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => set(list.filter((_, j) => j !== i))}
-                        aria-label={copy.projects.common.remove}
-                        title={copy.projects.common.remove}
+                        size="sm"
+                        onClick={() => record({ on: { local: "signOffs", id: so.id }, happened: "signed", date: today(), decision: deciding[so.id] ?? "approve" })}
+                        aria-label={ac.signAs(roleRefLabel(so.role, roles))}
+                        title={ac.signAs(roleRefLabel(so.role, roles))}
                       >
-                        <Trash2 />
+                        <FileSignature />
+                        {ac.sign}
                       </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => set(list.filter((_, j) => j !== i))}
+                    aria-label={copy.projects.common.remove}
+                    title={copy.projects.common.remove}
+                  >
+                    <Trash2 />
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       ) : null}
       <Button
         type="button"
