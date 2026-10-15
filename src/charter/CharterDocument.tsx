@@ -70,6 +70,10 @@ export function CharterDocument({
   const [opened, setOpened] = useState<Opened | null>(null);
   // Where the cursor goes once a new item shows: the list it was added to.
   const focusNext = useRef<string | null>(null);
+  // The item Add just made, until something in it is kept: Escape, or
+  // leaving it with nothing written, takes it back whole
+  // (cartograph-ui#125).
+  const fresh = useRef<string | null>(null);
   const sections = useRef<(HTMLElement | null)[]>([]);
   useEffect(() => {
     if (!step || !parts.data) return;
@@ -87,16 +91,21 @@ export function CharterDocument({
     return was.html !== part.html ? "changed" : undefined;
   };
   const act: Actions = {
-    save: (path, text) => update((s) => setAt(s, path, text.trim() === "" ? undefined : text)),
+    save: (path, text) => {
+      if (fresh.current && under(path, fresh.current) && text.trim() !== "") fresh.current = null;
+      update((s) => setAt(s, path, text.trim() === "" ? undefined : text));
+    },
     open: setOpened,
     add: (path) => {
       const list = getAt(spec, path);
       focusNext.current = `${path}/${Array.isArray(list) ? list.length : 0}`;
+      fresh.current = focusNext.current;
       update((s) => appendAt(s, path, newItemAt(schema as never, path, getAt(s, path))));
     },
     remove: (path) => update((s) => removeAt(s, path)),
     editorOf: (path) => editorAt(schema as never, path),
     focusNext,
+    fresh,
   };
 
   return (
@@ -141,6 +150,12 @@ interface Actions {
   remove: (path: string) => void;
   editorOf: (path: string) => Editor;
   focusNext: React.MutableRefObject<string | null>;
+  fresh: React.MutableRefObject<string | null>;
+}
+
+/** Whether path is at or inside the item at item. */
+function under(path: string, item: string): boolean {
+  return path === item || path.startsWith(`${item}/`);
 }
 
 /** The label a value is printed under: its term in a list of facts, or
@@ -313,6 +328,14 @@ function Section({ part, proposed, route, refSection, act }: { part: CharterPart
         onBlur={(e) => {
           const el = (e.target as HTMLElement).closest<HTMLElement>("[data-field][contenteditable]");
           if (el) flush(el);
+          // Left with nothing written, a new item is taken back, unless the
+          // cursor only moved to another of its own fields.
+          const item = actRef.current.fresh.current;
+          const next = (e.relatedTarget as HTMLElement | null)?.dataset?.field;
+          if (el && item && under(el.dataset.field!, item) && !(next && under(next, item))) {
+            actRef.current.fresh.current = null;
+            actRef.current.remove(item);
+          }
           // The cursor has left: what changed meanwhile is drawn now.
           requestAnimationFrame(() => {
             const root = body.current;
@@ -330,6 +353,8 @@ function Section({ part, proposed, route, refSection, act }: { part: CharterPart
               el.blur();
             } else if (e.key === "Escape") {
               el.textContent = el.dataset.was ?? "";
+              // An item just added, nothing in it kept: as if Add had not
+              // been pressed. The blur that follows takes it back.
               el.blur();
             }
             return;
