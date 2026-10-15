@@ -34,6 +34,29 @@ done
 # A name for the host user inside, which some tools ask for.
 "${compose[@]}" exec -T --user 0 dev sh -c "grep -q '^[^:]*:[^:]*:$CARTOGRAPH_UID:' /etc/passwd || echo 'dev:x:$CARTOGRAPH_UID:$CARTOGRAPH_GID:dev:/home/dev:/bin/sh' >> /etc/passwd"
 
+# Whether the repository changed since it was last synced (#108, in
+# cartograph-engine): a native find on the host, fast where the share
+# into the container is slow (Docker Desktop on a Mac). A new token when
+# something is newer than the stamp, else the last; the container syncs
+# only when its copy holds another, so a sync cut short is redone.
+cache=${XDG_CACHE_HOME:-$HOME/.cache}/cartograph-dev
+mkdir -p "$cache"
+stamp="$cache/cartograph-ui.stamp" next="$cache/cartograph-ui.next"
+printf '%s' "$(date +%s)-$$-$RANDOM" > "$next"
+if [ -f "$stamp" ] && [ -z "$(find "$root" \( -name .jj -o -name node_modules -o -name dist -o -name result \) -prune -o -newer "$stamp" -print 2>/dev/null | head -n 1)" ]; then
+  rm -f "$next"
+else
+  mv "$next" "$stamp"
+fi
+token=$(cat "$stamp")
+
+# On an arm64 host the container is aarch64-linux; Nix builds x86_64-linux
+# there only when told the platform is there (Rosetta or binfmt runs it).
+nixconf=""
+case "$(uname -m)" in
+  arm64 | aarch64) nixconf="extra-platforms = x86_64-linux" ;;
+esac
+
 # The same directory in the copy, when the caller is in the repository.
 here=$(pwd)
 case "$here" in
@@ -44,13 +67,16 @@ tty=(-T)
 [ -t 0 ] && [ -t 1 ] && tty=(-it)
 
 [ $# -gt 0 ] || set -- bash
-exec "${compose[@]}" exec "${tty[@]}" -w /workspace dev sh -c '
+exec "${compose[@]}" exec "${tty[@]}" -e CARTOGRAPH_SYNC="$token" -e NIX_CONFIG="$nixconf" -w /workspace dev sh -c '
   set -e
-  # The repository, as it stands on the host, into the copy. What the
-  # copy installed or built (node_modules, dist) stays.
-  nix develop /src/cartograph-ui --command rsync -a --delete \
-    --exclude /.jj --exclude /node_modules --exclude /dist --exclude /result \
-    /src/cartograph-ui/ /workspace/cartograph-ui/
+  # The repository, as it stands on the host, into the copy, when it
+  # changed. What the copy installed or built (node_modules, dist) stays.
+  if [ "$(cat /workspace/.synced 2>/dev/null)" != "$CARTOGRAPH_SYNC" ]; then
+    nix develop /src/cartograph-ui --command rsync -a --delete \
+      --exclude /.jj --exclude /node_modules --exclude /dist --exclude /result \
+      /src/cartograph-ui/ /workspace/cartograph-ui/
+    printf %s "$CARTOGRAPH_SYNC" > /workspace/.synced
+  fi
   cd "'"$wd"'" 2>/dev/null || cd /workspace/cartograph-ui
   exec nix develop /workspace/cartograph-ui --command "$@"
 ' dev "$@"
