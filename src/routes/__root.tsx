@@ -51,7 +51,7 @@ import { useManifestName } from "@/api/names";
 import { holds, useSession } from "@/access/access";
 import { useClient } from "@/client/context";
 import { useQuery } from "@tanstack/react-query";
-import { NotListed } from "@/access/NotListed";
+import { NoRole, NotListed } from "@/access/NotListed";
 import { useSettings } from "@/surfaces/goals/api";
 import { useLeftToDo } from "@/surfaces/home/leftToDo";
 import { TourProvider } from "@/tour/TourProvider";
@@ -437,6 +437,9 @@ function RootLayout() {
   // Signed in through the proxy, but not on the access list: nothing here
   // is theirs to see, and the engine would refuse every request.
   const unlisted = session?.access && !session.access.listed;
+  // Listed, but no role: every list would be refused and the workspace
+  // look empty (engine#109), so the page says why instead.
+  const roleless = !!session?.access?.listed && (session.access.roles ?? []).length === 0;
   const [sidebarOpen, setSidebarOpen] = useState(readSidebarOpenCookie);
   const { screen, route } = usePresenceScreen();
   const purpose = useSettings().data?.purpose;
@@ -669,7 +672,7 @@ function RootLayout() {
             </div>
           </header>
           <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-6" data-cartograph-region="main" data-working-in={workingIn ? "" : undefined}>
-            {unlisted ? <NotListed email={session?.email} /> : <Outlet />}
+            {unlisted ? <NotListed email={session?.email} /> : roleless ? <NoRole email={session?.email} /> : <Outlet />}
           </main>
         </SidebarInset>
       </TourProvider>

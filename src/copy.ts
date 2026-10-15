@@ -201,6 +201,9 @@ export const copy = {
     loadFailed: "The access list could not be read.",
     readOnly: "You can read this. Your access does not let you change it.",
     notYourTeam: "You can read this. It belongs to a team you are not part of.",
+    noRoleTitle: "You hold no role here",
+    noRole: (email?: string) =>
+      `You are signed in${email ? ` as ${email}` : ""} and listed, but none of your directory groups gives you a role, so nothing here can be shown to you. An administrator can give you a role on the Access page, or map one of your groups to a role.`,
     notListedTitle: "You are not on the access list",
     notListed: (email?: string) =>
       email
