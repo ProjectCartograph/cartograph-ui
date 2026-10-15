@@ -13,6 +13,9 @@ export const copy = {
   // The home page: one question, read against the taxonomy and the record
   // (engine docs/adr/0023).
   home: {
+    // The welcome walk, put off and not finished (#128).
+    resumeSetup: "Resume setting up",
+    resumeSetupLabel: "Resume setting up the workspace: name the organisation and its strategy",
     recent: {
       title: "Opened recently",
       justNow: "just now",
@@ -136,6 +139,8 @@ export const copy = {
     walking: (name: string, walk: "workspace" | "project") => `${name} is ${walk === "workspace" ? "opening the workspace" : "starting a project"}`,
     onSection: (names: string[]) => `${names.join(", ")} ${names.length === 1 ? "is" : "are"} here`,
     peopleHere: "People on this screen",
+    // A person on the same record, working in another change set (#129).
+    inOtherChangeSet: (name: string) => `${name}, in another change set`,
     someone: "Someone",
     you: "You",
     conflictsTitle: "Set by two people at once",
@@ -196,6 +201,9 @@ export const copy = {
     loadFailed: "The access list could not be read.",
     readOnly: "You can read this. Your access does not let you change it.",
     notYourTeam: "You can read this. It belongs to a team you are not part of.",
+    noRoleTitle: "You hold no role here",
+    noRole: (email?: string) =>
+      `You are signed in${email ? ` as ${email}` : ""} and listed, but none of your directory groups gives you a role, so nothing here can be shown to you. An administrator can give you a role on the Access page, or map one of your groups to a role.`,
     notListedTitle: "You are not on the access list",
     notListed: (email?: string) =>
       email

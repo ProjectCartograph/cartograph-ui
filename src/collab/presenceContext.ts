@@ -14,6 +14,9 @@ export interface PresenceApi {
   walking?: Peer[];
   /** The screen's draft, when it has one: carets are cursors into it. */
   draft?: SharedDraft;
+  /** The change set this window works in: a caret is placed only for a
+   * peer in the same one, the draft being that change set's. */
+  changeSet?: string;
   publish: (state: PresenceState) => void;
 }
 

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { newRecordId } from "@/lib/recordId";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -19,7 +19,7 @@ import { levelName } from "@/surfaces/goals/levels";
 import { createGoal, saveGoalFields } from "@/surfaces/goals/mutations";
 import type { GoalLevel } from "@/surfaces/goals/types";
 import { OnboardingMap } from "./OnboardingMap";
-import { markOnboarded } from "./firstRun";
+import { markOnboarded, useWorkspaceSetUp } from "./firstRun";
 
 const oc = copy.onboarding;
 
@@ -53,6 +53,16 @@ export function Onboarding() {
   const client = useClient();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // A workspace already set up has nothing to open: /welcome goes Home
+  // (#127). Decided once, on arrival: the walk itself names the
+  // workspace and its goals, and must not be sent away as it does.
+  const setUp = useWorkspaceSetUp();
+  const decided = useRef(false);
+  useEffect(() => {
+    if (decided.current || setUp === undefined) return;
+    decided.current = true;
+    if (setUp) void navigate({ to: "/", replace: true });
+  }, [setUp, navigate]);
   const levels = useSettings().data?.goalLevels;
   const word = (l: GoalLevel) => levelName(l, levels);
   const purposeGuide = useGuide("Purpose");

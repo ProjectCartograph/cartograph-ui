@@ -113,3 +113,26 @@ describe("opening a new workspace", () => {
     expect(navigate).toHaveBeenCalledWith({ to: "/" });
   });
 });
+
+// A workspace already set up has no walk to open: /welcome goes Home
+// (#127).
+describe("the welcome walk on a set-up workspace", () => {
+  it("sends the person Home", async () => {
+    const client = fakeClient({
+      settings: async () => ({ goalLevels: ["Goal", "Objective", "Outcome"], purpose: { organisation: "Riverside Growers" } }) as never,
+      goalTree: async () => ({ levels: [], nodes: [{ id: "g1", name: "Goal", level: "goal", children: [] }], unplaced: [] }) as never,
+      get: async () => {
+        throw new Error("not found");
+      },
+      getGuide: async (kind: string, opts?: { level?: string }) => guide(kind, opts?.level),
+    });
+    render(
+      <ClientProvider client={client}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <Onboarding />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/", replace: true }));
+  });
+});

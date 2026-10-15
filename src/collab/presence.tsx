@@ -11,7 +11,7 @@ import type { Peer, PresenceChannel, PresenceScreen, SharedDraft } from "@/clien
 import { openDraft } from "./draft";
 import { useFollow } from "./follow";
 import { PresenceContext, type PresenceApi } from "./presenceContext";
-import { walkerOf } from "./walkers";
+import { aloneOn, walkerOf } from "./walkers";
 
 export type { PresenceApi };
 
@@ -96,10 +96,13 @@ export function PresenceProvider({ screen, route, children }: { screen: Presence
   // A walk is each person's own (collab/walkers): inside one, nobody is
   // drawn; those walking are shown as walking, wherever the others are.
   const walking = shown.filter((p) => !p.agent && walkerOf(p.route) !== undefined);
-  // A caret, focus or pointer points into one draft: drawn only for those
-  // in the same change set; others on the record are shown, not drawn.
-  const sameDraft = (p: Peer) => Boolean(p.agent) || (p.changeSet ?? "") === (mine ?? "");
-  const here = walkerOf(route) ? [] : shown.filter((p) => p.agent || (sameView(p.route, route) && !walkerOf(p.route) && sameDraft(p)));
+  // Everyone on the same record is drawn, whichever change set each works
+  // in (#129: two people editing one project were each listed and never
+  // drawn, every edit being in its person's own change set). Only a caret
+  // inside text is tied to one draft: it is placed for those in the same
+  // change set, and the overlay marks the field for the others.
+  // On a view of one's own (Home, drafts, a walk), nobody is drawn.
+  const here = aloneOn(route) ? [] : shown.filter((p) => p.agent || (sameView(p.route, route) && !aloneOn(p.route)));
   const hereRef = useRef(here);
   hereRef.current = here;
   const pointerSent = useRef(false);
@@ -108,10 +111,12 @@ export function PresenceProvider({ screen, route, children }: { screen: Presence
     here,
     walking,
     draft,
+    changeSet: mine,
     publish: (state) => {
-      // Inside a walk, where the person is and what they point at is
-      // theirs alone: only the route is sent, so others see them walking.
-      if (walkerOf(routeRef.current)) {
+      // Inside a walk or on a view of one's own, where the person is and
+      // what they point at is theirs alone: only the route is sent, so
+      // others see them walking or elsewhere.
+      if (aloneOn(routeRef.current)) {
         const { pointer, focus, caret, ...rest } = state as Record<string, unknown>;
         if (pointer !== undefined || focus !== undefined || caret !== undefined) {
           if (pointerSent.current) channel.current?.publish({ pointer: null, focus: null, caret: null });
