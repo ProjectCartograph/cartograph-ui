@@ -23,6 +23,13 @@ export const copy = {
       hours: (n: number) => `${n} h ago`,
       days: (n: number) => `${n} day${n === 1 ? "" : "s"} ago`,
     },
+    // What the workspace holds, each register a link to its list, so Home
+    // never reads as empty when records are there (cartograph-engine#109).
+    holds: {
+      title: "In this workspace",
+      plural: { Goal: "Goals", Project: "Projects", Programme: "Programmes", Operation: "Operations", Gap: "Gaps", KPI: "Indicators" } as Record<string, string>,
+      label: (n: number, what: string) => `${n} ${what.toLowerCase()}: open the list`,
+    },
     // What was started and not finished (surfaces/home/leftToDo).
     left: {
       title: "Pick up where you left off",
