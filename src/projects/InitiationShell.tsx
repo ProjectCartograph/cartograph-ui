@@ -10,7 +10,7 @@ import { sameView } from "@/collab/presence";
 import { usePresence } from "@/collab/presenceContext";
 import { Scrubber, type ScrubStage } from "@/components/Scrubber";
 import { Button } from "@/components/ui/button";
-import { Activity, ChevronRight, FileText, GitMerge, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
+import { Activity, CheckCircle2, ChevronDown, ChevronRight, ChevronUp, FileText, GitMerge, ListChecks, PanelRightClose, PanelRightOpen, Waypoints } from "lucide-react";
 
 
 import { FlowBack, FlowNav, FlowNext } from "@/components/walker";
@@ -36,6 +36,7 @@ import { STAGES, stageOfSection, stepsOfStage, type InitiationSection, type Proj
 import { DMAICPanel } from "@/dmaic/DMAICPanel";
 import { STAGE_ICON, STEP_ICON } from "./steps";
 import { SectionOutline } from "./SectionOutline";
+import { foldedOnArrival } from "./fold";
 import { NextToDecide } from "./NextToDecide";
 
 const pc = copy.projects;
@@ -230,6 +231,27 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
   const allSteps = stepsOfStage(stage);
   const stepwise = STEPWISE.has(stage);
   const steps = stepwise ? allSteps.filter((s) => s.section === section) : allSteps;
+  // Sections already complete when the stage opens are folded under their
+  // headings, so a long stage shows what is left (#32). Decided once per
+  // stage: one that becomes complete while written in stays open, never
+  // folded away under the cursor; the one the link opened at is never
+  // folded.
+  const checks = useProjectChecks(id, true);
+  const [folded, setFolded] = useState<{ stage: string; sections: Set<string> } | undefined>(undefined);
+  // Decided as the stage's checks first arrive, while it renders (state
+  // adjusted to what it shows, not in an effect after).
+  if (!stepwise && steps.length > 1 && checks.data && folded?.stage !== stage) {
+    setFolded({ stage, sections: foldedOnArrival(steps.map((s) => s.section), section, checks.data.items) });
+  }
+  const isFolded = (s: string) => folded?.stage === stage && folded.sections.has(s);
+  const toggleFold = (s: string) =>
+    setFolded((f) => {
+      if (!f) return f;
+      const sections = new Set(f.sections);
+      if (sections.has(s)) sections.delete(s);
+      else sections.add(s);
+      return { ...f, sections };
+    });
   // Every role the project names can be picked where a role is asked for
   // (who verifies, who owns a risk): a role is picked by its id, so one
   // named without an id is given one, once.
@@ -329,6 +351,25 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
                           </h2>
                           {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
                         </div>
+                        {isFolded(step.section) ? (
+                          <span className="flex items-center gap-1 text-xs text-success" data-section-done="">
+                            <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                            {pc.outline.done}
+                          </span>
+                        ) : null}
+                        {folded?.stage === stage && !stepwise ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            aria-expanded={!isFolded(step.section)}
+                            aria-label={isFolded(step.section) ? pc.outline.openLabel(heading) : pc.outline.foldLabel(heading)}
+                            title={isFolded(step.section) ? pc.outline.openLabel(heading) : pc.outline.foldLabel(heading)}
+                            onClick={() => toggleFold(step.section)}
+                          >
+                            {isFolded(step.section) ? <ChevronDown aria-hidden="true" /> : <ChevronUp aria-hidden="true" />}
+                            {isFolded(step.section) ? pc.outline.open : pc.outline.fold}
+                          </Button>
+                        ) : null}
                         {/* Comments on the section, beside its heading and
                             outside it, so the outline reads the heading
                             alone (engine D72). */}
@@ -342,8 +383,10 @@ export function InitiationShell({ id, section }: { id: string; section: Initiati
                         <CommentMark kind="Project" id={id} anchor={`section:${step.section}`} what={heading} />
                       </div>
                     )}
-                    {createElement(View)}
-                    <ProjectSectionNotes section={step.section} />
+                    <div hidden={isFolded(step.section)} className="flex flex-col gap-4">
+                      {createElement(View)}
+                      <ProjectSectionNotes section={step.section} />
+                    </div>
                   </section>
                 );
               })}

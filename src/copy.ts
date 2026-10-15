@@ -2981,7 +2981,14 @@ export const copy = {
     outline: {
       label: "Sections of this stage",
       onThisPage: "On this page:",
-      keys: "Alt+Right and Alt+Left move a section. Ctrl+Enter takes the next step.",
+      keys: "Alt+Right and Alt+Left move a section, Alt+Down and Alt+Up a field. Ctrl+Enter takes the next step.",
+      // A section complete when the stage opened, folded under its
+      // heading (#32).
+      done: "Complete",
+      open: "Open",
+      openLabel: (heading: string) => `Open ${heading}, which is complete`,
+      fold: "Fold",
+      foldLabel: (heading: string) => `Fold ${heading} away`,
     },
     // The seven stages of the walk (engine TAXONOMY.md D33), each named
     // for what it settles, with the sentence that says so.
