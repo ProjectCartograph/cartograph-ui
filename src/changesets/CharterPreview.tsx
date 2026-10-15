@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Component, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 
@@ -61,7 +61,13 @@ function ProjectCharter({ set, project }: { set: string; project: string }) {
   const same = diff.data.filter((p) => p.state === "same").length;
   return (
     <div className="space-y-3" data-cartograph-charter={project}>
-      {diff.data.map((p, i) => (p.state === "same" && !showSame ? null : <Part key={`${p.title}-${i}`} part={p} />))}
+      {diff.data.map((p, i) =>
+        p.state === "same" && !showSame ? null : (
+          <PartBoundary key={`${p.title}-${i}`} title={p.title}>
+            <Part part={p} />
+          </PartBoundary>
+        ),
+      )}
       {same > 0 ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>{pc.sameCount(same)}</span>
@@ -81,6 +87,24 @@ const stateRing: Record<string, string> = {
   same: "",
 };
 
+/** One part that cannot be drawn says so in its place, and the rest of
+ * the charter, and the page, still read (cartograph-ui#124). */
+class PartBoundary extends Component<{ title: string; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <article className="rounded-md border border-dashed p-3 text-sm text-muted-foreground" aria-label={this.props.title} data-part-failed="">
+        <h3 className="mb-1 font-semibold text-foreground">{this.props.title}</h3>
+        {pc.partFailed}
+      </article>
+    );
+  }
+}
+
 function Part({ part }: { part: CharterPartDiff }) {
   return (
     <article className={`rounded-md border p-3 ${stateRing[part.state] ?? ""}`} aria-label={part.title} data-part-state={part.state}>
@@ -93,7 +117,7 @@ function Part({ part }: { part: CharterPartDiff }) {
         ) : null}
       </header>
       <ul className="space-y-0.5 text-sm">
-        {part.lines.map((l, i) =>
+        {(part.lines ?? []).map((l, i) =>
           l.op === "added" ? (
             <li key={i} className="rounded bg-success/10 px-1.5 text-success" data-line-op="added">
               <ins className="no-underline" title={pc.added}>

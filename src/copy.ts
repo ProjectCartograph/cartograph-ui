@@ -433,6 +433,7 @@ export const copy = {
       added: "Added",
       removed: "Removed",
       none: "No charter to show for this project yet.",
+      partFailed: "This part could not be shown. The rest of the charter is below it.",
     },
     title: "Change sets",
     rail: "Change sets",
