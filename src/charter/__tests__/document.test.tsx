@@ -134,6 +134,83 @@ describe("the charter as a document", () => {
   });
 });
 
+// An item just added can be taken back: Escape, or leaving it with
+// nothing written, as if Add had not been pressed; once something in it
+// is kept it stays (cartograph-ui#125). The engine would draw the new
+// item's fields after Add; here they are drawn from the start.
+describe("an item just added", () => {
+  const withNew: CharterPart[] = parts.map((p) =>
+    p.title !== "Problem statement"
+      ? p
+      : {
+          ...p,
+          html: p.html.replace(
+            "<p data-add",
+            '<dl><dt>Problem</dt><dd><span data-field="/spec/summary/problems/1/problem/situation" data-empty=""></span></dd>\n' +
+              '<dt>Cause</dt><dd><span data-field="/spec/summary/problems/1/problem/cause" data-empty=""></span></dd></dl>\n<p data-add',
+          ),
+        },
+  );
+  function mountNew() {
+    render(
+      <ClientProvider client={fakeClient({ charterParts: (async () => withNew) as never })}>
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <Harness />
+        </QueryClientProvider>
+      </ClientProvider>,
+    );
+  }
+  const problems = () => (latest.summary as { problems: unknown[] }).problems;
+  const newField = () => document.querySelector<HTMLElement>('[data-field="/spec/summary/problems/1/problem/situation"]')!;
+
+  it("is taken back by Escape", async () => {
+    const user = userEvent.setup();
+    mountNew();
+    await user.click(await screen.findByRole("button", { name: dc.add("Problem") }));
+    expect(problems()).toHaveLength(2);
+    newField().focus();
+    fireEvent.keyDown(newField(), { key: "Escape" });
+    fireEvent.blur(newField());
+    await waitFor(() => expect(problems()).toHaveLength(1));
+  });
+
+  it("is taken back when left with nothing written", async () => {
+    const user = userEvent.setup();
+    mountNew();
+    await user.click(await screen.findByRole("button", { name: dc.add("Problem") }));
+    newField().focus();
+    fireEvent.blur(newField());
+    await waitFor(() => expect(problems()).toHaveLength(1));
+  });
+
+  it("stays while the cursor moves between its own fields", async () => {
+    const user = userEvent.setup();
+    mountNew();
+    await user.click(await screen.findByRole("button", { name: dc.add("Problem") }));
+    newField().focus();
+    const cause = document.querySelector<HTMLElement>('[data-field="/spec/summary/problems/1/problem/cause"]')!;
+    fireEvent.blur(newField(), { relatedTarget: cause });
+    expect(problems()).toHaveLength(2);
+  });
+
+  it("stays once something in it is kept, and Escape then only restores the field", async () => {
+    const user = userEvent.setup();
+    mountNew();
+    await user.click(await screen.findByRole("button", { name: dc.add("Problem") }));
+    newField().focus();
+    newField().textContent = "Buyers find bruising a week late";
+    fireEvent.input(newField());
+    fireEvent.blur(newField());
+    await waitFor(() => expect((problems()[1] as { problem: { situation?: string } }).problem.situation).toBe("Buyers find bruising a week late"));
+    newField().focus();
+    newField().textContent = "Something else";
+    fireEvent.keyDown(newField(), { key: "Escape" });
+    fireEvent.blur(newField());
+    expect(problems()).toHaveLength(2);
+    expect((problems()[1] as { problem: { situation?: string } }).problem.situation).toBe("Buyers find bruising a week late");
+  });
+});
+
 // A problem reads as a sentence; each part opens beside it, never typed
 // into (cartograph-engine#79).
 describe("a problem as a sentence", () => {

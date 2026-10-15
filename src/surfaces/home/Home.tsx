@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ArrowUp, CircleDot, Compass, Sparkles, Type } from "lucide-react";
+import { ArrowRight, ArrowUp, CircleDot, Compass, FolderKanban, Gauge, Layers, Map as MapIcon, Settings2, Sparkles, TriangleAlert, Type } from "lucide-react";
 
 import { useClient } from "@/client/context";
 import type { Match, Order, Understanding } from "@/client/port";
@@ -39,6 +39,8 @@ export function Home() {
   const [text, setText] = useState("");
   const read = useMutation({ mutationFn: (t: string) => client.understand(t) });
   const order = useQuery({ queryKey: ["order"], queryFn: () => client.order() });
+  // Every kind with how many records it has, for what the workspace holds.
+  const kinds = useQuery({ queryKey: ["kinds"], queryFn: () => client.kinds() });
   const next = order.data?.stages.find((s) => s.key === order.data?.next);
   // A workspace with nothing in it opens by walking its organisation and
   // strategy, once per browser (src/onboarding).
@@ -118,6 +120,8 @@ export function Home() {
           <ArrowRight className="size-4 text-muted-foreground" aria-hidden="true" />
         </Link>
       ) : null}
+      {/* What the workspace holds, so Home never looks empty over records. */}
+      {read.data || read.isPending ? null : <Holds registers={kinds.data ?? []} />}
       {/* What was started and not finished, while nothing is being asked. */}
       {read.data || read.isPending ? null : <LeftToDo />}
       {/* What this person opened last, one click away (#58). */}
@@ -125,6 +129,51 @@ export function Home() {
       {/* Someone new to a workspace others started is offered the tour. */}
       {read.data || read.isPending || isNew ? null : <TourInvite />}
     </div>
+  );
+}
+
+// The registers, in the rail's order, each with its list and the rail's
+// icon for it.
+const LISTS: { kind: string; to: string; icon: typeof MapIcon }[] = [
+  { kind: "Goal", to: "/strategy", icon: MapIcon },
+  { kind: "Project", to: "/projects", icon: FolderKanban },
+  { kind: "Programme", to: "/programmes", icon: Layers },
+  { kind: "Operation", to: "/operations", icon: Settings2 },
+  { kind: "Gap", to: "/gaps", icon: TriangleAlert },
+  { kind: "KPI", to: "/kpis", icon: Gauge },
+];
+
+/** The registers that have records, each with its count and a link to
+ * its list (cartograph-engine#109). */
+export function Holds({ registers }: { registers: { kind: string; count: number }[] }) {
+  const counts = new Map(registers.map((r) => [r.kind, r.count]));
+  const held = LISTS.filter((l) => (counts.get(l.kind) ?? 0) > 0);
+  if (held.length === 0) return null;
+  const hh = hc.holds;
+  return (
+    <nav aria-label={hh.title} className="flex flex-col items-center gap-2" data-slot="home-holds">
+      <h2 className="text-xs font-medium text-muted-foreground">{hh.title}</h2>
+      <ul className="flex flex-wrap justify-center gap-2">
+        {held.map(({ kind, to, icon: Icon }) => {
+          const n = counts.get(kind) ?? 0;
+          const what = n === 1 ? (copy.graph.kind[kind] ?? kind) : (hh.plural[kind] ?? kind);
+          return (
+            <li key={kind}>
+              <Link
+                to={to as never}
+                className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm ring-1 ring-foreground/10 transition-colors duration-150 ease-standard hover:bg-muted active:bg-muted"
+                aria-label={hh.label(n, what)}
+                title={hh.label(n, what)}
+              >
+                <Icon className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                <span className="font-medium tabular-nums">{n}</span>
+                {what}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 

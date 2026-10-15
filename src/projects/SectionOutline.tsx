@@ -65,6 +65,23 @@ function goTo(target: HTMLElement) {
   focusAfter(target);
 }
 
+/** Moves the cursor a field down or up the stage (#32): from the field it
+ * is in, or from the top of the view when it is in none. Fields in a
+ * folded section are not on the page, so they are passed by. */
+function stepField(root: HTMLElement, delta: number) {
+  const fields = Array.from(root.querySelectorAll<HTMLElement>(FIELDS)).filter((f) => !f.closest("[role=dialog], [hidden]"));
+  if (fields.length === 0) return;
+  const active = document.activeElement as HTMLElement | null;
+  let at = fields.findIndex((f) => f === active || (active && f.contains(active)));
+  if (at < 0) {
+    const firstBelow = fields.findIndex((f) => f.getBoundingClientRect().top >= 120);
+    at = delta > 0 ? (firstBelow < 0 ? fields.length : firstBelow) - 1 : firstBelow < 0 ? fields.length : firstBelow;
+  }
+  const target = fields[Math.min(fields.length - 1, Math.max(0, at + delta))];
+  target.focus({ preventScroll: true });
+  target.scrollIntoView?.({ block: "center", behavior: "smooth" });
+}
+
 function focusAfter(h: HTMLElement) {
   // A field, not the help beside a heading: what is typed next lands in it.
   const fields = Array.from(document.querySelectorAll<HTMLElement>(FIELDS));
@@ -79,6 +96,7 @@ const typing = (el: EventTarget | null) =>
  * Where a long stage goes, from the keyboard (#32): an outline of its
  * headings, kept in view, each a jump; Alt+Right and Alt+Left (or Alt+L
  * and Alt+H, or J and K when not typing) move a section and put the cursor in its first field;
+ * Alt+Down and Alt+Up (or Alt+J and Alt+K) move a field;
  * Ctrl+Enter takes the next step. Reading one section and writing in
  * another no longer means reaching for the mouse to scroll.
  */
@@ -113,6 +131,12 @@ export function SectionOutline({ root, onNext }: { root: RefObject<HTMLElement |
       } else if ((alt && (e.key === "ArrowLeft" || e.code === "KeyH")) || (plain && e.key === "k")) {
         e.preventDefault();
         jump(el, -1);
+      } else if (alt && (e.key === "ArrowDown" || e.code === "KeyJ")) {
+        e.preventDefault();
+        stepField(el, 1);
+      } else if (alt && (e.key === "ArrowUp" || e.code === "KeyK")) {
+        e.preventDefault();
+        stepField(el, -1);
       } else if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && onNext) {
         e.preventDefault();
         onNext();

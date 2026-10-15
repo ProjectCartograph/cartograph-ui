@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Plus, X } from "lucide-react";
 
 import { CommentMark } from "@/comments/CommentMark";
@@ -55,10 +56,15 @@ export function DeliverablesSection() {
     });
   }
 
+  // The deliverable just added takes the cursor in its name, so what is
+  // typed next lands there (cartograph-ui#91).
+  const [added, setAdded] = useState<string | undefined>(undefined);
   function add() {
+    const id = `d-${randomSuffix()}`;
+    setAdded(id);
     store.updateSpec((s) => ({
       ...s,
-      deliverables: [...(s.deliverables ?? []), { id: `d-${randomSuffix()}`, name: "" }],
+      deliverables: [...(s.deliverables ?? []), { id, name: "" }],
     }));
   }
 
@@ -91,6 +97,7 @@ export function DeliverablesSection() {
                 }}
                 placeholder={dc.namePlaceholder}
                 aria-label={dc.nameLabel}
+                autoFocus={d.id === added}
                 maxLength={60}
               />
             </div>

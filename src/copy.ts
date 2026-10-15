@@ -23,6 +23,13 @@ export const copy = {
       hours: (n: number) => `${n} h ago`,
       days: (n: number) => `${n} day${n === 1 ? "" : "s"} ago`,
     },
+    // What the workspace holds, each register a link to its list, so Home
+    // never reads as empty when records are there (cartograph-engine#109).
+    holds: {
+      title: "In this workspace",
+      plural: { Goal: "Goals", Project: "Projects", Programme: "Programmes", Operation: "Operations", Gap: "Gaps", KPI: "Indicators" } as Record<string, string>,
+      label: (n: number, what: string) => `${n} ${what.toLowerCase()}: open the list`,
+    },
     // What was started and not finished (surfaces/home/leftToDo).
     left: {
       title: "Pick up where you left off",
@@ -433,6 +440,7 @@ export const copy = {
       added: "Added",
       removed: "Removed",
       none: "No charter to show for this project yet.",
+      partFailed: "This part could not be shown. The rest of the charter is below it.",
     },
     title: "Change sets",
     rail: "Change sets",
@@ -2973,7 +2981,14 @@ export const copy = {
     outline: {
       label: "Sections of this stage",
       onThisPage: "On this page:",
-      keys: "Alt+Right and Alt+Left move a section. Ctrl+Enter takes the next step.",
+      keys: "Alt+Right and Alt+Left move a section, Alt+Down and Alt+Up a field. Ctrl+Enter takes the next step.",
+      // A section complete when the stage opened, folded under its
+      // heading (#32).
+      done: "Complete",
+      open: "Open",
+      openLabel: (heading: string) => `Open ${heading}, which is complete`,
+      fold: "Fold",
+      foldLabel: (heading: string) => `Fold ${heading} away`,
     },
     // The seven stages of the walk (engine TAXONOMY.md D33), each named
     // for what it settles, with the sentence that says so.

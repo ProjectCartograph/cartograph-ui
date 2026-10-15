@@ -73,4 +73,33 @@ describe("the outline beside a summary", () => {
     const nav = await screen.findByRole("navigation", { name: so.label });
     expect(nav.textContent?.match(/Beneficiaries/g)).toHaveLength(1);
   });
+
+  it("moves the cursor a field down and up, passing a folded section", () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    function Fields() {
+      const root = useRef<HTMLDivElement>(null);
+      return (
+        <div ref={root}>
+          <SectionOutline root={root} />
+          <h2>Roles</h2>
+          <input aria-label="Role" />
+          <input aria-label="Post" />
+          <h2>Funding</h2>
+          <div hidden>
+            <input aria-label="Amount" />
+          </div>
+          <h2>Stakeholders</h2>
+          <input aria-label="Stake" />
+        </div>
+      );
+    }
+    render(<Fields />);
+    screen.getByRole("textbox", { name: "Role" }).focus();
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowDown", altKey: true });
+    expect(screen.getByRole("textbox", { name: "Post" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowDown", altKey: true });
+    expect(screen.getByRole("textbox", { name: "Stake" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { code: "KeyK", key: "˚", altKey: true });
+    expect(screen.getByRole("textbox", { name: "Post" })).toHaveFocus();
+  });
 });

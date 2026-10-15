@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowLeft, Bot, CheckCircle2, ChevronRight, CircleDashed, GitMerge, GitPullRequest, UserCheck } from "lucide-react";
 
 import { useSession } from "@/access/access";
+import { activeChangeSet } from "@/client/active";
 import { useClient } from "@/client/context";
 import { AskAgent } from "./AskAgent";
 import { CharterPreview } from "./CharterPreview";
@@ -68,6 +69,12 @@ function Review({ review }: { review: ChangeSetReview }) {
   const [focus, setFocus] = useState<DecisionFocus | undefined>(undefined);
   const recordNames = new Map(review.items.map((i) => [`${i.kind}/${i.id}`, i.name ?? i.id]));
   const projects = review.items.filter((i) => i.kind === "Project").map((i) => ({ id: i.id, name: i.name ?? i.id }));
+  // The change sets a person may work in are theirs and their agents' (the
+  // default list); a record opened from one of them opens in it, so what
+  // only it holds can be read (cartograph-ui#124).
+  const client = useClient();
+  const workable = useQuery({ queryKey: ["changesets"], queryFn: () => client.changeSets(), retry: false });
+  const canWorkIn = (workable.data ?? []).some((s) => s.id === cs.id) && editable;
   return (
     <>
       <header className="flex flex-col gap-2">
@@ -132,6 +139,7 @@ function Review({ review }: { review: ChangeSetReview }) {
                 set={cs.id}
                 item={it}
                 editable={editable && mine}
+                canWorkIn={canWorkIn}
                 decided={decided.filter((a) => a.on === `${it.kind}/${it.id}`)}
                 focus={focus && focus.kind === it.kind && focus.id === it.id ? focus : undefined}
               />
@@ -162,12 +170,14 @@ function Item({
   set,
   item,
   editable,
+  canWorkIn,
   decided,
   focus,
 }: {
   set: string;
   item: ChangeSetItem;
   editable: boolean;
+  canWorkIn: boolean;
   decided: Assumption[];
   focus?: DecisionFocus;
 }) {
@@ -270,9 +280,12 @@ function Item({
               {cc.allMet}
             </p>
           )}
-          {!isNew ? (
+          {/* Opened in this change set where the person may work in it, so a
+              record only it holds is there to read; otherwise the record
+              as it is, which a new one is not yet. */}
+          {canWorkIn || !isNew ? (
             <Button variant="outline" size="sm" asChild>
-              <Link to={link.to as never} params={link.params as never}>
+              <Link to={link.to as never} params={link.params as never} onClick={() => canWorkIn && activeChangeSet.set(set)} data-cartograph-open-record="">
                 {cc.openRecord}
               </Link>
             </Button>
