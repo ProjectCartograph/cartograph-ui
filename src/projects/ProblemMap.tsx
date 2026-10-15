@@ -333,13 +333,15 @@ export function ProblemMap({
                     {mc.useGroups(groups.map(nameOf).join(", "))}
                   </Button>
                 ) : null}
+                {/* Either break is about who the gap affects: it opens at
+                    that field, not the whole gap (#91). */}
                 {b.gap && drawer ? (
-                  <Button type="button" variant="link" size="sm" className="h-auto p-0 text-muted-foreground" onClick={() => drawer.open("Gap", b.gap as string, b.unknown ? "/spec/affects" : undefined)}>
-                    {b.unknown ? mc.sayAffects : mc.openGap}
+                  <Button type="button" variant="link" size="sm" className="h-auto p-0 text-muted-foreground" onClick={() => drawer.open("Gap", b.gap as string, "/spec/affects")}>
+                    {b.unknown ? mc.sayAffects : mc.changeAffects}
                   </Button>
                 ) : b.gap ? (
-                  <Link to="/gaps/$id" params={{ id: b.gap }} className="text-muted-foreground underline">
-                    {mc.openGap}
+                  <Link to="/gaps/$id/shortfall" params={{ id: b.gap }} className="text-muted-foreground underline">
+                    {b.unknown ? mc.sayAffects : mc.changeAffects}
                   </Link>
                 ) : null}
               </span>
