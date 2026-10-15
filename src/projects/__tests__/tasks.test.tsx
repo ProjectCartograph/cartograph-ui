@@ -97,4 +97,12 @@ describe("a deliverable's tasks", () => {
     await userEvent.click(region.querySelector(`[aria-label="${copy.projects.common.remove}"]`) as HTMLElement);
     await waitFor(() => expect(seen.spec?.deliverables?.[0].tasks).toBeUndefined());
   });
+
+  // A deliverable added takes the cursor in its name (cartograph-ui#91).
+  it("puts the cursor in a new deliverable's name", async () => {
+    await mount();
+    await screen.findByLabelText(`${dc.taskNameLabel} D1.1`);
+    await userEvent.click(screen.getByRole("button", { name: dc.add }));
+    await waitFor(() => expect(screen.getAllByLabelText(dc.nameLabel).at(-1)).toHaveFocus());
+  });
 });
