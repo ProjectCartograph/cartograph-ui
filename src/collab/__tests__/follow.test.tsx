@@ -227,7 +227,7 @@ describe("what the viewer sees", () => {
     }
     const mine = agentPeer("agent-1", { for: "ada@example.org", seq: 1, step: "draft" });
     const theirs = agentPeer("agent-2", { for: "sam@example.org", seq: 1, step: "draft" });
-    const person: Peer = { session: "s-sam", actor: "sam", color: "#2563eb", route: "/", focus: null, caret: null, pointer: null, heard: 0 };
+    const person: Peer = { session: "s-sam", actor: "sam", color: "#2563eb", route: "/strategy", focus: null, caret: null, pointer: null, heard: 0 };
     const channel: PresenceChannel = {
       publish: () => {},
       subscribe: (l) => {
@@ -240,7 +240,7 @@ describe("what the viewer sees", () => {
     const { rerender } = render(
       <ClientProvider client={client}>
         <FollowFeed value={{ othersOnDrafts: false, me: "ada@example.org" }}>
-          <PresenceProvider screen={null} route="/">
+          <PresenceProvider screen={null} route="/strategy">
             <Peers />
           </PresenceProvider>
         </FollowFeed>
@@ -250,12 +250,48 @@ describe("what the viewer sees", () => {
     rerender(
       <ClientProvider client={client}>
         <FollowFeed value={{ othersOnDrafts: true, me: "ada@example.org" }}>
-          <PresenceProvider screen={null} route="/">
+          <PresenceProvider screen={null} route="/strategy">
             <Peers />
           </PresenceProvider>
         </FollowFeed>
       </ClientProvider>,
     );
     await waitFor(() => expect(screen.getByTestId("peers")).toHaveTextContent("agent-1,agent-2,s-sam"));
+  });
+});
+
+// Home, drafts and mentions are each person's own: nobody is drawn over
+// them (#126). A person on the same record in another change set is drawn
+// (#129), their caret left to their own draft.
+describe("who is drawn where", () => {
+  it("draws nobody on Home, and draws people in other change sets on a shared view", async () => {
+    function Here() {
+      const { here, changeSet } = usePresence();
+      return <p data-testid="here">{(here ?? []).map((p) => `${p.session}:${p.changeSet ?? ""}`).join(",") + "|" + (changeSet ?? "")}</p>;
+    }
+    const sam: Peer = { session: "s-sam", actor: "sam", color: "#2563eb", route: "/strategy", changeSet: "cs-sam", focus: null, caret: null, pointer: null, heard: 0 };
+    const kai: Peer = { session: "s-kai", actor: "kai", color: "#16a34a", route: "/", focus: null, caret: null, pointer: null, heard: 0 };
+    const channel: PresenceChannel = {
+      publish: () => {},
+      subscribe: (l) => {
+        l([sam, kai]);
+        return () => {};
+      },
+      close: () => {},
+    };
+    const client = fakeClient({ joinPresence: async () => channel });
+    const at = (route: string) => (
+      <ClientProvider client={client}>
+        <FollowFeed value={{ othersOnDrafts: true, me: "ada@example.org" }}>
+          <PresenceProvider screen={null} route={route}>
+            <Here />
+          </PresenceProvider>
+        </FollowFeed>
+      </ClientProvider>
+    );
+    const { rerender } = render(at("/strategy"));
+    await waitFor(() => expect(screen.getByTestId("here")).toHaveTextContent("s-sam:cs-sam|"));
+    rerender(at("/"));
+    await waitFor(() => expect(screen.getByTestId("here").textContent).toBe("|"));
   });
 });

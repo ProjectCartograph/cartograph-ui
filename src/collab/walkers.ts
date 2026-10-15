@@ -9,6 +9,18 @@ const WALKERS: Record<string, "workspace" | "project"> = {
   "/projects/start": "project",
 };
 
+// Views that are each person's own: Home (what is left for them, their
+// recent work), their drafts and what asks them. Like a walk, nothing of
+// anyone else is drawn there and nothing of theirs is sent from there
+// (#126: other people's pointers were drawn over another person's Home).
+const PERSONAL = new Set(["/", "/drafts", "/mentions"]);
+
+/** Whether a route is a view of a person's own: a walk or a personal page. */
+export function aloneOn(route: string | undefined): boolean {
+  if (!route) return false;
+  return walkerOf(route) !== undefined || PERSONAL.has(route.split("?")[0].replace(/\/+$/, "") || "/");
+}
+
 /** Which walk a route is, if it is one. */
 export function walkerOf(route: string | undefined): "workspace" | "project" | undefined {
   if (!route) return undefined;

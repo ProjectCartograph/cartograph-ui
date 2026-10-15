@@ -136,6 +136,8 @@ export const copy = {
     walking: (name: string, walk: "workspace" | "project") => `${name} is ${walk === "workspace" ? "opening the workspace" : "starting a project"}`,
     onSection: (names: string[]) => `${names.join(", ")} ${names.length === 1 ? "is" : "are"} here`,
     peopleHere: "People on this screen",
+    // A person on the same record, working in another change set (#129).
+    inOtherChangeSet: (name: string) => `${name}, in another change set`,
     someone: "Someone",
     you: "You",
     conflictsTitle: "Set by two people at once",

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { copy } from "@/copy";
 import { createPortal } from "react-dom";
 
 import type { Peer, SharedDraft } from "@/client/port";
@@ -22,19 +23,21 @@ function textControlIn(el: Element): HTMLInputElement | HTMLTextAreaElement | nu
 
 const layer: CSSProperties = { position: "fixed", inset: 0, pointerEvents: "none", zIndex: 60, overflow: "hidden" };
 
-function NameChip({ peer, style }: { peer: Peer; style: CSSProperties }) {
+function NameChip({ peer, style, elsewhere }: { peer: Peer; style: CSSProperties; elsewhere?: boolean }) {
   return (
     <span
-      className="absolute max-w-48 truncate rounded px-1.5 py-0.5 text-xs font-medium text-white shadow-sm"
+      className="absolute max-w-56 truncate rounded px-1.5 py-0.5 text-xs font-medium text-white shadow-sm"
       style={{ backgroundColor: peer.color, ...style }}
     >
-      {displayName(peer)}
+      {elsewhere ? copy.collab.inOtherChangeSet(displayName(peer)) : displayName(peer)}
     </span>
   );
 }
 
-/** A coloured ring and a name on the field another session is in. */
-function FieldRing({ peer, index }: { peer: Peer; index: number }) {
+/** A coloured ring and a name on the field another session is in; for
+ * someone in another change set, the name says so, since what they type
+ * there is not in this draft yet. */
+function FieldRing({ peer, index, elsewhere }: { peer: Peer; index: number; elsewhere: boolean }) {
   const el = peer.focus ? byAttr("data-cartograph-field", peer.focus.path) : null;
   if (!el) return null;
   const r = el.getBoundingClientRect();
@@ -57,7 +60,7 @@ function FieldRing({ peer, index }: { peer: Peer; index: number }) {
     >
       {/* At the ring's right end: a field's label sits at its left, and a
           presence mark must never hide what it marks. */}
-      <NameChip peer={peer} style={{ right: 0, bottom: "100%", marginBottom: 2 }} />
+      <NameChip peer={peer} elsewhere={elsewhere} style={{ right: 0, bottom: "100%", marginBottom: 2 }} />
     </div>
   );
 }
@@ -142,7 +145,7 @@ function RemotePointer({ peer }: { peer: Peer }) {
  */
 export function PresenceOverlay() {
   const presence = usePresence();
-  const { draft } = presence;
+  const { draft, changeSet } = presence;
   const peers = peersHere(presence);
   useRelayout(peers.length > 0);
   if (peers.length === 0 || typeof document === "undefined") return null;
@@ -153,10 +156,13 @@ export function PresenceOverlay() {
         const path = peer.focus?.path ?? "";
         const index = ringsOn.get(path) ?? 0;
         ringsOn.set(path, index + 1);
+        // A caret is a cursor into one draft: placed only for someone in
+        // the same change set; the ring marks the field for the others.
+        const elsewhere = !peer.agent && (peer.changeSet ?? "") !== (changeSet ?? "");
         return (
           <div key={peer.session}>
-            <FieldRing peer={peer} index={index} />
-            {draft ? <RemoteCaret peer={peer} draft={draft} /> : null}
+            <FieldRing peer={peer} index={index} elsewhere={elsewhere} />
+            {draft && !elsewhere ? <RemoteCaret peer={peer} draft={draft} /> : null}
             <RemotePointer peer={peer} />
           </div>
         );
