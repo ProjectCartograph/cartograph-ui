@@ -4,12 +4,14 @@ import { CircleDashed } from "lucide-react";
 import { useClient } from "@/client/context";
 import { copy } from "@/copy";
 import { checkText } from "./MergeBar";
+import { locksMerge } from "./locks";
 import { useActiveChangeSet } from "./useActive";
 
 /**
- * What stops this record from merging, shown with its own checks: the
- * fields its schema still requires, or a value it refuses, as the change
- * set's review names them. Without this, they showed only in the bar at
+ * What stops this record from merging, shown with its own checks: a value
+ * it holds in a form that cannot be saved, as the change set's review
+ * names it. A field not filled in yet does not stop it (engine
+ * docs/adr/0035). Without this, they showed only in the bar at
  * the foot of the screen.
  */
 export function RecordBlocks({ kind, id }: { kind: string; id: string }) {
@@ -21,7 +23,7 @@ export function RecordBlocks({ kind, id }: { kind: string; id: string }) {
     enabled: Boolean(active),
   });
   const item = review.data?.items.find((it) => it.kind === kind && it.id === id);
-  const blocks = (item?.checks ?? []).filter((c) => c.id.startsWith("required:"));
+  const blocks = (item?.checks ?? []).filter(locksMerge);
   if (blocks.length === 0) return null;
   return (
     <div className="flex flex-col gap-1.5 rounded-lg bg-destructive/5 p-3 ring-1 ring-destructive/25" data-slot="record-blocks">
