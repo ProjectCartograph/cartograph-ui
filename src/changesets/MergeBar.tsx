@@ -5,6 +5,7 @@ import { CheckCircle2, CircleDashed, Eye, GitMerge } from "lucide-react";
 
 import { activeChangeSet } from "@/client/active";
 import { useClient } from "@/client/context";
+import { namesAfter } from "./names";
 import { ClientError, type Client } from "@/client/port";
 import { focusField } from "@/components/focusField";
 import { useGuide } from "@/components/guide";
@@ -67,11 +68,14 @@ export function MergeBar() {
   const [confirming, setConfirming] = useState(false);
   const [merged, setMerged] = useState(false);
 
-  // Named after what it first changed, while it still has the name it
-  // started with, so the list of change sets can be told apart.
+  // Named after the work it defines (a project, programme, service or
+  // portfolio) where it holds one, else what it first changed, while it
+  // still has the name it started with, so the list of change sets can be
+  // told apart (cartograph-ui#90): a project's walk touches its gaps
+  // first, and the change set is the project's.
   const client = useClient();
   const queryClient = useQueryClient();
-  const first = review.data?.items[0];
+  const first = namesAfter(review.data?.items ?? []);
   const firstName = first ? first.name || copy.workingIn.aRecord(copy.sheets.kindsSingular[first.kind] ?? first.kind) : undefined;
   const title = review.data?.changeSet.title;
   useEffect(() => {
@@ -130,6 +134,7 @@ export function MergeBar() {
 }
 
 type Review = Awaited<ReturnType<Client["changeSet"]>>;
+
 type Item = Review["items"][number];
 type ItemCheck = Item["checks"][number];
 
