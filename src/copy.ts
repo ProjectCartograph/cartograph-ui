@@ -13,6 +13,9 @@ export const copy = {
   // The home page: one question, read against the taxonomy and the record
   // (engine docs/adr/0023).
   home: {
+    // The welcome walk, put off and not finished (#128).
+    resumeSetup: "Resume setting up",
+    resumeSetupLabel: "Resume setting up the workspace: name the organisation and its strategy",
     recent: {
       title: "Opened recently",
       justNow: "just now",

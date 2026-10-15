@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ArrowUp, CircleDot, Sparkles, Type } from "lucide-react";
+import { ArrowRight, ArrowUp, CircleDot, Compass, Sparkles, Type } from "lucide-react";
 
 import { useClient } from "@/client/context";
 import type { Match, Order, Understanding } from "@/client/port";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { copy } from "@/copy";
 import { manifestLink } from "@/proposals/links";
 import { FLOW_KEYS, flowLink, nameFrom } from "./flows";
-import { onboarded, useNewWorkspace } from "@/onboarding/firstRun";
+import { onboarded, useNewWorkspace, useWorkspaceSetUp } from "@/onboarding/firstRun";
 import { LeftToDo } from "./LeftToDo";
 import { Recent } from "./Recent";
 import { TourInvite } from "@/tour/TourInvite";
@@ -43,6 +43,7 @@ export function Home() {
   // A workspace with nothing in it opens by walking its organisation and
   // strategy, once per browser (src/onboarding).
   const isNew = useNewWorkspace();
+  const setUp = useWorkspaceSetUp();
   const navigate = useNavigate();
   useEffect(() => {
     if (isNew && !onboarded()) void navigate({ to: "/welcome", replace: true });
@@ -101,6 +102,20 @@ export function Home() {
           <CircleDot className="size-4" aria-hidden="true" />
           {hc.next}: <span className="font-medium text-foreground">{termOf(next.key)}</span>
           <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+      ) : null}
+      {/* The walk put off and not finished: one step back into it (#128). */}
+      {setUp === false && onboarded() && !read.data && !read.isPending ? (
+        <Link
+          to="/welcome"
+          className="flex items-center gap-3 self-center rounded-full px-4 py-2 text-sm ring-1 ring-foreground/15 transition-colors duration-150 ease-standard hover:bg-muted active:bg-muted"
+          aria-label={hc.resumeSetupLabel}
+          title={hc.resumeSetupLabel}
+          data-slot="home-resume-setup"
+        >
+          <Compass className="size-4 text-muted-foreground" aria-hidden="true" />
+          <span className="font-medium">{hc.resumeSetup}</span>
+          <ArrowRight className="size-4 text-muted-foreground" aria-hidden="true" />
         </Link>
       ) : null}
       {/* What was started and not finished, while nothing is being asked. */}
