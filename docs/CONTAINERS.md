@@ -41,6 +41,20 @@ toolchain; later ones start in seconds.
 Commands run as your user. To start again from nothing:
 `scripts/dev --down`, then `docker volume rm cartograph-ui-workspace`.
 
+## Apple silicon and other arm64 hosts
+
+On a Mac with Apple silicon, or any arm64 machine, the container runs as
+`aarch64-linux`, and everything here builds and tests natively. (The
+engine's image and release recipes also build for x86_64; its
+docs/CONTAINERS.md says what they need on such a host.)
+
+Each call first copies the repository into the container when it changed
+on the host: `scripts/dev` checks the host side natively (a `find`
+against the last sync), so an unchanged repository costs no copy. On
+Docker Desktop the share into the container is slower per file than on
+Linux, so the first call after a large change (a branch switch) takes
+longer than the next.
+
 ## For agents
 
 Run every build, test and server through `scripts/dev`. Never edit,
