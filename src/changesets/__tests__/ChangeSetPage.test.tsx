@@ -155,4 +155,26 @@ describe("a change set's review", () => {
     fireEvent.click(within(preview).getByRole("button", { name: cc.preview.showSame }));
     expect(within(preview).getByText("Six depots")).toBeInTheDocument();
   });
+
+  // A record with a field not filled in yet merges: the dialog says it is
+  // left for later and asks why, but does not wait for it (engine
+  // docs/adr/0035).
+  it("merges a record not filled in yet, saying what is left", async () => {
+    const half: ChangeSetReview = {
+      changeSet: { ...review.changeSet, status: "open", agent: undefined },
+      items: [{ kind: "Project", id: "p-half", name: "Half", base: 0, proposed: "new", included: true, changes: [], checks: [{ id: "required:/spec/team", path: "/spec/team", state: "block", message: "Not filled in yet. It can be merged without it; fill it in before the work is handed off." }] }],
+    };
+    const proposeChangeSet = vi.fn(async () => half.changeSet);
+    const acceptChangeSet = vi.fn(async () => half.changeSet);
+    mount({ changeSet: async () => half, proposeChangeSet, acceptChangeSet } as never);
+    await screen.findByRole("heading", { name: "Define the bruising gap" });
+    fireEvent.click(await screen.findByRole("button", { name: copy.mergeBar.mergeLabel }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).queryByText(copy.mergeBar.finishFirst)).toBeNull();
+    expect(within(dialog).getByText("Fill in the team")).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText(copy.mergeBar.whyLabel), { target: { value: "the team is decided next week" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: copy.mergeBar.mergeLabel }));
+    await waitFor(() => expect(acceptChangeSet).toHaveBeenCalledWith("cs1"));
+    expect(proposeChangeSet).toHaveBeenCalled();
+  });
 });

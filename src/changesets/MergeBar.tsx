@@ -6,6 +6,7 @@ import { CheckCircle2, CircleDashed, Eye, GitMerge } from "lucide-react";
 import { activeChangeSet } from "@/client/active";
 import { useClient } from "@/client/context";
 import { namesAfter } from "./names";
+import { MISSING, isUnfilled, locksMerge } from "./locks";
 import { ClientError, type Client } from "@/client/port";
 import { focusField } from "@/components/focusField";
 import { useGuide } from "@/components/guide";
@@ -95,8 +96,8 @@ export function MergeBar() {
   }
   const items = review.data?.items ?? [];
   if (!active || items.length === 0) return null;
-  const open = items.reduce((n, it) => n + it.checks.filter((k) => k.state !== "ok" && !isRequired(k)).length, 0);
-  const needed = items.reduce((n, it) => n + it.checks.filter(isRequired).length, 0);
+  const open = items.reduce((n, it) => n + it.checks.filter((k) => k.state !== "ok" && !locksMerge(k)).length, 0);
+  const needed = items.reduce((n, it) => n + it.checks.filter(locksMerge).length, 0);
 
   return (
     <>
@@ -137,11 +138,6 @@ type Review = Awaited<ReturnType<Client["changeSet"]>>;
 
 type Item = Review["items"][number];
 type ItemCheck = Item["checks"][number];
-
-const isRequired = (k: ItemCheck) => k.id.startsWith("required:");
-// What the engine says of a field the schema requires and the record
-// lacks; anything else it says is shown as it says it.
-const MISSING = "Needed before this can be merged.";
 
 // The steps each kind's editor has a route for, by the section names its
 // checks use.
@@ -191,9 +187,9 @@ function RecordItems({ item, onGo, only }: { item: Item; onGo: () => void; only?
   if (open.length === 0) return null;
   // What stops the merge, then what stops a hand-off, then advice.
   const tiers = [
-    { key: "required", label: c.tierRequired, checks: open.filter(isRequired) },
-    { key: "block", label: c.tierHandoff, checks: open.filter((k) => !isRequired(k) && k.state === "block") },
-    { key: "warn", label: c.tierAdvice, checks: open.filter((k) => !isRequired(k) && k.state === "warn") },
+    { key: "required", label: c.tierRequired, checks: open.filter(locksMerge) },
+    { key: "block", label: c.tierHandoff, checks: open.filter((k) => !locksMerge(k) && k.state === "block") },
+    { key: "warn", label: c.tierAdvice, checks: open.filter((k) => !locksMerge(k) && k.state === "warn") },
   ].filter((t) => t.checks.length > 0 && (!only || t.key === only));
   if (tiers.length === 0) return null;
   return (
@@ -205,7 +201,7 @@ function RecordItems({ item, onGo, only }: { item: Item; onGo: () => void; only?
           <ul className="flex flex-col gap-1">
             {t.checks.map((check) => {
               const go = whereTo(item, check, stepOf);
-              const required = isRequired(check);
+              const required = locksMerge(check);
               return (
                 <li key={check.id} className="flex items-start gap-2" data-cartograph-check={check.id}>
                   <CircleDashed
@@ -256,8 +252,8 @@ function NeededList({ items, needed }: { items: Item[]; needed: number }) {
 /** What a check says, in words: a missing field by its name, anything
  * else as the engine says it. */
 export function checkText(check: ItemCheck): string {
-  if (!isRequired(check) || !check.path) return check.message;
-  if (check.message === MISSING) return c.required(fieldName(check.path));
+  if (!check.path || !(locksMerge(check) || isUnfilled(check))) return check.message;
+  if (check.message === MISSING || isUnfilled(check)) return c.required(fieldName(check.path));
   // Anything else said of a field says which field first (#86).
   return c.ofField(fieldName(check.path), check.message);
 }
@@ -291,8 +287,8 @@ export function MergeDialog({ set, open: shown, onOpenChange, onMerged }: { set:
   const [failed, setFailed] = useState<string | undefined>();
   const items = review.data?.items.filter((it) => it.included) ?? [];
   const open = items.flatMap((it) => it.checks.filter((k) => k.state !== "ok").map((k) => ({ item: it, check: k })));
-  const required = open.filter((o) => isRequired(o.check));
-  const may = open.filter((o) => !isRequired(o.check));
+  const required = open.filter((o) => locksMerge(o.check));
+  const may = open.filter((o) => !locksMerge(o.check));
   // A proposed change set already carries a reason for each open item.
   const asks = required.length === 0 && may.length > 0 && (review.data?.changeSet.status ?? "open") === "open";
   const merge = useMutation({
