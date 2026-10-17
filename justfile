@@ -66,6 +66,18 @@ stack-down:
     engine=$(cd "${CARTOGRAPH_ENGINE:-../cartograph-engine}" && pwd)
     just --justfile "$engine/justfile" --working-directory "$engine" stack-down
 
+# Count what each core screen shows on arrival (controls, primary actions,
+# navigation, words), against a stack serving the example: the walk-first
+# baseline (#136). Chromium is $CHROMIUM or chromium on PATH
+audit url="http://127.0.0.1:8080" out="":
+    #!{{toolchain}} bash
+    set -euo pipefail
+    # Text is laid out only with fonts; without them every word counts 0.
+    fonts=$(nix build --inputs-from . nixpkgs#dejavu_fonts --no-link --print-out-paths)
+    conf=$(mktemp)
+    printf '<?xml version="1.0"?><fontconfig><dir>%s/share/fonts</dir></fontconfig>' "$fonts" > "$conf"
+    FONTCONFIG_FILE="$conf" node scripts/screen-audit.mjs {{url}} "${CHROMIUM:-chromium}" 9495 {{out}}
+
 # Drive this build headless against an engine already serving it (README: The smoke test); Chromium is $CHROMIUM or chromium on PATH
 smoke url="http://127.0.0.1:8080" *args="":
     node scripts/smoke.mjs {{url}} {{args}}

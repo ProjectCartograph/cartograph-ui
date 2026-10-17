@@ -644,10 +644,11 @@ async function resourceCreateEditFlow(conn) {
   const createdName = `Smoke Test Resource ${Date.now()}`;
   const editedName = `${createdName} Edited`;
 
+  // Adding says itself why; only a change asks a reason (SheetForm).
   async function fill(name, category, reason) {
     await setField(conn, "/metadata/name", name, { within: "dialog" });
     await pickOption(conn, "/spec/category", { value: category, within: "dialog" });
-    await setReason(conn, reason);
+    if (reason) await setReason(conn, reason);
   }
 
   async function submit() {
@@ -669,7 +670,7 @@ async function resourceCreateEditFlow(conn) {
   if (pickers.some((f) => f !== "/spec/category")) {
     problems.push(`Resource dialog showed a picker for something other than the category: ${J(pickers)}`);
   }
-  await fill(createdName, "system", "smoke test create");
+  await fill(createdName, "system");
   await submit();
 
   const afterCreateText = await evalJS(conn, "document.body.innerText");
